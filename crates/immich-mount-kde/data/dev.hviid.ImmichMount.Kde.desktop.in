@@ -1,0 +1,13 @@
+[Desktop Entry]
+Name=Immich Mount
+Comment=Your Immich photos and videos as a drive in Dolphin
+Keywords=Immich;photos;videos;drive;mount;
+Exec=@BINDIR@/immich-mount-kde %u
+Icon=dev.hviid.ImmichMount
+Terminal=false
+Type=Application
+Categories=Qt;KDE;Utility;
+# Elsewhere the GNOME app (dev.hviid.ImmichMount) takes its place.
+OnlyShowIn=KDE;
+StartupNotify=true
+MimeType=x-scheme-handler/app.immich;

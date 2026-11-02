@@ -1,0 +1,25 @@
+#!/bin/bash
+# In-VM helper (pushed to /usr/local/bin/in-session by up.sh). Run as root.
+#
+#   in-session <cmd …>      run <cmd> as tester, in the foreground, with the
+#                           session's environment
+#   in-session -d <cmd …>   start <cmd> detached as a transient systemd --user
+#                           unit, so it outlives the `incus exec` that started it
+#                           (GUI apps such as `nautilus ~/Immich`)
+set -euo pipefail
+user=tester
+uid=$(id -u "$user")
+export XDG_RUNTIME_DIR=/run/user/$uid
+export DBUS_SESSION_BUS_ADDRESS=unix:path=$XDG_RUNTIME_DIR/bus  # the linger user bus
+export WAYLAND_DISPLAY=wayland-0                                 # created by gnome-shell
+export XDG_SESSION_TYPE=wayland
+export HOME=/home/$user
+cd "$HOME"
+
+if [ "${1:-}" = -d ]; then
+  shift
+  # The unit inherits the user manager's environment; session.sh put
+  # WAYLAND_DISPLAY there. A shell wrapper expands ~ and $HOME in the args.
+  exec runuser -u "$user" -- systemd-run --user --collect --quiet -- bash -c 'exec "$@"' _ "$@"
+fi
+exec runuser -u "$user" -- "$@"

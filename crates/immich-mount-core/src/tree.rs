@@ -1,0 +1,738 @@
+//! The tree engine: what each folder of the mount contains, with final names and attributes.
+//!
+//! Membership comes from the `LibrarySource` (Immich decides). This module applies the layout (sections, date and day
+//! folders, album layouts), names every entry (`naming`), and remembers the names it handed out (`NameMemory`), so a
+//! path keeps meaning the same Asset. Listings are cached for a freshness window (ARCHITECTURE.md, "Freshness").
+
+use std::collections::{BTreeSet, HashMap};
+use std::sync::{Arc, Mutex};
+use std::time::{Duration, Instant};
+
+use chrono::{DateTime, Utc};
+
+use crate::layout::{
+    album_folder_base, album_year_folder, day_folder_name, month_folder_name, year_folder_name, AlbumLayout,
+    GroupingMode, Section,
+};
+use crate::model::{Album, Asset, YearMonth};
+use crate::naming::{assign_names, file_base_name, sanitise, NameRequest};
+use crate::settings::Config;
+use crate::source::{LibraryChanges, LibrarySource, SourceError};
+
+/// The identity of every node in the mount. The parent is part of an Asset's identity, so one Asset can appear in
+/// several folders (one Appearance each).
+#[derive(Debug, Clone, PartialEq, Eq, Hash, PartialOrd, Ord, serde::Serialize, serde::Deserialize)]
+pub enum NodeKey {
+    Root,
+    Section(SectionKey),
+    TimelineYear(i32),
+    TimelineMonth(YearMonth),
+    TimelineDay(YearMonth, u32),
+    /// A year folder above albums, with the `year-folders` layout. `None` holds albums without photos.
+    AlbumYear(Option<i32>),
+    Album(String),
+    Person(String),
+    Country(String),
+    City { country: String, city: String },
+    GroupYear { base: Box<NodeKey>, year: i32 },
+    GroupMonth { base: Box<NodeKey>, month: YearMonth },
+    Asset { parent: Box<NodeKey>, asset_id: String },
+}
+
+impl NodeKey {
+    /// A stable text form, for storing per-folder state (assigned names, listings). Free text is escaped so the
+    /// separator never appears inside a part.
+    pub fn storage_key(&self) -> String {
+        fn escape(text: &str) -> String {
+            text.replace('%', "%25").replace('|', "%7C")
+        }
+        match self {
+            NodeKey::Root => "root".to_string(),
+            NodeKey::Section(section) => format!("section|{section:?}"),
+            NodeKey::TimelineYear(year) => format!("year|{year}"),
+            NodeKey::TimelineMonth(month) => format!("month|{}-{:02}", month.year, month.month),
+            NodeKey::TimelineDay(month, day) => format!("day|{}-{:02}-{day:02}", month.year, month.month),
+            NodeKey::AlbumYear(Some(year)) => format!("album-year|{year}"),
+            NodeKey::AlbumYear(None) => "album-year|unknown".to_string(),
+            NodeKey::Album(id) => format!("album|{}", escape(id)),
+            NodeKey::Person(id) => format!("person|{}", escape(id)),
+            NodeKey::Country(country) => format!("country|{}", escape(country)),
+            NodeKey::City { country, city } => format!("city|{}|{}", escape(country), escape(city)),
+            NodeKey::GroupYear { base, year } => format!("group-year|{}|{year}", escape(&base.storage_key())),
+            NodeKey::GroupMonth { base, month } => {
+                format!("group-month|{}|{}-{:02}", escape(&base.storage_key()), month.year, month.month)
+            }
+            NodeKey::Asset { parent, asset_id } => format!("asset|{}|{}", escape(&parent.storage_key()), escape(asset_id)),
+        }
+    }
+}
+
+/// `Section` as part of a hashable, ordered key.
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash, PartialOrd, Ord, serde::Serialize, serde::Deserialize)]
+pub enum SectionKey {
+    Photos,
+    Albums,
+    People,
+    Places,
+}
+
+impl From<Section> for SectionKey {
+    fn from(section: Section) -> SectionKey {
+        match section {
+            Section::Photos => SectionKey::Photos,
+            Section::Albums => SectionKey::Albums,
+            Section::People => SectionKey::People,
+            Section::Places => SectionKey::Places,
+        }
+    }
+}
+
+/// One entry of a folder listing.
+#[derive(Debug, Clone, PartialEq, serde::Serialize, serde::Deserialize)]
+pub struct Entry {
+    pub name: String,
+    pub node: NodeKey,
+    pub kind: EntryKind,
+}
+
+#[derive(Debug, Clone, PartialEq, serde::Serialize, serde::Deserialize)]
+pub enum EntryKind {
+    Folder,
+    File { asset_id: String, size: Option<u64>, modified: DateTime<Utc> },
+}
+
+/// Remembers the names handed out per folder, so they survive refreshes and restarts.
+pub trait NameMemory: Send + Sync {
+    fn remembered(&self, folder: &NodeKey) -> HashMap<String, String>;
+    fn remember(&self, folder: &NodeKey, names: &HashMap<String, String>);
+
+    /// Keep a folder's latest listing, so it can still be shown when Immich cannot be reached, after a restart too.
+    fn keep_listing(&self, _folder: &NodeKey, _entries: &[Entry]) {}
+
+    /// A kept listing, however old.
+    fn kept_listing(&self, _folder: &NodeKey) -> Option<Vec<Entry>> {
+        None
+    }
+}
+
+/// A `NameMemory` that lives only as long as the process; the metadata store replaces it in the daemon.
+#[derive(Default)]
+pub struct InMemoryNames {
+    folders: Mutex<HashMap<NodeKey, HashMap<String, String>>>,
+}
+
+impl NameMemory for InMemoryNames {
+    fn remembered(&self, folder: &NodeKey) -> HashMap<String, String> {
+        self.folders.lock().expect("name memory lock").get(folder).cloned().unwrap_or_default()
+    }
+    fn remember(&self, folder: &NodeKey, names: &HashMap<String, String>) {
+        self.folders.lock().expect("name memory lock").insert(folder.clone(), names.clone());
+    }
+}
+
+/// How long a listing is served from cache before the source is asked again.
+pub fn freshness_window(node: &NodeKey, now: DateTime<Utc>) -> Duration {
+    use chrono::Datelike;
+    let minutes = |count: u64| Duration::from_secs(count * 60);
+    match node {
+        NodeKey::Root | NodeKey::Section(SectionKey::Photos) | NodeKey::TimelineYear(_) => minutes(5),
+        NodeKey::TimelineMonth(month) | NodeKey::TimelineDay(month, _) => {
+            if month.year == now.year() && month.month == now.month() { minutes(1) } else { minutes(60) }
+        }
+        _ => minutes(10),
+    }
+}
+
+/// Whether a folder's listing depends on something in `changes`.
+fn is_touched(node: &NodeKey, changes: &LibraryChanges) -> bool {
+    if changes.everything {
+        return true;
+    }
+    let month_changed = |month: &YearMonth| changes.months.contains(month);
+    match node {
+        NodeKey::Section(SectionKey::Photos) => changes.timeline_months_changed,
+        NodeKey::TimelineYear(year) => changes.timeline_months_changed || changes.months.iter().any(|month| month.year == *year),
+        NodeKey::TimelineMonth(month) | NodeKey::TimelineDay(month, _) => month_changed(month),
+        NodeKey::Section(SectionKey::Albums) | NodeKey::AlbumYear(_) => changes.album_list_changed || !changes.albums.is_empty(),
+        NodeKey::Album(album_id) => changes.albums.contains(album_id),
+        NodeKey::GroupYear { base, .. } | NodeKey::GroupMonth { base, .. } => is_touched(base, changes),
+        _ => false,
+    }
+}
+
+/// An Asset list and when it was fetched.
+type FetchedAssets = (Instant, Arc<Vec<Asset>>);
+
+/// The tree engine.
+pub struct Tree<Source, Names> {
+    source: Source,
+    names: Names,
+    config: Config,
+    listings: Mutex<HashMap<NodeKey, (Instant, Vec<Entry>)>>,
+    /// The Asset lists of albums, people and cities, which their date-group folders reuse.
+    base_assets: Mutex<HashMap<NodeKey, FetchedAssets>>,
+    /// One gate per folder being fetched, so concurrent visits wait for a single fetch.
+    in_flight: Mutex<HashMap<NodeKey, Arc<tokio::sync::Mutex<()>>>>,
+    /// Counts invalidations. A fetch that saw the server before an invalidation must not be cached as fresh after it.
+    generation: std::sync::atomic::AtomicU64,
+}
+
+impl<Source: LibrarySource, Names: NameMemory> Tree<Source, Names> {
+    pub fn new(source: Source, names: Names, config: Config) -> Self {
+        Tree {
+            source,
+            names,
+            config,
+            listings: Mutex::new(HashMap::new()),
+            base_assets: Mutex::new(HashMap::new()),
+            in_flight: Mutex::new(HashMap::new()),
+            generation: std::sync::atomic::AtomicU64::new(0),
+        }
+    }
+
+    pub fn config(&self) -> &Config {
+        &self.config
+    }
+
+    /// Forget a cached listing, so the next call asks the source again.
+    pub fn invalidate(&self, node: &NodeKey) {
+        self.generation.fetch_add(1, std::sync::atomic::Ordering::SeqCst);
+        self.listings.lock().expect("listing cache lock").remove(node);
+        self.base_assets.lock().expect("base asset lock").remove(node);
+    }
+
+    /// Forget every listing, so every folder is read from Immich again on its next visit.
+    pub fn forget_all(&self) {
+        self.generation.fetch_add(1, std::sync::atomic::Ordering::SeqCst);
+        self.listings.lock().expect("listing cache lock").clear();
+        self.base_assets.lock().expect("base asset lock").clear();
+    }
+
+    /// Forget every listing of the timeline (Photos, its years, months and days), after an upload whose month is not
+    /// known yet.
+    pub fn forget_timeline(&self) {
+        self.generation.fetch_add(1, std::sync::atomic::Ordering::SeqCst);
+        let is_timeline = |node: &NodeKey| {
+            matches!(node, NodeKey::Section(SectionKey::Photos) | NodeKey::TimelineYear(_) | NodeKey::TimelineMonth(_) | NodeKey::TimelineDay(..))
+        };
+        self.listings.lock().expect("listing cache lock").retain(|node, _| !is_timeline(node));
+    }
+
+    /// Forget every listing the changes touch, so the next visit reads them again. Returns how many were forgotten.
+    pub fn apply_changes(&self, changes: &LibraryChanges) -> usize {
+        if changes.is_empty() {
+            return 0;
+        }
+        self.generation.fetch_add(1, std::sync::atomic::Ordering::SeqCst);
+        self.base_assets.lock().expect("base asset lock").retain(|node, _| !is_touched(node, changes));
+        let mut listings = self.listings.lock().expect("listing cache lock");
+        let before = listings.len();
+        listings.retain(|node, _| !is_touched(node, changes));
+        before - listings.len()
+    }
+
+    fn fresh_listing(&self, node: &NodeKey) -> Option<Vec<Entry>> {
+        let listings = self.listings.lock().expect("listing cache lock");
+        let (fetched_at, entries) = listings.get(node)?;
+        (fetched_at.elapsed() < freshness_window(node, Utc::now())).then(|| entries.clone())
+    }
+
+    /// The entries of a folder, from cache while fresh. Concurrent calls for one folder share a single fetch.
+    pub async fn list(&self, node: &NodeKey) -> Result<Vec<Entry>, SourceError> {
+        if let Some(entries) = self.fresh_listing(node) {
+            return Ok(entries);
+        }
+        let gate = self.in_flight.lock().expect("in-flight lock").entry(node.clone()).or_default().clone();
+        let _turn = gate.lock().await;
+        if let Some(entries) = self.fresh_listing(node) {
+            return Ok(entries);
+        }
+        let generation = self.generation.load(std::sync::atomic::Ordering::SeqCst);
+        let entries = match self.list_uncached(node).await {
+            Ok(entries) => entries,
+            // Offline or busy, an older listing beats an error: the folder still opens, and the next visit tries
+            // again (SPEC.md, "Errors seen by programs using the mount").
+            Err(error @ (SourceError::Offline(_) | SourceError::Busy)) => return self.stale_listing(node).ok_or(error),
+            Err(error) => return Err(error),
+        };
+        // An invalidation during the fetch means the server changed under it: answer, but do not keep it as fresh.
+        if self.generation.load(std::sync::atomic::Ordering::SeqCst) == generation {
+            let previous = self.listings.lock().expect("listing cache lock").insert(node.clone(), (Instant::now(), entries.clone()));
+            // The database write is skipped when nothing changed, which is most refreshes.
+            if previous.is_none_or(|(_, previous)| previous != entries) {
+                self.names.keep_listing(node, &entries);
+            }
+        }
+        self.in_flight.lock().expect("in-flight lock").remove(node);
+        Ok(entries)
+    }
+
+    /// A listing still held but past its freshness window: answered at once while a fresh one is fetched
+    /// (stale-while-revalidate). A listing forgotten because Immich changed is not held, so a known change is always
+    /// fetched before the folder answers.
+    pub fn expired_listing(&self, node: &NodeKey) -> Option<Vec<Entry>> {
+        let listings = self.listings.lock().expect("listing cache lock");
+        let (fetched_at, entries) = listings.get(node)?;
+        (fetched_at.elapsed() >= freshness_window(node, Utc::now())).then(|| entries.clone())
+    }
+
+    /// A listing however old, for when the source cannot be reached: from memory, or kept from an earlier run.
+    pub fn stale_listing(&self, node: &NodeKey) -> Option<Vec<Entry>> {
+        let in_memory = self.listings.lock().expect("listing cache lock").get(node).map(|(_, entries)| entries.clone());
+        in_memory.or_else(|| self.names.kept_listing(node))
+    }
+
+    /// Find one entry of a folder by name.
+    pub async fn lookup(&self, parent: &NodeKey, name: &str) -> Result<Option<Entry>, SourceError> {
+        Ok(self.list(parent).await?.into_iter().find(|entry| entry.name == name))
+    }
+
+    async fn list_uncached(&self, node: &NodeKey) -> Result<Vec<Entry>, SourceError> {
+        match node {
+            NodeKey::Root => Ok(self.root_entries()),
+            NodeKey::Section(SectionKey::Photos) => {
+                let years: BTreeSet<i32> = self.source.timeline_months().await?.iter().map(|(month, _)| month.year).collect();
+                Ok(years.into_iter().map(|year| folder(year_folder_name(year), NodeKey::TimelineYear(year))).collect())
+            }
+            NodeKey::TimelineYear(year) => {
+                let months = self.source.timeline_months().await?;
+                Ok(months
+                    .iter()
+                    .filter(|(month, _)| month.year == *year)
+                    .filter_map(|(month, _)| Some(folder(month_folder_name(month.month)?, NodeKey::TimelineMonth(*month))))
+                    .collect())
+            }
+            NodeKey::TimelineMonth(month) => {
+                let assets = self.source.month_assets(*month).await?;
+                if self.config.grouping_photos.splits(assets.len()) {
+                    let days: BTreeSet<u32> = assets.iter().map(Asset::day).collect();
+                    Ok(days.into_iter().map(|day| folder(day_folder_name(day), NodeKey::TimelineDay(*month, day))).collect())
+                } else {
+                    Ok(self.file_entries(node, &assets))
+                }
+            }
+            NodeKey::TimelineDay(month, day) => {
+                let assets: Vec<Asset> = self.source.month_assets(*month).await?.into_iter().filter(|asset| asset.day() == *day).collect();
+                Ok(self.file_entries(node, &assets))
+            }
+            NodeKey::Section(SectionKey::Albums) => {
+                let albums = self.source.albums().await?;
+                match self.config.album_layout {
+                    AlbumLayout::YearFolders => {
+                        let years: BTreeSet<Option<i32>> = albums.iter().map(|album| album.year).collect();
+                        Ok(years.into_iter().map(|year| folder(album_year_folder(year), NodeKey::AlbumYear(year))).collect())
+                    }
+                    _ => Ok(self.album_entries(node, &albums)),
+                }
+            }
+            NodeKey::AlbumYear(year) => {
+                let albums: Vec<Album> = self.source.albums().await?.into_iter().filter(|album| album.year == *year).collect();
+                Ok(self.album_entries(node, &albums))
+            }
+            NodeKey::Section(SectionKey::People) => {
+                let people = self.source.people().await?;
+                let requests: Vec<NameRequest> = people
+                    .iter()
+                    .filter(|person| !person.is_hidden && !person.name.trim().is_empty())
+                    .map(|person| folder_request(&person.id, &person.name, person.created_at))
+                    .collect();
+                Ok(self.named_folders(node, &requests, |id| NodeKey::Person(id.to_string())))
+            }
+            NodeKey::Section(SectionKey::Places) => {
+                let countries = self.source.countries().await?;
+                let requests: Vec<NameRequest> = countries.iter().map(|country| folder_request(country, country, DateTime::<Utc>::UNIX_EPOCH)).collect();
+                Ok(self.named_folders(node, &requests, |country| NodeKey::Country(country.to_string())))
+            }
+            NodeKey::Country(country) => {
+                let cities = self.source.cities(country).await?;
+                let requests: Vec<NameRequest> = cities.iter().map(|city| folder_request(city, city, DateTime::<Utc>::UNIX_EPOCH)).collect();
+                Ok(self.named_folders(node, &requests, |city| NodeKey::City { country: country.clone(), city: city.to_string() }))
+            }
+            NodeKey::Album(_) | NodeKey::Person(_) | NodeKey::City { .. } => {
+                let assets = self.assets_of(node).await?;
+                if self.grouping_for(node).splits(assets.len()) {
+                    let years: BTreeSet<i32> = assets.iter().map(Asset::year).collect();
+                    Ok(years
+                        .into_iter()
+                        .map(|year| folder(year_folder_name(year), NodeKey::GroupYear { base: Box::new(node.clone()), year }))
+                        .collect())
+                } else {
+                    Ok(self.file_entries(node, &assets))
+                }
+            }
+            NodeKey::GroupYear { base, year } => {
+                let months: BTreeSet<u32> = self.assets_of(base).await?.iter().filter(|asset| asset.year() == *year).map(Asset::month).collect();
+                Ok(months
+                    .into_iter()
+                    .filter_map(|month| {
+                        let key = NodeKey::GroupMonth { base: base.clone(), month: YearMonth { year: *year, month } };
+                        Some(folder(month_folder_name(month)?, key))
+                    })
+                    .collect())
+            }
+            NodeKey::GroupMonth { base, month } => {
+                let assets: Vec<Asset> = self
+                    .assets_of(base)
+                    .await?
+                    .iter()
+                    .filter(|asset| asset.year() == month.year && asset.month() == month.month)
+                    .cloned()
+                    .collect();
+                Ok(self.file_entries(node, &assets))
+            }
+            NodeKey::Asset { .. } => Err(SourceError::NotFound),
+        }
+    }
+
+    fn root_entries(&self) -> Vec<Entry> {
+        let shown = [
+            (Section::Photos, self.config.show_photos),
+            (Section::Albums, self.config.show_albums),
+            (Section::People, self.config.show_people),
+            (Section::Places, self.config.show_places),
+        ];
+        shown
+            .into_iter()
+            .filter(|(_, is_shown)| *is_shown)
+            .map(|(section, _)| folder(section.folder_name().to_string(), NodeKey::Section(section.into())))
+            .collect()
+    }
+
+    fn grouping_for(&self, node: &NodeKey) -> GroupingMode {
+        match node {
+            NodeKey::Album(_) => self.config.grouping_albums,
+            NodeKey::Person(_) => self.config.grouping_people,
+            _ => self.config.grouping_places,
+        }
+    }
+
+    /// The Assets of an album, person or city. Kept while fresh, so its year and month folders do not fetch the
+    /// whole list again.
+    async fn assets_of(&self, base: &NodeKey) -> Result<Arc<Vec<Asset>>, SourceError> {
+        if let Some((fetched_at, assets)) = self.base_assets.lock().expect("base asset lock").get(base) {
+            if fetched_at.elapsed() < freshness_window(base, Utc::now()) {
+                return Ok(assets.clone());
+            }
+        }
+        let assets = Arc::new(match base {
+            NodeKey::Album(album_id) => self.source.album_assets(album_id).await?,
+            NodeKey::Person(person_id) => self.source.person_assets(person_id).await?,
+            NodeKey::City { country, city } => self.source.city_assets(country, city).await?,
+            _ => return Err(SourceError::NotFound),
+        });
+        self.base_assets.lock().expect("base asset lock").insert(base.clone(), (Instant::now(), assets.clone()));
+        Ok(assets)
+    }
+
+    fn album_entries(&self, folder_node: &NodeKey, albums: &[Album]) -> Vec<Entry> {
+        let layout = self.config.album_layout;
+        let requests: Vec<NameRequest> = albums
+            .iter()
+            .map(|album| NameRequest {
+                key: album.id.clone(),
+                base: album_folder_base(layout, &album.name, album.year),
+                created_at: album.created_at,
+                is_file: false,
+            })
+            .collect();
+        self.named_folders(folder_node, &requests, |album_id| NodeKey::Album(album_id.to_string()))
+    }
+
+    fn named_folders(&self, folder_node: &NodeKey, requests: &[NameRequest], node_for: impl Fn(&str) -> NodeKey) -> Vec<Entry> {
+        let names = self.assign_and_remember(folder_node, requests);
+        requests
+            .iter()
+            .map(|request| folder(names[&request.key].clone(), node_for(&request.key)))
+            .collect()
+    }
+
+    fn file_entries(&self, folder_node: &NodeKey, assets: &[Asset]) -> Vec<Entry> {
+        let requests: Vec<NameRequest> = assets
+            .iter()
+            .map(|asset| NameRequest {
+                key: asset.id.clone(),
+                base: file_base_name(self.config.file_naming, &asset.original_file_name, asset.local_capture_time),
+                created_at: asset.uploaded_at,
+                is_file: true,
+            })
+            .collect();
+        let names = self.assign_and_remember(folder_node, &requests);
+        assets
+            .iter()
+            .map(|asset| Entry {
+                name: names[&asset.id].clone(),
+                node: NodeKey::Asset { parent: Box::new(folder_node.clone()), asset_id: asset.id.clone() },
+                kind: EntryKind::File { asset_id: asset.id.clone(), size: asset.size, modified: asset.captured_at },
+            })
+            .collect()
+    }
+
+    fn assign_and_remember(&self, folder_node: &NodeKey, requests: &[NameRequest]) -> HashMap<String, String> {
+        let remembered = self.names.remembered(folder_node);
+        let names = assign_names(requests, &remembered);
+        if names != remembered {
+            self.names.remember(folder_node, &names);
+        }
+        names
+    }
+}
+
+fn folder(name: String, node: NodeKey) -> Entry {
+    Entry { name, node, kind: EntryKind::Folder }
+}
+
+fn folder_request(key: &str, name: &str, created_at: DateTime<Utc>) -> NameRequest {
+    NameRequest { key: key.to_string(), base: sanitise(name, false), created_at, is_file: false }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use crate::model::Person;
+    use chrono::{NaiveDate, TimeZone};
+
+    /// A small library held in memory.
+    #[derive(Default)]
+    struct FakeLibrary {
+        assets: Vec<Asset>,
+        albums: Vec<(Album, Vec<String>)>,
+        people: Vec<(Person, Vec<String>)>,
+        album_fetches: std::sync::atomic::AtomicUsize,
+    }
+
+    impl FakeLibrary {
+        fn find(&self, ids: &[String]) -> Vec<Asset> {
+            self.assets.iter().filter(|asset| ids.contains(&asset.id)).cloned().collect()
+        }
+    }
+
+    impl LibrarySource for FakeLibrary {
+        async fn timeline_months(&self) -> Result<Vec<(YearMonth, u32)>, SourceError> {
+            let mut counts: HashMap<YearMonth, u32> = HashMap::new();
+            for asset in &self.assets {
+                *counts.entry(YearMonth { year: asset.year(), month: asset.month() }).or_default() += 1;
+            }
+            Ok(counts.into_iter().collect())
+        }
+        async fn month_assets(&self, month: YearMonth) -> Result<Vec<Asset>, SourceError> {
+            Ok(self.assets.iter().filter(|asset| asset.year() == month.year && asset.month() == month.month).cloned().collect())
+        }
+        async fn albums(&self) -> Result<Vec<Album>, SourceError> {
+            Ok(self.albums.iter().map(|(album, _)| album.clone()).collect())
+        }
+        async fn album_assets(&self, album_id: &str) -> Result<Vec<Asset>, SourceError> {
+            self.album_fetches.fetch_add(1, std::sync::atomic::Ordering::SeqCst);
+            let (_, ids) = self.albums.iter().find(|(album, _)| album.id == album_id).ok_or(SourceError::NotFound)?;
+            Ok(self.find(ids))
+        }
+        async fn people(&self) -> Result<Vec<Person>, SourceError> {
+            Ok(self.people.iter().map(|(person, _)| person.clone()).collect())
+        }
+        async fn person_assets(&self, person_id: &str) -> Result<Vec<Asset>, SourceError> {
+            let (_, ids) = self.people.iter().find(|(person, _)| person.id == person_id).ok_or(SourceError::NotFound)?;
+            Ok(self.find(ids))
+        }
+        async fn countries(&self) -> Result<Vec<String>, SourceError> {
+            Ok(vec!["Denmark".into()])
+        }
+        async fn cities(&self, _country: &str) -> Result<Vec<String>, SourceError> {
+            Ok(vec!["Odense".into()])
+        }
+        async fn city_assets(&self, _country: &str, city: &str) -> Result<Vec<Asset>, SourceError> {
+            Ok(self.assets.iter().filter(|asset| asset.city.as_deref() == Some(city)).cloned().collect())
+        }
+    }
+
+    fn asset(id: &str, original: &str, day: u32, second: u32, uploaded_minute: u32) -> Asset {
+        let local = NaiveDate::from_ymd_opt(2024, 3, day).unwrap().and_hms_opt(14, 32, second).unwrap();
+        Asset {
+            id: id.into(),
+            original_file_name: original.into(),
+            local_capture_time: local,
+            captured_at: Utc.from_utc_datetime(&local),
+            uploaded_at: Utc.with_ymd_and_hms(2024, 4, 1, 12, uploaded_minute, 0).unwrap(),
+            size: Some(1000),
+            city: Some("Odense".into()),
+            country: Some("Denmark".into()),
+        }
+    }
+
+    fn tree(library: FakeLibrary, config: Config) -> Tree<FakeLibrary, InMemoryNames> {
+        Tree::new(library, InMemoryNames::default(), config)
+    }
+
+    fn names(entries: &[Entry]) -> Vec<String> {
+        let mut names: Vec<String> = entries.iter().map(|entry| entry.name.clone()).collect();
+        names.sort();
+        names
+    }
+
+    #[test]
+    fn changes_touch_only_the_folders_that_depend_on_them() {
+        let march = YearMonth { year: 2024, month: 3 };
+        let april = YearMonth { year: 2024, month: 4 };
+        let changes = LibraryChanges { months: vec![march], albums: vec!["trip".into()], ..Default::default() };
+        let touched = |node: NodeKey| is_touched(&node, &changes);
+        assert!(touched(NodeKey::TimelineMonth(march)) && touched(NodeKey::TimelineDay(march, 15)));
+        assert!(touched(NodeKey::TimelineYear(2024)), "the year shows the month's file count");
+        assert!(!touched(NodeKey::TimelineMonth(april)) && !touched(NodeKey::TimelineYear(2023)));
+        assert!(!touched(NodeKey::Section(SectionKey::Photos)), "no month came or went");
+        assert!(touched(NodeKey::Album("trip".into())));
+        assert!(touched(NodeKey::GroupYear { base: Box::new(NodeKey::Album("trip".into())), year: 2024 }));
+        assert!(touched(NodeKey::Section(SectionKey::Albums)), "an album's year can move with its newest photo");
+        assert!(!touched(NodeKey::Album("other".into())) && !touched(NodeKey::Person("p".into())));
+    }
+
+    #[tokio::test]
+    async fn applying_changes_forgets_the_touched_listings() {
+        let library = FakeLibrary { assets: vec![asset("a", "IMG_1.JPG", 15, 7, 1)], ..Default::default() };
+        let tree = tree(library, Config::from_toml("").unwrap());
+        let month = NodeKey::TimelineMonth(YearMonth { year: 2024, month: 3 });
+        tree.list(&NodeKey::Root).await.unwrap();
+        tree.list(&month).await.unwrap();
+        assert_eq!(tree.apply_changes(&LibraryChanges::default()), 0);
+        let changes = LibraryChanges { months: vec![YearMonth { year: 2024, month: 3 }], ..Default::default() };
+        assert_eq!(tree.apply_changes(&changes), 1, "the month goes; the root stays");
+    }
+
+    #[tokio::test]
+    async fn an_expired_listing_is_offered_but_a_changed_one_is_not() {
+        let library = FakeLibrary { assets: vec![asset("a", "IMG_1.JPG", 15, 7, 1)], ..Default::default() };
+        let tree = tree(library, Config::from_toml("").unwrap());
+        let month = NodeKey::TimelineMonth(YearMonth { year: 2024, month: 3 });
+        tree.list(&month).await.unwrap();
+        assert_eq!(tree.expired_listing(&month), None, "still fresh");
+        let age = |tree: &Tree<FakeLibrary, InMemoryNames>| {
+            if let Some((fetched_at, _)) = tree.listings.lock().unwrap().get_mut(&month) {
+                *fetched_at = Instant::now().checked_sub(Duration::from_secs(2 * 3600)).unwrap();
+            }
+        };
+        age(&tree);
+        assert_eq!(tree.expired_listing(&month).map(|entries| entries.len()), Some(1));
+        tree.apply_changes(&LibraryChanges { months: vec![YearMonth { year: 2024, month: 3 }], ..Default::default() });
+        assert_eq!(tree.expired_listing(&month), None, "a known change is fetched before answering");
+    }
+
+    #[tokio::test]
+    async fn root_lists_enabled_sections_with_immichs_labels() {
+        let mut config = Config::from_toml("").unwrap();
+        config.show_places = false;
+        let entries = tree(FakeLibrary::default(), config).list(&NodeKey::Root).await.unwrap();
+        assert_eq!(names(&entries), ["Albums", "People", "Photos"]);
+    }
+
+    #[tokio::test]
+    async fn the_timeline_goes_year_month_files_with_date_time_names() {
+        let library = FakeLibrary { assets: vec![asset("a", "IMG_1.JPG", 15, 7, 1), asset("b", "IMG_2.JPG", 15, 7, 2)], ..Default::default() };
+        let tree = tree(library, Config::from_toml("").unwrap());
+        let years = tree.list(&NodeKey::Section(SectionKey::Photos)).await.unwrap();
+        assert_eq!(names(&years), ["2024"]);
+        let months = tree.list(&years[0].node).await.unwrap();
+        assert_eq!(names(&months), ["03 March"]);
+        let files = tree.list(&months[0].node).await.unwrap();
+        assert_eq!(names(&files), ["2024-03-15 14.32.07-1.JPG", "2024-03-15 14.32.07.JPG"]);
+    }
+
+    #[tokio::test]
+    async fn busy_months_split_into_days() {
+        let library = FakeLibrary { assets: vec![asset("a", "a.jpg", 15, 1, 1), asset("b", "b.jpg", 16, 1, 2)], ..Default::default() };
+        let mut config = Config::from_toml("").unwrap();
+        config.grouping_photos = GroupingMode::Always;
+        let tree = tree(library, config);
+        let days = tree.list(&NodeKey::TimelineMonth(YearMonth { year: 2024, month: 3 })).await.unwrap();
+        assert_eq!(names(&days), ["15", "16"]);
+        let files = tree.list(&days[1].node).await.unwrap();
+        assert_eq!(names(&files), ["2024-03-16 14.32.01.jpg"]);
+    }
+
+    #[tokio::test]
+    async fn a_grouped_albums_folders_share_one_fetch_of_its_assets() {
+        let created = Utc.with_ymd_and_hms(2024, 1, 1, 0, 0, 0).unwrap();
+        let library = FakeLibrary {
+            assets: vec![asset("a", "IMG_1.JPG", 15, 7, 1)],
+            albums: vec![(Album { id: "trip".into(), name: "Trip".into(), year: Some(2024), created_at: created }, vec!["a".into()])],
+            ..Default::default()
+        };
+        let mut config = Config::from_toml("").unwrap();
+        config.grouping_albums = crate::layout::GroupingMode::Always;
+        let tree = Arc::new(tree(library, config));
+        let album = NodeKey::Album("trip".into());
+        // Two visits at once share one fetch.
+        let (first, second) = tokio::join!(tree.list(&album), tree.list(&album));
+        assert_eq!(names(&first.unwrap()), ["2024"]);
+        assert_eq!(names(&second.unwrap()), ["2024"]);
+        let year = NodeKey::GroupYear { base: Box::new(album.clone()), year: 2024 };
+        let months = tree.list(&year).await.unwrap();
+        tree.list(&months[0].node).await.unwrap();
+        assert_eq!(tree.source.album_fetches.load(std::sync::atomic::Ordering::SeqCst), 1, "the year and month reuse the album's list");
+    }
+
+    #[tokio::test]
+    async fn albums_use_the_year_prefix_and_resolve_clashes() {
+        let created = |minute| Utc.with_ymd_and_hms(2024, 1, 1, 0, minute, 0).unwrap();
+        let library = FakeLibrary {
+            albums: vec![
+                (Album { id: "x".into(), name: "Trip".into(), year: Some(2023), created_at: created(1) }, vec![]),
+                (Album { id: "y".into(), name: "Trip".into(), year: Some(2023), created_at: created(2) }, vec![]),
+                (Album { id: "z".into(), name: "Empty".into(), year: None, created_at: created(3) }, vec![]),
+            ],
+            ..Default::default()
+        };
+        let entries = tree(library, Config::from_toml("").unwrap()).list(&NodeKey::Section(SectionKey::Albums)).await.unwrap();
+        assert_eq!(names(&entries), ["2023 - Trip", "2023 - Trip-1", "Empty"]);
+    }
+
+    #[tokio::test]
+    async fn the_year_folders_layout_groups_albums_by_year() {
+        let created = Utc.with_ymd_and_hms(2024, 1, 1, 0, 0, 0).unwrap();
+        let library = FakeLibrary {
+            albums: vec![
+                (Album { id: "x".into(), name: "Trip".into(), year: Some(2023), created_at: created }, vec![]),
+                (Album { id: "z".into(), name: "Empty".into(), year: None, created_at: created }, vec![]),
+            ],
+            ..Default::default()
+        };
+        let mut config = Config::from_toml("").unwrap();
+        config.album_layout = AlbumLayout::YearFolders;
+        let tree = tree(library, config);
+        let years = tree.list(&NodeKey::Section(SectionKey::Albums)).await.unwrap();
+        assert_eq!(names(&years), ["2023", "Unknown Year"]);
+        let inside = tree.list(&NodeKey::AlbumYear(Some(2023))).await.unwrap();
+        assert_eq!(names(&inside), ["Trip"]);
+    }
+
+    #[tokio::test]
+    async fn people_hide_hidden_and_unnamed_and_large_folders_get_date_groups() {
+        let created = Utc.with_ymd_and_hms(2024, 1, 1, 0, 0, 0).unwrap();
+        let person = |id: &str, name: &str, hidden| Person { id: id.into(), name: name.into(), is_hidden: hidden, created_at: created };
+        let library = FakeLibrary {
+            assets: vec![asset("a", "a.jpg", 15, 1, 1)],
+            people: vec![(person("p", "Anna", false), vec!["a".into()]), (person("h", "Hidden", true), vec![]), (person("u", " ", false), vec![])],
+            ..Default::default()
+        };
+        let mut config = Config::from_toml("").unwrap();
+        config.grouping_people = GroupingMode::Always;
+        let tree = tree(library, config);
+        let people = tree.list(&NodeKey::Section(SectionKey::People)).await.unwrap();
+        assert_eq!(names(&people), ["Anna"]);
+        let years = tree.list(&people[0].node).await.unwrap();
+        assert_eq!(names(&years), ["2024"]);
+        let months = tree.list(&years[0].node).await.unwrap();
+        assert_eq!(names(&months), ["03 March"]);
+        assert_eq!(names(&tree.list(&months[0].node).await.unwrap()), ["2024-03-15 14.32.01.jpg"]);
+    }
+
+    #[tokio::test]
+    async fn files_carry_size_and_capture_time() {
+        let library = FakeLibrary { assets: vec![asset("a", "a.jpg", 15, 1, 1)], ..Default::default() };
+        let tree = tree(library, Config::from_toml("").unwrap());
+        let files = tree.list(&NodeKey::TimelineMonth(YearMonth { year: 2024, month: 3 })).await.unwrap();
+        match &files[0].kind {
+            EntryKind::File { size, modified, .. } => {
+                assert_eq!(*size, Some(1000));
+                assert_eq!(modified.to_rfc3339(), "2024-03-15T14:32:01+00:00");
+            }
+            EntryKind::Folder => panic!("expected a file"),
+        }
+    }
+}

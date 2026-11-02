@@ -1,0 +1,260 @@
+name: release
+
+# The house release pipeline, adapted: Linux musl builds of the daemon and CLI, the desktop apps' packages, and a
+# GitHub release. The Homebrew tap update comes once the repository is public (ROADMAP, M5).
+
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+# A burst of pushes releases once: a newer push cancels the run before it.
+concurrency:
+  group: release
+  cancel-in-progress: true
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v5
+      - uses: dtolnay/rust-toolchain@stable
+        with:
+          components: clippy
+          targets: aarch64-apple-darwin
+      - name: Green gate - clippy (warnings are errors), tests, and the portable core
+        run: |
+          cargo clippy --workspace --exclude immich-mount-gnome --exclude immich-mount-kde --all-targets -- -D warnings
+          cargo test --workspace --exclude immich-mount-gnome --exclude immich-mount-kde
+          cargo check -p immich-api -p immich-mount-core --no-default-features --target aarch64-apple-darwin
+
+  fedora-apps:
+    # The desktop apps need newer libraries than Ubuntu's (GTK 4.18, libadwaita 1.8 and blueprint-compiler for GNOME;
+    # Qt 6 for KDE), so they are checked, and packaged as rpms, in the distribution they are developed against. The
+    # KDE app uses Qt's private QML API, so its rpm is tied to this release's Qt and is rebuilt with it.
+    runs-on: ubuntu-latest
+    container: fedora:44
+    steps:
+      - name: Build dependencies
+        run: |
+          dnf install -y -q git gcc gcc-c++ cargo rust clippy gtk4-devel libadwaita-devel blueprint-compiler rpm-build python3 \
+            qt6-qtbase-devel qt6-qtdeclarative-devel
+      - uses: actions/checkout@v5
+        with:
+          fetch-depth: 0
+      - name: Cache cargo (crates and build output)
+        uses: actions/cache@v4
+        with:
+          path: |
+            ~/.cargo/registry
+            ~/.cargo/git
+            target
+          key: fedora44-apps-${{ hashFiles('Cargo.lock') }}
+          restore-keys: fedora44-apps-
+      - name: Stamp version
+        run: |
+          git config --global --add safe.directory "$GITHUB_WORKSPACE"
+          v=$(git log --reverse --format='%H%x09%s' | awk -F'\t' 'BEGIN{maj=1;min=0;pat=0}NR==1{next}{s=$2;if(s~/^[A-Za-z]+(\([^)]*\))?!:/){maj++;min=0;pat=0}else if(s~/^feat(\([^)]*\))?:/){min++;pat=0}else{pat++}}END{print maj"."min"."pat}')
+          tmp=$(mktemp)
+          sed -E "s/^version = \"[^\"]*\"/version = \"$v\"/" Cargo.toml > "$tmp" && mv "$tmp" Cargo.toml
+          echo "VERSION=$v" >> "$GITHUB_ENV"
+      - name: Green gate for the apps - clippy (warnings are errors) and tests
+        run: |
+          cargo clippy -p immich-mount-gnome -p immich-mount-kde --all-targets -- -D warnings
+          cargo test -p immich-mount-gnome -p immich-mount-kde
+      - name: Package the apps (rpms for this Fedora release)
+        run: |
+          cargo build --release -p immich-mount-gnome -p immich-mount-kde
+          payload="$PWD/dist/payload"
+          mkdir -p "$payload"
+          cp target/release/immich-mount-gnome LICENSE crates/immich-mount-gnome/data/dev.hviid.ImmichMount.metainfo.xml "$payload/"
+          python3 packaging/third-party-licenses.py "$payload/THIRD-PARTY-LICENSES.md" immich-mount-gnome
+          sed 's|@BINDIR@|/usr/bin|' crates/immich-mount-gnome/data/dev.hviid.ImmichMount.desktop.in > "$payload/dev.hviid.ImmichMount.desktop"
+          rpmbuild -bb --define "_topdir $PWD/dist/rpmbuild" --define "pkg_version $VERSION" --define "payload $payload" \
+            packaging/rpm/immich-mount-gnome.spec
+          kde="$PWD/dist/payload-kde"
+          mkdir -p "$kde"
+          cp target/release/immich-mount-kde LICENSE crates/immich-mount-kde/data/dev.hviid.ImmichMount.Kde.metainfo.xml "$kde/"
+          python3 packaging/third-party-licenses.py "$kde/THIRD-PARTY-LICENSES.md" immich-mount-kde
+          sed 's|@BINDIR@|/usr/bin|' crates/immich-mount-kde/data/dev.hviid.ImmichMount.Kde.desktop.in > "$kde/dev.hviid.ImmichMount.Kde.desktop"
+          rpmbuild -bb --define "_topdir $PWD/dist/rpmbuild" --define "pkg_version $VERSION" --define "payload $kde" \
+            packaging/rpm/immich-mount-kde.spec
+          cp dist/rpmbuild/RPMS/*/*.rpm dist/
+          ls -l dist/*.rpm
+      - uses: actions/upload-artifact@v4
+        with:
+          name: fedora-apps
+          path: dist/*.rpm
+
+
+  ubuntu-apps:
+    # The desktop apps for Ubuntu 26.04 (GTK 4.22 and libadwaita 1.9 for GNOME; Qt 6.10 and KF 6.24 for Kubuntu),
+    # built and packaged in that release.
+    runs-on: ubuntu-latest
+    container: ubuntu:26.04
+    steps:
+      - name: Build dependencies
+        run: |
+          export DEBIAN_FRONTEND=noninteractive
+          apt-get update -qq
+          apt-get install -y -qq git gcc g++ pkg-config libgtk-4-dev libadwaita-1-dev blueprint-compiler rustc cargo dpkg-dev python3 \
+            qt6-base-dev qt6-declarative-dev >/dev/null
+      - uses: actions/checkout@v5
+        with:
+          fetch-depth: 0
+      - name: Cache cargo (crates and build output)
+        uses: actions/cache@v4
+        with:
+          path: |
+            ~/.cargo/registry
+            ~/.cargo/git
+            target
+          key: ubuntu2604-apps-${{ hashFiles('Cargo.lock') }}
+          restore-keys: ubuntu2604-apps-
+      - name: Stamp version
+        run: |
+          git config --global --add safe.directory "$GITHUB_WORKSPACE"
+          v=$(git log --reverse --format='%H%x09%s' | awk -F'\t' 'BEGIN{maj=1;min=0;pat=0}NR==1{next}{s=$2;if(s~/^[A-Za-z]+(\([^)]*\))?!:/){maj++;min=0;pat=0}else if(s~/^feat(\([^)]*\))?:/){min++;pat=0}else{pat++}}END{print maj"."min"."pat}')
+          tmp=$(mktemp)
+          sed -E "s/^version = \"[^\"]*\"/version = \"$v\"/" Cargo.toml > "$tmp" && mv "$tmp" Cargo.toml
+          echo "VERSION=$v" >> "$GITHUB_ENV"
+      - name: Build and package the apps (.debs for Ubuntu 26.04)
+        run: |
+          cargo build --release -p immich-mount-gnome -p immich-mount-kde
+          root=dist/deb-app
+          install -Dm755 target/release/immich-mount-gnome "$root/usr/bin/immich-mount-gnome"
+          sed 's|@BINDIR@|/usr/bin|' crates/immich-mount-gnome/data/dev.hviid.ImmichMount.desktop.in > dev.hviid.ImmichMount.desktop
+          install -Dm644 dev.hviid.ImmichMount.desktop "$root/usr/share/applications/dev.hviid.ImmichMount.desktop"
+          install -Dm644 crates/immich-mount-gnome/data/dev.hviid.ImmichMount.metainfo.xml "$root/usr/share/metainfo/dev.hviid.ImmichMount.metainfo.xml"
+          install -Dm644 LICENSE "$root/usr/share/doc/immich-mount-gnome/copyright"
+          python3 packaging/third-party-licenses.py "$root/usr/share/doc/immich-mount-gnome/THIRD-PARTY-LICENSES.md" immich-mount-gnome
+          mkdir -p "$root/DEBIAN"
+          sed -e "s/@VERSION@/$VERSION/" -e "s/@ARCH@/amd64/" packaging/deb/immich-mount-gnome.control.in > "$root/DEBIAN/control"
+          dpkg-deb --root-owner-group --build "$root" "dist/immich-mount-gnome_${VERSION}_amd64.deb"
+          root=dist/deb-kde
+          install -Dm755 target/release/immich-mount-kde "$root/usr/bin/immich-mount-kde"
+          sed 's|@BINDIR@|/usr/bin|' crates/immich-mount-kde/data/dev.hviid.ImmichMount.Kde.desktop.in > dev.hviid.ImmichMount.Kde.desktop
+          install -Dm644 dev.hviid.ImmichMount.Kde.desktop "$root/usr/share/applications/dev.hviid.ImmichMount.Kde.desktop"
+          install -Dm644 crates/immich-mount-kde/data/dev.hviid.ImmichMount.Kde.metainfo.xml "$root/usr/share/metainfo/dev.hviid.ImmichMount.Kde.metainfo.xml"
+          install -Dm644 LICENSE "$root/usr/share/doc/immich-mount-kde/copyright"
+          python3 packaging/third-party-licenses.py "$root/usr/share/doc/immich-mount-kde/THIRD-PARTY-LICENSES.md" immich-mount-kde
+          mkdir -p "$root/DEBIAN" debian
+          # The Qt libraries the binary links (dpkg-shlibdeps wants a debian/control), and the private QML ABI that
+          # cxx-qt's generated registration uses, which ties the package to this release's Qt.
+          echo "Source: immich-mount" > debian/control
+          shlibs=$(dpkg-shlibdeps -O -e "$root/usr/bin/immich-mount-kde" | sed 's/^shlibs:Depends=//')
+          abi=$(dpkg-query -W -f='${Provides}' libqt6qml6 | grep -o 'qt6-declarative-private-abi (= [^)]*)')
+          sed -e "s/@VERSION@/$VERSION/" -e "s/@ARCH@/amd64/" -e "s/@QT_DEPENDS@/$shlibs, $abi/" \
+            packaging/deb/immich-mount-kde.control.in > "$root/DEBIAN/control"
+          dpkg-deb --root-owner-group --build "$root" "dist/immich-mount-kde_${VERSION}_amd64.deb"
+          ls -l dist/*.deb
+      - uses: actions/upload-artifact@v4
+        with:
+          name: ubuntu-apps
+          path: dist/*.deb
+  build:
+    needs: [test, fedora-apps, ubuntu-apps]
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        target: [x86_64-unknown-linux-musl, aarch64-unknown-linux-musl]
+    steps:
+      - uses: actions/checkout@v5
+        with:
+          fetch-depth: 0
+      - name: Stamp version (so `immich-mount --version` matches the release)
+        run: |
+          # Conventional-Commit semver from history (never bump by hand): the first commit is 1.0.0, then
+          #   a breaking type!: -> major | feat: -> minor | anything else -> patch
+          v=$(git log --reverse --format='%H%x09%s' | awk -F'\t' 'BEGIN{maj=1;min=0;pat=0}NR==1{next}{s=$2;if(s~/^[A-Za-z]+(\([^)]*\))?!:/){maj++;min=0;pat=0}else if(s~/^feat(\([^)]*\))?:/){min++;pat=0}else{pat++}}END{print maj"."min"."pat}')
+          tmp=$(mktemp)
+          sed -E "s/^version = \"[^\"]*\"/version = \"$v\"/" Cargo.toml > "$tmp" && mv "$tmp" Cargo.toml
+          echo "stamped $v"
+          echo "VERSION=$v" >> "$GITHUB_ENV"
+      - uses: dtolnay/rust-toolchain@stable
+        with:
+          targets: ${{ matrix.target }}
+      - name: Install cross
+        uses: taiki-e/install-action@v2
+        with:
+          tool: cross
+      - name: Build
+        run: cross build --release -p immich-mount --target ${{ matrix.target }}
+      - name: Package
+        run: |
+          mkdir -p dist/stage
+          cp "target/${{ matrix.target }}/release/immich-mount" dist/stage/
+          sed 's|@BINDIR@|%h/.local/bin|' packaging/systemd/immich-mount.service.in > dist/stage/immich-mount.service
+          cp LICENSE README.md packaging/icons/*.svg dist/stage/
+          # The notices of every crate linked in, which a binary copy must carry (cargo fetch puts their sources here).
+          cargo fetch
+          python3 packaging/third-party-licenses.py dist/stage/THIRD-PARTY-LICENSES.md immich-mount --target ${{ matrix.target }}
+          tar czf "dist/immich-mount-${{ matrix.target }}.tar.gz" -C dist/stage .
+      - name: Packages (.deb and .rpm, with the distributions' own tools)
+        run: |
+          sudo apt-get install -y -qq rpm >/dev/null
+          case "${{ matrix.target }}" in
+            x86_64-*) deb_arch=amd64; rpm_arch=x86_64 ;;
+            aarch64-*) deb_arch=arm64; rpm_arch=aarch64 ;;
+          esac
+          payload="$PWD/dist/payload"
+          mkdir -p "$payload"
+          cp "target/${{ matrix.target }}/release/immich-mount" LICENSE README.md dist/stage/THIRD-PARTY-LICENSES.md \
+            packaging/icons/*.svg "$payload/"
+          sed 's|@BINDIR@|/usr/bin|' packaging/systemd/immich-mount.service.in > "$payload/immich-mount.service"
+          root=dist/deb
+          install -Dm755 "$payload/immich-mount" "$root/usr/bin/immich-mount"
+          install -Dm644 "$payload/immich-mount.service" "$root/usr/lib/systemd/user/immich-mount.service"
+          install -Dm644 packaging/icons/dev.hviid.ImmichMount.svg "$root/usr/share/icons/hicolor/scalable/apps/dev.hviid.ImmichMount.svg"
+          install -Dm644 packaging/icons/dev.hviid.ImmichMount-symbolic.svg \
+            "$root/usr/share/icons/hicolor/symbolic/apps/dev.hviid.ImmichMount-symbolic.svg"
+          install -Dm644 LICENSE "$root/usr/share/doc/immich-mount/copyright"
+          install -Dm644 README.md "$root/usr/share/doc/immich-mount/README.md"
+          install -Dm644 "$payload/THIRD-PARTY-LICENSES.md" "$root/usr/share/doc/immich-mount/THIRD-PARTY-LICENSES.md"
+          mkdir -p "$root/DEBIAN"
+          sed -e "s/@VERSION@/$VERSION/" -e "s/@ARCH@/$deb_arch/" packaging/deb/control.in > "$root/DEBIAN/control"
+          dpkg-deb --root-owner-group --build "$root" "dist/immich-mount_${VERSION}_${deb_arch}.deb"
+          rpmbuild -bb --target "$rpm_arch" --define "_topdir $PWD/dist/rpmbuild" \
+            --define "pkg_version $VERSION" --define "payload $payload" packaging/rpm/immich-mount.spec
+          cp dist/rpmbuild/RPMS/*/*.rpm dist/
+          ls -l dist/*.deb dist/*.rpm
+      - uses: actions/upload-artifact@v4
+        with:
+          name: ${{ matrix.target }}
+          path: |
+            dist/*.tar.gz
+            dist/*.deb
+            dist/*.rpm
+
+  release:
+    needs: build
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v5
+        with:
+          fetch-depth: 0
+      - uses: actions/download-artifact@v4
+        with:
+          path: art
+          merge-multiple: true
+      - name: Version
+        run: |
+          VERSION=$(git log --reverse --format='%H%x09%s' | awk -F'\t' 'BEGIN{maj=1;min=0;pat=0}NR==1{next}{s=$2;if(s~/^[A-Za-z]+(\([^)]*\))?!:/){maj++;min=0;pat=0}else if(s~/^feat(\([^)]*\))?:/){min++;pat=0}else{pat++}}END{print maj"."min"."pat}')
+          echo "VERSION=$VERSION" >> "$GITHUB_ENV"
+      - name: Publish release
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          gh release create "v$VERSION" art/*.tar.gz art/*.deb art/*.rpm \
+            --title "v$VERSION" --notes "Automated build from ${GITHUB_SHA:0:7}" \
+            || gh release upload "v$VERSION" art/*.tar.gz art/*.deb art/*.rpm --clobber
+      - name: Prune old releases (keep the latest 10)
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          for tag in $(gh release list --json tagName,createdAt -q 'sort_by(.createdAt) | reverse | .[10:] | .[].tagName'); do
+            gh release delete "$tag" --cleanup-tag -y || true
+          done

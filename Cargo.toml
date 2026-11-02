@@ -1,0 +1,14 @@
+[workspace]
+resolver = "2"
+members = ["crates/*"]
+
+[workspace.package]
+version = "0.0.0"          # CI-stamped from commit history; never hand-bump (AGENTS.md, Versioning)
+edition = "2021"
+license = "MIT"
+homepage = "https://github.com/jakobhviid/immich-mount"
+repository = "https://github.com/jakobhviid/immich-mount"
+
+[profile.release]
+opt-level = 3
+lto = true

@@ -1,0 +1,991 @@
+# ARCHITECTURE
+
+How Immich Mount is built and why. [SPEC.md](SPEC.md) is the contract (what it does), and
+[PRINCIPLES.md](PRINCIPLES.md) holds the invariants. This file is the model and the reasoning: every design choice
+is stated with its reason, and where a question tends to come back, the alternative that lost is named with the
+reason it lost.
+
+A claim marked *verified* was observed on a real system: Fedora 44 VMs with GNOME 50 (Files 50.4) or KDE Plasma 6.8
+(Dolphin 26.08), against Immich v3.3.5, and v3.2.0 for the version floor. AGENTS.md, "Testing on Erebus", describes
+that lab.
+
+## What Immich Mount is
+
+A feature for Immich, not a product of its own. It shows an Immich library as a folder in the file manager and in
+every file dialog, with server thumbnails, and downloads originals only when something reads them. Files copied
+into the timeline are uploaded.
+
+It is inspired by [Kartax/immich-desktop-app](https://github.com/Kartax/immich-desktop-app), which does the same on
+macOS through Apple's File Provider.
+
+Order of platforms:
+1. **GNOME** (Files, which is Nautilus) first.
+2. **KDE** (Dolphin) next.
+3. **macOS** later, at low priority, because it needs the maintainer for signing and notarization.
+
+There is no Windows edition; a separate project, ImmichDrive, already covers Windows with the Cloud Files API.
+
+The library is never mirrored. Libraries run to 300 GB and more, and downloading them is never acceptable.
+
+**Not its job:**
+- syncing
+- editing, renaming, moving or deleting Assets through the file manager
+- managing albums
+- a gallery, or anything else that duplicates Immich's own web and mobile apps: browsing photo by photo, search,
+  faces, sharing and editing stay there
+
+## Why FUSE
+
+The library has to appear as real files to Files, to every file dialog, to sandboxed apps through the portals, and
+to plain programs, with content arriving on demand. On Linux that is FUSE:
+- **Every program sees real paths.** Flatpak apps reach files through the document portal, which is itself a FUSE
+  filesystem.
+- **No privileges, and no GNOME release cycle.** An unprivileged per-user daemon mounts through `fusermount3`, and
+  the same mount works in KDE and elsewhere.
+- **The kernel side keeps improving:** passthrough, io_uring transport and request timeouts arrived recently.
+- **The cost:** we own what the OS owns on macOS: the content cache, thumbnails and freshness.
+
+Not chosen (also in GNOME integration):
+- a GNOME Online Accounts provider with a GVfs backend
+- a Nautilus extension
+- fanotify pre-content events
+- a sync folder
+
+## The name
+
+**Immich Mount.** The file manager shows the volume as **Immich**, and our own interface (launcher, windows,
+notifications, packages) says **Immich Mount**.
+- **It is a feature for Immich, not a brand** (principle 11). "Mount" is the established word for making storage
+  appear in the file manager, on Linux and on macOS.
+- **The README and the repository's topics carry the search words** people will use: Immich drive, mount, FUSE,
+  Nautilus, Files, Dolphin, on-demand, network drive. Web searches for "immich mount" are crowded with guides on
+  mounting storage for the server, so "drive" must be there too.
+
+**Not chosen:**
+- **"Immich Desktop":** the name of Kartax's macOS app, and hdmain/immich-desktop already ships `immich-desktop`
+  packages on Snap and AUR.
+- **"Immich Drive":** the best consumer word, but a Windows project already uses it ("ImmichDrive", "Drive for
+  Immich" in the Microsoft Store).
+- **Plain "Immich" as the app name:** it would look official, and could collide with an official desktop app or
+  package later.
+- **A brand of our own** (photography or media words, plus "for Immich"): it would pull the spotlight from Immich.
+- `immichfs` and `immich-fuse` were taken by small Linux projects too.
+
+## The icon
+
+**A drive with a camera lens whose ring carries Immich's five colours** (`packaging/icons/`): related to Immich by
+its colours, never by its shapes. It is not Immich's flower logo, which would make the drive look official
+(principle 11), and nothing of Kartax's app icon. It is drawn for this project as hand-written SVG, in GNOME's app
+icon style, and is MIT like the rest.
+- **One name for both apps,** `dev.hviid.ImmichMount`, with a symbolic variant for notifications. Both launchers,
+  both About pages, the apps' welcome and status pages, and Dolphin's place for the mount use it.
+- **Shipped in the `immich-mount` package,** which both app packages depend on: dpkg refuses one file in two
+  packages, and both apps may be installed side by side.
+- **Software centres** take the icon from the launcher entry, so the AppStream files name none (with one, the
+  validator wants the categories repeated there too).
+- **The Files sidebar** keeps its own drive symbol: it draws mounts with the theme's symbolic icons, whatever the
+  mount supplies.
+- **Flatpak impact:** a Flatpak exports icons named after its own app ID, so the GNOME app's Flatpak ships the
+  icon as it is, and a KDE Flatpak (`dev.hviid.ImmichMount.Kde`) renames its copy at build time.
+
+## Two processes: a daemon and an app
+
+```
+ Files, file dialogs, players ──▶ kernel FUSE (~/Immich, shown as "Immich")
+                                         │ /dev/fuse
+ ┌───────────────────────────────────────▼─────────────────────────────────────────┐
+ │ immich-mount daemon      systemd user service, no display needed                │
+ │   FUSE adapter ─▶ tree (names, inodes) ─▶ metadata store (redb)                  │
+ │        ├─▶ content cache (blocks, range reads)    thumbnail seeder ─▶ ~/.cache/thumbnails
+ │        └─▶ upload staging ─▶ uploader                                            │
+ │   change feed (sync stream / polling)   D-Bus service   notifications            │
+ │   immich-api (reqwest, tokio) ──────────────────────────────────────────────────┼─▶ Immich
+ └───────────────────────────────────────▲─────────────────────────────────────────┘
+                                         │ session D-Bus
+                     immich-mount-gnome (GTK 4 + libadwaita): sign-in, settings, status
+                     immich-mount-kde (Qt 6 + Kirigami): the same, for Plasma
+```
+
+**The daemon** (`immich-mount daemon`) owns the mount, the metadata store, the caches, thumbnail seeding and
+uploads. **The app** (`immich-mount-gnome` on GNOME, `immich-mount-kde` on Plasma) is a normal desktop application:
+it signs in, edits settings and shows status. Closing it never stops anything.
+
+Why two processes:
+- **A stalled FUSE process freezes everything** that touches the mount (Files, file dialogs, shells), and a crashed
+  one leaves a dead mount ("Transport endpoint is not connected") until someone unmounts it.
+- **The mount must not depend on a display or on GTK.** The daemon runs headless (test VMs, development
+  hosts without a desktop, servers) and ships as a static musl binary.
+- **A UI crash cannot take the mount down.**
+- **GNOME has no menu bar or tray** to host a long-running app that outlives its windows, so a user service takes
+  that role.
+
+The cost is a D-Bus interface (SPEC.md), which also gives the CLI for free.
+
+**Not chosen:** one process, where the GTK app keeps running in the background with the mount inside it. It would
+put the mount at the mercy of a display session and a toolkit, in the one process that must never hang.
+
+## Crates: a portable core with platform adapters
+
+| Crate | Portable | Kind | Holds |
+|---|---|---|---|
+| `immich-api` | yes | lib | The Immich REST client and models |
+| `immich-mount-core` | yes | lib | The library model, naming, membership, metadata store, change journal, content cache, upload logic, settings table, config |
+| `immich-mount-linux` | Linux | lib | FUSE adapter (inode table, kernel invalidation, staging), freedesktop thumbnail seeding, Secret Service, notifications, D-Bus service |
+| `immich-mount` | Linux | bin | Thin CLI plus the `daemon` subcommand: resolve inputs, call one core function, render the result |
+| `immich-mount-desktop` | Linux desktops | lib | What the desktop apps share, without a toolkit: checking a server, sign-in, the credential, first-run setup, status over D-Bus, the preferences' groups and labels |
+| `immich-mount-gnome` | GNOME | bin | The GTK 4 / libadwaita app over `immich-mount-desktop`; talks to the daemon over D-Bus |
+| `immich-mount-kde` | KDE Plasma | bin | The Qt 6 / Kirigami app over `immich-mount-desktop`: QML pages and one Rust object through cxx-qt |
+
+**Why a portable core:** each platform has its own native way to show a remote library as files.
+
+| Platform | Mechanism | Who caches content | Identity |
+|---|---|---|---|
+| Linux | FUSE | We do | Inode numbers handed out per mount |
+| macOS | File Provider | The OS | String item identifiers, sync anchors |
+
+If the logic were written in FUSE terms (inodes, `readdir`, `flush`), a macOS edition would be a rewrite. So the
+core speaks an identifier-based model:
+- stable `NodeKey` identities, serialisable to strings
+- listings with final names
+- attributes
+- byte-range reads
+- thumbnail bytes
+- uploads with duplicate semantics
+- a change journal with sequence numbers: it drives kernel invalidation on Linux, and would serve as sync anchors on
+  macOS
+
+OS services (secrets, notifications, directories, the clock) come in through traits.
+
+**What keeps the boundary honest:**
+- CI compiles the core for `aarch64-apple-darwin`.
+- The core's integration tests run through a small in-memory adapter, so the core always has a consumer that is not
+  FUSE.
+
+**Key dependencies:**
+
+| Area | Crates |
+|---|---|
+| Core | `tokio`, `reqwest` (rustls with the system's root certificates), `serde`, `redb` (pure Rust), `sha1`, `toml` + `toml_edit`, `tracing`, `thiserror` |
+| Linux adapter | `fuser` (pure Rust, mounts through `fusermount3` with no libfuse), `zbus`, `oo7`, `image` + `png` |
+| CLI | `clap` (with `clap_complete` and `clap_mangen`), `anyhow` |
+| GNOME app | `gtk4`, `libadwaita` |
+
+`fuser` calls the `Filesystem` trait synchronously; answers that need the network move the reply object into a
+tokio task. Its async-native alternative, `fuse3`, is less used. Switch only if that reply pattern gets ugly.
+
+**macOS later.** A macOS edition would put a File Provider extension and a SwiftUI app on this core, through `uniffi`
+bindings. The app and the extension run as separate processes there, so multi-process access to the metadata store
+is a design question for that edition; on Linux one daemon owns everything.
+
+**Error types:** the core uses typed errors (`thiserror`), because the FUSE adapter must map each kind (offline,
+signed out, gone, transient, protocol) to an error code. `anyhow` with context is used at the edges, in the CLI and
+the daemon's wiring.
+
+## The daemon's lifecycle
+
+1. **Start:**
+   - Read the config and the credential. A locked keyring brings up the system's unlock prompt.
+   - A stale mount left by a crash is detached first (`fusermount3 -uz`).
+   - Mount, and answer from the metadata store at once. The server connection comes up in the background.
+     *(Built so far: the daemon asks the server for its version and media types first, up to about ten seconds each
+     when it does not answer, then mounts; listings kept in the metadata store answer offline.)*
+2. **Server unreachable:** stay mounted. Serve cached listings and content, fail uncached reads fast, notify once.
+3. **Eject from the file manager:** respected. The daemon notices within two seconds and exits cleanly. The
+   user service restarts only on failure, so the next login (or `systemctl --user start immich-mount`) mounts again.
+   Once the app can control the daemon over D-Bus (M4), it will offer "Mount again" too.
+4. **Server or account change:** refused while uploads are staged or in flight. Otherwise unmount, switch to the
+   new account's cache namespace, and remount. Old namespaces are deleted.
+5. **Stop** (logout, `systemctl --user stop`): finish or cancel in-flight work, then unmount cleanly.
+
+## The tree
+
+### Identity and inodes
+
+```rust
+enum NodeKey {
+    Root, Timeline, TimelineYear(Year), TimelineMonth(YearMonth), TimelineDay(Date),
+    AlbumsRoot, Album(AlbumId), PeopleRoot, Person(PersonId),
+    PlacesRoot, Country(String), City { country: String, city: String },
+    DateGroupYear { base: Box<NodeKey>, year: Year },
+    DateGroupMonth { base: Box<NodeKey>, month: YearMonth },
+    Asset { parent: Box<NodeKey>, asset: AssetId },   // one per Appearance
+    Staging(StagingId), Virtual(VirtualFile),   // a receipt is a staged file after its upload
+}
+```
+
+- **One node per Appearance.** The parent is part of the identity, so one Asset can live in its month, its albums,
+  its persons and its city at once.
+- **Shared content:** Appearances of one Asset share the content cache, keyed by asset id.
+- **Inodes:** the Linux adapter keeps a two-way table between `NodeKey` and inode, hands out inode numbers in
+  sequence for the life of a mount, and drops entries when the kernel's `forget` brings their lookup count to zero.
+  Inode numbers are not stable across remounts; FUSE does not need them to be. Each mount uses a non-zero
+  `generation`.
+- **No hard links:** `st_nlink` is 1. Copy tools would otherwise deduplicate Appearances, and "delete one link" has
+  no meaning here.
+
+### Membership comes from Immich
+
+Folder membership is whatever Immich's own endpoints say (the table in SPEC.md). The month folders use the same
+timeline buckets the Immich web app uses, and albums, people and cities hold exactly the Assets Immich's searches
+return for them.
+
+Why: Immich groups the timeline by **local** capture time, while its search filters on **UTC** `fileCreatedAt`.
+Recomputing months from search results puts a photo taken at 00:30 on 1 March in a UTC+2 zone into February,
+while Immich's timeline shows it in March. This was verified on v3.3.5.
+Any grouping logic we write ourselves is a chance to disagree with Immich; using its answers means following it
+automatically.
+
+Date groups inside albums, people and cities are computed from the folder's own Asset list, by each Asset's
+`localDateTime`. That gives exactly what the timeline's `albumId` and `personId` buckets return (verified on v3.2.0:
+the ids match), without a second round of requests, and cities have no timeline filter anyway. Day folders in busy months
+work the same way: Immich's web timeline draws its day headers from `localDateTime`. That is Immich's rule, applied
+to Immich's values.
+
+**Not chosen:** months from the first seven characters of `fileCreatedAt` with UTC search ranges, which is wrong
+at month boundaries.
+
+### Names
+
+The rules are in SPEC.md. FUSE needs unique, stable names, and Immich provides neither: shots in the same second,
+`IMG_0001.JPG` from two cameras, two people with the same name, and free-text album names all clash.
+
+**Files are named by date and time by default** (`2024-03-15 14.32.07.jpg`):
+- **The reasons:** camera file names (`IMG_1234`) are counters that Immich hardly shows. Date-time names sort
+  chronologically in every folder, and copies carry meaningful names.
+- **The time** is the local capture time, the same value Immich's timeline uses.
+- **Dots instead of colons,** because colons are invalid on exFAT, NTFS and SMB, and Finder shows them as slashes.
+  It is the convention Dropbox's camera uploads use.
+- **Original names** remain a setting.
+
+**Clashes get a counter, assigned in upload order and remembered** (`-1`, `-2`).
+- The Asset uploaded first keeps the plain name, so a newly uploaded duplicate never takes an existing name.
+- Assigned names live in the metadata store, so a counter never moves to another Asset while its holder exists.
+  Deleting one leaves a gap. That keeps principle 8.
+- A fresh installation computes the same names from server data, except where deletions have left gaps.
+- Comparison is case-insensitive after NFC normalisation. So
+  copies to exFAT, NTFS or macOS volumes do not collide, and an NFD name from an iPhone matches its NFC twin.
+
+**Not chosen:**
+- **Milliseconds in the name.** Most cameras and all screenshots record only whole seconds, so bursts would still
+  collide, and names would sometimes carry milliseconds and sometimes not.
+- **Counters recomputed on every listing.** Deleting one Asset would renumber the rest, so a path could open a
+  different photo than yesterday. Remembering the assignment is what makes counters safe.
+- **An id suffix** (`IMG_0001 (3f9a2c1b).JPG`): stable, but noisy.
+- **Leaving clashes to the platform.** On macOS the File Provider renames by arrival order, but
+  FUSE has no such mechanism anyway.
+
+### The metadata store
+
+redb, a pure-Rust embedded database with crash-safe transactions, one database per account, holding:
+- listings with their fetch times
+- Assets and their Appearances, with the names assigned to them
+- the change cursor
+
+The seeded-thumbnail ledger is the exception: a plain list of URIs beside the store (`seeded-thumbnails`), appended
+as seeds are written. `immich-mount logout` must read it to clean up, and a plain file can be read while the
+daemon holds the database's lock, or after a crash left the database unreadable.
+
+Why:
+- **FUSE forgets everything at unmount.** On macOS, the File Provider framework keeps its own database of items,
+  which is why Finder shows folders instantly after a reboot.
+- **We have neither, so the store does both jobs.** Folders open instantly after a restart, listings work offline,
+  assigned names stay stable, and writes are incremental.
+
+The store carries a format version and is migrated in code, with tests.
+
+**Not chosen: SQLite** (`rusqlite` with its bundled C library). Everything stored is key-value shaped, and compiling
+SQLite's C for every target would complicate the static builds and the macOS check of the portable core. SQLite's
+advantage, inspecting the store with its command-line tool, matters less than a pure-Rust build.
+
+### Freshness
+
+The kernel caches whatever it is told to, for as long as it is told. inotify never sees changes that originate on
+the server, so freshness is our job:
+
+1. **Stale-while-revalidate.** A listing older than its window is answered at once, and fetched again in the
+   background; the next visit shows the fresh one. A listing the change poll forgot, because Immich changed, is
+   fetched before the folder answers, so a known change is never answered stale. Verified in the GNOME VM: with a
+   1-second network delay, a month past its window listed in 5 ms.
+   Nothing is pushed to the kernel (`notify_inval_entry` and the like): its timeouts are short (60 s), the daemon
+   answers every `readdir` itself, and Files would not redraw on a push anyway, since it watches with inotify.
+
+   | What | Window |
+   |---|---|
+   | Root, timeline, years | 5 min |
+   | Current month | 1 min |
+   | Older months | 1 h |
+   | Album, person and place lists and contents | 10 min |
+   | An Asset's attributes | 24 h |
+
+   Kernel entry and attribute timeouts are 60 s for folders and files alike, so a name freed by a deletion and given
+   to another Asset stops pointing at the old one quickly (principle 8).
+   Files does not redraw an open folder when Immich changes: it watches folders with inotify, which sees nothing
+   of a change made on the server, so F5 or re-entering shows it.
+2. **The change feed** depends on the credential (verified on v3.3.5):
+   - **A session** (browser or password sign-in) follows `/sync/stream` with acks. It gets exact, resumable deltas,
+     including permanent deletes and album membership, so the mount is close to live.
+   - **An API key with the `all` permission** can use the websocket (`/api/socket.io`, key in the `x-api-key`
+     header), which sends `on_upload_success`, `on_asset_update`, `on_album_update`, `on_asset_trash`,
+     `on_asset_restore` and `on_asset_delete`. Each event refreshes the folders it touches.
+   - **A scoped API key** can only poll. ETags on `/timeline/buckets`, `/timeline/bucket` and `/albums` make that
+     cheap: a 304 when nothing changed. `/sync/*` refuses every API key, and the websocket refuses scoped keys.
+     Asset fields alone cannot track changes: adding an Asset to an album leaves its `updatedAt` alone, and a
+     permanent delete leaves no trace but a missing id.
+
+   The feed is chosen automatically. The freshness windows always stay on, as the safety net for connection gaps.
+
+   **Built so far: ETag polling for every credential,** every 10 seconds: `/timeline/buckets` and `/albums` with
+   `If-None-Match`, so an unchanged library costs two 304s. A month whose count changed, and an album whose count
+   or update time changed, are forgotten, with the folders above them; the next visit (or F5 in Files) reads them
+   again. Verified in the GNOME VM: an Asset added to an album, or archived out of a month, shows on the next poll.
+   Swaps that keep a month's count are left to the freshness windows.
+
+   **Sessions also follow the sync stream** in the same poll (`AssetsV2`, `AlbumToAssetsV1`): a changed Asset marks
+   its month, album membership marks its album, and a permanent delete or a reset refreshes every folder, since its
+   place is unknown. The first stream of a run only sets the baseline and is acked. On a large library that first
+   stream is the whole library, so it is read over several polls: each reads it for at most 15 seconds, the baseline
+   is acked every 5,000 records, and running out of time is not counted as being offline. Verified in the GNOME VM: a
+   permanent delete arrived as `AssetDeleteV1` within one poll.
+
+   **Not chosen, for now: the websocket for `all` keys.** With every credential polled every 10 seconds, a change
+   already shows within seconds; the websocket would save those seconds for one kind of key, at the price of a
+   socket.io client and a second connection to keep alive. Parked in ROADMAP.
+3. **Our own uploads** invalidate the affected folders at once.
+
+### Directory listings are complete
+
+FUSE has no paging towards the kernel: a listing is complete or it is wrong. A large album is fetched in full
+(about 1,000 per page) before its first `readdir` answers. Date groups keep the visible folders small, and the
+metadata store makes later visits instant.
+
+## Content: blocks fetched with range requests
+
+Originals are fetched in 2 MiB blocks with HTTP range requests, and kept as one sparse file per Asset plus a block
+map beside it (`<id>.blocks`, a line per block), which survives restarts:
+- **Single flight:** each folder listing and content block is fetched once, however many FUSE calls wait for it,
+  and an Asset's server thumbnail once per folder being seeded (then kept on disk by Asset id).
+- **Read-ahead:** sequential reads (each starting where the last ended) widen a read-ahead window from 2 blocks up
+  to 16 (32 MiB). Random access resets it. Read-ahead runs at lower priority than reads someone is waiting for
+  (two fetches at once). It starts only after 4 MiB of sequential reading, so a program peeking at a header (a type
+  sniffer, a thumbnailer) never pulls more than it reads.
+- **Crash safety:** a block counts as present only after it is written and synced, so a crash never serves zeros.
+- **Validation:** the block map records the original's size and its weak ETag (`W/"<size>-<mtime>"`, sent with every
+  206). Cached blocks are dropped, and fetched again from the new original, when the listing gives another size, when
+  a fetched block carries another ETag, or when a range comes back shorter than the listed size allows; a read that
+  overlapped the change reads again, and the folder it came from is listed again. One Asset's block writes take
+  turns, so the check and the files change together, and the map is emptied and synced before the data file, so a
+  crash never leaves old blocks listed over an emptied file. An original replaced at the same size whose blocks are
+  all cached is not noticed until one is fetched again (after eviction), since nothing is asked of the server then.
+  Verified against the lab server: the ETag is the same for every range of an original.
+- **Page cache:** files are opened with `FOPEN_KEEP_CACHE`, so repeated reads never reach the daemon, unless the
+  cache dropped the original's blocks since the last open: then the kernel's pages go too.
+- **Eviction:** whole Assets, least recently used first, once the cache passes `cache.limit`, or once the disk is
+  down to its last tenth, whichever comes first (the core asks the platform through a probe, `statvfs` on Linux, at
+  most every 30 seconds: btrfs shows freed space only after a commit, and asking after every eviction would then
+  evict ever more).
+  An Asset being read is pinned and never evicted; an open file that is idle can be, and its next read fetches
+  again. Offline albums, if built (ROADMAP), would be exempt. Server thumbnails (`server-thumbnails/`, a few
+  hundred KB per Asset) are not counted.
+
+**Trash checks.** `open` never waits. If an Asset's active state has not been checked recently, `open` starts a
+background check, and the result applies to later reads.
+
+**Concurrency** is bounded per kind of work: listings 4, thumbnails 8 to 16, content 4, uploads 2. Everything
+shares one HTTP/2 connection pool. *(Built so far: thumbnails only, 12 small and 4 previews at once, each with its
+own budget so previews never hold up a listing.)*
+
+Why blocks:
+- **Many readers touch only part of a file:** content-type sniffing reads the first KB, EXIF readers read the
+  header, and video players seek. A whole-file cache would download a multi-GB video because something wanted
+  64 KB of it.
+- **Range requests work on Immich v3.3.5**, byte-exact for images and videos, HEAD included.
+
+Two quirks are handled:
+- multi-range requests return the whole file, so only single ranges are sent
+- a range past the end returns 404, not 416, which means our size is stale
+
+`If-Range` works on the server, but HTTP forbids weak ETags in it, so it is not relied on. Whole-file download
+remains only as the fallback for a server that refuses ranges.
+
+**Never hang.** Every task that answers a FUSE request has a deadline:
+- listings: about 10 s, then `EIO` (the fetch continues, and the next visit gets its result)
+- reads: 30 s without progress, then `EIO`
+- uploads on close: their own limit (Uploads)
+
+The FUSE session thread never blocks. Handlers answer from memory, or move the reply object into a tokio task.
+
+## Thumbnails
+
+### The problem (verified)
+
+On a FUSE mount, GNOME is aggressive (verified in a GNOME 50 VM):
+- **GIO treats our mount as local.** It reports `filesystem::type fuse` (taken from the statfs magic, so a
+  `fuse.immich` subtype is invisible) and `filesystem::remote FALSE`. Every `local-only` default applies.
+- **Opening a folder makes `glycin-thumbnailer` read every file in it to the end, viewport or not:** 40 of 40 files
+  and 99 MB while 16 were visible, and a 400-file folder within 7 seconds. Only files over the 50 MB
+  `thumbnail-limit` are skipped.
+- **A search typed in Files crawls the tree, and then thumbnails every hit.**
+
+Without countermeasures, opening one month downloads all of it.
+
+### Seeding the freedesktop cache
+
+Nautilus never reads an original if a valid thumbnail exists, in any bucket. It uses the largest bucket present,
+accepts PNGs smaller than the bucket as they are, and a valid thumbnail wins over a recorded failure. So:
+
+1. **Before `readdir` answers** (budget 10 s; 8 to 16 fetches in parallel), every Appearance in the folder gets
+   `x-large/` (512) from Immich's small `thumbnail`. That is a WebP with a short side of 250 px, so it fits without
+   resampling, and costs 5 to 25 KB each. This alone stops every original from being read. A busy month of 1,000
+   photos costs about 20 MB on its first visit, and nothing after.
+2. **In the background,** with sharp thumbnails on by default, `xx-large/` (1024) is made from Immich's `preview`
+   (40 to 520 KB each). Nautilus shows it the next time the folder is drawn.
+   **On KDE** the same image also goes to `normal/` (128) and `large/` (256). Dolphin asks KIO for the bucket of its
+   zoom level, `normal` at its default, and KIO starts its thumbnailer when that bucket is empty instead of taking
+   a larger one (verified in a Plasma 6.8 VM). The daemon asks at each seeding: its environment, or Plasma's shell on
+   the session bus, since at login a user service can start before Plasma hands over its environment.
+3. **Server thumbnails are cached by asset id,** so writing them for more Appearances, or rewriting them after a
+   name change, needs no network.
+
+**Not chosen, for now: prefetching the folders one level below.** Seeding before `readdir` answers already makes a
+first visit fast (600 files in under half a second), and a prefetch would fetch thumbnails for folders that
+may never be opened, multiplied by People and Places. Parked in ROADMAP.
+
+The URI that keys the cache file must match `g_filename_to_uri` byte for byte. A unit test compares our encoder
+with GLib's for awkward names (spaces, `#`, `%`, `?`, `[`, non-ASCII, combining characters). GLib is only a test
+dependency.
+
+**Indexer walks do not trigger seeding either.** Baloo (`baloo_file`) and GNOME's miners list every folder they
+index; on a mount with People and Places, one walk would fetch a server thumbnail for every photo.
+
+**Search crawls do not trigger seeding.** FUSE reports the calling thread, and Files' crawl runs on one named
+`nautilus-search` (verified in a GNOME 50 VM). Their hits fall to the safety net and show generic icons until the
+folder is opened normally.
+
+**Not chosen:**
+- **Small thumbnails only:** cheaper, but soft at larger zoom levels and on HiDPI screens.
+- **Seeding for search crawls:** one search could fetch thumbnails for the whole library. Seeding them lazily,
+  with a cap per minute, remains the fallback if crawl detection proves unreliable.
+
+### The safety net
+
+Seeding can lose a race or hit its budget. So when a known thumbnailer opens an original, it gets `EIO` at once:
+- **Identifying the caller:** FUSE reports the calling thread. Its process (`Tgid` in `/proc/<id>/status`) and that
+  process's ancestors are matched by `/proc/<pid>/comm`. The thread's own name is not enough: glycin reads from a
+  worker thread named `blocking-1` (verified with the bpftrace probe, 2026-11-01).
+  - On GNOME 50 that is `glycin-thumbnailer` under `bwrap`. `comm` is truncated to 15 characters, so the match is
+    on `glycin-thumbnai`.
+  - Videos go to `gst-video-thumbnailer` (`gst-video-thumb`), also under `bwrap`.
+  - Also recognised: `gdk-pixbuf-thumbnailer`, `totem-video-thumbnailer`, `ffmpegthumbnailer`, and KDE's
+    `thumbnail.so` worker.
+- **What follows:** GNOME's thumbnail factory records a failure for the file (`thumbnails/fail/`), and Files keeps
+  showing a generic icon for it, F5 included, until Files is started again; then the seed written meanwhile wins
+  over the failure. In practice this happens only when seeding could not run, with the server
+  unreachable, so WORKFLOWS tells users to reopen Files once it is back.
+
+**Indexers are refused too, always.** Baloo indexes only Documents, Pictures, Videos and Music by default, but once
+the mount is among its folders (added, or mounted inside Pictures), its extractor reads every original: 75 MB within
+a minute on the lab's 50 photos. Its extractor and GNOME's get `EIO` at open, whatever the safety-net setting, and
+their file-name indexing goes on. GNOME is also kept out by `.trackerignore`; KDE has no such file.
+
+**Not chosen:** feeding the thumbnailer the preview's bytes instead of the original's. The same path would then return
+different bytes depending on who asks, the size would not match, and a misidentified program (a backup tool, an
+editor) would silently get a small JPEG instead of the photo (principle 3).
+
+### Privacy
+
+Seeds are small copies of private photos in a shared directory. Every seeded file is recorded, and deleted when
+signing out, together with any `fail/` entries for our URIs. Signing out also sweeps
+the thumbnail cache for any entry whose `Thumb::URI` lies under the mount, including thumbnails a thumbnailer made
+there and failure records for search hits that were never seeded, since those URIs carry album and person names.
+
+## Uploads
+
+**The upload runs inside FUSE `FLUSH`, which is what `close()` waits on.**
+- `close()` returns success only after the server has the file, and GIO checks the result of closing the
+  destination before it deletes a moved file's source.
+- So a move into Photos can never lose its source early (principle 6), in a program that checks its `close()`.
+  KIO, Dolphin's file layer, does not: in a Plasma 6.8 VM a move whose upload failed still deleted its source, since
+  KIO counts the permissions it then cannot set as a mere warning. Hence the not-uploaded folder ("After a failed
+  upload", below).
+- The cost: Files' progress bar sits at 100% while the upload runs. A notification covers long uploads. And the
+  kernel cannot interrupt a `flush`, so a program killed while its close waits (Ctrl+C on `cp`) stays until the
+  upload ends, at most the limit below; the data stays safe.
+- The wait is bounded: 30 minutes in total, and 2 minutes without progress. Temporary failures are retried with
+  backoff inside that limit. *(Built so far: the 30-minute limit, and the client's own brief retries.)*
+
+**Not chosen:** uploading after `release`, which returns at once. Release errors are discarded by the kernel, so
+failures would be invisible and moves could lose files.
+
+**What is accepted:** standalone image and video files, judged by extension against the server's media types (RAW
+included), read from `/server/media-types` when the daemon starts, with a built-in list when the server cannot be
+asked. A refused extension fails at `create`, before any bytes are copied.
+
+**Not supported:** folders, Live Photo pairing, and separate XMP sidecars.
+
+**The upload sequence:**
+1. Stream SHA-1 over the staging file.
+2. `POST /assets/bulk-upload-check`. A trashed duplicate fails here, before any upload.
+3. A streamed multipart `POST /assets` with `assetData`, `fileCreatedAt` and `fileModifiedAt`.
+   - `fileCreatedAt` is the capture date from the file's EXIF (images) or container metadata (videos), falling back
+     to the mtime, then to now. The server re-reads EXIF anyway. *(Built so far: the staged file's mtime at close;
+     the client does not parse EXIF, since the server does. GIO may set the source's mtime only after closing, in
+     which case a file without its own date is filed under the copy time.)*
+4. 201 is a new Asset, and 200 `duplicate` is Already in library.
+
+A lost response is retried safely, because the checksum turns a second upload into a duplicate, not a second Asset.
+
+**Details that need care:**
+- **Upload once per round of writing, from a writer:** `flush` runs on every close of every descriptor, readers
+  included (a thumbnailer). Every `open` gets its own handle that knows whether it may write; only a writer's close
+  starts an upload, a close during an upload waits for its result, and a close after a failed upload gets the
+  failure. A handle opened before an upload cannot write after it (`EIO`); a fresh open of the name is a new round.
+- **Cut-short copies are refused:** a writer killed by a signal (`PF_SIGNALED` in its task flags) does not upload,
+  and before any upload the file's own structure is checked: JPEG up to its end-of-image marker, PNG's `IEND`,
+  GIF's trailer, the length RIFF (WebP, AVI) and BMP declare, Matroska's (WebM, MKV) Segment size, ISO media
+  (HEIC, AVIF, MP4, MOV) whole up to its index and media data, and for TIFF and the RAW formats on it (DNG, CR2,
+  NEF, ARW, ORF, RW2) every strip, tile and preview its directories point to. Data appended after a whole image
+  (a Motion Photo's video, a phone's trailer) is allowed. A cancelled copy in Files closes the file before deleting
+  it, so this check is what keeps it from becoming an Asset. What cannot be judged uploads: MPEG transport streams
+  (MTS, M2TS), and Matroska written live, which declares no size.
+- **Temporary names:** GIO's `.goutputstream-XXXXXX` and rsync's `.name.XXXXXX` are staged and upload under their
+  real name. GIO renames before closing, so its rename returns at once and the close uploads (the folder is never
+  locked for an upload); rsync renames after closing, so its rename uploads and returns the result, holding the
+  folder's lock for that time. A hidden name with a media extension (`.IMG_1.JPG`) is a photo and uploads on close;
+  any other hidden name is refused, so nothing is staged and then silently dropped.
+- **Receipts:** the written name stays as a receipt for about two minutes, because GIO may still set the mtime after
+  closing, and the user sees what they pasted. Writing to a receipt's name again counts as a new upload. Watched in
+  the GNOME VM: GIO's copy into a new name sends `CREATE`, `WRITE`, `FLUSH` (the upload) and then two
+  `SETATTR`s, the times and the mode, on the receipt, with no rename; Files' own copy and move behave the same, and
+  a move deletes its source only after the close succeeded.
+- **Free space:** `statfs` reports the staging filesystem's free space, so the file manager's space check is
+  meaningful.
+- **Kernel request timeouts:** since Linux 6.14 the kernel can abort a whole FUSE connection when one request
+  outlasts `fs.fuse.default_request_timeout` (off by default; capped by `fs.fuse.max_request_timeout`). Verified in
+  the GNOME VM: at 5 s, an upload in `flush` taking longer killed the mount ("Software caused connection
+  abort"). So the daemon reads the limit at mount, warns once in its log, and ends every wait of its own a second
+  before it: an upload that would take longer fails its `close()` and is stopped, a read or a listing fails with
+  `EIO`, and the mount survives. `doctor` reports the setting. **Not chosen:** asking the kernel for a longer limit
+  of our own (`FUSE_REQUEST_TIMEOUT` in the init reply), which fuser 0.18 cannot send; worth adopting once it can.
+- **Unmounting during an upload:** an unmount, eject included, fails with "target is busy" while a writer still
+  has the file open. Once `close()` has returned, the upload is finished.
+- **After a failed upload,** the staged file disappears from Photos, and once its last handle closes it is moved to
+  `~/.local/share/immich-mount/not-uploaded/` under its own name (numbered if taken), never deleted: a program that
+  ignores `close()`'s error has deleted its source by then. The notification names the folder. Verified with `mv` and
+  `gio move` and a key without `asset.upload` (both failed with "Permission denied" and kept the source), and with KIO's
+  move in a Plasma VM (the source went; the kept copy matched it byte for byte).
+- **After a crash:** staging files left behind by a dead daemon are not uploaded, since their writer's close never
+  succeeded, but they are kept the same way at the next start, named from the name file each staged file has beside
+  it.
+- **What is deleted** is only what the user dropped: a copy cut short by Cancel (its source is still there), an
+  empty file, a file deleted or replaced in Photos, an uploaded file's receipt.
+- **Flatpak impact:** the folder follows `XDG_DATA_HOME`, which a Flatpak maps into its own data directory; the
+  notification names the real path either way.
+
+## Signing in
+
+**Sign-in is a button that opens the user's own browser, like Immich's mobile app.**
+1. The app reads `/server/features` (`oauth`, `oauthAutoLaunch`, `passwordLogin`) and `/server/config`
+   (`oauthButtonText`) to know what to offer. Neither needs authentication.
+2. `POST /oauth/authorize` with `{redirectUri, state, codeChallenge}` (PKCE S256) returns the identity provider's
+   URL, opened through the OpenURI portal.
+3. The user signs in there with passkeys, password managers, or whatever they normally use.
+4. The provider redirects to `app.immich:///oauth-callback`. Our launcher entry is registered as the handler for that
+   scheme. On servers with Immich's "mobile redirect override", the provider redirects to
+   `https://<server>/api/oauth/mobile-redirect` instead, which bounces to the same `app.immich:` URL.
+5. `POST /oauth/callback` with `{url, state, codeVerifier}` returns a session token.
+
+This flow was read from the server source (`server/src/services/auth.service.ts`, `oauth.repository.ts`,
+`dtos/auth.dto.ts`), and is verified on a running server: `immich-mount login` signs in through Dex in the lab
+with Dex as the identity provider, and both apps complete it from a real browser redirect in the GNOME and
+Plasma VMs.
+
+**Why this design:**
+- **Reusing the mobile app's redirect URI** means sign-in works with no server or identity-provider changes,
+  wherever mobile sign-in already works.
+- **The Immich server is the OIDC client:** it holds the secret and does the exchange, so we register nothing
+  anywhere.
+- **PKCE and state make an intercepted code useless.** If another program on the same machine claimed the
+  `app.immich` scheme, the worst outcome is a failed sign-in, not a leak.
+
+**Who runs it:** the app runs the interactive flow as a single instance, so the redirect reaches the process that
+holds the PKCE verifier. It stores the credential in the keyring, and the daemon only reads it (`Reload` over
+D-Bus). Headless, `immich-mount login` runs the same flow itself, with the redirect URL pasted back.
+
+**The session is kept, in the keyring.**
+- **Only a session gets the sync stream** (verified), which makes the mount near-live.
+- **Revocable in the usual places:** the desktop shows up in Immich's "Authorized devices", and signing out there or
+  at the identity provider (back-channel logout) cuts it off. That is what OIDC users expect.
+- Sessions have no expiry by default.
+- The cost: a session carries the user's full permissions, so least privilege rests on the app's own switches.
+
+Requests send an honest User-Agent, `ImmichMount/<version> (Linux; <distro>)`, so the "Authorized devices" entry is
+recognisable.
+
+**Email and password** is offered when the server allows password login, both on the desktop and headless. It yields
+a session too, so even a headless machine gets the sync stream. Immich's password login has no two-factor step:
+`LoginCredentialDto` is email and password only, and the feature request for it (immich issue #880) was closed.
+Two-factor comes through OIDC, and the form says so.
+
+**API keys** are the advanced option: tests, CI, least-privilege setups, and machines without a browser.
+
+**Not chosen:**
+- **An embedded web view:** passkeys and password managers belong in the real browser (RFC 8252 says the same). The
+  maintainer uses passkeys.
+- **A loopback redirect (`127.0.0.1:port`):** the native-app norm, but the admin would have to register it at the
+  identity provider. Parked in ROADMAP.
+- **Turning the session into a scoped API key:** least privilege, but it loses the sync stream and identity-provider
+  revocation.
+- **No password form at all,** with API keys for password-only servers: no credentials typed into our app, but a
+  clumsy setup and no live changes, for the main use case (desktops).
+
+The core holds the Immich side of sign-in. Catching the redirect is per platform: a scheme handler on Linux, and
+`ASWebAuthenticationSession` on macOS.
+
+## The Immich API layer
+
+`immich-api` holds the client and models for the endpoints we use. They are copied from
+[immich-rs](https://github.com/boul2gom/immich-rs) (MIT, generated from the Immich v3.3.5 OpenAPI spec, commit
+`60d1eb3`) and adapted. From then on they are our own code.
+
+**What is copied:**
+- the models for the timeline buckets (with album and person filters), search, people, albums and suggestions
+- the sync stream and ack types
+- the OAuth authorize and callback types
+- auth with API keys and bearer tokens
+- multipart uploads with SHA-1
+- the retry policy: 429 and 502 to 504 everywhere, 500 only on idempotent methods, honouring `Retry-After`
+
+**Why copy instead of depending on it:** the crate was three days old with one author, and carries far more than we
+use (the whole API, WASM, OpenTelemetry, Socket.IO). Our contract tests on Erebus catch API drift.
+
+**Checks before relying on the copied code** (M0):
+- the endpoints the mount uses, against the lab on v3.3.5 and v3.2.0
+- **lenient decoding:** a field missing on the older server, or an unknown one, must not break decoding
+- rustls only, no unused features, and it builds for the static musl target
+- a reasonable compile time
+
+**Version policy:** the current and previous Immich minor release, with the floor moving forward deliberately.
+- Only the current search dialect is implemented: `filter`, `orderBy`, `cursor`.
+- Every search sets `filter.trashedAt: {eq: null}`, because that dialect includes trashed Assets by default.
+- `/server/version` is read once per connection, and version-specific behaviour lives in one place.
+- **Checked on v3.2.0:** the parts of the OpenAPI spec the client uses are identical to v3.3.5's, and the server
+  answered the same. (One difference: a video's `fullsize` thumbnail redirects to its preview, and `fullsize` is
+  never used.)
+- **Not chosen:** a floor as old as v1.135.0, with the deprecated search dialect. It would mean two dialects, older
+  upload fields, and a larger test matrix, for a new app whose users tend to upgrade Immich often.
+
+**Names and sizes without a session.** With an API key there is no sync stream. The details for a month's ids
+(names, sizes) then come from a search over the month's UTC range widened by 14 hours on each side, filtered to
+the bucket's ids.
+
+**The account namespace.**
+- A session knows its user id from the sign-in response, so caches are keyed by the URL plus the user id.
+- A scoped API key cannot read `/users/me`, and `/api-keys/me` returns no user id, so API-key connections are keyed
+  by the URL plus a hash of the key.
+- `status` shows the account's email only when the credential can read it.
+
+What the API does, verified on v3.3.5, all of which the client encodes:
+- **Sizes:** `withExif: true` on every search; without it there is no `exifInfo` at all, so no sizes.
+- **Visibility:** searches and buckets outside albums restrict visibility to the timeline, since the defaults
+  include archived Assets.
+- **Albums:** album contents come from search by `albumIds`. The album response has no asset list.
+- **The connection probe** is `/api-keys/me` for keys, which needs no scope. `/users/me` needs `user.read`, which
+  scoped keys lack.
+- **Thumbnail sizes:** `thumbnail` is a 250 px WebP and `preview` a 1440 px JPEG. `fullsize` redirects to the
+  original, so it is never used.
+- **Uploads:** they need `assetData`, `fileCreatedAt` and `fileModifiedAt`. The checksum is base64 SHA-1, and
+  `bulk-upload-check` accepts hex or base64. A duplicate of a trashed Asset returns the trashed id, and the Asset
+  stays trashed.
+- **Error codes:** an unknown or deleted Asset id gives 400 `Not found or no asset.read access`, not 404. A missing
+  or inaccessible Asset is not proof of deletion.
+- **Keys stay out of URLs:** `?apiKey=` also authenticates, but is never used. An API key sent as `Bearer` is
+  refused (401).
+- **Ranges on originals:** byte-exact 206 answers with `Content-Range`, HEAD included. A multi-range request gets
+  the whole file (200), and a range past the end gets 404, not 416. The weak ETag (size and mtime in hex) is the
+  same for every range, and `Last-Modified` is the Asset's `fileModifiedAt`.
+- **Timeline buckets** are columnar JSON: ids and a few fields, with no names or sizes. Their `fileCreatedAt` has
+  no `Z`, and a malformed `timeBucket` gets a 500.
+- **Value formats:** `duration` is in milliseconds (null for images), and `localDateTime` is wall-clock time with a
+  misleading `Z`.
+- **The search dialect** (`filter`, `orderBy`, `cursor`) cannot be mixed with the deprecated fields (400).
+  `visibility {ne: archive}` needs elevated permission, since it would include locked Assets, so the client asks
+  for `{eq: timeline}`.
+- **Defaults that surprise:** a `size` parameter on buckets is ignored, not rejected; `GET /assets/{id}` has no
+  `status` field; search defaults include archived (and, in the new dialect, trashed) Assets.
+
+## GNOME integration
+
+- **The mount lives at `~/Immich`** (verified in a GNOME 50 VM):
+  - **In the sidebar:** a FUSE mount under home appears in the Files sidebar as its own volume, with a drive icon and
+    an eject button.
+  - **Its name** comes from `/.xdg-volume-info`. The icon set there only affects full-colour icons; the sidebar keeps
+    the drive symbol.
+  - **Elsewhere:** a mount under `/run/user` is invisible unless bookmarked.
+  - **Eject** really unmounts. The daemon treats that as the user's choice and exits cleanly; the user service is
+    not restarted, so the next login (or `systemctl --user start immich-mount`) mounts again. "Mount again" in the
+    app comes with its D-Bus control.
+  - **Remounting:** gvfs ignores a quick unmount-and-remount, so the daemon waits for the old mount to disappear
+    first.
+  - **No `DCIM` folder at the root:** gvfs scans new mounts for camera layouts *(untested)*.
+- **File dialogs:** GTK and portal file choosers show the mount, and should show the seeded thumbnails. Flatpak apps
+  reach the files through the document portal. *(Both untested.)*
+- **The indexer:** GNOME's indexer (localsearch) indexes all of `$HOME` recursively by default. In the GNOME VM it
+  never entered the FUSE mount, for unknown reasons, so the hidden `.nomedia` and `.trackerignore` stay as
+  protection, including if someone mounts inside `~/Pictures`.
+- **Search:** a search typed in Files crawls the tree (listings only). People and Places multiply the tree, so a
+  first search is slow. The GNOME Shell overview search did not touch the mount.
+- **`updatedb` / `plocate`** run as root, and root cannot enter a mount without `allow_other`.
+- **Backup tools** that walk `$HOME` (Déjà Dup, restic, borg) would see the mount. WORKFLOWS documents how to
+  exclude it.
+- **No tray icon:** stock GNOME has none. Status lives in the app and in notifications. The daemon is a user
+  service, so it needs neither the Background portal nor a tray.
+- **Notifications** cover only what the user cannot otherwise see:
+  - a refused upload
+  - a long upload
+  - the server unreachable (once)
+  - signed out
+  - a locked keyring
+- **Not chosen:**
+  - **A GNOME Online Accounts provider plus a GVfs backend,** as GNOME did for OneDrive in GNOME 46. It is C code
+    inside GNOME's own repositories, on GNOME's release cycle, and GNOME-only. GIO also marks such locations remote,
+    which means no thumbnails by default. Non-GIO apps would only reach it through gvfs's own FUSE bridge.
+  - **A Nautilus extension:** extensions can no longer add locations, only menus and columns.
+  - **fanotify pre-content events** (Linux 6.14+): placeholder files on a local filesystem, filled on first access.
+    They are the closest Linux match to macOS's placeholders, but need `CAP_SYS_ADMIN`.
+
+## The desktop app
+
+Each platform gets a native app that looks and reads like a first-party app (principle 9).
+
+**How the GNOME app is written:** gtk4-rs and libadwaita, with screens in **Blueprint**.
+- **Blueprint** is GNOME's compact markup for GTK interfaces. It compiles to GtkBuilder XML at build time, through
+  gtk4-rs's `blueprint` feature (`#[template(file = "window.blp")]`).
+- **Who uses it:** many GNOME Circle apps and some core apps, so it is the direction GNOME's own apps are taking.
+- **The caveat:** Blueprint still calls itself experimental, and GTK 5's way of defining interfaces is undecided
+  (the April 2026 GTK planning call kept Blueprint out of GTK's tree). The app is small (sign-in, settings,
+  status), so a migration would be cheap. The build environment pins the Blueprint version, and ROADMAP tracks
+  upstream changes.
+- **Not chosen: Relm4.** Less boilerplate, but an extra layer, and not what GNOME's documentation or its own Rust
+  apps (Loupe, Snapshot) use.
+- On GNOME: GTK 4 and libadwaita, following the GNOME Human Interface Guidelines:
+  - `AdwApplicationWindow`, `AdwNavigationView`, `AdwStatusPage`
+  - `AdwPreferencesDialog`, `AdwToast`, `AdwAboutDialog` and `AdwShortcutsDialog` (Ctrl+?, which needs
+    libadwaita 1.8, GNOME 49)
+  - adaptive layout, the system's dark style and accent colour
+  - symbolic icons, and GNOME's capitalisation rules
+- **Names:** the app says "Immich Mount", and the file manager says "Immich". The interface says "Files", never
+  "Nautilus".
+- **First run:**
+  1. the server URL, checked live
+  2. sign-in, offering only the methods the server supports
+  3. the sections and the mount location
+  4. "Open in Files"
+- **One settings table:** the settings dialog is generated from the core's settings table, the same one behind
+  `immich-mount configure`. The two can never disagree about which settings exist or what values are valid.
+- **Status:** connection, account, server version, mount point, cache usage and uploads in flight.
+- **The About dialog** carries the non-affiliation notice, the credits, and the AI disclosure.
+- **Accessibility:** keyboard navigation everywhere, a keyboard-shortcuts dialog, and accessible labels on every
+  control.
+- **One app per desktop:** GNOME gets the GTK app and Plasma the Kirigami app, never the other's look. They are
+  separate packages, and where both are installed the launchers sort it out: the KDE entry says `OnlyShowIn=KDE;`
+  and the GNOME entry `NotShowIn=KDE;`, so Plasma lists only the KDE app and every other desktop only the GNOME
+  app. Both declare the `app.immich` scheme, so each makes itself its handler as it starts a browser sign-in, and
+  the redirect returns to the app in use. On Plasma the daemon's notifications name the KDE app (`desktop-entry`),
+  which heads them with its name and icon; Plasma is detected as for seeding (the environment, or Plasma's shell
+  on the session bus). Elsewhere they carry the name and our symbolic icon and no `desktop-entry`: GNOME 50 drops a
+  notification whose `desktop-entry` names an app it did not come from, and the daemon is not the app (verified in
+  both VMs).
+- **How the KDE app is written:** Kirigami pages in QML over one Rust object, bound with **cxx-qt** (KDAB's
+  Rust/Qt bridge). The object is a thin layer over `immich-mount-desktop`, so the two apps share every step but
+  the widgets.
+  - **Its pages** follow GNOME's steps in Kirigami's terms: `PlaceholderMessage` for the start, waiting and status
+    pages, `FormLayout` for sign-in, setup and preferences, Preferences and About as layers from the header's menu,
+    and the `org.kde.desktop` style, so it looks like Plasma's own apps.
+  - **Its preferences page** is generated from the same settings table as the GNOME dialog (one `FormLayout` row
+    per setting: a switch, a list or a field), and shares its side effects through `immich-mount-desktop`: each
+    change is written at once, "Mount when the session starts" enables or disables the user service, and the daemon
+    restarts when the page closes if anything it reads changed. A refused value shows the table's message.
+  - **The browser's redirect starts a second process,** because Qt has no single-instance service. The first process
+    keeps the waiting sign-in (server, state, PKCE verifier) in `$XDG_RUNTIME_DIR/immich-mount-sign-in`, mode 0600;
+    the second claims the attempt by renaming the file away (so a redirect delivered twice is finished once),
+    finishes the sign-in, stores the credential, writes the outcome in its place, and exits; the first reads the
+    outcome and moves on. It waits for that outcome, not for a stored credential, because "Sign In Again" starts
+    with the old credential still in the keyring. A provider's refusal (`error` in the redirect) is reported the same
+    way, and going back, or signing in another way, drops the attempt so a late redirect finds nothing.
+  - **Not chosen: KDBusService** (KDE's single-instance helper). It would need C++ glue for one call, and the file
+    is simpler and works the same for any toolkit.
+  - **Dolphin's Places:** Solid lists only the FUSE mounts it knows (sshfs and rclone as network shares, encfs,
+    cryfs and gocryptfs as vaults), so the mount is not among Dolphin's devices. The app's setup adds it to Places
+    once, as "Add to Places" would, in `user-places.xbel`; a place the user removes stays removed, and `logout`
+    takes it away. Without a Places file yet, the one written lets KIO add its own defaults around it.
+  - **Dolphin's previews:** KIO counts the mount as remote, where Dolphin shows no previews. Setup and status
+    offer "Show thumbnails", which sets `[PreviewSettings] MaximumRemoteSize` in `kdeglobals` to 100 MB through
+    `kwriteconfig6`, or removes it to return to KDE's default. It is KDE's setting for every remote location, so
+    the app changes it only when the user flips the switch, and says so beside it.
+  - **Flatpak impact:** Qt opens URLs through the OpenURI portal inside a sandbox. Each sandboxed instance has a
+    runtime directory of its own, so inside a Flatpak the hand-off file goes in the app's folder of it
+    (`$XDG_RUNTIME_DIR/app/$FLATPAK_ID`), which every instance shares. The previews switch would need write access to
+    `xdg-config/kdeglobals`, or would be left out of a Flatpak.
+
+## Security and privacy
+
+- **Credentials** live in the keyring (`oo7`, which speaks both the Secret Service and the Secret portal).
+  - **Why a keyring:** a credential opens a whole photo library, so it belongs in a keychain, not in a plain
+    config file.
+  - **KWallet** serves the Secret Service through `ksecretd`, which D-Bus can start only by its own name
+    (`org.kde.secretservicecompat`); a Plasma login usually starts it through `pam_kwallet`. Where nothing has, the
+    keyring code starts it before asking, so a Plasma install without `pam_kwallet` works the same. Its first use
+    shows KWallet's "create a wallet" wizard. Not where the Secret Service's own name can be started (GNOME
+    Keyring): D-Bus starts that one, and KWallet never takes its place on a machine that has both.
+  - **The headless fallback** is a file that must be 0600, or the daemon refuses it. An environment variable is
+    accepted only in tests.
+  - **Never exposed:** credentials never appear in logs, URLs, D-Bus messages, cache paths or crash reports.
+- **Mount options:** `nosuid`, `nodev`, `noexec`, `default_permissions`, and no `allow_other`, so only the user who
+  mounted it can enter, not even root. The filesystem type is `fuse.immich`, with source `immich`.
+- **Logs** (journald): endpoints and timings. No credentials and no request bodies; Asset ids only at debug level.
+- **Cache directories** are 0700 and cleared on disconnect. They are not encrypted at rest; full-disk encryption is
+  the user's layer.
+- **TLS:** rustls with the system's root certificates (`rustls-native-certs`), so homelab private CAs added to the system trust store (for example
+  with `update-ca-trust`) work. Plain `http://` is allowed for LAN servers, with a visible warning before any
+  password is sent. Nothing silently downgrades from https to http.
+- **D-Bus:** the session bus is the normal same-user trust boundary. The credential never crosses it.
+
+## Packaging and releases
+
+- **First release:** Homebrew (a formula for the static daemon with `brew services`, and a Linux cask for the app),
+  RPM (COPR), DEB (GitHub Releases) and AUR. All four package the same CI-built artifacts.
+- **The daemon and CLI follow the house release pipeline:**
+  - the version is derived from Conventional Commits: the first commit is 1.0.0, then a breaking change bumps the
+    major version, a feature the minor, anything else the patch (AGENTS.md, "Versioning")
+  - the clippy gate and the tests run first; the build needs them
+  - static musl builds for x86_64 and aarch64
+  - releases pruned to the last ten
+  - once the repository is public, not built yet: a Homebrew formula in the maintainer's tap
+    (`jakobhviid/homebrew-tap`), and `install.sh` for headless machines
+- **The GNOME app** links the system's GTK 4 and libadwaita, so it ships through the native packages and the cask,
+  not as a static bottle.
+- **The KDE app** links the system's Qt 6 and loads Kirigami and the KDE style as QML modules, so its packages name
+  them (`kf6-kirigami`, `kf6-qqc2-desktop-style`) besides the libraries rpm finds. cxx-qt's generated QML
+  registration uses Qt's private API, which ties the package to its distribution's Qt minor version
+  (`libQt6Qml.so.6(Qt_6.11_PRIVATE_API)` on Fedora 44): it is built in that release and rebuilt when Qt moves. The
+  Ubuntu .deb says so with `qt6-declarative-private-abi (= 6.10.2)`, the virtual package Ubuntu's `libqt6qml6`
+  provides for this, besides the libraries `dpkg-shlibdeps` finds.
+- **Channel targets:**
+  - **DEB:** Ubuntu 26.04 (GNOME 50). Debian 13 ships GNOME 48, below the GNOME floor, so it is not served until a
+    Flatpak exists.
+  - **DEB repository:** an apt repository can follow the GitHub Releases files later.
+  - **Updates** come from the package managers; there is no built-in update checker.
+- **Installed files:**
+  - the binaries
+  - `immich-mount.service` (`Type=notify`, `ExecStop` unmounts, `Restart=on-failure`)
+  - a D-Bus activation file
+  - the launcher entry (`dev.hviid.ImmichMount.desktop` for GNOME, `dev.hviid.ImmichMount.Kde.desktop` for KDE),
+    named "Immich Mount", with the keywords `Immich;Drive;Mount;Photos;Videos;Files;` and the
+    `x-scheme-handler/app.immich` handler
+  - the icon, `dev.hviid.ImmichMount` and its symbolic variant, in the `immich-mount` package ("The icon")
+  - AppStream metadata carrying the non-affiliation notice
+  - the license notices: `LICENSE`, and `THIRD-PARTY-LICENSES.md`, written at release by
+    `packaging/third-party-licenses.py`: `THIRD-PARTY-NOTICES.md` first, then every crate the package's binary links
+    (from `cargo tree`) with the license files it ships, each distinct text printed once
+- **Not chosen:**
+  - **AppImage:** no service or autostart integration, the sign-in scheme handler needs extra desktop integration,
+    and bundling GTK 4 and libadwaita drifts from the host look.
+
+### Flatpak: deferred, but kept possible
+
+A Flatpak can mount FUSE the way Pika Backup (a GNOME Circle app) and Vorta do on Flathub:
+- it builds its own libfuse (`-Duseroot=false`)
+- a `fusermount` wrapper runs the host's `fusermount3` through `flatpak-spawn --host`, forwarding the FUSE file
+  descriptor
+- it needs `--device=all` and `--talk-name=org.freedesktop.Flatpak`
+- it mounts at a path both sides see (Pika uses `xdg-run/pika-backup:create`)
+
+The mount is then a normal host mount, served from inside the sandbox.
+
+For us it would also need `--filesystem=~/Immich:create` and `--filesystem=xdg-cache/thumbnails` (the host's cache).
+The safety net would be lost: FUSE reports host process ids, which the sandbox's `/proc` cannot see.
+
+The host-command permission is effectively no sandbox, so the Flatpak would be a delivery channel, not a security
+boundary. Flathub's linter flags it as a warning (`finish-args-flatpak-spawn-access`), not an error. Acceptance is
+at the reviewers' discretion; Pika Backup ships with it and needs no linter exception.
+
+It is too much work for now, so it is parked. When it comes, it ships from our own Flatpak repository first, and goes
+to Flathub only after that works.
+
+**Comparison: Nextcloud.** Nextcloud's client is on Flathub with ordinary permissions (`--filesystem=host:rw`, the
+keyring, a tray), because on Linux it **syncs real files** into a local folder: no FUSE, no host commands. Its Files
+menu items come from a separate distribution package (`nautilus-nextcloud`), not from the Flatpak.
+
+**Not chosen: a sandboxed Flatpak that syncs instead of mounting.** It would be Flathub-friendly, but:
+- **every file would have to be the downloaded original.** An unprivileged app has no placeholder files that fill
+  on read, and sparse files would read as zeros.
+- **syncing everything** means downloading the library, which is never acceptable.
+- **selective sync** breaks the "any photo from any file dialog" use case.
+- **freeing space** could only delete local copies, so photos would vanish from the folder.
+
+These rules keep a future Flatpak cheap:
+
+| Rule | Why it matters inside a Flatpak |
+|---|---|
+| Mounting goes through one replaceable **mounter**: `fusermount3` natively, a host wrapper later | The sandbox cannot run the setuid helper |
+| The daemon's logic never assumes **systemd**; startup lives in packaging, and `sd_notify` is optional | A Flatpak starts in the background through the Background portal |
+| Every path goes through the **`Dirs` trait**, and the thumbnail cache is addressed as the host's `$HOME/.cache/thumbnails` | Flatpak remaps `XDG_CACHE_HOME` to a private directory that thumbnail lookups never read |
+| Secrets go through **`oo7`** | It speaks both the Secret Service and the Secret portal |
+| The browser opens through the **OpenURI portal**, not `xdg-open` | Spawning host programs is unavailable |
+| **D-Bus names live under the app ID** | A Flatpak may only own names under its app ID |
+| The **safety net is optional** and degrades silently | The sandbox cannot see host processes in `/proc` |
+| No host programs besides `fusermount3` | Each would need another host call |
+
+Every design change states its Flatpak impact against this table.
+
+## Testing
+
+| Layer | What | Where |
+|---|---|---|
+| Unit | Naming and clashes (stability as entries come and go, case and NFC clashes, 255-byte cuts), node keys, grouping thresholds, month keys from `localDateTime` around time zones, block arithmetic and read-ahead, the URI encoder against GLib, PNG chunks, error mapping, multipart encoding | `cargo test` in the toolbox |
+| Core | The core driven through the in-memory adapter | `cargo test` |
+| Contract | `immich-api` against a real server, with both the read-only and the full key, on the floor and the latest release. Run on demand and before milestones, never as part of a normal `cargo test` that would need the LAN | Erebus `lab/immich-server` (`IMMICH_VERSION=...`) |
+| Sign-in | The OIDC flow against an identity provider on Erebus: Dex (static users, scriptable) for automated runs, and Pocket ID (passkeys, what the maintainer uses) for a manual check | `lab/immich-server/oidc.sh` (Dex); Pocket ID by hand |
+| Mount | The daemon mounted for real: listing, checksums against the server, ranged reads (`dd` with offsets; bytes sent by the server), copies and moves into Photos with the server stopped midway, hang checks with the server down | The development host (`/dev/fuse` is there) or an Erebus container |
+| Desktop | Files, the sidebar and eject, thumbnails with zero originals read (the bpftrace probe), copies and moves through Files' own operations (scripted via `org.gnome.Nautilus.FileOperations2`, or `gio copy` and `gio move`) and Dolphin's (`kioclient copy` and `move`), a video seeking in a player, both apps' first run, Dolphin, KWallet, screenshots | `lab/gnome-vm` and `lab/plasma-vm` |
+| Packaging | Per channel, an install matrix in containers (`lab/packaging/matrix.sh`, a release's .rpm and .deb on several distributions at once: they install, `--version` matches, `doctor` runs, the apps find their libraries, register the sign-in scheme and start (GTK under headless Weston, Qt off screen), the daemon mounts the lab server as root and serves originals matching Immich's checksums, and they remove cleanly), and a full run in a fresh GNOME VM: sign in, mount, sidebar, zero originals read, checksum, remount after reboot, clean uninstall. VMs: Fedora 44 (Homebrew, RPM), Ubuntu 26.04 (Homebrew, DEB), Arch (AUR) | Erebus `lab/packaging/` |
+
+Tests also hold the docs to the code:
+- SPEC's config example parses
+- WORKFLOWS names only real commands
+- the D-Bus table in SPEC matches the interface
+- every `--json` command writes exactly one JSON document
+
+Before milestones, especially uploads (M3) and the first release, an independent agent runs an adversarial review
+covering safety, correctness, and docs against behaviour.
+
+## Prior art
+
+| Project | Relation to this one |
+|---|---|
+| Kartax/immich-desktop-app (macOS) | The inspiration: the same idea on macOS, through Apple's File Provider. No code is shared |
+| boul2gom/immich-rs (MIT) | The API layer started from it. Other Rust clients (`immich` 0.2.0, `immich_api_rs` generated for v1.137, `immich-lib` for duplicates) were stale or too narrow |
+| Dynamic-Solutions-Canada/immich-drive (Windows) | The same idea on Windows, through the Cloud Files API. It also has Favorites and Partners sections (an open question in ROADMAP) |
+| Katy248/immichfs (Go) and AlessandroLorenzi/immich-fuse (Python), both Linux FUSE | Read-only, and without thumbnail handling, so on GNOME both download every original of every folder opened. Thumbnails, sync, sign-in and uploads would be new code there too, so this is a project of its own |
+| PersistentCloud/immich-webdav-wrapper | A different model: it runs next to the server, reads Immich's library volume directly, and covers albums only. GNOME treats WebDAV as a remote location, with no thumbnails by default and no volume |
+
+Credits and licenses: [CREDITS.md](CREDITS.md).
+
+## Note for the house guidelines
+
+This project follows the maintainer's house style, `rust-cli-guidelines` (a private guide), which assumes
+run-and-exit command-line tools. These are the deviations, and what they suggest for the guidelines:
+
+- **Two binaries.** The daemon and CLI (`immich-mount`) are one binary with subcommands, as the guidelines prefer.
+  The desktop app is a second binary, because it links GTK, which the daemon must not.
+- **`CLAUDE.md` is a symlink** to `AGENTS.md` (the maintainer's choice), rather than the 6-line pointer.
+- **Typed errors in the core,** with `anyhow` at the edges, because the FUSE adapter maps error kinds to error codes.
+- **Long-running service and desktop app concerns** have no home in the guidelines:
+  - a systemd user unit
+  - a D-Bus interface
+  - launcher entries, icons and AppStream metadata
+  - packaging that links system libraries
+
+  They are documented here, and could seed a "daemon + desktop app" chapter in the guidelines.
+- **The release pipeline** runs as specified for the CLI. The desktop app adds native packages (RPM, DEB, AUR) and
+  a Linux cask beside the Homebrew formula.

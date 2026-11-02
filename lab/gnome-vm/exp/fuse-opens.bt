@@ -1,0 +1,30 @@
+// Which process opens or reads files on ANY FUSE mount. Runs as root, but sees
+// the caller's comm/pid at the kernel's FUSE layer, i.e. what a FUSE daemon would
+// get from fuse_get_context(). fatrace (fanotify) sees none of these accesses on
+// a non-allow_other FUSE mount.
+//   O  open of a regular file    R  read (bytes requested)    D  opendir
+// Fields: time kind thread(pid) file [len@offset] process<-parent
+// (thread names like "blocking-1" say little; the process and parent do).
+kprobe:fuse_open
+{
+  $f = (struct file *)arg1;
+  printf("%s O %s(%d) %s/%s %s<-%s\n", strftime("%H:%M:%S", nsecs), comm, pid,
+    str($f->f_path.dentry->d_parent->d_name.name), str($f->f_path.dentry->d_name.name),
+    curtask->group_leader->comm, curtask->real_parent->comm);
+}
+kprobe:fuse_file_read_iter
+{
+  $k = (struct kiocb *)arg0;
+  $it = (struct iov_iter *)arg1;
+  printf("%s R %s(%d) %s/%s %d@%d %s<-%s\n", strftime("%H:%M:%S", nsecs), comm, pid,
+    str($k->ki_filp->f_path.dentry->d_parent->d_name.name),
+    str($k->ki_filp->f_path.dentry->d_name.name), $it->count, $k->ki_pos,
+    curtask->group_leader->comm, curtask->real_parent->comm);
+}
+kprobe:fuse_dir_open
+{
+  $f = (struct file *)arg1;
+  printf("%s D %s(%d) %s/%s %s<-%s\n", strftime("%H:%M:%S", nsecs), comm, pid,
+    str($f->f_path.dentry->d_parent->d_name.name), str($f->f_path.dentry->d_name.name),
+    curtask->group_leader->comm, curtask->real_parent->comm);
+}

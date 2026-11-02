@@ -1,0 +1,39 @@
+name: ci
+
+# main is gated by release.yml; this runs on every other branch and on pull requests.
+on:
+  push:
+    branches-ignore: [main]
+  pull_request:
+
+jobs:
+  gate:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: dtolnay/rust-toolchain@stable
+        with:
+          components: clippy
+          targets: aarch64-apple-darwin
+      - name: clippy (warnings are errors)
+        run: cargo clippy --workspace --exclude immich-mount-gnome --exclude immich-mount-kde --all-targets -- -D warnings
+      - name: tests
+        run: cargo test --workspace --exclude immich-mount-gnome --exclude immich-mount-kde
+      - name: the core stays portable
+        run: cargo check -p immich-api -p immich-mount-core --no-default-features --target aarch64-apple-darwin
+
+  fedora-apps:
+    # The desktop apps need newer libraries than Ubuntu's (GTK 4.18, libadwaita 1.8 and blueprint-compiler for GNOME;
+    # Qt 6 for KDE), so they are checked in the distribution they are developed against.
+    runs-on: ubuntu-latest
+    container: fedora:44
+    steps:
+      - name: Build dependencies
+        run: |
+          dnf install -y -q git gcc gcc-c++ cargo rust clippy gtk4-devel libadwaita-devel blueprint-compiler \
+            qt6-qtbase-devel qt6-qtdeclarative-devel
+      - uses: actions/checkout@v5
+      - name: Green gate for the apps - clippy (warnings are errors) and tests
+        run: |
+          cargo clippy -p immich-mount-gnome -p immich-mount-kde --all-targets -- -D warnings
+          cargo test -p immich-mount-gnome -p immich-mount-kde

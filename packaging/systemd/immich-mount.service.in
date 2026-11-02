@@ -1,0 +1,12 @@
+[Unit]
+Description=Immich Mount: your Immich photos and videos as a drive
+Documentation=https://github.com/jakobhviid/immich-mount
+
+[Service]
+Type=simple
+ExecStart=@BINDIR@/immich-mount daemon
+Restart=on-failure
+RestartSec=5
+
+[Install]
+WantedBy=default.target

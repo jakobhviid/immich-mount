@@ -1,0 +1,339 @@
+using Gtk 4.0;
+using Adw 1;
+
+template $ImmichMountWindow: Adw.ApplicationWindow {
+  title: _("Immich Mount");
+  default-width: 560;
+  default-height: 700;
+  width-request: 360;
+  height-request: 294;
+
+  content: Adw.ToastOverlay toasts {
+    child: Adw.NavigationView navigation {
+      Adw.NavigationPage {
+        tag: "connect";
+        title: _("Immich Mount");
+
+        child: Adw.ToolbarView {
+          [top]
+          Adw.HeaderBar {
+            [end]
+            MenuButton {
+              primary: true;
+              icon-name: "open-menu-symbolic";
+              tooltip-text: _("Main Menu");
+              menu-model: primary_menu;
+            }
+          }
+
+          content: Adw.StatusPage {
+            icon-name: "dev.hviid.ImmichMount";
+            title: _("Your Immich Library in Files");
+            description: _("Browse your photos and videos as a drive. Originals download only when you open them.");
+
+            child: Adw.Clamp {
+              maximum-size: 420;
+
+              child: Box {
+                orientation: vertical;
+                spacing: 24;
+
+                Adw.PreferencesGroup {
+                  Adw.EntryRow server_row {
+                    title: _("Server Address");
+                    input-purpose: url;
+                    entry-activated => $on_connect() swapped;
+                  }
+                }
+
+                Button connect_button {
+                  label: _("_Continue");
+                  use-underline: true;
+                  halign: center;
+                  clicked => $on_connect() swapped;
+
+                  styles [
+                    "pill",
+                    "suggested-action",
+                  ]
+                }
+              };
+            };
+          };
+        };
+      }
+
+      Adw.NavigationPage {
+        tag: "sign-in";
+        title: _("Sign In");
+
+        child: Adw.ToolbarView {
+          [top]
+          Adw.HeaderBar {}
+
+          content: Adw.PreferencesPage {
+            Adw.PreferencesGroup browser_group {
+              description: _("Opens your browser, where you sign in as usual, with a passkey or a password manager.");
+
+              Button browser_button {
+                halign: center;
+                clicked => $on_browser_sign_in() swapped;
+
+                styles [
+                  "pill",
+                  "suggested-action",
+                ]
+              }
+            }
+
+            Adw.PreferencesGroup password_group {
+              title: _("Email and Password");
+              description: _("For two-factor sign-in, use your server's single sign-on instead.");
+
+              Adw.EntryRow email_row {
+                title: _("Email");
+                input-purpose: email;
+              }
+
+              Adw.PasswordEntryRow password_row {
+                title: _("Password");
+                entry-activated => $on_password_sign_in() swapped;
+              }
+
+              Adw.ButtonRow password_button {
+                title: _("Sign _In");
+                use-underline: true;
+                activated => $on_password_sign_in() swapped;
+              }
+            }
+
+            Adw.PreferencesGroup {
+              Adw.ExpanderRow {
+                title: _("Use an API Key Instead");
+                subtitle: _("For read-only access, or machines without a browser");
+
+                Adw.PasswordEntryRow api_key_row {
+                  title: _("API Key");
+                  entry-activated => $on_api_key_sign_in() swapped;
+                }
+
+                Adw.ButtonRow {
+                  title: _("Sign In With _Key");
+                  use-underline: true;
+                  activated => $on_api_key_sign_in() swapped;
+                }
+              }
+            }
+          };
+        };
+      }
+
+      Adw.NavigationPage {
+        tag: "setup";
+        title: _("Your Library in Files");
+        can-pop: false;
+
+        child: Adw.ToolbarView {
+          [top]
+          Adw.HeaderBar {}
+
+          content: Adw.PreferencesPage {
+            Adw.PreferencesGroup {
+              title: _("Sections");
+              description: _("The folders the drive shows. You can change this later in Preferences.");
+
+              Adw.SwitchRow photos_switch {
+                title: _("Photos");
+                subtitle: _("The timeline, by year and month. New files copied here are uploaded");
+              }
+
+              Adw.SwitchRow albums_switch {
+                title: _("Albums");
+              }
+
+              Adw.SwitchRow people_switch {
+                title: _("People");
+              }
+
+              Adw.SwitchRow places_switch {
+                title: _("Places");
+              }
+            }
+
+            Adw.PreferencesGroup {
+              title: _("Location");
+
+              Adw.EntryRow location_row {
+                title: _("Folder");
+              }
+            }
+
+            Adw.PreferencesGroup {
+              Button {
+                label: _("_Open in Files");
+                use-underline: true;
+                halign: center;
+                clicked => $on_setup_done() swapped;
+
+                styles [
+                  "pill",
+                  "suggested-action",
+                ]
+              }
+            }
+          };
+        };
+      }
+
+      Adw.NavigationPage {
+        tag: "status";
+        title: _("Immich Mount");
+        can-pop: false;
+
+        child: Adw.ToolbarView {
+          [top]
+          Adw.HeaderBar {
+            [end]
+            MenuButton {
+              primary: true;
+              icon-name: "open-menu-symbolic";
+              tooltip-text: _("Main Menu");
+              menu-model: primary_menu;
+            }
+          }
+
+          content: Adw.StatusPage status_page {
+            icon-name: "dev.hviid.ImmichMount";
+            title: _("Your Library Is in Files");
+
+            child: Adw.Clamp {
+              maximum-size: 420;
+
+              child: Box {
+                orientation: vertical;
+                spacing: 24;
+
+                Button {
+                  label: _("_Open in Files");
+                  use-underline: true;
+                  halign: center;
+                  clicked => $on_open_in_files() swapped;
+
+                  styles [
+                    "pill",
+                    "suggested-action",
+                  ]
+                }
+
+                Adw.PreferencesGroup sign_in_again_group {
+                  visible: false;
+
+                  Adw.ButtonRow {
+                    title: _("Sign In _Again");
+                    use-underline: true;
+                    activated => $on_sign_in_again() swapped;
+
+                    styles [
+                      "suggested-action",
+                    ]
+                  }
+                }
+
+                Adw.PreferencesGroup {
+                  Adw.ActionRow server_status_row {
+                    title: _("Server");
+
+                    styles [
+                      "property",
+                    ]
+                  }
+
+                  Adw.ActionRow email_status_row {
+                    title: _("Account");
+                    visible: false;
+
+                    styles [
+                      "property",
+                    ]
+                  }
+
+                  Adw.ActionRow account_row {
+                    title: _("Credential");
+
+                    styles [
+                      "property",
+                    ]
+                  }
+
+                  Adw.ActionRow connection_row {
+                    title: _("Connection");
+
+                    styles [
+                      "property",
+                    ]
+                  }
+
+                  Adw.ActionRow cache_row {
+                    title: _("Cache");
+
+                    styles [
+                      "property",
+                    ]
+                  }
+
+                  Adw.ActionRow mount_row {
+                    title: _("Location");
+
+                    styles [
+                      "property",
+                    ]
+                  }
+
+                  Adw.ActionRow uploads_row {
+                    title: _("Uploading");
+                    visible: false;
+
+                    styles [
+                      "property",
+                    ]
+                  }
+                }
+
+                Adw.PreferencesGroup {
+                  Adw.ButtonRow {
+                    title: _("_Disconnect");
+                    use-underline: true;
+                    activated => $on_disconnect() swapped;
+
+                    styles [
+                      "destructive-action",
+                    ]
+                  }
+                }
+              };
+            };
+          };
+        };
+      }
+    };
+  };
+}
+
+menu primary_menu {
+  section {
+    item {
+      label: _("_Preferences");
+      action: "app.preferences";
+    }
+
+    item {
+      label: _("_Keyboard Shortcuts");
+      action: "app.shortcuts";
+    }
+
+    item {
+      label: _("_About Immich Mount");
+      action: "app.about";
+    }
+  }
+}

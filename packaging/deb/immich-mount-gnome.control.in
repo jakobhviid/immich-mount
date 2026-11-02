@@ -1,0 +1,16 @@
+Package: immich-mount-gnome
+Version: @VERSION@
+Architecture: @ARCH@
+Maintainer: Jakob Hviid <jakob@hviid.phd>
+Depends: immich-mount (= @VERSION@), libgtk-4-1 (>= 4.18), libadwaita-1-0 (>= 1.8), desktop-file-utils
+Section: utils
+Priority: optional
+Homepage: https://github.com/jakobhviid/immich-mount
+Description: Immich Mount for GNOME: sign in, status and settings for the Immich drive in Files
+ Signs in to a self-hosted Immich server (single sign-on in the browser, email and
+ password, or an API key), keeps the credential in the keyring, and starts the mount
+ that shows the library in Files.
+ .
+ Immich Mount is an independent, unofficial project. It is not affiliated with,
+ endorsed by, or sponsored by the Immich project or FUTO. "Immich" is used only to
+ describe the server this software works with, and remains the mark of its owner.

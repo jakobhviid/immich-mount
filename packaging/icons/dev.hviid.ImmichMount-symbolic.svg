@@ -1,0 +1,6 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 16 16">
+  <!-- Immich Mount, symbolic: the drive and its lens. GTK and KDE both recolour it to the text colour. -->
+  <style id="current-color-scheme">.ColorScheme-Text { color: #2e3436; }</style>
+  <path class="ColorScheme-Text" fill="currentColor" fill-rule="evenodd" d="M4.5 1.5h7a3 3 0 0 1 3 3v7a3 3 0 0 1-3 3h-7a3 3 0 0 1-3-3v-7a3 3 0 0 1 3-3z
+    M12 7a4 4 0 1 1-8 0a4 4 0 1 1 8 0z M10.5 7a2.5 2.5 0 1 1-5 0a2.5 2.5 0 1 1 5 0z M1.5 11.5h13v1h-13z"/>
+</svg>

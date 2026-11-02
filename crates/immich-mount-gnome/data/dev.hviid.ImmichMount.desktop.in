@@ -1,0 +1,13 @@
+[Desktop Entry]
+Name=Immich Mount
+Comment=Your Immich photos and videos as a drive in Files
+Keywords=Immich;photos;videos;drive;mount;
+Exec=@BINDIR@/immich-mount-gnome %u
+Icon=dev.hviid.ImmichMount
+Terminal=false
+Type=Application
+Categories=GTK;GNOME;Utility;
+# On Plasma the KDE app (dev.hviid.ImmichMount.Kde) takes its place.
+NotShowIn=KDE;
+StartupNotify=true
+MimeType=x-scheme-handler/app.immich;

@@ -1,0 +1,17 @@
+[package]
+name = "immich-mount-gnome"
+description = "Immich Mount for GNOME: sign-in, status and settings for the Immich drive in Files"
+version.workspace = true
+edition.workspace = true
+license.workspace = true
+homepage.workspace = true
+repository.workspace = true
+
+[dependencies]
+immich-api = { path = "../immich-api" }
+immich-mount-core = { path = "../immich-mount-core" }
+immich-mount-linux = { path = "../immich-mount-linux" }
+immich-mount-desktop = { path = "../immich-mount-desktop" }
+gtk = { package = "gtk4", version = "0.11", features = ["v4_18", "blueprint"] }
+adw = { package = "libadwaita", version = "0.9", features = ["v1_8"] }
+tokio = { version = "1", features = ["rt-multi-thread"] }

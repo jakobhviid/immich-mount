@@ -1,0 +1,28 @@
+[package]
+name = "immich-mount-core"
+description = "The portable logic behind Immich Mount: library model, naming, membership, caches, uploads, settings"
+version.workspace = true
+edition.workspace = true
+license.workspace = true
+homepage.workspace = true
+repository.workspace = true
+
+[dependencies]
+immich-api = { path = "../immich-api", default-features = false }
+chrono = { version = "0.4", default-features = false, features = ["std", "clock", "serde"] }
+serde = { version = "1", features = ["derive"] }
+serde_json = "1"
+unicode-normalization = "0.1"
+toml_edit = "0.22"
+thiserror = "2"
+tokio = { version = "1", features = ["sync"] }
+redb = "4"
+log = "0.4"
+futures-util = { version = "0.3", default-features = false, features = ["std"] }
+sha2 = "0.10"
+base64 = "0.22"
+getrandom = { version = "0.3", features = ["std"] }
+
+[dev-dependencies]
+tokio = { version = "1", features = ["rt", "macros", "sync"] }
+tempfile = "3"

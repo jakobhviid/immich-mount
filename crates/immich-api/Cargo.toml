@@ -1,0 +1,31 @@
+[package]
+name = "immich-api"
+description = "Typed client for the Immich REST API, as used by Immich Mount"
+version.workspace = true
+edition.workspace = true
+license.workspace = true
+homepage.workspace = true
+repository.workspace = true
+
+[dependencies]
+# rustls with the system trust store; no OpenSSL. `http2` lets TLS servers negotiate one shared HTTP/2 connection.
+reqwest = { version = "0.12", default-features = false, features = ["http2", "json", "stream", "multipart"] }
+tokio = { version = "1", features = ["time", "fs", "io-util"] }
+serde = { version = "1", features = ["derive"] }
+serde_json = "1"
+thiserror = "2"
+url = "2"
+bytes = "1"
+futures-util = { version = "0.3", default-features = false, features = ["std"] }
+chrono = { version = "0.4", default-features = false, features = ["std"] }
+sha1 = "0.10"
+base64 = "0.22"
+
+[features]
+# TLS is a feature only so the portability check (`--no-default-features --target aarch64-apple-darwin`) can skip
+# ring's C code, which does not cross-compile on Linux. Every binary uses the default.
+default = ["tls"]
+tls = ["reqwest/rustls-tls-native-roots"]
+
+[dev-dependencies]
+tokio = { version = "1", features = ["macros", "rt-multi-thread", "net", "time", "fs", "io-util"] }

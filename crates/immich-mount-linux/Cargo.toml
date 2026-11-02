@@ -1,0 +1,26 @@
+[package]
+name = "immich-mount-linux"
+description = "The Linux adapter for Immich Mount: FUSE, freedesktop thumbnails, Secret Service, notifications, D-Bus"
+version.workspace = true
+edition.workspace = true
+license.workspace = true
+homepage.workspace = true
+repository.workspace = true
+
+[dependencies]
+immich-mount-core = { path = "../immich-mount-core" }
+fuser = "0.18"
+zbus = { version = "5", default-features = false, features = ["tokio"] }
+oo7 = { version = "0.6", default-features = false, features = ["tokio", "native_crypto"] }
+libc = "0.2"
+tokio = { version = "1", features = ["rt-multi-thread", "macros", "time", "sync", "signal", "fs"] }
+serde = { version = "1", features = ["derive"] }
+chrono = { version = "0.4", default-features = false, features = ["std", "clock"] }
+log = "0.4"
+thiserror = "2"
+image = { version = "0.25", default-features = false, features = ["webp", "jpeg", "png"] }
+png = "0.18"
+md-5 = "0.11"
+
+[dev-dependencies]
+tempfile = "3"

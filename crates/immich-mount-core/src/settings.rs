@@ -1,0 +1,281 @@
+//! The settings table: one source of truth for every user setting.
+//!
+//! `immich-mount configure` and the desktop app's settings dialog both read this table, so they can never disagree
+//! about which settings exist or what values are valid (ARCHITECTURE.md, "The desktop app"). Settings live in
+//! `config.toml`. Reading is lenient: unknown keys are ignored. Writing goes through `toml_edit`, so comments and
+//! the user's own layout survive.
+
+use toml_edit::{value, DocumentMut, Item, Table};
+
+use crate::layout::{AlbumLayout, GroupingMode};
+use crate::naming::FileNaming;
+
+/// The config file format this build writes. Older files are migrated once on load.
+pub const CONFIG_FORMAT_VERSION: i64 = 1;
+
+/// The kind of value a setting takes.
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub enum Kind {
+    Bool,
+    /// Free text, such as a URL.
+    Text,
+    /// A file system path; `~` is expanded by the caller.
+    Path,
+    /// A size such as `10GiB`.
+    Size,
+    /// One of a fixed set of words.
+    Choice(&'static [&'static str]),
+}
+
+/// One user setting.
+#[derive(Debug, Clone, Copy)]
+pub struct Setting {
+    /// Dotted key, mirroring the TOML path.
+    pub key: &'static str,
+    pub kind: Kind,
+    /// A one-line description, shown by `configure list` and as the settings dialog's subtitle.
+    pub description: &'static str,
+    /// The default, as text. Empty means "not set".
+    pub default: &'static str,
+}
+
+const GROUPING_CHOICES: &[&str] = &["never", "atLeast500", "always"];
+
+/// Every setting, in display order.
+pub const SETTINGS: &[Setting] = &[
+    Setting { key: "server.url", kind: Kind::Text, description: "The Immich server; /api is added", default: "" },
+    Setting { key: "mount.path", kind: Kind::Path, description: "Where the mount appears", default: "~/Immich" },
+    Setting { key: "mount.at_login", kind: Kind::Bool, description: "Mount when the session starts", default: "true" },
+    Setting { key: "sections.photos", kind: Kind::Bool, description: "Show the Photos section", default: "true" },
+    Setting { key: "sections.albums", kind: Kind::Bool, description: "Show the Albums section", default: "true" },
+    Setting { key: "sections.people", kind: Kind::Bool, description: "Show the People section", default: "true" },
+    Setting { key: "sections.places", kind: Kind::Bool, description: "Show the Places section", default: "true" },
+    Setting { key: "grouping.photos", kind: Kind::Choice(GROUPING_CHOICES), description: "Day folders inside months", default: "atLeast500" },
+    Setting { key: "grouping.albums", kind: Kind::Choice(GROUPING_CHOICES), description: "Year and month folders inside albums", default: "atLeast500" },
+    Setting { key: "grouping.people", kind: Kind::Choice(GROUPING_CHOICES), description: "Year and month folders inside people", default: "atLeast500" },
+    Setting { key: "grouping.places", kind: Kind::Choice(GROUPING_CHOICES), description: "Year and month folders inside cities", default: "atLeast500" },
+    Setting { key: "albums.layout", kind: Kind::Choice(&["year-prefix", "year-folders", "flat"]), description: "How album folders are named and grouped", default: "year-prefix" },
+    Setting { key: "files.naming", kind: Kind::Choice(&["date-time", "original"]), description: "How files are named", default: "date-time" },
+    Setting { key: "cache.limit", kind: Kind::Size, description: "The content cache's size limit", default: "10GiB" },
+    Setting { key: "uploads.enabled", kind: Kind::Bool, description: "Accept files copied into Photos", default: "true" },
+    Setting { key: "thumbnails.sharp", kind: Kind::Bool, description: "Also seed 1024 px thumbnails from the preview", default: "true" },
+    Setting { key: "thumbnails.safety_net", kind: Kind::Bool, description: "Refuse thumbnailer reads of originals", default: "true" },
+    Setting { key: "credential.file", kind: Kind::Path, description: "Headless only: a 0600 file holding the credential", default: "" },
+];
+
+/// Why a setting could not be read or changed.
+#[derive(Debug, thiserror::Error, PartialEq, Eq)]
+pub enum SettingError {
+    #[error("unknown setting `{0}` (see `immich-mount configure keys`)")]
+    UnknownKey(String),
+    #[error("`{key}` must be {expected}, not `{given}`")]
+    InvalidValue { key: String, expected: String, given: String },
+    #[error("the config file is not valid TOML: {0}")]
+    Unparsable(String),
+}
+
+/// Look a setting up by key.
+pub fn setting(key: &str) -> Result<&'static Setting, SettingError> {
+    SETTINGS.iter().find(|setting| setting.key == key).ok_or_else(|| SettingError::UnknownKey(key.to_string()))
+}
+
+/// Check that `given` is a valid value for `key`.
+pub fn validate(key: &str, given: &str) -> Result<(), SettingError> {
+    let setting = setting(key)?;
+    let invalid = |expected: String| SettingError::InvalidValue { key: key.to_string(), expected, given: given.to_string() };
+    match setting.kind {
+        Kind::Bool => given.parse::<bool>().map(|_| ()).map_err(|_| invalid("`true` or `false`".into())),
+        Kind::Text | Kind::Path => if given.trim().is_empty() { Err(invalid("non-empty".into())) } else { Ok(()) },
+        Kind::Size => parse_size(given).map(|_| ()).ok_or_else(|| invalid("a size such as `10GiB` or `500MiB`".into())),
+        Kind::Choice(choices) => if choices.contains(&given) { Ok(()) } else { Err(invalid(format!("one of {}", choices.join(", ")))) },
+    }
+}
+
+/// Parse a size: a whole number of bytes, or a number with `KiB`, `MiB`, `GiB` or `TiB`.
+pub fn parse_size(text: &str) -> Option<u64> {
+    let text = text.trim();
+    let units = [("TiB", 1u64 << 40), ("GiB", 1 << 30), ("MiB", 1 << 20), ("KiB", 1 << 10), ("B", 1)];
+    for (unit, multiplier) in units {
+        if let Some(number) = text.strip_suffix(unit) {
+            return number.trim().parse::<u64>().ok()?.checked_mul(multiplier);
+        }
+    }
+    text.parse().ok()
+}
+
+/// The effective settings, typed.
+#[derive(Debug, Clone, PartialEq)]
+pub struct Config {
+    pub server_url: Option<String>,
+    pub mount_path: String,
+    pub mount_at_login: bool,
+    pub show_photos: bool,
+    pub show_albums: bool,
+    pub show_people: bool,
+    pub show_places: bool,
+    pub grouping_photos: GroupingMode,
+    pub grouping_albums: GroupingMode,
+    pub grouping_people: GroupingMode,
+    pub grouping_places: GroupingMode,
+    pub album_layout: AlbumLayout,
+    pub file_naming: FileNaming,
+    pub cache_limit_bytes: u64,
+    pub uploads_enabled: bool,
+    pub sharp_thumbnails: bool,
+    pub thumbnail_safety_net: bool,
+    pub credential_file: Option<String>,
+}
+
+impl Config {
+    /// Read a config file's text. Unknown keys are ignored; a known key with an invalid value is an error.
+    pub fn from_toml(text: &str) -> Result<Config, SettingError> {
+        let document: DocumentMut = text.parse().map_err(|error: toml_edit::TomlError| SettingError::Unparsable(error.to_string()))?;
+        let effective = |key: &str| -> Result<String, SettingError> {
+            match read_value(&document, key) {
+                Some(given) => {
+                    validate(key, &given)?;
+                    Ok(given)
+                }
+                None => Ok(setting(key)?.default.to_string()),
+            }
+        };
+        let flag = |key: &str| -> Result<bool, SettingError> { Ok(effective(key)? == "true") };
+        let optional = |key: &str| -> Result<Option<String>, SettingError> {
+            let given = effective(key)?;
+            Ok(if given.is_empty() { None } else { Some(given) })
+        };
+        Ok(Config {
+            server_url: optional("server.url")?,
+            mount_path: effective("mount.path")?,
+            mount_at_login: flag("mount.at_login")?,
+            show_photos: flag("sections.photos")?,
+            show_albums: flag("sections.albums")?,
+            show_people: flag("sections.people")?,
+            show_places: flag("sections.places")?,
+            grouping_photos: grouping(&effective("grouping.photos")?),
+            grouping_albums: grouping(&effective("grouping.albums")?),
+            grouping_people: grouping(&effective("grouping.people")?),
+            grouping_places: grouping(&effective("grouping.places")?),
+            album_layout: match effective("albums.layout")?.as_str() {
+                "year-folders" => AlbumLayout::YearFolders,
+                "flat" => AlbumLayout::Flat,
+                _ => AlbumLayout::YearPrefix,
+            },
+            file_naming: if effective("files.naming")? == "original" { FileNaming::Original } else { FileNaming::DateTime },
+            cache_limit_bytes: parse_size(&effective("cache.limit")?).unwrap_or(10 << 30),
+            uploads_enabled: flag("uploads.enabled")?,
+            sharp_thumbnails: flag("thumbnails.sharp")?,
+            thumbnail_safety_net: flag("thumbnails.safety_net")?,
+            credential_file: optional("credential.file")?,
+        })
+    }
+}
+
+fn grouping(choice: &str) -> GroupingMode {
+    match choice {
+        "never" => GroupingMode::Never,
+        "always" => GroupingMode::Always,
+        _ => GroupingMode::AtLeast500,
+    }
+}
+
+/// The value stored for `key`, as text, if the file sets it.
+pub fn read_value(document: &DocumentMut, key: &str) -> Option<String> {
+    let (table, leaf) = key.split_once('.')?;
+    let item = document.get(table)?.get(leaf)?;
+    if let Some(flag) = item.as_bool() {
+        return Some(flag.to_string());
+    }
+    item.as_str().map(str::to_string)
+}
+
+/// The values a config file's text sets explicitly, by key. Keys the file does not set are absent.
+pub fn stored_values(text: &str) -> Result<std::collections::HashMap<&'static str, String>, SettingError> {
+    let document: DocumentMut = text.parse().map_err(|error: toml_edit::TomlError| SettingError::Unparsable(error.to_string()))?;
+    Ok(SETTINGS.iter().filter_map(|setting| read_value(&document, setting.key).map(|value| (setting.key, value))).collect())
+}
+
+/// Set `key` to `given` in a config file's text, keeping everything else as it was.
+pub fn set_value(text: &str, key: &str, given: &str) -> Result<String, SettingError> {
+    validate(key, given)?;
+    let mut document: DocumentMut = text.parse().map_err(|error: toml_edit::TomlError| SettingError::Unparsable(error.to_string()))?;
+    let (table_name, leaf) = key.split_once('.').expect("every setting key is dotted");
+    if document.get("version").is_none() {
+        document["version"] = value(CONFIG_FORMAT_VERSION);
+    }
+    if !document.contains_table(table_name) {
+        document[table_name] = Item::Table(Table::new());
+    }
+    document[table_name][leaf] = match setting(key)?.kind {
+        Kind::Bool => value(given == "true"),
+        _ => value(given),
+    };
+    Ok(document.to_string())
+}
+
+/// Remove `key` from a config file's text, so its default applies again.
+pub fn unset_value(text: &str, key: &str) -> Result<String, SettingError> {
+    setting(key)?;
+    let mut document: DocumentMut = text.parse().map_err(|error: toml_edit::TomlError| SettingError::Unparsable(error.to_string()))?;
+    let (table_name, leaf) = key.split_once('.').expect("every setting key is dotted");
+    if let Some(table) = document.get_mut(table_name).and_then(Item::as_table_mut) {
+        table.remove(leaf);
+    }
+    Ok(document.to_string())
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn every_default_is_valid() {
+        for setting in SETTINGS.iter().filter(|setting| !setting.default.is_empty()) {
+            assert_eq!(validate(setting.key, setting.default), Ok(()), "{}", setting.key);
+        }
+    }
+
+    #[test]
+    fn an_empty_file_gives_the_defaults() {
+        let config = Config::from_toml("").unwrap();
+        assert_eq!(config.mount_path, "~/Immich");
+        assert_eq!(config.album_layout, AlbumLayout::YearPrefix);
+        assert_eq!(config.file_naming, FileNaming::DateTime);
+        assert_eq!(config.grouping_photos, GroupingMode::AtLeast500);
+        assert_eq!(config.cache_limit_bytes, 10 << 30);
+        assert!(config.server_url.is_none());
+    }
+
+    #[test]
+    fn unknown_keys_are_ignored_and_invalid_values_are_reported() {
+        assert!(Config::from_toml("[old]\nthing = 1\n").is_ok());
+        let invalid = Config::from_toml("[albums]\nlayout = \"sideways\"\n");
+        assert!(matches!(invalid, Err(SettingError::InvalidValue { .. })));
+    }
+
+    #[test]
+    fn setting_a_value_keeps_comments_and_unsetting_restores_the_default() {
+        let original = "# my notes\n[server]\nurl = \"https://photos.example.org\" # home\n";
+        let updated = set_value(original, "albums.layout", "flat").unwrap();
+        assert!(updated.contains("# my notes"));
+        assert!(updated.contains("# home"));
+        assert_eq!(Config::from_toml(&updated).unwrap().album_layout, AlbumLayout::Flat);
+        let restored = unset_value(&updated, "albums.layout").unwrap();
+        assert_eq!(Config::from_toml(&restored).unwrap().album_layout, AlbumLayout::YearPrefix);
+    }
+
+    #[test]
+    fn values_are_validated_before_writing() {
+        assert!(matches!(set_value("", "files.naming", "camera"), Err(SettingError::InvalidValue { .. })));
+        assert!(matches!(set_value("", "no.such", "x"), Err(SettingError::UnknownKey(_))));
+        assert!(set_value("", "mount.at_login", "false").unwrap().contains("at_login = false"));
+    }
+
+    #[test]
+    fn sizes_parse_with_binary_units() {
+        assert_eq!(parse_size("10GiB"), Some(10 << 30));
+        assert_eq!(parse_size("500 MiB"), Some(500 << 20));
+        assert_eq!(parse_size("4096"), Some(4096));
+        assert_eq!(parse_size("ten"), None);
+    }
+}

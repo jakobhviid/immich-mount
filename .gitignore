@@ -1,0 +1,9 @@
+/target/
+*.swp
+.env.local
+lab/**/fixtures/cache/
+lab/**/screenshots/
+.claude/worktrees/
+# Written by cxx-qt-build for the QML language server, with absolute paths.
+.qmlls.ini
+lab/**/evidence/
