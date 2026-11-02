@@ -68,8 +68,16 @@ sed "s|@BINDIR@|$HOME/.local/bin|" crates/immich-mount-kde/data/dev.hviid.Immich
 xdg-mime default dev.hviid.ImmichMount.Kde.desktop x-scheme-handler/app.immich
 ```
 
-**Coming:** Homebrew (`brew install jakobhviid/tap/immich-mount`), COPR for Fedora, and the AUR. Until then, the
-release files above are the way in.
+**Homebrew** (any Linux, x86_64 or ARM): the daemon and CLI. FUSE comes from your distribution (`sudo dnf install
+fuse3` or `sudo apt install fuse3`), and `brew services` runs the daemon in place of the packages' user unit:
+
+```sh
+brew install jakobhviid/tap/immich-mount
+immich-mount login --server https://photos.example.org
+brew services start immich-mount
+```
+
+**Coming:** COPR for Fedora, and the AUR.
 
 Requirements: `fusermount3` (package `fuse3`) and a keyring (GNOME Keyring or KWallet) for normal use. The app needs
 the current or previous GNOME release.
@@ -207,7 +215,8 @@ Logs: `journalctl --user -u immich-mount`.
   - every thumbnail the daemon seeded
   - the mount's place in Dolphin's Places, on KDE
 
-  It also turns the user service off, which would otherwise fail at every login without a credential. After the
+  It also turns the user service off (Homebrew's too), which would otherwise fail at every login without a
+  credential. After the
   next `immich-mount login`, `systemctl --user enable --now immich-mount` turns it on again (the apps do that at
   their first-run setup).
 - Settings are kept, and so are files that could not be uploaded (`~/.local/share/immich-mount/not-uploaded/`).

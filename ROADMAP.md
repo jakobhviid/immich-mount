@@ -95,8 +95,8 @@ The adversarial review found three ways to lose or corrupt data, all fixed and r
 second close starting or skipping the upload (fixed: per-handle, every close gets the result), hidden photo names
 staged and dropped, and receipts reading back empty; plus rename under the folder lock, cut-short copies (now
 refused by the file's own structure, and for killed writers), renames onto Assets' names, and leaked staging
-files. Notifications for refused, failed and long uploads are built, and show on GNOME 50. M3's exit criteria are met; what remains is watching a
-Cancel in Files' progress popover by hand.
+files. Notifications for refused, failed and long uploads are built, and show on GNOME 50. M3's exit criteria are
+met; what remains is watching a Cancel in Files' progress popover by hand.
 
 ## M4. The GNOME app
 
@@ -130,19 +130,20 @@ libadwaita 1.9), built in an `ubuntu:26.04` job and tested by installing in a co
 - **README screenshots** of how it looks and works, taken in the GNOME VM: the Immich volume in the Files sidebar,
   a month with thumbnails, an album, the app's first run and status page. AppStream reuses them.
 - AppStream metadata.
-- **Going public:** the history squashed into a single 1.0.0 commit, the repository made public, and GitHub's
-  private vulnerability reporting turned on (SECURITY.md points to it).
-- **After going public:** the Homebrew formula and Linux cask in the maintainer's tap (`jakobhviid/homebrew-tap`),
-  then COPR and the AUR.
+- **Public (2026-11-02):** the history is a single 1.0.0 commit, the repository is public, and GitHub's private
+  vulnerability reporting is on (SECURITY.md points to it).
+- **Homebrew: the formula is built.** The release workflow renders `ci/immich-mount.rb.tmpl` with an x86_64 Linux
+  bottle and pushes it to the maintainer's tap (`jakobhviid/homebrew-tap`), whose gate installs and tests it before
+  it lands. Not built: a Linux cask for the apps. Next: COPR and the AUR.
 - An independent adversarial review before tagging.
 
 ## M6. KDE edition
 
 - **Built:** the Kirigami app (`immich-mount-kde`) for sign-in, first-run setup, status and preferences, with "Show
-  thumbnails" for Dolphin and an About page, packaged for Fedora 44 and Kubuntu 26.04. The mount works in Dolphin, and with
-  previews allowed Dolphin shows the seeded thumbnails without reading originals; Dolphin's search crawl and KDE's
-  thumbnail worker are recognised. KWallet works through the Secret Service
-  (`ksecretd`): sign-in stored there and the daemon mounted from it.
+  thumbnails" for Dolphin and an About page, packaged for Fedora 44 and Kubuntu 26.04. The mount works in Dolphin,
+  and with previews allowed Dolphin shows the seeded thumbnails without reading originals; Dolphin's search crawl and
+  KDE's thumbnail worker are recognised. KWallet works through the Secret Service (`ksecretd`): sign-in stored there
+  and the daemon mounted from it.
 
 Exit: a fresh Plasma VM on Erebus goes from install to a working mount in Dolphin.
 

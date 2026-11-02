@@ -1,7 +1,7 @@
 name: release
 
 # The house release pipeline, adapted: Linux musl builds of the daemon and CLI, the desktop apps' packages, and a
-# GitHub release. The Homebrew tap update comes once the repository is public (ROADMAP, M5).
+# GitHub release, and the formula in the Homebrew tap (jakobhviid/homebrew-tap).
 
 on:
   push:
@@ -244,6 +244,22 @@ jobs:
         run: |
           VERSION=$(git log --reverse --format='%H%x09%s' | awk -F'\t' 'BEGIN{maj=1;min=0;pat=0}NR==1{next}{s=$2;if(s~/^[A-Za-z]+(\([^)]*\))?!:/){maj++;min=0;pat=0}else if(s~/^feat(\([^)]*\))?:/){min++;pat=0}else{pat++}}END{print maj"."min"."pat}')
           echo "VERSION=$VERSION" >> "$GITHUB_ENV"
+      - name: Homebrew bottle (x86_64 Linux)
+        run: |
+          # The prebuilt binary as a bottle, so `brew install` pours it. A poured bottle skips the formula's install,
+          # so the keg holds what install would make: the binary, its man page and the completions.
+          keg="immich-mount/${VERSION}"
+          stage=bottlestage
+          mkdir -p "$stage/$keg/bin" "$stage/$keg/share/man/man1" "$stage/$keg/share/zsh/site-functions" \
+            "$stage/$keg/share/bash-completion/completions" "$stage/$keg/share/fish/vendor_completions.d"
+          tar xzf art/immich-mount-x86_64-unknown-linux-musl.tar.gz -C "$stage/$keg/bin" ./immich-mount
+          bin="$stage/$keg/bin/immich-mount"
+          "$bin" --man > "$stage/$keg/share/man/man1/immich-mount.1"
+          "$bin" completions zsh > "$stage/$keg/share/zsh/site-functions/_immich-mount"
+          "$bin" completions bash > "$stage/$keg/share/bash-completion/completions/immich-mount"
+          "$bin" completions fish > "$stage/$keg/share/fish/vendor_completions.d/immich-mount.fish"
+          ( cd "$stage" && tar czf "../art/immich-mount-${VERSION}.x86_64_linux.bottle.tar.gz" immich-mount )
+          echo "BOTTLE_SHA=$(sha256sum "art/immich-mount-${VERSION}.x86_64_linux.bottle.tar.gz" | awk '{print $1}')" >> "$GITHUB_ENV"
       - name: Publish release
         env:
           GH_TOKEN: ${{ github.token }}
@@ -258,3 +274,31 @@ jobs:
           for tag in $(gh release list --json tagName,createdAt -q 'sort_by(.createdAt) | reverse | .[10:] | .[].tagName'); do
             gh release delete "$tag" --cleanup-tag -y || true
           done
+      - name: Update Homebrew tap
+        env:
+          TAP_DEPLOY_KEY: ${{ secrets.TAP_DEPLOY_KEY }}
+        run: |
+          if [ -z "$TAP_DEPLOY_KEY" ]; then
+            echo "::warning::TAP_DEPLOY_KEY not set: released, but the tap is not updated."
+            exit 0
+          fi
+          mkdir -p ~/.ssh
+          printf '%s\n' "$TAP_DEPLOY_KEY" > ~/.ssh/id_ed25519
+          chmod 600 ~/.ssh/id_ed25519
+          ssh-keyscan -t ed25519 github.com >> ~/.ssh/known_hosts 2>/dev/null
+          export GIT_SSH_COMMAND="ssh -i ~/.ssh/id_ed25519 -o IdentitiesOnly=yes"
+          x=$(sha256sum art/immich-mount-x86_64-unknown-linux-musl.tar.gz | awk '{print $1}')
+          a=$(sha256sum art/immich-mount-aarch64-unknown-linux-musl.tar.gz | awk '{print $1}')
+          sed -e "s/@VERSION@/${VERSION}/g" -e "s/@BOTTLE_SHA@/${BOTTLE_SHA}/g" -e "s/@X86_SHA@/${x}/g" -e "s/@ARM_SHA@/${a}/g" \
+            ci/immich-mount.rb.tmpl > /tmp/immich-mount.rb
+          git clone git@github.com:jakobhviid/homebrew-tap tap
+          mkdir -p tap/Formula
+          cp /tmp/immich-mount.rb tap/Formula/immich-mount.rb
+          cd tap
+          git config user.name "tap-bot"
+          git config user.email "tap-bot@users.noreply.github.com"
+          git add Formula/immich-mount.rb
+          git commit -m "immich-mount ${VERSION}" || { echo "no formula change"; exit 0; }
+          # To a candidate branch, not main: the tap's gate installs and tests the formula on every platform it
+          # claims and lands it only if it passes, opening an issue there if not. Force: the branch holds one candidate.
+          git push --force origin "HEAD:refs/heads/auto/formula-immich-mount"

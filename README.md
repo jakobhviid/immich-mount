@@ -59,6 +59,7 @@ Download the packages for your system from the
 | Fedora 44 | `immich-mount-*.x86_64.rpm`, plus `immich-mount-gnome-*.rpm` (GNOME) or `immich-mount-kde-*.rpm` (KDE Plasma) |
 | Ubuntu 26.04, Kubuntu 26.04 | `immich-mount_*.deb`, plus `immich-mount-gnome_*.deb` or `immich-mount-kde_*.deb` |
 | Fedora 43, Ubuntu 24.04, Debian 13 | `immich-mount` (.rpm or .deb): the mount and the command line, without the desktop app |
+| Any Linux, with Homebrew | `brew install jakobhviid/tap/immich-mount`: the mount and the command line |
 | Any other Linux | `immich-mount-*-linux-musl.tar.gz`, a static binary with its user service |
 
 ```sh
@@ -110,7 +111,7 @@ Immich server, and the packages install and remove cleanly on Fedora 43 and 44, 
 Debian 13. Releases follow semantic versioning: a change that breaks settings or behaviour bumps the major
 version.
 
-Not there yet: packages in COPR, the AUR and Homebrew, a Flatpak, and a macOS edition. [ROADMAP.md](ROADMAP.md) has
+Not there yet: packages in COPR and the AUR, a Flatpak, and a macOS edition. [ROADMAP.md](ROADMAP.md) has
 the plans and the open questions.
 
 ## Documentation

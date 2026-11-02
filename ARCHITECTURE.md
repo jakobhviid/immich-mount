@@ -503,7 +503,7 @@ there and failure records for search hits that were never seeded, since those UR
 **The upload runs inside FUSE `FLUSH`, which is what `close()` waits on.**
 - `close()` returns success only after the server has the file, and GIO checks the result of closing the
   destination before it deletes a moved file's source.
-- So a move into Photos can never lose its source early (principle 6), in a program that checks its `close()`.
+- So a move into Photos never loses its source early, in a program that checks its `close()` (principle 6).
   KIO, Dolphin's file layer, does not: in a Plasma 6.8 VM a move whose upload failed still deleted its source, since
   KIO counts the permissions it then cannot set as a mere warning. Hence the not-uploaded folder ("After a failed
   upload", below).
@@ -860,8 +860,10 @@ Each platform gets a native app that looks and reads like a first-party app (pri
   - the clippy gate and the tests run first; the build needs them
   - static musl builds for x86_64 and aarch64
   - releases pruned to the last ten
-  - once the repository is public, not built yet: a Homebrew formula in the maintainer's tap
-    (`jakobhviid/homebrew-tap`), and `install.sh` for headless machines
+  - the Homebrew formula (`ci/immich-mount.rb.tmpl`) with an x86_64 Linux bottle, pushed to a candidate branch of the
+    maintainer's tap (`jakobhviid/homebrew-tap`), whose gate installs and tests it before it lands; `brew services`
+    runs the daemon as `homebrew.immich-mount.service`, which `logout` turns off like the packages' unit
+  - not built yet: `install.sh` for headless machines
 - **The GNOME app** links the system's GTK 4 and libadwaita, so it ships through the native packages and the cask,
   not as a static bottle.
 - **The KDE app** links the system's Qt 6 and loads Kirigami and the KDE style as QML modules, so its packages name

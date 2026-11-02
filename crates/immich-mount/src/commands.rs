@@ -202,6 +202,9 @@ pub struct LogoutReport {
     pub removed: Vec<PathBuf>,
 }
 
+/// The user services that run the daemon: the packages' own, and Homebrew's (`brew services`).
+const USER_SERVICES: [&str; 2] = ["immich-mount.service", "homebrew.immich-mount.service"];
+
 /// Unmount, remove every seeded thumbnail, then the credential and every cache. Settings are kept. The caller ends
 /// the session on the server first, while the credential still exists.
 ///
@@ -214,7 +217,9 @@ pub fn logout(paths: &Paths, session_ended: bool) -> Result<LogoutReport> {
     if state != mounts::MountState::NotMounted {
         mounts::unmount(&mount_point, state == mounts::MountState::Stale).map_err(anyhow::Error::msg)?;
     }
-    let _ = std::process::Command::new("systemctl").args(["--user", "stop", "immich-mount.service"]).output();
+    for unit in USER_SERVICES {
+        let _ = std::process::Command::new("systemctl").args(["--user", "stop", unit]).output();
+    }
 
     // Dolphin's place for the mount goes with it (the KDE app added it at setup).
     if let Err(error) = immich_mount_linux::kde::remove_place(paths, &mount_point) {
@@ -262,7 +267,9 @@ pub fn logout(paths: &Paths, session_ended: bool) -> Result<LogoutReport> {
     }
     // Signed out, the daemon can only fail at every start, and its unit restarts on failure, so the unit goes off too.
     // The next `immich-mount login` says how to turn it on again; the apps do it at their first-run setup.
-    let _ = std::process::Command::new("systemctl").args(["--user", "disable", "immich-mount.service"]).output();
+    for unit in USER_SERVICES {
+        let _ = std::process::Command::new("systemctl").args(["--user", "disable", unit]).output();
+    }
     Ok(LogoutReport { session_ended, unmounted: state != mounts::MountState::NotMounted, seeded_thumbnails_removed, keyring_item_removed, removed })
 }
 
