@@ -24,8 +24,10 @@ first, and ARCHITECTURE.md is updated with the reason.
 5. **Mutations are explicit and honest.** An outcome that cannot be confirmed is reported as uncertain and checked,
    never replayed blindly.
 
-6. **A move never loses its source early.** A file moved into Photos is uploaded before `close()` returns
-   success, so the source is removed only after the server has it.
+6. **A move never loses a photo.** A file moved into Photos is uploaded before `close()` returns success, so a
+   program that checks it removes the source only after the server has the file. A program that does not (Dolphin's
+   KIO deletes the source anyway) still loses nothing: a file that was not uploaded is kept, never deleted.
+   *Earned by:* a failed move in Dolphin, which deleted its source while the upload had been refused.
 
 7. **Least privilege where the user wants it.** An API key with read-only permissions is enough to browse and open
    files. Uploads need the server's permission, and the app's own switches gate them.

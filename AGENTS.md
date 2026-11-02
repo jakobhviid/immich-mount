@@ -32,8 +32,6 @@ in ARCHITECTURE.md, "Note for the house guidelines".
   Platform specifics go in adapters, behind traits.
 - **Keep a future Flatpak possible.** Every design change states its Flatpak impact against the readiness rules in
   ARCHITECTURE.md.
-- **The repository is private** until the maintainer publishes it. Do not create public repositories, releases,
-  packages or gists from this code.
 
 ## The docs, and which one to change
 
