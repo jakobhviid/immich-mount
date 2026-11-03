@@ -51,3 +51,38 @@ snapshot_fresh() {
   inc snapshot create --project "$P" "$1" "$FRESH_SNAPSHOT" </dev/null
   inc start --project "$P" "$1" </dev/null
 }
+
+# Custom volumes, for VMs that boot from one (the Bazzite VMs, from a copy of a kept base disk): the same expiry and
+# the same fresh snapshot, held by the volume. A volume is restored while its VM is stopped.
+POOL=${POOL:-local}
+
+renew_volume() { inc storage volume set "$POOL" "$1" user.expires="$(expires_at)" --project "$P" </dev/null; }
+
+# Delete the project's expired custom volumes, never a kept one or one an instance still uses.
+sweep_expired_volumes() {
+  local now name expires
+  now=$(date -u +%s)
+  for name in $(inc storage volume list "$POOL" type=custom --project "$P" -f csv -c n </dev/null 2>/dev/null); do
+    case "$name" in ind-*) ;; *) continue ;; esac
+    [ "$(inc storage volume get "$POOL" "$name" user.keep --project "$P" </dev/null 2>/dev/null)" = true ] && continue
+    expires=$(inc storage volume get "$POOL" "$name" user.expires --project "$P" </dev/null 2>/dev/null)
+    [ -n "$expires" ] || continue
+    if [ "$(date -u -d "$expires" +%s 2>/dev/null || echo "$now")" -lt "$now" ]; then
+      inc storage volume delete "$POOL" "$name" --project "$P" </dev/null 2>/dev/null && step "deleted volume $name (expired $expires)"
+    fi
+  done
+}
+
+has_fresh_volume() {
+  inc storage volume snapshot list "$POOL" "custom/$1" --project "$P" -f csv,noheader -c n </dev/null 2>/dev/null | grep -qx "$FRESH_SNAPSHOT"
+}
+
+restore_fresh_volume() {
+  inc storage volume snapshot restore "$POOL" "$1" "$FRESH_SNAPSHOT" --project "$P" </dev/null
+  renew_volume "$1"
+}
+
+snapshot_fresh_volume() {
+  inc storage volume snapshot delete "$POOL" "$1" "$FRESH_SNAPSHOT" --project "$P" </dev/null 2>/dev/null || true
+  inc storage volume snapshot create "$POOL" "$1" "$FRESH_SNAPSHOT" --project "$P" </dev/null
+}

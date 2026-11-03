@@ -17,9 +17,13 @@ lab/immich-server/oidc.sh         # optional: Dex as the OIDC provider, for brow
 ```
 
 - `up.sh` takes about 90 s; `seed.sh` about 90 s with cached fixtures, about 160 s from an empty cache.
-- Everything lands in the git-ignored `lab/immich-server/.env.local`: `IMMICH_URL`, a full-access and a read-only
-  key, the throwaway admin login, and after `oidc.sh` the Dex user (`DEX_EMAIL`, `DEX_PASSWORD`).
-- `seed.sh` expects a fresh server; on a seeded one it stops at the admin sign-up. Rebuild instead.
+- **Warm in NAT mode** (AGENTS.md, "Testing on Erebus"): `seed.sh` ends by taking a snapshot of the seeded server,
+  and every later `up.sh` restores it, so each check starts from the same seed, uploads of earlier checks gone;
+  `seed.sh` then has nothing to do. `--fresh` builds it again. A LAN-mode server is never kept warm. Dex is not in
+  the snapshot: run `oidc.sh` again after each `up.sh` that needs it.
+- Everything lands in the git-ignored `lab/immich-server/.env.local` (`.env.<instance>.local` for another
+  `IMMICH_INSTANCE`, so two servers can run side by side): `IMMICH_URL`, a full-access and a read-only key, the
+  throwaway admin login, and after `oidc.sh` the Dex user (`DEX_EMAIL`, `DEX_PASSWORD`).
 - Tear down with `lab/immich-server/down.sh`, always, and before anything else in a LAN-mode run: LAN mode exposes
   the server and its throwaway login to the whole LAN.
 

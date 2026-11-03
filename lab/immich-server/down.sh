@@ -14,4 +14,5 @@ if [ -n "$(state lab "$NAME")" ]; then
 else
   step "$NAME does not exist"
 fi
-rm -f "$HERE/.env.local" "$HERE/.assets.tsv"   # they point at the deleted server
+# They point at the deleted server.
+if [ "$NAME" = ind-immich-srv ]; then rm -f "$HERE/.env.local" "$HERE/.assets.tsv"; else rm -f "$HERE/.env.$NAME.local" "$HERE/.assets.$NAME.tsv"; fi

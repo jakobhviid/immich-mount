@@ -22,6 +22,13 @@ P=lab
 . "$EREBUS_DIR/lib/erebus.sh"
 
 [ "$(state "$P" "$NAME")" = RUNNING ] || die "$NAME is not running; run ./up.sh first"
+. "$HERE/../warm.sh"
+ENV_FILE=$HERE/.env.local ASSETS_FILE=$HERE/.assets.tsv
+[ "$NAME" = ind-immich-srv ] || { ENV_FILE=$HERE/.env.$NAME.local ASSETS_FILE=$HERE/.assets.$NAME.tsv; }
+if has_fresh "$NAME" && [ -f "$ENV_FILE" ]; then
+  step "$NAME is seeded already: up.sh restored its snapshot"
+  exit 0
+fi
 in_ct() { inc exec --project "$P" "$NAME" -- "$@" </dev/null; }
 IP=$(inc list --project "$P" "^$NAME\$" -f json </dev/null |
      jq -r '.[0].state.network.eth0.addresses[] | select(.family=="inet") | .address' | head -1)
@@ -61,12 +68,20 @@ step "organize: albums, archive, trash, person"
 in_ct bash /opt/immich/seed-container.sh organize
 wait_for "$P" "$NAME" "job queues idle" bash /opt/immich/seed-container.sh idle
 
-step "write .env.local"
+step "write $(basename "$ENV_FILE")"
 {
   echo "# Throwaway credentials for the disposable lab server $NAME. Written by seed.sh."
   echo "IMMICH_URL=http://$IP:2283"
   in_ct cat /opt/immich/seed/keys.env
-} > "$HERE/.env.local"
-chmod 600 "$HERE/.env.local"
-in_ct cat /opt/immich/seed/assets.tsv > "$HERE/.assets.tsv"   # manifest id -> asset id, for tests
+} > "$ENV_FILE"
+chmod 600 "$ENV_FILE"
+in_ct cat /opt/immich/seed/assets.tsv > "$ASSETS_FILE"   # manifest id -> asset id, for tests
 step "$(in_ct bash /opt/immich/seed-container.sh summary)"
+# Warm for the session, in NAT mode: the seeded server as a snapshot, taken stopped so Postgres is consistent, which
+# up.sh restores before each check.
+if ! inc config show --project "$P" "$NAME" </dev/null | grep -qx -- '- lan'; then
+  step "taking its seeded snapshot"
+  snapshot_fresh "$NAME"
+  wait_for "$P" "$NAME" "Immich /api/server/ping" \
+    sh -c 'curl -fsS --max-time 3 http://127.0.0.1:2283/api/server/ping | grep -q pong'
+fi

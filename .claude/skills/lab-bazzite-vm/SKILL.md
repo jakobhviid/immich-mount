@@ -31,11 +31,15 @@ What a VM is: a stock Bazzite, nothing layered. The image adds only the Incus ag
 ## The loop
 
 ```sh
-lab/bazzite-vm/up.sh gnome && lab/bazzite-vm/session.sh        # about 55 s, then 4 s; or up.sh kde
+lab/bazzite-vm/up.sh gnome && lab/bazzite-vm/session.sh        # warm: about 18 s, then 4 s; built: about 100 s
 lab/bazzite-vm/run-in-session.sh bash -ic 'brew install jakobhviid/tap/immich-mount'
 lab/bazzite-vm/shot.sh /tmp/bazzite.png                         # then look at it with the Read tool
 lab/bazzite-vm/down.sh                                          # the VM and its disk; the base stays
 ```
+
+**Warm VMs:** the first `up.sh` copies the base disk, boots through Bazzite's first-boot reboot, waits for Homebrew to
+be unpacked, and snapshots the VM's disk (`fresh`); every later `up.sh` restores that snapshot, so each check starts
+from a stock Bazzite again. `--fresh` copies the base again (a rebuilt base, say). Run `up.sh` before every check.
 
 The scripts after `up.sh` find the VM by themselves; with both editions up, name one with
 `BAZZITE_VM=ind-bazzite-kde-1`. `up.sh` prints the Bazzite version it boots.

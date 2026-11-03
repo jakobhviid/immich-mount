@@ -3,6 +3,10 @@
 #
 #   ./up.sh            NAT network (incusbr0): reachable from Erebus and its other instances only
 #   ./up.sh --lan      --profile default --profile lan: a real LAN address, reachable from this host
+#   ./up.sh --fresh    build it again, even when it is warm
+#
+# Warm in NAT mode: once seed.sh has run, it takes a snapshot of the seeded server, and later starts restore it (the
+# credentials in .env.local stay valid). A server other than ind-immich-srv writes .env.<name>.local instead.
 #
 # Env overrides:
 #   IMMICH_VERSION   Immich release tag to deploy            (default: v3.3.5, the version this was verified with)
@@ -21,19 +25,45 @@ P=lab
 # shellcheck source=/dev/null
 . "$EREBUS_DIR/lib/erebus.sh"   # inc, step, die, wait_for, state
 
+HERE=$(cd "$(dirname "$0")" && pwd)
+. "$HERE/../warm.sh"
+# Each instance its own credentials, so two servers can run side by side.
+ENV_FILE=$HERE/.env.local ASSETS_FILE=$HERE/.assets.tsv
+[ "$NAME" = ind-immich-srv ] || { ENV_FILE=$HERE/.env.$NAME.local ASSETS_FILE=$HERE/.assets.$NAME.tsv; }
 PROFILES=()
-case ${1:-} in
-  --lan) PROFILES=(--profile default --profile lan) ;;
-  "") ;;
-  *) die "usage: $0 [--lan]" ;;
-esac
-
-[ -z "$(state "$P" "$NAME")" ] || die "$NAME already exists; run ./down.sh first"
+build=false
+for argument in "$@"; do
+  case $argument in
+    --lan) PROFILES=(--profile default --profile lan) ;;
+    --fresh) build=true ;;
+    *) die "usage: $0 [--lan] [--fresh]" ;;
+  esac
+done
+sweep_expired
+# Warm, in NAT mode only (a LAN-mode server shows its throwaway login to the whole LAN): back to the snapshot seed.sh
+# took, seeded, with the credentials it wrote.
+if [ ${#PROFILES[@]} -eq 0 ] && ! $build && has_fresh "$NAME" && [ -f "$ENV_FILE" ]; then
+  step "restoring $NAME to its seeded snapshot"
+  restore_fresh "$NAME"
+  wait_for "$P" "$NAME" "Immich /api/server/ping" \
+    sh -c 'curl -fsS --max-time 3 http://127.0.0.1:2283/api/server/ping | grep -q pong'
+  IP=$(inc list --project "$P" "^$NAME\$" -f json </dev/null |
+       jq -r '.[0].state.network.eth0.addresses[] | select(.family=="inet") | .address' | head -1)
+  sed -i "s|^IMMICH_URL=.*|IMMICH_URL=http://$IP:2283|" "$ENV_FILE"
+  step "ready: $NAME, seeded as before (seed.sh has nothing to do)"
+  exit 0
+fi
+if [ -n "$(state "$P" "$NAME")" ]; then
+  step "deleting $NAME to build it again"
+  inc delete --project "$P" -f "$NAME" </dev/null
+  rm -f "$ENV_FILE" "$ASSETS_FILE"
+fi
 
 step "launch $NAME ($IMAGE, ${PROFILES[*]:-NAT}, Immich $IMMICH_VERSION)"
 # Not --ephemeral: Erebus reboots itself for OS updates, and an ephemeral instance
-# would be deleted by that. Not user.keep either: teardown may remove it. ./down.sh deletes it.
-inc launch "$IMAGE" "$NAME" --project "$P" "${PROFILES[@]}" \
+# would be deleted by that. Not user.keep either: teardown may remove it. ./down.sh deletes it when the session
+# ends, and user.expires lets a later session delete it if that was forgotten.
+inc launch "$IMAGE" "$NAME" --project "$P" "${PROFILES[@]}" -c user.expires="$(expires_at)" \
   -c security.nesting=true -c limits.cpu=4 -c limits.memory=8GiB -d root,size=40GiB </dev/null
 
 # In --lan mode the address comes from the router's DHCP; DNS working implies it arrived.

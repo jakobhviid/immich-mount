@@ -3,31 +3,30 @@
 # Bazzite sets it up and nothing of Immich Mount. Adds the first user, `tester` (uid 1000, in wheel, home
 # /home/tester through Bazzite's /home -> var/home link), with linger, and the lab's in-VM helpers.
 #
-#   lab/bazzite-vm/up.sh [gnome|kde]       (default gnome; the VM is ind-bazzite-<edition>-1, or BAZZITE_VM)
+#   lab/bazzite-vm/up.sh [gnome|kde] [--fresh]   (default gnome; the VM is ind-bazzite-<edition>-1, or BAZZITE_VM)
+#
+# A warm VM gets its disk back from the snapshot taken after its first boot; --fresh, or none, copies the base again.
 #
 # Next: lab/bazzite-vm/session.sh starts the headless GNOME or Plasma session.
 set -euo pipefail
 here=$(cd "$(dirname "$0")" && pwd)
 . "$here/common.sh"
-edition=${1:-gnome}
+edition=gnome
+build=false
+for argument in "$@"; do
+  case $argument in
+    --fresh) build=true ;;
+    *) edition=$argument ;;
+  esac
+done
 upstream_image "$edition" >/dev/null
 VM=${BAZZITE_VM:-ind-bazzite-$edition-1}
 case "$VM" in ind-bazzite-gnome-* | ind-bazzite-kde-*) ;; *) die "'$VM' is not an ind-bazzite-<edition>-* name" ;; esac
 base=$(base_volume "$edition")
-[ -z "$(state "$PROJECT" "$VM")" ] || die "$VM already exists (BAZZITE_VM=other-name, or down.sh first)"
-built=$(inc storage volume get "$POOL" "$base" --project "$PROJECT" user.bazzite.version </dev/null 2>/dev/null) \
-  || die "no $base volume: run lab/bazzite-vm/build-image.sh $edition"
-
-# The VM's disk is a copy of the base (a btrfs snapshot, instant), named like the VM, and not kept: down.sh, or
-# Erebus' teardown, deletes it. The instance's own root disk stays empty; the firmware boots Bazzite's disk first.
-# Bazzite's kernel is signed with Universal Blue's key, which the VM's Secure Boot does not hold.
-step "launching $VM: Bazzite $built ($edition), 4 vCPU, 8 GiB"
-inc storage volume copy "$POOL/$base" "$POOL/$VM" --project "$PROJECT" </dev/null >/dev/null
-inc storage volume unset "$POOL" "$VM" user.keep --project "$PROJECT" </dev/null
-inc init --empty --vm "$VM" --project "$PROJECT" -c limits.cpu=4 -c limits.memory=8GiB \
-  -c security.secureboot=false -c user.bazzite.edition="$edition" -d root,size=1GiB </dev/null >/dev/null
-inc config device add --project "$PROJECT" "$VM" bazzite disk pool="$POOL" source="$VM" boot.priority=10 </dev/null >/dev/null
-inc start --project "$PROJECT" "$VM" </dev/null
+P=$PROJECT
+. "$here/../warm.sh"
+sweep_expired
+sweep_expired_volumes
 
 # Bazzite reboots itself once on its first boot (bazzite-hardware-setup adds kernel arguments, then "Rebooting to
 # apply karg changes"), and Incus shows the VM STOPPED for a moment, which wait_for takes for a failure. Wait for it
@@ -46,6 +45,39 @@ wait_through_reboots() {
     done
   done
 }
+# A warm VM: its disk goes back to the snapshot taken after its first boot (Homebrew unpacked, the user made).
+if ! $build && [ -n "$(state "$PROJECT" "$VM")" ] && has_fresh_volume "$VM"; then
+  step "restoring $VM's disk to its fresh snapshot"
+  inc stop --project "$PROJECT" -f "$VM" </dev/null 2>/dev/null || true
+  restore_fresh_volume "$VM"
+  renew "$VM"
+  inc start --project "$PROJECT" "$VM" </dev/null
+  wait_through_reboots "the Incus agent" true
+  wait_through_reboots "the boot to finish" sh -c \
+    'case $(systemctl is-system-running) in running|degraded) exit 0 ;; *) exit 1 ;; esac'
+else
+if [ -n "$(state "$PROJECT" "$VM")" ]; then
+  step "deleting $VM to build it again"
+  inc delete --project "$PROJECT" -f "$VM" </dev/null
+fi
+if [ -n "$(inc storage volume list "$POOL" --project "$PROJECT" -f csv -c n "^$VM\$" </dev/null)" ]; then
+  inc storage volume delete "$POOL" "$VM" --project "$PROJECT" </dev/null
+fi
+built=$(inc storage volume get "$POOL" "$base" --project "$PROJECT" user.bazzite.version </dev/null 2>/dev/null) \
+  || die "no $base volume: run lab/bazzite-vm/build-image.sh $edition"
+
+# The VM's disk is a copy of the base (a btrfs snapshot, instant), named like the VM, and not kept: down.sh, or
+# Erebus' teardown, deletes it. The instance's own root disk stays empty; the firmware boots Bazzite's disk first.
+# Bazzite's kernel is signed with Universal Blue's key, which the VM's Secure Boot does not hold.
+step "launching $VM: Bazzite $built ($edition), 4 vCPU, 8 GiB"
+inc storage volume copy "$POOL/$base" "$POOL/$VM" --project "$PROJECT" </dev/null >/dev/null
+inc storage volume unset "$POOL" "$VM" user.keep --project "$PROJECT" </dev/null
+renew_volume "$VM"
+inc init --empty --vm "$VM" --project "$PROJECT" -c limits.cpu=4 -c limits.memory=8GiB -c user.expires="$(expires_at)" \
+  -c security.secureboot=false -c user.bazzite.edition="$edition" -d root,size=1GiB </dev/null >/dev/null
+inc config device add --project "$PROJECT" "$VM" bazzite disk pool="$POOL" source="$VM" boot.priority=10 </dev/null >/dev/null
+inc start --project "$PROJECT" "$VM" </dev/null
+
 wait_through_reboots "the Incus agent" true
 wait_through_reboots "the boot to finish" sh -c \
   'case $(systemctl is-system-running) in running|degraded) exit 0 ;; *) exit 1 ;; esac'
@@ -56,13 +88,23 @@ step "booted: $(vm sh -c '. /etc/os-release; echo $PRETTY_NAME') $(vm uname -r)"
 failed=$(vm systemctl --failed --plain --no-legend | awk '{print $1}' | tr '\n' ' ')
 [ -z "$failed" ] || echo "         failed units on this boot: $failed"
 
+# Bazzite's installer makes users with HOME=/home/<name>, through the link, which is what hides the mount from GVfs;
+# plain useradd on Bazzite would give /var/home/<name> (its /etc/default/useradd), so the home is set explicitly.
+vm sh -c "id $TESTER >/dev/null 2>&1 || useradd -m -d /home/$TESTER -G wheel $TESTER; loginctl enable-linger $TESTER"
+# Homebrew is unpacked by brew-setup.service at the first boot; the snapshot must hold it.
+wait_for "$PROJECT" "$VM" "Homebrew unpacked" test -x /home/linuxbrew/.linuxbrew/bin/brew
+step "taking its disk's fresh snapshot"
+inc stop --project "$PROJECT" "$VM" </dev/null
+snapshot_fresh_volume "$VM"
+inc start --project "$PROJECT" "$VM" </dev/null
+wait_through_reboots "the Incus agent" true
+wait_through_reboots "the boot to finish" sh -c \
+  'case $(systemctl is-system-running) in running|degraded) exit 0 ;; *) exit 1 ;; esac'
+fi
 # Bazzite's own timers would update the system, Flatpaks and Homebrew during a check (uupd runs all three).
 vm sh -c 'for timer in uupd.timer brew-update.timer brew-upgrade.timer rpm-ostreed-automatic.timer; do
   systemctl stop "$timer" 2>/dev/null || true; done'
 
-# Bazzite's installer makes users with HOME=/home/<name>, through the link, which is what hides the mount from GVfs;
-# plain useradd on Bazzite would give /var/home/<name> (its /etc/default/useradd), so the home is set explicitly.
-vm sh -c "id $TESTER >/dev/null 2>&1 || useradd -m -d /home/$TESTER -G wheel $TESTER; loginctl enable-linger $TESTER"
 uid=$(vm id -u "$TESTER")
 [ "$uid" = 1000 ] || echo "         $TESTER has uid $uid, not 1000: Bazzite's Homebrew belongs to uid 1000"
 wait_for "$PROJECT" "$VM" "user@$uid.service" systemctl is-active -q "user@$uid.service"
