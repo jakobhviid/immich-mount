@@ -79,16 +79,30 @@ echo 1 > events/labfuse/enable          # then browse; each line of `trace` star
 echo 0 > events/labfuse/enable; echo '-:labfuse/open' >> kprobe_events; echo '-:labfuse/read' >> kprobe_events
 ```
 
+Probe arguments name the file and the range: `f=file:%pD` on `fuse_open`, and
+`f=iocb->ki_filp:%pD pos=iocb->ki_pos:s64 len=to->count:u64` on `fuse_file_read_iter`.
+- **The READs the daemon gets,** after the kernel's read-ahead: `fuse_read_args_fill` is inlined into the file read
+  path (kernel 7.2), so it shows only directory reads. Probe where requests are sent instead, `fuse_simple_background`
+  and `__fuse_simple_request`, with `op=args->opcode:u32 nid=args->nodeid:u64 off=+8(+40(args)):u64
+  sz=+16(+40(args)):u32` and the filter `op == 15` (READ); `nid` is the file's inode (`stat -c %i`). Array
+  subscripts such as `in_args[0]` are refused.
+- **Which code read:** `echo 1 > options/record-tgid` adds the process, and `options/userstacktrace` with
+  `options/sym-userobj` adds each event's user stack as library and offset; Bazzite has binutils, so `nm -DC` on
+  the library names the function.
+
 The content cache (`~/.cache/immich-mount/<server>/content/*.bin`) shows which originals were fetched. To try the
 system without one of its files for a moment, `bootc usr-overlay` makes `/usr` writable until the next reboot.
 
 ## Traps
 
 - **Bazzite's file managers read the files in every folder they show.** Bazzite ships rom-properties (a plugin for
-  game images): its overlay-icon plugin in Dolphin and its extension in Files read each file's start from the
-  file manager's main thread, which fetches the original. `ShowDangerousPermissionsOverlayIcon=false` under
-  `[Options]` in `~/.config/rom-properties/rom-properties.conf` turns Dolphin's off; Files' has no setting. Know
-  this before measuring that a folder opens without reading originals.
+  game images): its overlay-icon plugin in Dolphin and its extension in Files read the first 8 KiB and the last
+  partial page of every file in the folder, shown on screen or not, from the file manager's main thread; the daemon
+  answers them with small range requests (ARCHITECTURE.md, "Peeks fetch only their own range"). `ShowDangerousPermissionsOverlayIcon=false` under `[Options]` in
+  `~/.config/rom-properties/rom-properties.conf` turns Dolphin's off; Files' has no setting (version 2.9 reads the
+  file before it looks at any). Know this before measuring that a folder opens without reading originals.
+- **`/opt/exp/input.sh` runs as root,** through `incus exec`, not through `run-in-session.sh`: `runuser` refuses
+  to start from the session user.
 - **The first boot reboots once:** `bazzite-hardware-setup` adds kernel arguments and reboots. `up.sh` waits
   through it; `lib/erebus.sh`'s `wait_for` alone takes the moment the VM shows `STOPPED` for a failure.
 - **The Incus agent needs a label** under SELinux; `build-image.sh` adds the drop-in. A disk built without it

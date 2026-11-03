@@ -96,6 +96,12 @@ struct SequentialRun {
 /// Read-ahead starts only after this much sequential reading, so a program peeking at a file's header (a type
 /// sniffer, a thumbnailer) never pulls more than it reads (principle 2).
 const READ_AHEAD_AFTER: u64 = 2 * BLOCK_SIZE;
+/// A read into bytes the cache does not hold fetches just its own range, cached nowhere, while the run of reads it
+/// belongs to stays within this much: a program peeking at every file of a folder (rom-properties, which Bazzite's
+/// file managers load, reads each file's first 8 KiB and its last page) then costs a few small range requests per
+/// file instead of whole blocks, which for most photos are the whole original. The kernel's own read-ahead after a
+/// peek (16 to 48 KiB) stays within it; a copy or a viewer passes it at its first or second read.
+const PEEK_LIMIT: u64 = 64 * 1024;
 /// The read-ahead window, in blocks: it starts at 2 and doubles up to 16 (32 MiB).
 const READ_AHEAD_MIN: u64 = 2;
 const READ_AHEAD_MAX: u64 = 16;
@@ -251,6 +257,18 @@ impl<Source: ContentSource> BlockCache<Source> {
         let end = (offset + u64::from(length)).min(total_size);
         let first_block = offset / BLOCK_SIZE;
         let last_block = (end - 1) / BLOCK_SIZE;
+        // A file within the limit costs no more whole than peeked, and whole it is cached.
+        if total_size > PEEK_LIMIT
+            && self.is_peek(asset_id, offset, end - offset)
+            && !(first_block..=last_block).all(|block| self.is_present(asset_id, block))
+        {
+            let RangeBytes { bytes, .. } = self.source.read_range(asset_id, offset, end - 1).await?;
+            if bytes.len() as u64 != end - offset {
+                log::info!("asked for {} bytes of {asset_id} at {offset}, got {}; the original changed", end - offset, bytes.len());
+                return Err(SourceError::Changed);
+            }
+            return Ok(bytes);
+        }
         // A read that overlapped a new version of the original may hold blocks of both, or find the file emptied
         // under it: it reads again.
         for _ in 0..3 {
@@ -307,6 +325,18 @@ impl<Source: ContentSource> BlockCache<Source> {
             None => entry.size = Some(total_size),
             Some(_) => {}
         }
+    }
+
+    /// Whether a read of `length` bytes at `offset` is a peek (`PEEK_LIMIT`): small, and in a run of reads that
+    /// stays small with it. The run is the one `read_ahead` keeps, with the same slack for reads out of order.
+    fn is_peek(&self, asset_id: &str, offset: u64, length: u64) -> bool {
+        if length > PEEK_LIMIT {
+            return false;
+        }
+        let runs = self.read_ahead.lock().expect("read-ahead lock");
+        let Some(run) = runs.get(asset_id) else { return true };
+        let continues = run.bytes > 0 && offset + BLOCK_SIZE >= run.next_offset && offset <= run.next_offset + BLOCK_SIZE;
+        !continues || run.bytes + length <= PEEK_LIMIT
     }
 
     /// Note a finished read; if it continues a long sequential run (video playback, a copy), fetch the blocks after
@@ -594,6 +624,9 @@ mod tests {
     }
 
     /// An original replaced on the server once `replaced` is set: other bytes, another ETag.
+    /// A read long enough not to be a peek, so it fetches and caches whole blocks.
+    const BLOCK_READ: u32 = 128 * 1024;
+
     struct ReplacedSource {
         replaced: std::sync::atomic::AtomicBool,
     }
@@ -609,16 +642,16 @@ mod tests {
     async fn a_new_size_in_the_listing_drops_even_fully_cached_blocks() {
         let directory = tempfile::tempdir().unwrap();
         let cache = BlockCache::new(ReplacedSource { replaced: std::sync::atomic::AtomicBool::new(false) }, directory.path(), u64::MAX).unwrap();
-        assert_eq!(cache.read("asset", BLOCK_SIZE + 10, 0, 10).await.unwrap(), vec![1u8; 10]);
+        assert_eq!(cache.read("asset", BLOCK_SIZE + 10, 0, BLOCK_READ).await.unwrap()[..10], [1u8; 10]);
         cache.source.replaced.store(true, Ordering::SeqCst);
         // Block 0 is cached, but the listing now gives another size: it is fetched again, from the new original.
-        assert_eq!(cache.read("asset", BLOCK_SIZE * 2, 0, 10).await.unwrap(), vec![2u8; 10]);
+        assert_eq!(cache.read("asset", BLOCK_SIZE * 2, 0, BLOCK_READ).await.unwrap()[..10], [2u8; 10]);
         assert_eq!(cache.generation("asset"), 1);
         let map = std::fs::read_to_string(directory.path().join("asset.blocks")).unwrap();
         assert!(map.contains(&format!("size {}\n", BLOCK_SIZE * 2)) && !map.contains("old"), "{map}");
         assert!(cache.keep_page_cache("asset"), "a first open keeps whatever the kernel holds");
         cache.source.replaced.store(false, Ordering::SeqCst);
-        assert_eq!(cache.read("asset", BLOCK_SIZE + 10, 0, 10).await.unwrap(), vec![1u8; 10]);
+        assert_eq!(cache.read("asset", BLOCK_SIZE + 10, 0, BLOCK_READ).await.unwrap()[..10], [1u8; 10]);
         assert!(!cache.keep_page_cache("asset"), "the original changed since the last open: the kernel's pages go");
         assert!(cache.keep_page_cache("asset"), "and nothing changed since this one");
     }
@@ -628,11 +661,11 @@ mod tests {
         let directory = tempfile::tempdir().unwrap();
         let size = BLOCK_SIZE * 2;
         let cache = BlockCache::new(ReplacedSource { replaced: std::sync::atomic::AtomicBool::new(false) }, directory.path(), u64::MAX).unwrap();
-        assert_eq!(cache.read("asset", size, 0, 10).await.unwrap(), vec![1u8; 10]);
+        assert_eq!(cache.read("asset", size, 0, BLOCK_READ).await.unwrap()[..10], [1u8; 10]);
         cache.source.replaced.store(true, Ordering::SeqCst);
         // The second block comes from the new version, so the first one is dropped and fetched again.
-        assert_eq!(cache.read("asset", size, BLOCK_SIZE, 10).await.unwrap(), vec![2u8; 10]);
-        assert_eq!(cache.read("asset", size, 0, 10).await.unwrap(), vec![2u8; 10]);
+        assert_eq!(cache.read("asset", size, BLOCK_SIZE, BLOCK_READ).await.unwrap()[..10], [2u8; 10]);
+        assert_eq!(cache.read("asset", size, 0, BLOCK_READ).await.unwrap()[..10], [2u8; 10]);
         assert_eq!(cache.used_bytes(), size);
         let map = std::fs::read_to_string(directory.path().join("asset.blocks")).unwrap();
         assert!(map.starts_with("version W/\"new\"\n") && !map.contains("old"), "{map}");
@@ -658,6 +691,30 @@ mod tests {
         let tail = cache.read("asset-1", size, size - 500, 4096).await.unwrap();
         assert_eq!(tail, bytes[bytes.len() - 500..]);
         assert!(cache.read("asset-1", size, size, 10).await.unwrap().is_empty());
+    }
+
+    #[tokio::test]
+    async fn a_peek_fetches_its_own_range_and_a_run_fetches_blocks() {
+        let bytes = original((BLOCK_SIZE + 3000) as usize);
+        let size = bytes.len() as u64;
+        let directory = tempfile::tempdir().unwrap();
+        let cache =
+            Arc::new(BlockCache::new(CountingSource { bytes: bytes.clone(), requests: AtomicUsize::new(0) }, directory.path(), u64::MAX).unwrap());
+        // rom-properties' pattern after the kernel's read-ahead: the start, the last page, the start's continuation.
+        for (offset, length) in [(0, 16384), (size - 3000, 4096), (16384, 32768)] {
+            let read = cache.read("peeked", size, offset, length).await.unwrap();
+            assert_eq!(read, bytes[offset as usize..(offset + u64::from(length)).min(size) as usize]);
+            cache.read_ahead("peeked", size, offset, read.len() as u64);
+        }
+        assert_eq!(cache.source.requests.load(Ordering::SeqCst), 3);
+        assert_eq!(cache.used_bytes(), 0, "a peek caches nothing");
+        // A copy goes on from there: past 64 KiB of run, whole blocks.
+        cache.read("peeked", size, 49152, 131072).await.unwrap();
+        assert!(cache.used_bytes() >= BLOCK_SIZE);
+        // Bytes the cache holds are read from it, peek or not.
+        let before = cache.source.requests.load(Ordering::SeqCst);
+        cache.read("peeked", size, 100, 512).await.unwrap();
+        assert_eq!(cache.source.requests.load(Ordering::SeqCst), before);
     }
 
     #[tokio::test]

@@ -235,6 +235,7 @@ The apps' preferences (GNOME's dialog, KDE's page) edit the same settings. The k
 | The mount is not in Files' sidebar | `immich-mount doctor` says why. On an atomic desktop (`$HOME` reached through the `/home` symlink) the daemon sets GVfs up as it starts: run `immich-mount unmount`, then `immich-mount mount` |
 | "Transport endpoint is not connected" | The daemon died. `immich-mount doctor` confirms it; `systemctl --user restart immich-mount` cleans up and remounts |
 | A large upload fails with "This computer lets a file operation take at most N seconds" | The system sets `fs.fuse.default_request_timeout`; the mount stops each upload just before that limit so as not to be aborted. Set it to 0 (`sudo sysctl fs.fuse.default_request_timeout=0`) for longer uploads |
+| Opening a folder on Bazzite downloads a little of each file (about 50 KB) | Bazzite's file managers load rom-properties, which reads the start and end of every file they show. The mount answers those reads with small range requests. On KDE, `ShowDangerousPermissionsOverlayIcon=false` under `[Options]` in `~/.config/rom-properties/rom-properties.conf` stops it; Files has no such setting, and rom-properties after 2.9 skips the mount by itself |
 | A backup tool wants to copy `~/Immich` | Exclude it: Déjà Dup "Folders to ignore"; restic and borg `--exclude ~/Immich`, or `--one-file-system` |
 
 Logs: `journalctl --user -u immich-mount`.

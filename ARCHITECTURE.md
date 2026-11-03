@@ -403,6 +403,16 @@ map beside it (`<id>.blocks`, a line per block), which survives restarts:
   to 16 (32 MiB). Random access resets it. Read-ahead runs at lower priority than reads someone is waiting for
   (two fetches at once). It starts only after 4 MiB of sequential reading, so a program peeking at a header (a type
   sniffer, a thumbnailer) never pulls more than it reads.
+- **Peeks fetch only their own range.** A read into bytes the cache does not hold, in a run of reads that stays
+  within 64 KiB, of a file larger than that, fetches exactly its range and caches nothing; past 64 KiB of run, reads
+  fetch whole blocks as above. Bazzite's file managers load rom-properties (a plugin for game images; 2.9 on Bazzite
+  44), which reads every file of a folder they show from their own main thread: each file's first 8 KiB and its
+  last partial page, which the kernel turns into three requests (0+16 KiB, the last page, and its own read-ahead of
+  32 KiB). With whole blocks that fetched every original whole, 5.7 MB for a month of 3 photos and 25 MB for a
+  folder of 121, on GNOME and KDE alike (measured on Bazzite 44 with the kernel tracing reads); as peeks it costs at
+  most 53 KB per file. A copy or a viewer passes 64 KiB at its first or second read, so it pays one or two small
+  requests more. rom-properties after 2.9 counts unknown FUSE filesystems as remote and skips them; on KDE,
+  `ShowDangerousPermissionsOverlayIcon=false` in its settings stops Dolphin's plugin already.
 - **Crash safety:** a block counts as present only after it is written and synced, so a crash never serves zeros.
 - **Validation:** the block map records the original's size and its weak ETag (`W/"<size>-<mtime>"`, sent with every
   206). Cached blocks are dropped, and fetched again from the new original, when the listing gives another size, when
