@@ -35,12 +35,21 @@ the toolbox and push the binary:
   ind-gnome-1/usr/local/bin/immich-mount --mode 0755 </dev/null
 ```
 
+**An atomic desktop's home** (Bazzite, Silverblue: `HOME=/home/tester` while the folder is `/var/home/tester`),
+between `up.sh` and `session.sh`, as root in the VM:
+`loginctl disable-linger tester; systemctl stop user@<uid>.service; mv /home /var/home; ln -s var/home /home;
+loginctl enable-linger tester`. **Homebrew as a user installs it:** pre-create `/home/linuxbrew/.linuxbrew` owned
+by `tester`, then run Homebrew's installer with `NONINTERACTIVE=1` as `tester` (it needs `git`, `procps-ng`,
+`file`, `curl` and `gcc`). Source the lab helpers from bash: under zsh, `inc` looks for `bin/incus` in the wrong
+place.
+
 A stale binary earlier on the PATH (an old tarball install in `~/.local/bin`) silently wins over a package's; check
 `command -v immich-mount` in the VM when a result looks old.
 
 **Driving Plasma apps by name:** `in-session act.py tree immich-mount-kde` lists what is on screen;
 `act.py press <app> <name>`, `act.py set <app> <name> <text>` and `act.py wait <app> <name>` do the rest, in our app
 and in others (KWallet's wizard, Fedora's Welcome Center). Names beat coordinates: they survive layout changes.
+`act.py` says "no application" until the window is on the accessibility bus; wait a few seconds after starting it.
 Qt drops the name of password fields on the accessibility bus, so fill those by position:
 `act.py set-nth immich-mount-kde 'password text' 1 <password>`. KWallet's first-use wizard is "Classic, blowfish
 encrypted file", then Finish, then `set` on "Password:" and "Verify:" and OK.

@@ -17,7 +17,14 @@ brew install jakobhviid/tap/immich-mount
 ```
 
 Then open **Immich Mount** from the app grid: its first run signs you in and starts the mount, with no service to
-start by hand. The interfaces are built on Fedora 44, so the system needs to be at least as new (GTK 4.18 and
+start by hand.
+
+From 1.1 and earlier, where Homebrew had the formula `immich-mount` and the cask `immich-mount-linux`, move to the
+one cask (`brew update` moves the cask over; the old formula's `immich-mount` would collide with the cask's):
+
+```sh
+brew update && brew uninstall --formula immich-mount && brew upgrade --cask immich-mount
+``` The interfaces are built on Fedora 44, so the system needs to be at least as new (GTK 4.18 and
 libadwaita 1.8 for the GTK one); on a Plasma whose Qt is not Fedora 44's, the GTK interface stands in for Kirigami.
 
 **Without a desktop, with Homebrew** (x86_64 or ARM): the daemon and CLI alone, as the formula

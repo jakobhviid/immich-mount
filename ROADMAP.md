@@ -136,7 +136,9 @@ libadwaita 1.9), built in an `ubuntu:26.04` job and tested by installing in a co
   interfaces (built on Fedora 44), the daemon and the command line, which the tap bumps daily from the releases. The
   formula `immich-mount-headless` is the daemon alone, for servers: the release workflow renders
   `ci/immich-mount-headless.rb.tmpl` with an x86_64 Linux bottle and pushes it to the maintainer's tap
-  (`jakobhviid/homebrew-tap`), whose gate installs and tests it before it lands. Next: COPR and the AUR, and Fedora 45 builds of the
+  (`jakobhviid/homebrew-tap`), whose gate installs and tests it before it lands. Verified in a Fedora 44 GNOME VM
+  with an atomic desktop's home (`/home` a link to `/var/home`): the one command, the app from the app grid,
+  sign-in, the sidebar bookmark, Unmount and Mount, and the move from the 1.1 formula and cask. Next: COPR and the AUR, and Fedora 45 builds of the
   interfaces once Fedora 45 based systems need them (the Kirigami one is tied to its Fedora's Qt).
 - An independent adversarial review before tagging.
 

@@ -736,7 +736,8 @@ What the API does, verified on v3.3.5, all of which the client encodes:
     `/media` or `/run/media/$USER`. It compares the kernel's path, always resolved (`/var/home/me/Immich`), with
     `$HOME` as written, so no mount in such a home is listed, sshfs and rclone's included (seen on Bazzite). There
     the GNOME app's setup bookmarks the mount in the sidebar, once, in GTK's bookmarks file; `logout` removes it and
-    `doctor` applies GVfs's rule to say which case a machine is in. A bookmark has no drive icon or eject button.
+    `doctor` applies GVfs's rule to say which case a machine is in. Verified in a GNOME 50 VM with `/home` a link to
+    `/var/home`: GVfs listed no mount, and the setup's bookmark put **Immich** in the sidebar. A bookmark has no drive icon or eject button.
     **Flatpak impact:** none; the bookmarks file is the user's, as Dolphin's Places file is.
     - **Not chosen: the `x-gvfs-show` mount option,** which GVfs honours before the path. Only root may record a
       user-space option, so it reaches GVfs only through `fusermount3`: from fuse3 3.17, and only into a
@@ -826,8 +827,10 @@ Each platform gets a native app that looks and reads like a first-party app (pri
     and `immich-mount-kde` carry the interfaces, and on Fedora the daemon's package recommends the one for the
     installed desktop. With Homebrew the whole app is one cask, `immich-mount`: both interfaces, built on Fedora 44,
     with the static daemon and command line, its man page and completions. `brew install jakobhviid/tap/immich-mount`
-    finds it without `--cask`, since no formula has that name. The formula `immich-mount-headless` is the daemon
-    alone, for x86_64 and ARM servers; the two hold the same binary, so they do not go together.
+    finds it without `--cask`, since no formula has that name, and without `brew trust`, since it is named (verified
+    with Homebrew 7.0.12 in a fresh Fedora 44 GNOME VM). The formula `immich-mount-headless` is the daemon alone,
+    for x86_64 and ARM servers; the two hold the same binary, so they do not go together. The tap's
+    `cask_renames.json` moves an installed `immich-mount-linux` to the cask at `brew update`.
   - **Not chosen for Homebrew: a formula for the daemon and a cask for the app that depends on it,** after
     Homebrew's own split (formulae for command-line tools and services, casks for apps). It had a desktop user
     install the cask under a second name to get the app, while the obvious name gave a command line with no app,
