@@ -209,7 +209,10 @@ the daemon's wiring.
      failure (a unit written before these lines restarts it all the same, through `Restart=on-failure`).
    - **Nothing there for two minutes** is an uninstall; a Homebrew upgrade removes the old version before it adds
      the new one, hence the grace. The daemon leaves once idle and disables the unit it runs in, named by its own
-     control group, so it touches no other unit.
+     control group, so it touches no other unit. It also takes away what points at a mount that will not come back,
+     as `logout` does: the place in Dolphin, the sidebar bookmark, the GVfs drop-in and the seeded thumbnails (small
+     copies of private photos in a shared folder). The credential and the caches stay for `logout` or a zap: an
+     uninstall may be a reinstall.
    - **Verified** on the development host with a transient user unit: a file held open on the mount held the
      restart until it closed, then the new binary mounted about 9 seconds later; with the binary removed, the daemon
      unmounted after the grace and was not restarted.

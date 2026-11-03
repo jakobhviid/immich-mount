@@ -434,7 +434,10 @@ impl qobject::Backend {
         self.as_mut().set_busy(true);
         run(self, async move { session::set_mounted(mounted) }, |mut backend, outcome: Result<(), String>| {
             match outcome {
-                Ok(()) => backend.as_mut().set_busy(false),
+                Ok(()) => {
+                    backend.as_mut().set_busy(false);
+                    backend.as_mut().set_message(QString::default());
+                }
                 Err(message) => backend.as_mut().fail(&message),
             }
             backend.refresh();

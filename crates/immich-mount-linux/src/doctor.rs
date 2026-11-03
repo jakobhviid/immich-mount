@@ -140,7 +140,7 @@ fn sidebar(paths: &Paths, mount_point: &Path) -> Check {
             Some("Use a visible folder in your home, such as ~/Immich"),
         );
     }
-    if kde::is_running() || gnome::listed_in_sidebar(paths, mount_point) {
+    if gnome::listed_in_sidebar(paths, mount_point) || kde::plasma_is_running_blocking() {
         return check("location", Status::Ok, "the mount point shows in the file manager's sidebar", None);
     }
     let resolved = std::fs::canonicalize(&paths.home).unwrap_or_else(|_| paths.home.clone());

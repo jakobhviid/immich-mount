@@ -99,8 +99,7 @@ system without one of its files for a moment, `bootc usr-overlay` makes `/usr` w
   `xdg-desktop-portal` cannot start in the headless session (`graphical-session.target` is inactive), so the browser
   sign-in and the `app.immich` hand-off through the portal cannot be checked here yet.
 - **Harmless:** `ublue-os-media-automount.service` fails on every boot (a bootc install writes no `/etc/fstab`
-  entries); the VM's empty root disk shows as a blank device under Dolphin's Devices; the daemon logs
-  `[Not Implemented] ioctl` when KIO asks the mount for its label.
+  entries); the VM's empty root disk shows as a blank device under Dolphin's Devices.
 - **A dead guest's journal:** stop the VM, remove its `bazzite` disk device, attach its volume to another VM (the
   builder), mount the btrfs root, and read `journalctl -D <root>/ostree/deploy/default/var/log/journal`.
 

@@ -42,6 +42,12 @@ pub async fn plasma_is_running() -> bool {
     answer
 }
 
+/// `plasma_is_running`, for code that runs outside any async runtime (the doctor).
+pub fn plasma_is_running_blocking() -> bool {
+    is_running()
+        || tokio::runtime::Builder::new_current_thread().enable_all().build().is_ok_and(|runtime| runtime.block_on(plasma_is_running()))
+}
+
 fn kdeglobals(paths: &Paths) -> PathBuf {
     std::env::var_os("XDG_CONFIG_HOME").map(PathBuf::from).unwrap_or_else(|| paths.home.join(".config")).join("kdeglobals")
 }

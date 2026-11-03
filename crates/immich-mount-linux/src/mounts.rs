@@ -70,13 +70,29 @@ pub fn unmount(path: &Path, lazy: bool) -> Result<(), String> {
     run_with_timeout(command, Duration::from_secs(10))
 }
 
+/// Whether an unmount failed because something still uses the mount (a file manager showing it, an open file).
+pub fn is_busy(message: &str) -> bool {
+    message.contains("busy")
+}
+
 fn run_with_timeout(mut command: Command, timeout: Duration) -> Result<(), String> {
-    let mut child = command.spawn().map_err(|error| format!("could not run fusermount3: {error}"))?;
+    let mut child = command
+        .stdout(std::process::Stdio::null())
+        .stderr(std::process::Stdio::piped())
+        .spawn()
+        .map_err(|error| format!("could not run fusermount3: {error}"))?;
     let started = std::time::Instant::now();
     loop {
         match child.try_wait() {
             Ok(Some(status)) if status.success() => return Ok(()),
-            Ok(Some(status)) => return Err(format!("fusermount3 failed ({status})")),
+            Ok(Some(status)) => {
+                let mut said = String::new();
+                if let Some(mut stderr) = child.stderr.take() {
+                    let _ = std::io::Read::read_to_string(&mut stderr, &mut said);
+                }
+                let reason = said.trim().rsplit(": ").next().unwrap_or_default().to_owned();
+                return Err(if reason.is_empty() { format!("fusermount3 failed ({status})") } else { format!("fusermount3: {reason}") });
+            }
             Ok(None) if started.elapsed() > timeout => {
                 let _ = child.kill();
                 return Err("fusermount3 did not finish in time".to_string());

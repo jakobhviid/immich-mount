@@ -145,7 +145,8 @@ the address the browser ends on from stdin; the other methods read their secrets
 - It starts at login, through the user service, which the app's first run and `immich-mount mount` turn on (and the
   `mount.at_login` setting turns off).
 - **Unmount** on the app's status page, or **Eject** in Files, takes it out until the next login, or until **Mount**
-  on the status page or `immich-mount mount`.
+  on the status page or `immich-mount mount`. A Files or Dolphin window showing the mount does not stop it: the
+  window leaves the mount, as with Eject. A copy into Photos still in progress does: unmount once it has finished.
 - `immich-mount unmount` and `immich-mount mount` do the same from a terminal.
 
 Browse it like any folder: Photos by year and month (busy months by day), Albums (`2023 - Summer trip`),
@@ -254,7 +255,12 @@ Logs: `journalctl --user -u immich-mount`.
 - Settings are kept, and so are files that could not be uploaded (`~/.local/share/immich-mount/not-uploaded/`).
   So is KDE's remote-preview limit if **Show thumbnails** turned it on (turn it off in the KDE app first, or with
   `kwriteconfig6 --file kdeglobals --group PreviewSettings --key MaximumRemoteSize --delete`).
-- After that, remove the package as usual for your channel.
+- After that, remove the package as usual for your channel (with Homebrew, `brew uninstall --cask --zap
+  jakobhviid/tap/immich-mount` also deletes the caches and moves the settings to the trash).
+- **Uninstalling without `logout` first** leaves the credential, the session on the server and the caches, which
+  `logout` would have removed. The mount itself goes: about two and a half minutes after the program is gone, the
+  daemon unmounts, turns its service off, and takes the mount out of Dolphin's Places and Files' sidebar, with its
+  seeded thumbnails.
 
 ## Exit codes and JSON
 

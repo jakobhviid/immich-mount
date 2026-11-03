@@ -194,9 +194,58 @@ pub fn unmount(paths: &Paths) -> Result<UnmountReport> {
     let mount_point = mount_point(paths)?;
     let was = mounts::mount_state(&mount_point);
     if was != mounts::MountState::NotMounted {
-        mounts::unmount(&mount_point, was == mounts::MountState::Stale).map_err(anyhow::Error::msg)?;
+        match mounts::unmount(&mount_point, was == mounts::MountState::Stale) {
+            // A file manager showing the mount keeps it busy. Detach it as an eject does, so the windows leave it,
+            // unless a copy into Photos would be cut short.
+            Err(message) if mounts::is_busy(&message) => {
+                let uploads = tokio::runtime::Builder::new_current_thread()
+                    .enable_all()
+                    .build()
+                    .map(|runtime| runtime.block_on(immich_mount_linux::dbus::uploads_in_flight()))
+                    .unwrap_or_default();
+                if let Some((name, _, _)) = uploads.first() {
+                    anyhow::bail!("{name} is still being copied into Photos; unmount once it has finished");
+                }
+                mounts::unmount(&mount_point, true).map_err(anyhow::Error::msg)?;
+            }
+            outcome => outcome.map_err(anyhow::Error::msg)?,
+        }
     }
     Ok(UnmountReport { mount_point, was })
+}
+
+/// Take away what the mount left in the desktop's shared places: its place in Dolphin, its bookmark in Files'
+/// sidebar and the GVfs drop-in, and every thumbnail under it, our seeds and anything a thumbnailer made or recorded
+/// as failed there, since their URIs carry album and person names. At logout, and by the daemon once its program is
+/// uninstalled. Returns how many thumbnails went.
+pub fn remove_desktop_traces(paths: &Paths, mount_point: &std::path::Path) -> Result<usize> {
+    if let Err(error) = immich_mount_linux::kde::remove_place(paths, mount_point) {
+        eprintln!("warning: could not remove the mount from Dolphin's Places: {error}");
+    }
+    if let Err(error) = immich_mount_linux::gnome::remove_bookmark(paths, mount_point) {
+        eprintln!("warning: could not remove the mount's bookmark from Files' sidebar: {error}");
+    }
+    if let Err(error) = immich_mount_linux::gnome::remove_sidebar_drop_in(paths) {
+        eprintln!("warning: could not remove the GVfs drop-in: {error}");
+    }
+    // Under the resolved path, and the configured one where home is reached through a symlink (both are seeded).
+    let mut mount_prefixes = vec![immich_mount_linux::thumbnails::file_uri(&mounts::canonical_mount_point(mount_point))];
+    let configured_prefix = immich_mount_linux::thumbnails::file_uri(mount_point);
+    if !mount_prefixes.contains(&configured_prefix) {
+        mount_prefixes.push(configured_prefix);
+    }
+    let mut removed = 0;
+    for prefix in &mount_prefixes {
+        removed += immich_mount_linux::thumbnails::remove_thumbnails_under(&paths.thumbnail_directory, &format!("{}/", prefix.trim_end_matches('/')));
+    }
+    if let Ok(accounts) = std::fs::read_dir(&paths.cache_directory) {
+        for account in accounts.flatten() {
+            // The sweep above found them already, unless the mount point moved since; the ledger catches those.
+            removed += seeding::remove_seeds(&account.path(), &paths.thumbnail_directory)
+                .with_context(|| format!("removing the thumbnails seeded for {}", account.path().display()))?;
+        }
+    }
+    Ok(removed)
 }
 
 #[derive(Serialize)]
@@ -231,38 +280,7 @@ pub fn logout(paths: &Paths, session_ended: bool) -> Result<LogoutReport> {
         let _ = std::process::Command::new("systemctl").args(["--user", "stop", unit]).output();
     }
 
-    // Dolphin's place for the mount goes with it (the KDE app added it at setup), and so does its bookmark in Files'
-    // sidebar (the GNOME app's setup added one where GVfs does not list the mount).
-    if let Err(error) = immich_mount_linux::kde::remove_place(paths, &mount_point) {
-        eprintln!("warning: could not remove the mount from Dolphin's Places: {error}");
-    }
-    if let Err(error) = immich_mount_linux::gnome::remove_bookmark(paths, &mount_point) {
-        eprintln!("warning: could not remove the mount's bookmark from Files' sidebar: {error}");
-    }
-    if let Err(error) = immich_mount_linux::gnome::remove_sidebar_drop_in(paths) {
-        eprintln!("warning: could not remove the GVfs drop-in: {error}");
-    }
-
-    // Every thumbnail under the mount goes: our seeds, and anything a thumbnailer made or recorded as failed there,
-    // since their URIs carry album and person names.
-    // Under the resolved path, and the configured one where home is reached through a symlink (both are seeded).
-    let mut mount_prefixes = vec![immich_mount_linux::thumbnails::file_uri(&mounts::canonical_mount_point(&mount_point))];
-    let configured_prefix = immich_mount_linux::thumbnails::file_uri(&mount_point);
-    if !mount_prefixes.contains(&configured_prefix) {
-        mount_prefixes.push(configured_prefix);
-    }
-    let mut seeded_thumbnails_removed = 0;
-    for prefix in &mount_prefixes {
-        seeded_thumbnails_removed +=
-            immich_mount_linux::thumbnails::remove_thumbnails_under(&paths.thumbnail_directory, &format!("{}/", prefix.trim_end_matches('/')));
-    }
-    if let Ok(accounts) = std::fs::read_dir(&paths.cache_directory) {
-        for account in accounts.flatten() {
-            // The sweep above found them already, unless the mount point moved since; the ledger catches those.
-            seeded_thumbnails_removed += seeding::remove_seeds(&account.path(), &paths.thumbnail_directory)
-                .with_context(|| format!("removing the thumbnails seeded for {}", account.path().display()))?;
-        }
-    }
+    let seeded_thumbnails_removed = remove_desktop_traces(paths, &mount_point)?;
 
     let keyring_item_removed = remove_from_keyring();
 

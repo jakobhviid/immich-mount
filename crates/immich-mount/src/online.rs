@@ -404,10 +404,14 @@ pub fn daemon(paths: &Paths) -> Result<Option<StopReason>> {
             log::warn!("{} is already mounted by another immich-mount daemon; this one stops", path.display());
             Ok(None)
         }
-        // Its program is gone: turn off the service that started it, so it does not fail at every login.
+        // Its program is gone: turn off the service that started it, so it does not fail at every login, and take
+        // away what points at a mount that will not come back (the credential and the caches stay for `logout`).
         Ok(StopReason::Uninstalled) => {
             if let Some(unit) = immich_mount_linux::service::own_unit() {
                 let _ = std::process::Command::new("systemctl").args(["--user", "disable", &unit]).output();
+            }
+            if let Err(error) = crate::commands::remove_desktop_traces(paths, &mount_point) {
+                log::warn!("could not take the mount out of the desktop: {error:#}");
             }
             Ok(Some(StopReason::Uninstalled))
         }

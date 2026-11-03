@@ -11,6 +11,14 @@ use zbus::object_server::SignalEmitter;
 
 pub const BUS_NAME: &str = "dev.hviid.ImmichMount.Daemon";
 pub const OBJECT_PATH: &str = "/dev/hviid/ImmichMount/Daemon";
+const INTERFACE: &str = "dev.hviid.ImmichMount.Daemon1";
+
+/// The files the running daemon is copying in or uploading (name, what, size); empty when no daemon answers.
+pub async fn uploads_in_flight() -> Vec<(String, String, u64)> {
+    let Ok(connection) = zbus::Connection::session().await else { return Vec::new() };
+    let Ok(proxy) = zbus::Proxy::new(&connection, BUS_NAME, OBJECT_PATH, INTERFACE).await else { return Vec::new() };
+    proxy.get_property("Uploads").await.unwrap_or_default()
+}
 
 /// The connection state, as SPEC names it.
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]

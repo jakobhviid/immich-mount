@@ -14,7 +14,7 @@ use std::sync::{Arc, Mutex};
 use std::time::{Duration, SystemTime};
 
 use fuser::{
-    AccessFlags, BackgroundSession, BsdFileFlags, Config, Errno, FileAttr, FileHandle, FileType, Filesystem, FopenFlags, Generation,
+    AccessFlags, BackgroundSession, IoctlFlags, ReplyIoctl, BsdFileFlags, Config, Errno, FileAttr, FileHandle, FileType, Filesystem, FopenFlags, Generation,
     INodeNo, LockOwner, MountOption, OpenFlags, RenameFlags, ReplyAttr, ReplyCreate, ReplyData, ReplyDirectory, ReplyEmpty,
     ReplyEntry, ReplyOpen, ReplyStatfs, ReplyWrite, ReplyXattr, Request, TimeOrNow, WriteFlags,
 };
@@ -971,6 +971,22 @@ where
             return reply.error(Errno::EACCES);
         }
         reply.ok();
+    }
+
+    /// No ioctls: KIO asks for the filesystem's label (`FS_IOC_GETFSLABEL`) when it copies, and takes no for an answer.
+    #[allow(clippy::too_many_arguments)]
+    fn ioctl(
+        &self,
+        _request: &Request,
+        _inode: INodeNo,
+        _handle: FileHandle,
+        _flags: IoctlFlags,
+        _command: u32,
+        _input: &[u8],
+        _output_size: u32,
+        reply: ReplyIoctl,
+    ) {
+        reply.error(Errno::ENOTTY);
     }
 
     fn mknod(&self, _request: &Request, parent: INodeNo, _name: &OsStr, _mode: u32, _umask: u32, _rdev: u32, reply: ReplyEntry) {
