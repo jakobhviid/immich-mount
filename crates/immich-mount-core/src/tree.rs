@@ -25,6 +25,8 @@ use crate::source::{LibraryChanges, LibrarySource, SourceError};
 pub enum NodeKey {
     Root,
     Section(SectionKey),
+    /// The Upload folder: it holds only files being uploaded, which the platform's filesystem lists.
+    Upload,
     TimelineYear(i32),
     TimelineMonth(YearMonth),
     TimelineDay(YearMonth, u32),
@@ -48,6 +50,7 @@ impl NodeKey {
         }
         match self {
             NodeKey::Root => "root".to_string(),
+            NodeKey::Upload => "upload".to_string(),
             NodeKey::Section(section) => format!("section|{section:?}"),
             NodeKey::TimelineYear(year) => format!("year|{year}"),
             NodeKey::TimelineMonth(month) => format!("month|{}-{:02}", month.year, month.month),
@@ -290,6 +293,7 @@ impl<Source: LibrarySource, Names: NameMemory> Tree<Source, Names> {
     async fn list_uncached(&self, node: &NodeKey) -> Result<Vec<Entry>, SourceError> {
         match node {
             NodeKey::Root => Ok(self.root_entries()),
+            NodeKey::Upload => Ok(Vec::new()),
             NodeKey::Section(SectionKey::Photos) => {
                 let years: BTreeSet<i32> = self.source.timeline_months().await?.iter().map(|(month, _)| month.year).collect();
                 Ok(years.into_iter().map(|year| folder(year_folder_name(year), NodeKey::TimelineYear(year))).collect())
@@ -391,11 +395,12 @@ impl<Source: LibrarySource, Names: NameMemory> Tree<Source, Names> {
             (Section::People, self.config.show_people),
             (Section::Places, self.config.show_places),
         ];
-        shown
+        let sections = shown
             .into_iter()
             .filter(|(_, is_shown)| *is_shown)
-            .map(|(section, _)| folder(section.folder_name().to_string(), NodeKey::Section(section.into())))
-            .collect()
+            .map(|(section, _)| folder(section.folder_name().to_string(), NodeKey::Section(section.into())));
+        let upload = self.config.uploads_enabled.then(|| folder(crate::layout::UPLOAD_FOLDER.to_string(), NodeKey::Upload));
+        sections.chain(upload).collect()
     }
 
     fn grouping_for(&self, node: &NodeKey) -> GroupingMode {
@@ -617,8 +622,11 @@ mod tests {
     async fn root_lists_enabled_sections_with_immichs_labels() {
         let mut config = Config::from_toml("").unwrap();
         config.show_places = false;
+        let entries = tree(FakeLibrary::default(), config.clone()).list(&NodeKey::Root).await.unwrap();
+        assert_eq!(names(&entries), ["Albums", "People", "Photos", "Upload"]);
+        config.uploads_enabled = false;
         let entries = tree(FakeLibrary::default(), config).list(&NodeKey::Root).await.unwrap();
-        assert_eq!(names(&entries), ["Albums", "People", "Photos"]);
+        assert_eq!(names(&entries), ["Albums", "People", "Photos"], "without uploads, no Upload folder");
     }
 
     #[tokio::test]

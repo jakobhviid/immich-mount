@@ -81,7 +81,7 @@ Exit:
 - An independent adversarial review before closing it (data-loss surface).
 
 Exit:
-- Copies and moves into Photos work.
+- Copies and moves into Upload work.
 - With the server stopped midway, a move keeps its source.
 - Duplicates are reported correctly.
 

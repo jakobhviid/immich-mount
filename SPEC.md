@@ -32,12 +32,15 @@ Use these words in code, docs and issues.
   copy of anything.
 - **Thumbnail seeding**: writing Immich's own thumbnails into the freedesktop thumbnail cache, so the file manager
   never reads originals to draw previews.
-- **Staging file**: a file being written into Photos. It lives in the daemon's staging area until its upload
+- **Upload folder**: the mount's one writable folder, `Upload`: what is copied into it is uploaded, and leaves it
+  once Immich has it. Every other folder is a read-only view, its structure built from the library's metadata.
+- **Staging file**: a file being written into Upload. It lives in the daemon's staging area until its upload
   has finished.
-- **Receipt**: the entry that stands in Photos for two minutes where an uploaded file was written. It reads back the
-  uploaded bytes, and cannot be deleted or renamed (that would change nothing on the server).
-- **Asset upload**: transfer of a local photo or video into the existing library, unchanged, without
-  any upload-specific folders. Avoid: import, sync.
+- **Receipt**: the entry that stays in Upload for a few seconds after a file's upload, for the copy tools that set
+  its times after closing it. It reads back the uploaded bytes, may be deleted (Immich keeps the photo), and is not
+  renamed.
+- **Asset upload**: transfer of a local photo or video into the existing library, unchanged, without creating
+  anything for it in Immich (no album, no folder). Avoid: import, sync.
 - **Already in library**: an upload whose content (by checksum) already exists as a non-trashed Asset.
   It counts as success.
 - **Trashed duplicate**: an upload whose content matches an Asset in the Immich trash. It counts as a
@@ -49,18 +52,19 @@ Use these words in code, docs and issues.
 
 ### Layout
 
-The sections carry Immich's own labels: Photos, Albums, People, Places.
+The sections carry Immich's own labels: Photos, Albums, People, Places. Beside them, `Upload` takes new files.
 
 ```
 ~/Immich/                                  shown as "Immich" in the file manager
-├─ Photos/                                 the timeline; the only folder that accepts new files
+├─ Photos/                                 the timeline
 │  └─ <Year>/<MM Month>/[<DD>/]<file>
 ├─ Albums/
 │  └─ <Year> - <Album>/[<Year>/<MM Month>/]<file>
 ├─ People/
 │  └─ <Name>/[<Year>/<MM Month>/]<file>
-└─ Places/
-   └─ <Country>/<City>/[<Year>/<MM Month>/]<file>
+├─ Places/
+│  └─ <Country>/<City>/[<Year>/<MM Month>/]<file>
+└─ Upload/                                 the only folder that takes new files: copied in, uploaded, then gone
 ```
 
 - Each section can be switched off; it then disappears from the root.
@@ -155,7 +159,7 @@ cameras. Clashes are detected case-insensitively, after Unicode NFC normalisatio
 | `st_size` | The original's exact size (`exifInfo.fileSizeInByte`; if missing, a `HEAD` of the original). A size that stays unknown makes reads fail with `EIO`, never look empty | 0 |
 | `st_mtime`, `st_atime`, `st_ctime` | The capture time (`fileCreatedAt`), so sorting by date follows shooting order and copies keep it | The mount time |
 | `st_mode` | `0644` | `0755` |
-| `access()` | Read; never write | Read and search; write only for Photos and its folders, with uploads |
+| `access()` | Read; never write | Read and search; write only for Upload, with uploads |
 | owner | The mounting user | The mounting user |
 | `st_nlink` | 1 (Appearances are separate files, not hard links) | 2 |
 | `st_blocks` | `ceil(size / 512)` | 0 |
@@ -176,11 +180,11 @@ cameras. Clashes are detected case-insensitively, after Unicode NFC normalisatio
 - The modes are what a copy gets, so a photo copied out is an ordinary file (`0644`) and a copied folder an ordinary
   folder (`0755`). What the mount allows is `access()`'s answer, which file managers read for their read-only
   emblem (GNOME Files' lock), and each operation's own refusal.
-- Existing Assets are read-only: write access, rename, delete and `setattr` on them fail with `EPERM` or `EROFS`.
-  "Move to Trash" in the file manager therefore fails.
-- `mkdir` anywhere, and new files anywhere except Photos, fail with `EPERM` (in Photos) or `EROFS`; so do
-  `mknod`, `symlink` and `link`.
-- With uploads off (`uploads.enabled = false`), the mount is read-only as a whole (`ro`).
+- Every folder but Upload is a read-only view: write access, rename, delete and `setattr` on Assets, and new files
+  or folders, fail with `EROFS`. "Move to Trash" and "Paste" in the file manager therefore fail there.
+- In Upload, `mkdir` fails with `EPERM`, and so do `mknod`, `symlink` and `link`: it takes files only.
+- With uploads off (`uploads.enabled = false`), there is no Upload folder and the mount is read-only as a whole
+  (`ro`).
 - Desktop indexers get `EIO` when they open an original: KDE's Baloo extractor (`baloo_file_extractor`) and GNOME's
   (`localsearch-extractor-3`, `tracker-extract-3`). Always, not a setting: indexing the contents would download the
   library. Their file-name walks are answered as usual.
@@ -221,8 +225,9 @@ cameras. Clashes are detected case-insensitively, after Unicode NFC normalisatio
 
 ## Uploads
 
-- Only Photos accepts new files (Photos itself and its year, month and day folders), and only while
-  `uploads.enabled` is on and the credential may upload. With uploads off, the whole mount is read-only.
+- Only the Upload folder accepts new files, and only while `uploads.enabled` is on and the credential may upload.
+  An uploaded file leaves Upload and shows in Photos under its own date (and in albums, people and places as Immich
+  files it); where it was dropped never decides where it appears. With uploads off, there is no Upload folder.
 - Only standalone image and video files are accepted (the server's media types, RAW included). Folders, symlinks,
   other files, Live Photo pairs and XMP sidecars are not supported.
 - **Upload on close:** the upload runs when the writing program closes the file. `close()` returns success only
@@ -232,7 +237,7 @@ cameras. Clashes are detected case-insensitively, after Unicode NFC normalisatio
 - **Nothing that failed to upload is thrown away:** the file is kept in `~/.local/share/immich-mount/not-uploaded/`
   under its own name (numbered if the name is taken), and the notification says so. So is what a daemon that died
   mid-upload left behind, at its next start. Only what the user dropped is deleted: a cancelled copy that ends short, an
-  empty file, a file deleted or replaced in Photos.
+  empty file, a file deleted or replaced in Upload.
 - **Where the kernel limits one file operation** (`fs.fuse.default_request_timeout`, Linux 6.14 and later), an
   upload, a read and a listing each end a second before that limit: a longer upload fails its `close()` with `EIO`
   and is stopped, with one notification naming the setting, and the mount stays up. Off by default.
@@ -245,9 +250,10 @@ cameras. Clashes are detected case-insensitively, after Unicode NFC normalisatio
   - A hidden photo (`.IMG_1.JPG`) uploads on close like any photo. Known temporary names (GIO's
     `.goutputstream-*`, rsync's `.<name>.<6 characters>` around a photo's name) are staged, and uploaded once
     renamed to the photo's name. Any other hidden name is refused, and so are macOS's `._` companion files.
-  - An empty file is never uploaded: it disappears from Photos when its last handle closes.
-  - After an upload, the written name stays in Photos as a **receipt** for about two minutes, then disappears.
-    The Asset appears in its date folder.
+  - An empty file is never uploaded: it disappears from Upload when its last handle closes.
+  - After an upload, the written name stays in Upload as a **receipt** for about 10 seconds, then disappears; it
+    may be deleted before then. The Asset appears in its date folder in Photos. **Already in library** (the same
+    bytes are in Immich, a photo copied from the mount itself, say) adds nothing, and a notification says so.
 - A desktop notification explains refused files, and reports long uploads and failed ones. Repeated refusals of
   one kind within 20 seconds give one notification.
 - **What programs see:**
@@ -259,8 +265,8 @@ cameras. Clashes are detected case-insensitively, after Unicode NFC normalisatio
   | The same bytes are in the trash | `EEXIST` on `close()` |
   | The credential may not upload | `EACCES` on `close()` |
   | Server unreachable or busy past the limit | `EIO` on `close()` |
-  | Deleting, renaming, or changing an existing Asset, or a new folder, in Photos | `EPERM` |
-  | Any change outside Photos | `EROFS` |
+  | A folder, a link or a device node in Upload | `EPERM` |
+  | Any change outside Upload | `EROFS` |
 
 ## Signing in and credentials
 
@@ -313,7 +319,7 @@ table in the Core drives validation, `immich-mount configure`, and the app's set
 | `albums.layout` | `year-prefix`, `year-folders`, `flat` | `year-prefix` | How album folders are named and grouped |
 | `files.naming` | `date-time`, `original` | `date-time` | How files are named |
 | `cache.limit` | size (`10GiB`) | `10GiB` | Content cache limit |
-| `uploads.enabled` | bool | `true` | Accept files copied into Photos (also needs the server's upload permission) |
+| `uploads.enabled` | bool | `true` | Show the Upload folder, and upload what is copied into it (also needs the server's upload permission) |
 | `thumbnails.sharp` | bool | `true` | Also seed 1024 px thumbnails from `preview` |
 | `thumbnails.safety_net` | bool | `true` | Refuse thumbnailer reads of originals |
 | `credential.file` | path | none | Headless only: a 0600 file holding the credential |
@@ -331,7 +337,7 @@ One binary: the daemon and the command line.
 | `immich-mount daemon` | Runs the daemon in the foreground (what the user service starts). Once the program it was started from is replaced by an upgrade and nothing is open or uploading, it unmounts and exits with status 75, on which the service starts the new version; once the program has been gone for two minutes (uninstalled), it unmounts, turns off the service that started it, takes the mount out of Dolphin's Places and Files' sidebar, removes the GVfs drop-in and its seeded thumbnails, and exits 0 |
 | `immich-mount login [--password \| --api-key] [--server URL]` | Signs in; prompts only on a terminal |
 | `immich-mount logout` | Unmounts, then removes the seeded thumbnails, the credential and the caches |
-| `immich-mount mount` / `unmount` | Mounts (starts the user service, writing it first where no install brought one and enabling it when `mount.at_login` is on, and waits up to 15 s for the mount) or unmounts (which stops the daemon, as an eject does). When something keeps the mount busy, such as a file manager window showing it, `unmount` detaches it lazily (`fusermount3 -uz`), unless the daemon has a copy into Photos in flight: then it refuses, naming the file ("… is still uploading") |
+| `immich-mount mount` / `unmount` | Mounts (starts the user service, writing it first where no install brought one and enabling it when `mount.at_login` is on, and waits up to 15 s for the mount) or unmounts (which stops the daemon, as an eject does). When something keeps the mount busy, such as a file manager window showing it, `unmount` detaches it lazily (`fusermount3 -uz`), unless the daemon has a copy into Upload in flight: then it refuses, naming the file ("… is still uploading") |
 | `immich-mount status` | Connection state, server and its version, account, credential, mount point, cache usage |
 | `immich-mount doctor` | A read-only health check (see WORKFLOWS) |
 | `immich-mount configure list \| keys \| get \| set \| unset` | Reads and writes settings |

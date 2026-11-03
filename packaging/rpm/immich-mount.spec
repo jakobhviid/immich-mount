@@ -21,7 +21,7 @@ Recommends:     desktop-file-utils
 %description
 Also known as Immich drive. A FUSE daemon and command line that show a self-hosted
 Immich library as an ordinary folder, downloading originals only when something
-opens them, and uploading files copied into Photos.
+opens them, and uploading files copied into its Upload folder.
 
 Immich Mount is an independent, unofficial project. It is not affiliated with,
 endorsed by, or sponsored by the Immich project or FUTO. "Immich" is used only to

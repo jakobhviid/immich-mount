@@ -1,4 +1,4 @@
-//! Uploads into Photos, independent of the platform (SPEC.md, "Uploads"; ARCHITECTURE.md, "Uploads").
+//! Uploads through the Upload folder, independent of the platform (SPEC.md, "Uploads"; ARCHITECTURE.md, "Uploads").
 //!
 //! Which names are accepted, and the trait the upload goes through. The platform adapter stages the bytes and calls
 //! the upload when the writing program closes the file.
@@ -11,7 +11,7 @@ use chrono::{DateTime, Utc};
 
 use crate::source::SourceError;
 
-/// What happens to a file created in Photos under a given name.
+/// What happens to a file created in Upload under a given name.
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub enum Admission {
     /// An image or video: uploaded when the program closes it.

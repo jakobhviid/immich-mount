@@ -22,7 +22,7 @@ Problems in the Immich server itself belong to the Immich project:
   and thumbnails in the desktop's thumbnail cache. `immich-mount logout` removes them. Files that could not be
   uploaded are kept in `~/.local/share/immich-mount/not-uploaded/`; they are yours, and `logout` leaves them.
 - **Its network use:** it talks only to the Immich server you sign in to.
-- **What it changes on the server:** it uploads files you copy into Photos, and signing out ends its own session.
+- **What it changes on the server:** it uploads files you copy into its Upload folder, and signing out ends its own session.
   It never edits, moves or deletes what is already in your library.
 
 SPEC.md, "Files on disk", lists every file it writes.

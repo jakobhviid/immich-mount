@@ -196,7 +196,7 @@ pub fn unmount(paths: &Paths) -> Result<UnmountReport> {
     if was != mounts::MountState::NotMounted {
         match mounts::unmount(&mount_point, was == mounts::MountState::Stale) {
             // A file manager showing the mount keeps it busy. Detach it as an eject does, so the windows leave it,
-            // unless a copy into Photos would be cut short.
+            // unless a copy into Upload would be cut short.
             Err(message) if mounts::is_busy(&message) => {
                 let uploads = tokio::runtime::Builder::new_current_thread()
                     .enable_all()

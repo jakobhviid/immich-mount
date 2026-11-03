@@ -221,7 +221,7 @@ the daemon's wiring.
      restart until it closed, then the new binary mounted about 9 seconds later; with the binary removed, the daemon
      unmounted after the grace and was not restarted.
    - **Not chosen: restarting from the packages** (`%systemd_user_postun_with_restart`, a postinst, a cask
-     postflight). It restarts at once, with a copy into Photos in flight or a video open, and needs three channels
+     postflight). It restarts at once, with a copy into Upload in flight or a video open, and needs three channels
      to get it right, Homebrew's steps running in a sandbox. **Flatpak impact:** none; a Flatpak would update the
      app, while the daemon and this check stay on the host.
 
@@ -562,10 +562,23 @@ there and failure records for search hits that were never seeded, since those UR
 
 ## Uploads
 
+**One folder takes new files: `Upload`, at the root.** Every other folder is a read-only view whose structure is
+built from the library's metadata: Photos from each photo's date, Albums, People and Places from Immich's. What is
+copied into Upload is uploaded, and leaves it once Immich has it, a few seconds after the upload; the photo then
+shows in Photos under its own date, and wherever else Immich files it. With uploads off, there is no Upload folder.
+- **Why not Photos and its date folders,** where new files went first: a date folder is computed from each photo's
+  own date, so a photo dropped into `2024/03 March` lands wherever its date says, and the drop suggested a placement
+  that could not be kept. And a copy pasted beside its source (Ctrl+C, Ctrl+V in Files) uploaded the same bytes,
+  Immich added nothing, and the pasted name stood as a receipt that could not be deleted (seen on Bazzite). In
+  Upload a paste of that kind adds nothing too, says so in a notification, and goes like any upload.
+- **The lock** (`access()`) then reads simply: everything is read-only but Upload. Uploads also no longer depend on
+  the Photos section being shown.
+- **Flatpak impact:** none; it is the mount's own layout.
+
 **The upload runs inside FUSE `FLUSH`, which is what `close()` waits on.**
 - `close()` returns success only after the server has the file, and GIO checks the result of closing the
   destination before it deletes a moved file's source.
-- So a move into Photos never loses its source early, in a program that checks its `close()` (principle 6).
+- So a move into Upload never loses its source early, in a program that checks its `close()` (principle 6).
   KIO, Dolphin's file layer, does not: in a Plasma 6.8 VM a move whose upload failed still deleted its source, since
   KIO counts the permissions it then cannot set as a mere warning. Hence the not-uploaded folder ("After a failed
   upload", below).
@@ -614,8 +627,9 @@ A lost response is retried safely, because the checksum turns a second upload in
   locked for an upload); rsync renames after closing, so its rename uploads and returns the result, holding the
   folder's lock for that time. A hidden name with a media extension (`.IMG_1.JPG`) is a photo and uploads on close;
   any other hidden name is refused, so nothing is staged and then silently dropped.
-- **Receipts:** the written name stays as a receipt for about two minutes, because GIO may still set the mtime after
-  closing, and the user sees what they pasted. Writing to a receipt's name again counts as a new upload. Watched in
+- **Receipts:** the written name stays as a receipt for about 10 seconds, because GIO, KIO and rsync set the file's
+  times right after closing it; deleting it before then is allowed and changes nothing in Immich. Writing to a
+  receipt's name again counts as a new upload. Watched in
   the GNOME VM: GIO's copy into a new name sends `CREATE`, `WRITE`, `FLUSH` (the upload) and then two
   `SETATTR`s, the times and the mode, on the receipt, with no rename; Files' own copy and move behave the same, and
   a move deletes its source only after the close succeeded.
@@ -639,7 +653,7 @@ A lost response is retried safely, because the checksum turns a second upload in
   succeeded, but they are kept the same way at the next start, named from the name file each staged file has beside
   it.
 - **What is deleted** is only what the user dropped: a copy cut short by Cancel (its source is still there), an
-  empty file, a file deleted or replaced in Photos, an uploaded file's receipt.
+  empty file, a file deleted or replaced in Upload, an uploaded file's receipt.
 - **Flatpak impact:** the folder follows `XDG_DATA_HOME`, which a Flatpak maps into its own data directory; the
   notification names the real path either way.
 
@@ -1066,7 +1080,7 @@ Every design change states its Flatpak impact against this table.
 | Core | The core driven through the in-memory adapter | `cargo test` |
 | Contract | `immich-api` against a real server, with both the read-only and the full key, on the floor and the latest release. Run on demand and before milestones, never as part of a normal `cargo test` that would need the LAN | Erebus `lab/immich-server` (`IMMICH_VERSION=...`) |
 | Sign-in | The OIDC flow against an identity provider on Erebus: Dex (static users, scriptable) for automated runs, and Pocket ID (passkeys, what the maintainer uses) for a manual check | `lab/immich-server/oidc.sh` (Dex); Pocket ID by hand |
-| Mount | The daemon mounted for real: listing, checksums against the server, ranged reads (`dd` with offsets; bytes sent by the server), copies and moves into Photos with the server stopped midway, hang checks with the server down | The development host (`/dev/fuse` is there) or an Erebus container |
+| Mount | The daemon mounted for real: listing, checksums against the server, ranged reads (`dd` with offsets; bytes sent by the server), copies and moves into Upload with the server stopped midway, hang checks with the server down | The development host (`/dev/fuse` is there) or an Erebus container |
 | Desktop | Files, the sidebar and eject, thumbnails with zero originals read (the bpftrace probe), copies and moves through Files' own operations (scripted via `org.gnome.Nautilus.FileOperations2`, or `gio copy` and `gio move`) and Dolphin's (`kioclient copy` and `move`), a video seeking in a player, both apps' first run, Dolphin, KWallet, screenshots | `lab/gnome-vm` and `lab/plasma-vm` |
 | Packaging | Per channel, an install matrix in containers (`lab/packaging/matrix.sh`, a release's .rpm and .deb on several distributions at once: they install, `--version` matches, `doctor` runs, the apps find their libraries, register the sign-in scheme and start (GTK under headless Weston, Qt off screen), the daemon mounts the lab server as root and serves originals matching Immich's checksums, and they remove cleanly), and a full run in a fresh GNOME VM: sign in, mount, sidebar, zero originals read, checksum, remount after reboot, clean uninstall. VMs: Fedora 44 (Homebrew, RPM), Ubuntu 26.04 (Homebrew, DEB), Arch (AUR) | Erebus `lab/packaging/` |
 

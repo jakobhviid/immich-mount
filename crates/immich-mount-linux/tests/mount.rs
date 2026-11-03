@@ -15,6 +15,7 @@ use immich_mount_core::source::{LibrarySource, SourceError, ThumbnailKind, Thumb
 use immich_mount_core::uploads::{MediaTypes, UploadError, UploadTarget, Uploaded};
 use immich_mount_core::tree::{InMemoryNames, Tree};
 use immich_mount_linux::fuse::{mount, ImmichFilesystem};
+use immich_mount_linux::staging::Staging;
 
 struct Library {
     assets: Vec<Asset>,
@@ -80,13 +81,13 @@ impl ThumbnailSource for Library {
     }
 }
 
-/// Uploads are refused: this test mounts without them.
+/// Every upload is a new Asset; most tests mount without uploads.
 impl UploadTarget for Library {
     async fn media_types(&self) -> Result<MediaTypes, SourceError> {
         Ok(MediaTypes::default())
     }
     async fn upload(&self, _path: &std::path::Path, _file_name: &str, _modified: chrono::DateTime<Utc>) -> Result<Uploaded, UploadError> {
-        Err(UploadError::Source(SourceError::Busy))
+        Ok(Uploaded::Created("uploaded".into()))
     }
 }
 
@@ -134,7 +135,7 @@ fn the_mount_lists_and_reads_like_a_normal_folder() {
     std::thread::sleep(Duration::from_millis(200));
 
     let root = mountpoint.path();
-    assert_eq!(sorted_names(root), [".nomedia", ".trackerignore", ".xdg-volume-info", "Albums", "People", "Photos", "Places"]);
+    assert_eq!(sorted_names(root), [".nomedia", ".trackerignore", ".xdg-volume-info", "Albums", "People", "Photos", "Places", "Upload"]);
     assert_eq!(std::fs::read_to_string(root.join(".xdg-volume-info")).unwrap(), "[Volume Info]\nName=Immich\n");
 
     let month = root.join("Photos").join("2024").join("03 March");
@@ -167,6 +168,15 @@ struct Mounted {
 
 impl Mounted {
     fn new() -> Mounted {
+        Mounted::build(false)
+    }
+
+    /// Mounted with uploads, into a staging area of its own.
+    fn with_uploads() -> Mounted {
+        Mounted::build(true)
+    }
+
+    fn build(uploads: bool) -> Mounted {
         let (small, small_bytes) = asset("asset-small", 7, 1000);
         let (medium, medium_bytes) = asset("asset-medium", 8, 900_000);
         let (large, large_bytes) = asset("asset-large", 9, 5 * 1024 * 1024 + 123);
@@ -185,7 +195,11 @@ impl Mounted {
         let mountpoint = tempfile::tempdir().unwrap();
         let tree = Arc::new(Tree::new(library.clone(), InMemoryNames::default(), Config::from_toml("").unwrap()));
         let content = Arc::new(BlockCache::new(library.clone(), cache.path(), u64::MAX).unwrap());
-        let filesystem = ImmichFilesystem::new(tree, content, runtime.handle().clone());
+        let mut filesystem = ImmichFilesystem::new(tree, content, runtime.handle().clone());
+        if uploads {
+            let staging = Staging::new(&cache.path().join("staging"), &cache.path().join("not-uploaded")).unwrap();
+            filesystem = filesystem.with_uploads(Arc::new(staging), MediaTypes::default(), Arc::new(library.clone()));
+        }
         let session = mount(filesystem, mountpoint.path()).expect("mounts");
         std::thread::sleep(Duration::from_millis(200));
         Mounted { library, mountpoint, _cache: cache, _runtime: runtime, session: Some(session) }
@@ -320,4 +334,29 @@ fn a_dead_mount_is_known_dead_though_its_attributes_are_cached() {
     assert_eq!(immich_mount_linux::mounts::mount_state(&root), immich_mount_linux::mounts::MountState::Stale);
     immich_mount_linux::mounts::unmount(&root, true).unwrap();
     drop(mounted.session.take());
+}
+
+/// A whole 1x1 PNG, so the upload's completeness check passes.
+const PNG: &[u8] = &[
+    0x89, 0x50, 0x4E, 0x47, 0x0D, 0x0A, 0x1A, 0x0A, 0x00, 0x00, 0x00, 0x0D, 0x49, 0x48, 0x44, 0x52, 0x00, 0x00, 0x00, 0x01,
+    0x00, 0x00, 0x00, 0x01, 0x08, 0x06, 0x00, 0x00, 0x00, 0x1F, 0x15, 0xC4, 0x89, 0x00, 0x00, 0x00, 0x0A, 0x49, 0x44, 0x41,
+    0x54, 0x78, 0x9C, 0x63, 0x00, 0x01, 0x00, 0x00, 0x05, 0x00, 0x01, 0x0D, 0x0A, 0x2D, 0xB4, 0x00, 0x00, 0x00, 0x00, 0x49,
+    0x45, 0x4E, 0x44, 0xAE, 0x42, 0x60, 0x82,
+];
+
+#[test]
+#[ignore = "needs /dev/fuse and fusermount3"]
+fn only_upload_takes_new_files() {
+    let mounted = Mounted::with_uploads();
+    let upload = mounted.mountpoint.path().join("Upload");
+    // The library's folders are views built from its metadata: nothing is copied into them.
+    assert_eq!(errno(std::fs::write(mounted.month().join("new.png"), PNG)), Some(libc::EROFS));
+    assert!(!access(&mounted.month(), libc::W_OK) && access(&upload, libc::W_OK));
+    // Upload takes the file; its close returns once Immich has it, and what is left may go at once.
+    std::fs::write(upload.join("new.png"), PNG).unwrap();
+    assert_eq!(sorted_names(&upload), ["new.png"]);
+    std::fs::remove_file(upload.join("new.png")).unwrap();
+    assert!(sorted_names(&upload).is_empty());
+    // It takes files only.
+    assert_eq!(errno(std::fs::create_dir(upload.join("folder"))), Some(libc::EPERM));
 }

@@ -1,5 +1,5 @@
-//! The FUSE adapter: presents the core's tree as a filesystem, read-only except for new files in Photos, which are
-//! staged and uploaded (ARCHITECTURE.md, "The tree", "Content", "Uploads").
+//! The FUSE adapter: presents the core's tree as a filesystem, read-only except for new files in the Upload folder,
+//! which are staged and uploaded (ARCHITECTURE.md, "The tree", "Content", "Uploads").
 //!
 //! The kernel speaks inode numbers; the core speaks `NodeKey`s. The inode table translates, handing out numbers in
 //! sequence for the life of the mount. Every request that needs the network runs on the tokio runtime with a
@@ -20,7 +20,7 @@ use fuser::{
 };
 use immich_mount_core::content::{BlockCache, ContentSource};
 use immich_mount_core::source::{LibrarySource, SourceError, ThumbnailSource};
-use immich_mount_core::tree::{Entry, EntryKind, NameMemory, NodeKey, SectionKey, Tree};
+use immich_mount_core::tree::{Entry, EntryKind, NameMemory, NodeKey, Tree};
 use immich_mount_core::uploads::{completeness, Admission, Completeness, MediaTypes, UploadError, UploadTarget, Uploaded};
 
 use crate::caller;
@@ -125,7 +125,7 @@ const VIRTUAL_FILES: &[(&str, &str)] = &[
 enum MountNode {
     Tree(NodeKey),
     Virtual(&'static str),
-    /// A file being written into Photos, by its staging id.
+    /// A file being written into Upload, by its staging id.
     Staged(u64),
 }
 
@@ -276,7 +276,7 @@ const LIBRARY_FILE_HANDLE: u64 = u64::MAX;
 /// One folder's entries as `readdir` hands them out: inode, type and name, `.` and `..` first.
 type Listing = Vec<(u64, FileType, String)>;
 
-/// Uploads into Photos (SPEC.md, "Uploads").
+/// Uploads through the Upload folder (SPEC.md, "Uploads").
 struct UploadSetup<Content> {
     staging: Arc<Staging>,
     media: Arc<MediaTypes>,
@@ -324,7 +324,7 @@ where
         self.open_files.clone()
     }
 
-    /// Accept new files in Photos, staged in `staging` and uploaded to `target` on close.
+    /// Accept new files in Upload, staged in `staging` and uploaded to `target` on close.
     pub fn with_uploads(mut self, staging: Arc<Staging>, media: MediaTypes, target: Arc<Content>) -> Self {
         self.uploads = Some(UploadSetup { staging, media: Arc::new(media), target });
         self
@@ -344,10 +344,10 @@ where
         self.attributes(inode, &MountNode::Staged(id), &staged_kind(file))
     }
 
-    /// The error for changing something outside the staged files: existing Assets cannot be changed (principle 4),
-    /// and outside Photos the mount is read-only.
+    /// The error for changing something other than the files being uploaded: in Upload, what it does not take (a
+    /// folder, a link) is not permitted; everywhere else the mount is a read-only view of the library.
     fn refusal(&self, folder: &NodeKey) -> Errno {
-        if self.uploads.is_some() && is_photos_folder(folder) { Errno::EPERM } else { Errno::EROFS }
+        if self.uploads.is_some() && is_upload_folder(folder) { Errno::EPERM } else { Errno::EROFS }
     }
 
     fn parent_folder(&self, parent: INodeNo) -> Result<(NodeKey, PathBuf), Errno> {
@@ -370,9 +370,10 @@ fn virtual_content(name: &str) -> &'static str {
     VIRTUAL_FILES.iter().find(|(file_name, _)| *file_name == name).map(|(_, content)| *content).unwrap_or("")
 }
 
-/// Whether a folder belongs to Photos, the only place new files are accepted.
-fn is_photos_folder(node: &NodeKey) -> bool {
-    matches!(node, NodeKey::Section(SectionKey::Photos) | NodeKey::TimelineYear(_) | NodeKey::TimelineMonth(_) | NodeKey::TimelineDay(..))
+/// Whether a folder is Upload, the only place new files are accepted. Photos and its date folders are views built
+/// from each photo's own date, where a dropped file could not stay where it was put.
+fn is_upload_folder(node: &NodeKey) -> bool {
+    matches!(node, NodeKey::Upload)
 }
 
 fn staged_kind(file: &StagedFile) -> EntryKind {
@@ -433,7 +434,11 @@ where
         Ok(Ok(uploaded)) => {
             match uploaded {
                 Uploaded::Created(_) => log::info!("uploaded {name}"),
-                Uploaded::AlreadyInLibrary(_) => log::info!("{name} is already in the library"),
+                Uploaded::AlreadyInLibrary(_) => {
+                    log::info!("{name} is already in the library");
+                    let body = "Immich has this photo already, so nothing was added.";
+                    crate::notify::notify_once_in_a_while("already-in-library", &format!("Already in Immich: {name}"), body).await;
+                }
             }
             tree.forget_timeline();
             Ok(())
@@ -563,9 +568,9 @@ where
                 None => reply.error(Errno::ENOENT),
             };
         }
+        // The library's files are read-only views; only what is being uploaded (above) may be written.
         if access_mode != libc::O_RDONLY {
-            let in_photos = record.as_ref().is_some_and(|record| matches!(&record.node, MountNode::Tree(NodeKey::Asset { parent, .. }) if is_photos_folder(parent)));
-            return reply.error(if in_photos && self.uploads.is_some() { Errno::EPERM } else { Errno::EROFS });
+            return reply.error(Errno::EROFS);
         }
         if inode.0 != INodeNo::ROOT.0 {
             if let Some(indexer) = caller::indexer(request.pid()) {
@@ -841,7 +846,7 @@ where
             Ok(found) => found,
             Err(errno) => return reply.error(errno),
         };
-        let Some(uploads) = self.uploads.as_ref().filter(|_| is_photos_folder(&folder)) else {
+        let Some(uploads) = self.uploads.as_ref().filter(|_| is_upload_folder(&folder)) else {
             return reply.error(Errno::EROFS);
         };
         let Some(name) = name.to_str().map(str::to_owned) else {
@@ -965,7 +970,7 @@ where
         if flags.contains(RenameFlags::RENAME_EXCHANGE) || flags.contains(RenameFlags::RENAME_WHITEOUT) {
             return reply.error(Errno::EINVAL);
         }
-        if !is_photos_folder(&new_folder) {
+        if !is_upload_folder(&new_folder) {
             return reply.error(Errno::EROFS);
         }
         let admission = uploads.media.admission(&new_name);
@@ -999,8 +1004,8 @@ where
         });
     }
 
-    /// Removing a staged file that was not uploaded is allowed (a cancelled copy cleaning up); a receipt or an Asset
-    /// cannot be removed, since that would change nothing on the server, or the library itself (principles 4, 5).
+    /// Removing a file in Upload is allowed (a cancelled copy cleaning up, a receipt going early); an Asset cannot be
+    /// removed, since that would change the library itself (principles 4, 5).
     fn unlink(&self, _request: &Request, parent: INodeNo, name: &OsStr, reply: ReplyEmpty) {
         let (folder, _) = match self.parent_folder(parent) {
             Ok(found) => found,
@@ -1023,7 +1028,7 @@ where
         let Some(record) = self.inodes.lock().expect("inode table lock").record(inode.0) else { return reply.error(Errno::ENOENT) };
         let writable = match (&record.node, &record.kind) {
             (MountNode::Staged(_), _) => true,
-            (MountNode::Tree(key), EntryKind::Folder) => self.uploads.is_some() && is_photos_folder(key),
+            (MountNode::Tree(key), EntryKind::Folder) => self.uploads.is_some() && is_upload_folder(key),
             _ => false,
         };
         let searchable = matches!(record.kind, EntryKind::Folder);

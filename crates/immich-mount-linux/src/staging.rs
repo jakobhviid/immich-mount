@@ -1,4 +1,4 @@
-//! Files being written into Photos, held in the staging area until their upload (SPEC.md, "Uploads").
+//! Files being written into Upload, held in the staging area until their upload (SPEC.md, "Uploads").
 //!
 //! Each staged file is a private file in the account's `staging/` directory, and every `open` or `create` of it gets
 //! a handle of its own, which remembers whether it may write and in which round of writing it was opened.
@@ -6,14 +6,15 @@
 //!   such as a thumbnailer, never uploads a half-written file.
 //! - **Every close waits for the same result.** A close during an upload waits for it; a close after a failure gets
 //!   the failure. So no close reports success while the server does not have the file.
-//! - **After an upload the name stays as a receipt** for two minutes, keeping its bytes, so reading it back (an undo
-//!   in Files) gets the real file. A receipt cannot be deleted or renamed: that would change nothing on the server.
+//! - **After an upload the name stays as a receipt** for a few seconds, keeping its bytes, for the copy tools that
+//!   set the file's times after closing it (GIO, KIO, rsync). It may be deleted before then, which changes nothing in
+//!   Immich; it is not renamed.
 //! - **A handle opened before an upload cannot write after it:** its writes would start a new file with a hole.
 //!   A fresh open of the receipt's name is a new round, and a new upload.
 //! - **What did not upload is never thrown away.** A file whose upload failed, and what a dead daemon left behind,
 //!   go to the not-uploaded folder under their own names: Dolphin's move (KIO) deletes its source although the close
 //!   failed. Only what the user dropped is deleted: a cancelled copy that ends short, an empty file, a file removed or
-//!   replaced in Photos, an uploaded file's receipt.
+//!   replaced in Upload, an uploaded file's receipt.
 
 use std::collections::HashMap;
 use std::os::unix::fs::{DirBuilderExt, FileExt, OpenOptionsExt};
@@ -24,8 +25,9 @@ use std::time::{Duration, Instant, SystemTime};
 use immich_mount_core::tree::NodeKey;
 use tokio::sync::watch;
 
-/// How long a receipt stays after its upload.
-pub const RECEIPT_LIFETIME: Duration = Duration::from_secs(120);
+/// How long an uploaded file stays in Upload after its upload, as a receipt: copy tools set its times right after
+/// closing it (GIO, KIO, rsync), and those must find it. Then it goes: Immich has it, in its date folder.
+pub const RECEIPT_LIFETIME: Duration = Duration::from_secs(10);
 
 /// An upload's outcome as the closing program sees it: success, or an error number.
 pub type UploadResult = Result<(), i32>;
@@ -438,12 +440,12 @@ impl Staging {
         Ok(())
     }
 
-    /// Remove a staged file that was not uploaded (a cancelled copy cleaning up). Receipts stay: deleting one would
-    /// change nothing on the server.
+    /// Remove a staged file: one not uploaded (a cancelled copy cleaning up), or a receipt going early. Not one being
+    /// uploaded, whose close is waiting.
     pub fn remove(&self, file: u64) -> Result<(), Refusal> {
         let mut inner = self.lock();
         match inner.files.get(&file).map(|staged| &staged.state) {
-            Some(StagedState::Receipt(_)) => Err(libc::EPERM),
+            // A receipt may go early: Immich keeps the photo, and the receipt was leaving anyway.
             Some(StagedState::Uploading(_)) => Err(libc::EBUSY),
             Some(_) => {
                 if let Some(staged) = inner.files.remove(&file) {
@@ -597,10 +599,24 @@ mod tests {
         assert!(receipt.is_receipt());
         assert_eq!(staging.read(file, 0, 64).unwrap(), b"hello world", "a receipt keeps its bytes");
         assert_eq!(staging.write(writer, 11, b"!"), Err(libc::EIO), "a handle from before the upload cannot write");
-        assert_eq!(staging.remove(file), Err(libc::EPERM), "a receipt cannot be deleted");
         let fresh = staging.open(file, true).unwrap();
         staging.write(fresh, 0, b"again").unwrap();
         assert!(matches!(staging.close(fresh), CloseAction::Upload(_)), "a fresh open of the name is a new upload");
+    }
+
+    #[tokio::test]
+    async fn a_receipt_may_go_before_its_time() {
+        let directory = tempfile::tempdir().unwrap();
+        let staging = Staging::new(directory.path(), &directory.path().join("kept")).unwrap();
+        let (file, writer) = staging.create(&photos(), "IMG_0003.JPG", false).unwrap();
+        staging.write(writer, 0, b"bytes").unwrap();
+        let pending = upload(staging.close(writer));
+        let path = pending.path.clone();
+        staging.finish_upload(pending, Ok(()));
+        assert!(staging.get(file).unwrap().is_receipt());
+        assert_eq!(staging.remove(file), Ok(()), "Immich keeps the photo; the receipt was leaving anyway");
+        assert!(staging.get(file).is_none());
+        assert!(!path.exists(), "its bytes go with it, as Immich has them");
     }
 
     #[tokio::test]

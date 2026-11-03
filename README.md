@@ -21,7 +21,8 @@ your editor, or drag new pictures in to upload them, without downloading the lib
 - **Thumbnails from the server,** so browsing a folder never downloads the photos in it.
 - **Originals on demand:** a file is fetched only when a program opens it, and only the parts it reads. A video
   seeks without downloading the whole file. Folders you have visited stay browsable offline.
-- **Uploads by copy and move:** drop photos and videos into **Photos** and they are uploaded unchanged. A move
+- **Uploads by copy and move:** drop photos and videos into **Upload** and they are uploaded unchanged, then show
+  in Photos by their own date. Every other folder is a read-only view of the library. A move
   never loses a photo: Files keeps the source until Immich has the file, and anything that fails to upload is kept
   in a folder of its own.
 - **Changes in Immich show within seconds,** in an open folder after a refresh.

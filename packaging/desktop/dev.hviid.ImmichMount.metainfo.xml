@@ -12,7 +12,7 @@
     <p>
       Browse a self-hosted Immich library as an ordinary folder in Files or Dolphin and in every file dialog: the
       timeline, albums, people and places. Thumbnails come from the server, originals download only when something
-      opens them, and photos copied into Photos are uploaded. The app opens in the interface native to the desktop:
+      opens them, and photos copied into its Upload folder are uploaded. The app opens in the interface native to the desktop:
       GTK and libadwaita on GNOME, Kirigami on KDE Plasma.
     </p>
     <p>

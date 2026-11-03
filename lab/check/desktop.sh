@@ -11,7 +11,8 @@
 # Runs as the desktop's user inside its session (lab/check/run.sh runs it through the VM kind's run-in-session.sh),
 # with Immich Mount installed, signed in and mounted at ~/Immich. With a server.env beside it (IMMICH_URL and
 # IMMICH_API_KEY_READONLY), it also asks the server about the copies and the upload. It does what a user would: copies
-# into a scratch folder, one upload into Photos, an unmount and a mount, and opens and closes the app.
+# into a scratch folder, one upload into Upload (and a paste into Photos refused), an unmount and a mount, and opens
+# and closes the app.
 set -o pipefail
 
 expected_version=${1:?usage: desktop.sh <expected version> [--app-setup]}
@@ -247,14 +248,14 @@ choose_months() {
   [ -n "$peek_month" ] && [ -n "$copy_month" ]
 }
 
-# access() is what the mount allows: no writing at its root, in Albums or to a photo; Photos and its folders take new
-# files (SPEC.md, "Attributes").
+# access() is what the mount allows: no writing at its root, in Photos, its folders, Albums or to a photo; only
+# Upload takes new files (SPEC.md, "Attributes").
 check_access() {
   local photo year_directory entry path expected seen label wrong=() allowed=() refused=()
   photo=$(find "$peek_month" -maxdepth 1 -type f | head -1)
   year_directory=$(dirname "$peek_month")
   for entry in "$mount_point:FALSE" "$mount_point/Albums:FALSE" "$photo:FALSE" \
-    "$mount_point/Photos:TRUE" "$year_directory:TRUE" "$peek_month:TRUE"; do
+    "$mount_point/Photos:FALSE" "$year_directory:FALSE" "$peek_month:FALSE" "$mount_point/Upload:TRUE"; do
     expected=${entry##*:}
     path=${entry%:*}
     label=${path#"$mount_point"/}
@@ -407,7 +408,7 @@ check_copies() {
   fi
 }
 
-# An upload: a photo the server does not have, copied into Photos, uploads on close; its name stays as a receipt,
+# An upload: a photo the server does not have, copied into Upload, uploads on close; its name stays as a receipt,
 # and the asset appears in its date folder once Immich has read its metadata and the change feed has turned
 # (WORKFLOWS.md, "Uploading"). The photo is the one just copied out, with a JPEG comment that makes its bytes new; its
 # EXIF date is its source's, so its date folder is the source's month. Until Immich reads the metadata, the asset
@@ -434,20 +435,20 @@ PYTHON
   fi
   before=$(ls -1 "$copy_month" 2>/dev/null)
   started=$EPOCHREALTIME
-  if ! cp "$work/upload.jpg" "$mount_point/Photos/$name" 2>"$work/upload.err"; then
-    fail upload "cp into Photos failed: $(head -1 "$work/upload.err")"
+  if ! cp "$work/upload.jpg" "$mount_point/Upload/$name" 2>"$work/upload.err"; then
+    fail upload "cp into Upload failed: $(head -1 "$work/upload.err")"
     return
   fi
   elapsed=$(seconds_since "$started")
-  [ -e "$mount_point/Photos/$name" ] || { fail upload "Photos/$name is not there as a receipt after the copy"; return; }
+  [ -e "$mount_point/Upload/$name" ] || { fail upload "Upload/$name is not there as a receipt after the copy"; return; }
   if matches=$(server_assets_like "$work/upload.jpg"); then
     if [ "${matches%% *}" -lt 1 ]; then
       fail upload "cp returned 0 in $elapsed s, but no asset on the server has its SHA-1"
       return
     fi
-    pass upload "Photos/$name ($((size / 1000)) KB): cp returned in $elapsed s, the server has its SHA-1, the receipt is in Photos"
+    pass upload "Upload/$name ($((size / 1000)) KB): cp returned in $elapsed s, the server has its SHA-1, the receipt is in Upload"
   else
-    pass upload "Photos/$name ($((size / 1000)) KB): cp returned in $elapsed s, the receipt is in Photos (not asked of the server: no server.env)"
+    pass upload "Upload/$name ($((size / 1000)) KB): cp returned in $elapsed s, the receipt is in Upload (not asked of the server: no server.env)"
   fi
   # A new name in the source's month, with the upload's size.
   if wait_until 90 sh -c '
@@ -460,6 +461,31 @@ PYTHON
   else
     fail upload-listed "nothing new of $size bytes in ${copy_month#"$mount_point"/} 90 s after the copy${matches:+ (the server: ${matches#* })}"
   fi
+  # Once Immich has it, the file leaves Upload by itself, a few seconds after its upload (SPEC.md, "Uploads").
+  if wait_until 30 test ! -e "$mount_point/Upload/$name"; then
+    pass upload-gone "Upload/$name left Upload $(seconds_since "$started") s after the copy began"
+  else
+    fail upload-gone "Upload/$name is still in Upload 30 s after the copy"
+  fi
+}
+
+# The library's folders are read-only views: a paste beside a photo is refused, nothing is uploaded, and nothing is
+# left behind (SPEC.md, "What the mount refuses").
+check_read_only_views() {
+  local photo target error
+  photo=$(find "$copy_month" -maxdepth 1 -type f -name '*.jpg' | head -1)
+  target="$copy_month/pasted beside its source.jpg"
+  if cp "$photo" "$target" 2>"$work/paste.err"; then
+    fail read-only "a paste into ${copy_month#"$mount_point"/} succeeded"
+    return
+  fi
+  error=$(head -1 "$work/paste.err")
+  case $error in
+    *"Read-only file system"*) ;;
+    *) fail read-only "a paste into ${copy_month#"$mount_point"/} failed, but not as read-only: $error"; return ;;
+  esac
+  [ ! -e "$target" ] || { fail read-only "the refused paste left ${target#"$mount_point"/} behind"; return; }
+  pass read-only "a paste beside ${photo#"$mount_point"/} refused: Read-only file system"
 }
 
 # doctor: no problem and no warning (WORKFLOWS.md, "Doctor").
@@ -560,6 +586,7 @@ if choose_months; then
   check_peek
   check_copies
   check_upload
+  check_read_only_views
 else
   fail folders "no month with three files and another with a JPEG under $mount_point/Photos (found '${peek_month#"$mount_point"/}' and '${copy_month#"$mount_point"/}')"
 fi

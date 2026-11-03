@@ -148,7 +148,7 @@ the address the browser ends on from stdin; the other methods read their secrets
   `mount.at_login` setting turns off).
 - **Unmount** on the app's status page, or **Eject** in Files, takes it out until the next login, or until **Mount**
   on the status page or `immich-mount mount`. A Files or Dolphin window showing the mount does not stop it; the
-  window keeps what it showed until it is refreshed (F5), as after Files' own Eject. A copy into Photos still
+  window keeps what it showed until it is refreshed (F5), as after Files' own Eject. A copy into Upload still
   uploading does: unmount when it is done.
 - `immich-mount unmount` and `immich-mount mount` do the same from a terminal.
 
@@ -216,12 +216,14 @@ The apps' preferences (GNOME's dialog, KDE's page) edit the same settings. The k
 
 ## 7. Uploading
 
-- Copy or move photos and videos into **Photos** in Files. Each file uploads unchanged, and then appears in its
-  date folder. The name you pasted stays for about two minutes as a receipt.
+- Copy or move photos and videos into **Upload**, at the top of the mount, in Files or Dolphin. Each file uploads
+  unchanged, leaves Upload a few seconds later, and appears in Photos under its own date. Every other folder is a
+  read-only view of your library, built from its dates, albums, people and places: nothing is pasted there.
 - **A move never loses a photo.** In Files, the source is deleted only after the server has the file: if an upload
   fails, Files reports an error and the source stays where it was. Dolphin deletes the source even then, so any file
   that could not be uploaded is kept in `~/.local/share/immich-mount/not-uploaded/`, and the notification says so.
-- **Already in library:** a file whose content already exists counts as done. A file matching something in the Immich
+- **Already in library:** a file whose content already exists counts as done, adds nothing, and a notification says
+  so (a photo copied from the mount itself, say). A file matching something in the Immich
   trash is refused; restore it in Immich if you want it.
 - Folders and non-media files are refused, with a notification explaining why.
 - **Cancelling a copy** keeps the part already copied out of Immich: each file's own structure shows whether it

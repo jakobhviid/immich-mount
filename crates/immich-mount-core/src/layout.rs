@@ -29,6 +29,10 @@ impl Section {
     }
 }
 
+/// The one folder that takes new files: what is copied into it is uploaded, and leaves it once Immich has it
+/// (SPEC.md, "Uploads"). Every other folder is a read-only view of the library.
+pub const UPLOAD_FOLDER: &str = "Upload";
+
 /// When a folder is split into date folders (`grouping.*`).
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub enum GroupingMode {

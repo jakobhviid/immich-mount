@@ -57,7 +57,7 @@ pub const SETTINGS: &[Setting] = &[
     Setting { key: "albums.layout", kind: Kind::Choice(&["year-prefix", "year-folders", "flat"]), description: "How album folders are named and grouped", default: "year-prefix" },
     Setting { key: "files.naming", kind: Kind::Choice(&["date-time", "original"]), description: "How files are named", default: "date-time" },
     Setting { key: "cache.limit", kind: Kind::Size, description: "The content cache's size limit", default: "10GiB" },
-    Setting { key: "uploads.enabled", kind: Kind::Bool, description: "Accept files copied into Photos", default: "true" },
+    Setting { key: "uploads.enabled", kind: Kind::Bool, description: "Show the Upload folder, and upload what is copied into it", default: "true" },
     Setting { key: "thumbnails.sharp", kind: Kind::Bool, description: "Also seed 1024 px thumbnails from the preview", default: "true" },
     Setting { key: "thumbnails.safety_net", kind: Kind::Bool, description: "Refuse thumbnailer reads of originals", default: "true" },
     Setting { key: "credential.file", kind: Kind::Path, description: "Headless only: a 0600 file holding the credential", default: "" },

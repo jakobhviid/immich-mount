@@ -60,8 +60,10 @@ Show thumbnails switch does), which also checks that doctor's advice works.
 | `thumbnails` | a listed month's files have `x-large` (and `normal`, `large` on KDE) at once and `xx-large` within 40 s, keyed by the MD5 of `gio info`'s URI, mode 0600, `Thumb::URI` right; under `/home` and `/var/home` where home is a link | SPEC "Thumbnails" |
 | `peek` | each file's first 8 KiB and last 4 KiB, page cache dropped first (`posix_fadvise`), cost under 100 KB per file in `status --json`'s `fetched.bytes`; nothing fetched fails as unmeasured | ARCHITECTURE "Peeks fetch only their own range" |
 | `copies` | a photo by `gio copy` and `cp`, and the smallest album by `cp -r`, come out 0644 and 0755, byte for byte the server's (SHA-1 asked of the server) | SPEC "What the mount refuses" |
-| `upload` | a photo the server lacks (a copied one with a new JPEG comment), `cp` into Photos, returns once the server has its SHA-1; the receipt stays | SPEC "Uploads" |
+| `upload` | a photo the server lacks (a copied one with a new JPEG comment), `cp` into Upload, returns once the server has its SHA-1; the receipt stays | SPEC "Uploads" |
 | `upload-listed` | the asset shows in its date folder (its source's month) | WORKFLOWS "Uploading" |
+| `upload-gone` | the file leaves Upload by itself within 30 s of the copy | SPEC "Uploads" |
+| `read-only` | a paste beside a photo in its month is refused as `Read-only file system`, and leaves nothing | SPEC "What the mount refuses" |
 | `doctor` | `doctor --json`: no problem, no warning | WORKFLOWS "Doctor" |
 | `app` | the launcher's command, started in the user manager as a desktop starts it, opens `immich-mount-kde` on Plasma and `immich-mount-gnome` elsewhere, still running after 5 s | SPEC "The immich-mount command" |
 | `unmount` | `immich-mount unmount` with a process inside Photos: exit 0, detached, the service stopped | SPEC "The immich-mount command" |
@@ -89,7 +91,7 @@ at a release (the `lab-desktop-vm` and `lab-bazzite-vm` skills), for what no com
 - single sign-on through a browser and the `app.immich` hand-off (`lab/immich-server/oidc-sign-in.py` covers the
   CLI's side)
 - what is drawn: the thumbnails Files and Dolphin show, the sidebar's eject button, notifications
-- upgrades restarting into the new version, offline behaviour, and moves into Photos from the file managers
+- upgrades restarting into the new version, offline behaviour, and moves into Upload from the file managers
 
 ## Traps
 
