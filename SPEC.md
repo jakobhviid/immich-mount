@@ -165,9 +165,10 @@ cameras. Clashes are detected case-insensitively, after Unicode NFC normalisatio
 - `/.xdg-volume-info` (`[Volume Info]`, `Name=Immich`): the display name in the file manager (verified in a
   GNOME 50 VM).
 - `/.nomedia` and `/.trackerignore`: hidden; they keep GNOME's indexer out.
-- Anything else that tools probe for (`.hidden`, `.directory`, `.Trash-<uid>`, `autorun.inf`, `.DS_Store`): a fast
-  `ENOENT`, which the kernel remembers for a minute (a negative entry), so a folder's next probes never reach the
-  daemon. Only these known names are remembered: any other missing name, a dot-name of an album or a file included,
+- Anything else that tools probe for (`.hidden`, `.directory`, `.Trash-<uid>`, `autorun.inf`, `.DS_Store`, and
+  rom-properties' `code`, `default.xex` and `default.xbe` in their spellings): a fast `ENOENT`, which the kernel
+  remembers for a minute (a negative entry), so a folder's next probes never reach the daemon. When the folder's
+  listing is not at hand within half a second, such a name is answered absent all the same. Only these known names are remembered: any other missing name, a dot-name of an album or a file included,
   may still arrive from Immich.
 
 ### What the mount refuses

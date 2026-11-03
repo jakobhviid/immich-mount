@@ -68,6 +68,36 @@ const FOLDER_TTL: Duration = Duration::from_secs(60);
 const FILE_TTL: Duration = Duration::from_secs(60);
 /// How long the kernel may remember that a probed name is absent (`is_probe_name`).
 const NEGATIVE_TTL: Duration = Duration::from_secs(60);
+/// After a listing ran past its deadline, the server is taken as not answering for this long: listings then wait at
+/// most `IMPATIENT_DEADLINE`, an older listing standing in where there is one. A program that probes folder after
+/// folder (rom-properties, from Files' main thread) then gets its answers in moments, not 10 s a name, when the
+/// server drops requests (measured on Bazzite: Files froze for 3 minutes).
+const SERVER_SILENT_FOR: Duration = Duration::from_secs(30);
+const IMPATIENT_DEADLINE: Duration = Duration::from_secs(1);
+/// Only a wait this long that ran out shows the server silent; a probe's or an impatient one's short wait does not.
+const SILENCE_PROOF: Duration = Duration::from_secs(5);
+/// How long a lookup of a probed name waits for its folder's listing: such names are next to never there, so when no
+/// listing is at hand they are answered absent.
+const PROBE_DEADLINE: Duration = Duration::from_millis(500);
+
+/// Whether a listing that waited `SILENCE_PROOF` or longer ran out within the last `SERVER_SILENT_FOR`.
+#[derive(Default)]
+struct ListingPatience {
+    silent_since: Mutex<Option<std::time::Instant>>,
+}
+
+impl ListingPatience {
+    fn deadline(&self, wanted: Duration) -> Duration {
+        match *self.silent_since.lock().expect("patience lock") {
+            Some(since) if since.elapsed() < SERVER_SILENT_FOR => wanted.min(IMPATIENT_DEADLINE),
+            _ => wanted,
+        }
+    }
+
+    fn silent(&self) {
+        *self.silent_since.lock().expect("patience lock") = Some(std::time::Instant::now());
+    }
+}
 
 /// Names tools probe for in every folder: Dolphin's `.directory`, GIO's `.hidden`, the trash, indexers' opt-outs,
 /// and Windows' and macOS' leftovers. Their absence is cached by the kernel as a negative entry, so the next probe
@@ -76,7 +106,11 @@ const NEGATIVE_TTL: Duration = Duration::from_secs(60);
 fn is_probe_name(name: &str) -> bool {
     const PROBED: &[&str] =
         &[".directory", ".hidden", ".Trash", ".DS_Store", ".nomedia", ".trackerignore", ".metadata_never_index", "autorun.inf", "desktop.ini", "Thumbs.db"];
-    PROBED.contains(&name) || name.starts_with(".Trash-") || name.starts_with("._")
+    // rom-properties (Bazzite's file managers load it) probes every folder shown for extracted game discs: a Wii U
+    // folder's `code/app.xml`, an Xbox one's `default.xex` and `default.xbe`, in three spellings each.
+    const ROM_PROPERTIES: &[&str] =
+        &["code", "default.xex", "Default.xex", "DEFAULT.XEX", "default.xbe", "Default.xbe", "DEFAULT.XBE"];
+    PROBED.contains(&name) || ROM_PROPERTIES.contains(&name) || name.starts_with(".Trash-") || name.starts_with("._")
 }
 
 /// Files the mount answers itself, at its root.
@@ -173,6 +207,7 @@ async fn list_detached<Library, Names>(
     tree: Arc<Tree<Library, Names>>,
     key: NodeKey,
     deadline: Duration,
+    patience: &ListingPatience,
 ) -> Result<Result<Vec<Entry>, SourceError>, tokio::time::error::Elapsed>
 where
     Library: LibrarySource + 'static,
@@ -188,11 +223,19 @@ where
         return Ok(Ok(entries));
     }
     let listing = tokio::spawn(async move { fetching_tree.list(&fetching_key).await });
+    let deadline = patience.deadline(deadline);
     match tokio::time::timeout(deadline, listing).await {
+        // A listing that comes in time does not end the silence early: most come from what the daemon holds already
+        // (the root, the sections, fresh folders), which says nothing of the server.
         Ok(Ok(result)) => Ok(result),
         Ok(Err(failure)) => Ok(Err(SourceError::Protocol(format!("the listing task failed: {failure}")))),
         // Past the deadline an older listing, if there is one, beats an error (a server that drops packets).
-        Err(elapsed) => tree.stale_listing(&key).map(Ok).ok_or(elapsed),
+        Err(elapsed) => {
+            if deadline >= SILENCE_PROOF {
+                patience.silent();
+            }
+            tree.stale_listing(&key).map(Ok).ok_or(elapsed)
+        }
     }
 }
 
@@ -221,6 +264,7 @@ pub struct ImmichFilesystem<Library, Names, Content> {
     /// skips or repeats an entry (a `cp -r` of a large folder while Immich changes it).
     listings: Arc<Mutex<HashMap<u64, Arc<Listing>>>>,
     next_folder_handle: AtomicU64,
+    listing_patience: Arc<ListingPatience>,
     /// How many library files are open, which the daemon waits on before it restarts into an upgrade.
     open_files: Arc<AtomicUsize>,
 }
@@ -269,6 +313,7 @@ where
             thumbnails: None,
             uploads: None,
             listings: Arc::new(Mutex::new(HashMap::new())),
+            listing_patience: Arc::default(),
             next_folder_handle: AtomicU64::new(1),
             open_files: Arc::new(AtomicUsize::new(0)),
         }
@@ -465,8 +510,13 @@ where
         let filesystem = self.snapshot();
         let path = parent_record.path.join(&name);
         let folder = MountNode::Tree(parent_key.clone());
+        let patience = self.listing_patience.clone();
+        let probe = is_probe_name(&name);
         self.spawn(async move {
-            let found = list_detached(tree, parent_key, within(LISTING_DEADLINE, 1)).await.map(|listing| listing.map(|entries| entries.into_iter().find(|entry| entry.name == name)));
+            let deadline = if probe { PROBE_DEADLINE } else { within(LISTING_DEADLINE, 1) };
+            let found = list_detached(tree, parent_key, deadline, &patience)
+                .await
+                .map(|listing| listing.map(|entries| entries.into_iter().find(|entry| entry.name == name)));
             match found {
                 Ok(Ok(Some(entry))) => {
                     let node = MountNode::Tree(entry.node.clone());
@@ -474,7 +524,10 @@ where
                     reply.entry(&ttl_for(&entry.kind), &filesystem.attributes(inode, &node, &entry.kind), filesystem.generation);
                 }
                 // A negative entry (node id 0) is `ENOENT` that the kernel remembers.
-                Ok(Ok(None)) if is_probe_name(&name) => reply.entry(&NEGATIVE_TTL, &filesystem.attributes(0, &folder, &EntryKind::Folder), filesystem.generation),
+                // A probed name is answered absent also when its folder's listing is not at hand.
+                Ok(Ok(None)) | Err(_) if probe => {
+                    reply.entry(&NEGATIVE_TTL, &filesystem.attributes(0, &folder, &EntryKind::Folder), filesystem.generation)
+                }
                 Ok(Ok(None)) => reply.error(Errno::ENOENT),
                 Ok(Err(error)) => reply.error(errno_for(&error)),
                 Err(_) => reply.error(Errno::EIO),
@@ -668,9 +721,10 @@ where
             }
             _ => None,
         };
+        let patience = self.listing_patience.clone();
         self.spawn(async move {
             // Listing and seeding share the request: under a kernel limit each gets half of it.
-            let entries: Vec<Entry> = match list_detached(tree, key.clone(), within(LISTING_DEADLINE, 2)).await {
+            let entries: Vec<Entry> = match list_detached(tree, key.clone(), within(LISTING_DEADLINE, 2), &patience).await {
                 Ok(Ok(entries)) => entries,
                 Ok(Err(error)) => return reply.error(errno_for(&error)),
                 Err(_) => return reply.error(Errno::EIO),
@@ -803,9 +857,10 @@ where
             return reply.error(Errno::ENOTSUP);
         }
         let (staging, tree, inodes, filesystem) = (uploads.staging.clone(), self.tree.clone(), self.inodes.clone(), self.snapshot());
+        let patience = self.listing_patience.clone();
         self.spawn(async move {
             // A name an Asset already has in this folder is taken.
-            match list_detached(tree, folder.clone(), within(LISTING_DEADLINE, 1)).await {
+            match list_detached(tree, folder.clone(), within(LISTING_DEADLINE, 1), &patience).await {
                 Ok(Ok(entries)) if entries.iter().any(|entry| entry.name == name) => return reply.error(Errno::EEXIST),
                 Ok(Ok(_)) => {}
                 Ok(Err(error)) => return reply.error(errno_for(&error)),
@@ -921,9 +976,10 @@ where
             return reply.error(Errno::EEXIST);
         }
         let (target, staging, tree, inodes) = (uploads.target.clone(), uploads.staging.clone(), self.tree.clone(), self.inodes.clone());
+        let patience = self.listing_patience.clone();
         self.spawn(async move {
             // An Asset's name in the target folder is taken (principle 8).
-            match list_detached(tree.clone(), new_folder.clone(), within(LISTING_DEADLINE, 1)).await {
+            match list_detached(tree.clone(), new_folder.clone(), within(LISTING_DEADLINE, 1), &patience).await {
                 Ok(Ok(entries)) if entries.iter().any(|entry| entry.name == new_name) => return reply.error(Errno::EEXIST),
                 Ok(Ok(_)) => {}
                 Ok(Err(error)) => return reply.error(errno_for(&error)),

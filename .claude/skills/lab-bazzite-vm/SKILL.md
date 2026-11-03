@@ -105,6 +105,11 @@ system without one of its files for a moment, `bootc usr-overlay` makes `/usr` w
   answers them with small range requests (ARCHITECTURE.md, "Peeks fetch only their own range"). `ShowDangerousPermissionsOverlayIcon=false` under `[Options]` in
   `~/.config/rom-properties/rom-properties.conf` turns Dolphin's off; Files' has no setting (version 2.9 reads the
   file before it looks at any). Know this before measuring that a folder opens without reading originals.
+  Files' extension also probes inside every subfolder shown, from the main thread (libromdata's
+  `RomDataFactory::create`): `code/app.xml`, then `default.xex` and `default.xbe` in three spellings each, a statx
+  and an openat apiece. Each is a lookup in a folder the daemon may have to list first; the daemon answers these
+  names absent within half a second when the listing is not at hand (ARCHITECTURE.md, "Never hang"). A freeze of
+  Files with the server unreachable is therefore worth a look: its main thread's kernel stack shows who waits.
 - **`/opt/exp/input.sh` runs as root,** through `incus exec`, not through `run-in-session.sh`: `runuser` refuses
   to start from the session user.
 - **The first boot reboots once:** `bazzite-hardware-setup` adds kernel arguments and reboots. `up.sh` waits

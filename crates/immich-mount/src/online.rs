@@ -271,6 +271,17 @@ pub struct CacheStatus {
     pub limit_bytes: u64,
 }
 
+/// How long the daemon's start and `status` wait for the server's version (ARCHITECTURE.md, "The daemon's lifecycle").
+const VERSION_WAIT: std::time::Duration = std::time::Duration::from_secs(10);
+
+/// The server's version, or an error once `VERSION_WAIT` has passed without one.
+async fn server_version_soon(client: &Client) -> Result<immich_api::version::ServerVersion, immich_api::ApiError> {
+    match tokio::time::timeout(VERSION_WAIT, client.server_version()).await {
+        Ok(outcome) => outcome,
+        Err(_) => Err(immich_api::ApiError::Offline(format!("no answer within {} s", VERSION_WAIT.as_secs()))),
+    }
+}
+
 /// What the daemon would see: the server, the credential, the mount and the cache.
 pub fn status(paths: &Paths) -> Result<StatusReport> {
     let config = load_config(paths)?;
@@ -307,7 +318,7 @@ pub fn status(paths: &Paths) -> Result<StatusReport> {
         report.change_feed = "sync-stream";
     }
     let client = client(&server_url, Some(&credential))?;
-    match runtime.block_on(client.server_version()) {
+    match runtime.block_on(server_version_soon(&client)) {
         Ok(version) => {
             if let Some(server) = report.server.as_mut() {
                 server.version = Some(version.to_string());
@@ -385,7 +396,9 @@ pub fn daemon(paths: &Paths) -> Result<Option<StopReason>> {
         Err(error) => return Err(error),
     };
     let client = client(&server_url, Some(&credential))?;
-    let version = match runtime.block_on(client.server_version()) {
+    // The mount comes first: a server that drops requests would otherwise hold it back for the client's retries (four
+    // minutes, seen on Bazzite), with the mount point an empty folder all along.
+    let version = match runtime.block_on(server_version_soon(&client)) {
         Ok(version) if !version.is_supported() => {
             bail!("{server_url} runs Immich {version}; Immich Mount needs {} or later", immich_api::version::MINIMUM_SUPPORTED)
         }

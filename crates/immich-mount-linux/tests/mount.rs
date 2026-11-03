@@ -21,6 +21,16 @@ struct Library {
     originals: HashMap<String, Vec<u8>>,
     /// Bytes of originals fetched, as a server would count them.
     fetched: std::sync::atomic::AtomicU64,
+    /// A server that takes requests and never answers them (it drops packets): month and city listings hang.
+    silent: std::sync::atomic::AtomicBool,
+}
+
+impl Library {
+    async fn answer_or_hang(&self) {
+        if self.silent.load(std::sync::atomic::Ordering::SeqCst) {
+            tokio::time::sleep(Duration::from_secs(3600)).await;
+        }
+    }
 }
 
 impl LibrarySource for Library {
@@ -28,6 +38,7 @@ impl LibrarySource for Library {
         Ok(vec![(YearMonth { year: 2024, month: 3 }, self.assets.len() as u32)])
     }
     async fn month_assets(&self, _month: YearMonth) -> Result<Vec<Asset>, SourceError> {
+        self.answer_or_hang().await;
         Ok(self.assets.clone())
     }
     async fn albums(&self) -> Result<Vec<Album>, SourceError> {
@@ -49,6 +60,7 @@ impl LibrarySource for Library {
         Ok(vec!["Odense".into()])
     }
     async fn city_assets(&self, _country: &str, _city: &str) -> Result<Vec<Asset>, SourceError> {
+        self.answer_or_hang().await;
         Ok(self.assets.clone())
     }
 }
@@ -109,6 +121,7 @@ fn the_mount_lists_and_reads_like_a_normal_folder() {
         assets: vec![small, large],
         originals: HashMap::from([("asset-small".to_string(), small_bytes.clone()), ("asset-large".to_string(), large_bytes.clone())]),
         fetched: Default::default(),
+        silent: Default::default(),
     });
 
     let runtime = tokio::runtime::Runtime::new().unwrap();
@@ -165,6 +178,7 @@ impl Mounted {
                 ("asset-large".to_string(), large_bytes),
             ]),
             fetched: Default::default(),
+            silent: Default::default(),
         });
         let runtime = tokio::runtime::Runtime::new().unwrap();
         let cache = tempfile::tempdir().unwrap();
@@ -267,4 +281,43 @@ fn links_device_nodes_and_ioctls_are_refused_cleanly() {
     const FS_IOC_GETFSLABEL: libc::c_ulong = 0x8100_9431;
     let outcome = unsafe { libc::ioctl(photo.as_raw_fd(), FS_IOC_GETFSLABEL, label.as_mut_ptr()) };
     assert_eq!((outcome, std::io::Error::last_os_error().raw_os_error()), (-1, Some(libc::ENOTTY)));
+}
+
+#[test]
+#[ignore = "needs /dev/fuse and fusermount3"]
+fn a_silent_server_costs_a_probe_nothing_and_a_folder_one_wait() {
+    let mounted = Mounted::new();
+    let month = mounted.month();
+    assert!(month.is_dir());
+    mounted.library.silent.store(true, std::sync::atomic::Ordering::SeqCst);
+    // rom-properties' probe for an extracted Wii U disc, in a folder whose listing will not come: absent at once.
+    let started = std::time::Instant::now();
+    assert_eq!(errno(std::fs::metadata(month.join("code").join("app.xml"))), Some(libc::ENOENT));
+    assert!(started.elapsed() < Duration::from_secs(2), "the probe took {:?}", started.elapsed());
+    // A real name waits the listing's deadline once, and fails.
+    let started = std::time::Instant::now();
+    assert!(std::fs::metadata(month.join("2024-03-15 14.32.07.jpg")).is_err());
+    assert!(started.elapsed() >= Duration::from_secs(5), "the first wait was {:?}", started.elapsed());
+    // Then the server counts as silent: another folder that is not at hand fails in a moment, not another 10 s.
+    let started = std::time::Instant::now();
+    let city = mounted.mountpoint.path().join("Places").join("Denmark").join("Odense");
+    assert!(std::fs::read_dir(city).and_then(|entries| entries.collect::<Result<Vec<_>, _>>()).is_err());
+    assert!(started.elapsed() < Duration::from_secs(3), "the second folder took {:?}", started.elapsed());
+}
+
+#[test]
+#[ignore = "needs /dev/fuse and fusermount3"]
+fn a_dead_mount_is_known_dead_though_its_attributes_are_cached() {
+    let mut mounted = Mounted::new();
+    let root = mounted.mountpoint.path().to_path_buf();
+    assert!(std::fs::metadata(&root).is_ok(), "the root's attributes, now in the kernel's cache");
+    assert_eq!(immich_mount_linux::mounts::mount_state(&root), immich_mount_linux::mounts::MountState::Mounted);
+    // Abort the connection, as a crashed daemon leaves it; the mounting user owns its control files.
+    let device = std::fs::metadata(&root).unwrap();
+    let minor = std::os::unix::fs::MetadataExt::dev(&device) & 0xff;
+    std::fs::write(format!("/sys/fs/fuse/connections/{minor}/abort"), "1").expect("aborting the connection");
+    assert!(std::fs::metadata(&root).is_ok(), "stat still answers from the cache");
+    assert_eq!(immich_mount_linux::mounts::mount_state(&root), immich_mount_linux::mounts::MountState::Stale);
+    immich_mount_linux::mounts::unmount(&root, true).unwrap();
+    drop(mounted.session.take());
 }

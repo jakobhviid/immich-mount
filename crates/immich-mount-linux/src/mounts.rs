@@ -57,9 +57,15 @@ pub fn mount_state(path: &Path) -> MountState {
     if !is_listed(path) {
         return MountState::NotMounted;
     }
-    match std::fs::metadata(path) {
-        Err(error) if error.raw_os_error() == Some(libc::ENOTCONN) => MountState::Stale,
-        _ => MountState::Mounted,
+    // statfs always reaches the daemon, where the kernel answers stat from the attributes it keeps for a minute: a
+    // dead mount then looks alive, and a daemon restarted after a crash took it for another daemon's (seen on Bazzite).
+    let Ok(path_text) = std::ffi::CString::new(path.as_os_str().as_encoded_bytes()) else { return MountState::Mounted };
+    let mut space = std::mem::MaybeUninit::<libc::statvfs>::uninit();
+    let failed = unsafe { libc::statvfs(path_text.as_ptr(), space.as_mut_ptr()) } != 0;
+    if failed && std::io::Error::last_os_error().raw_os_error() == Some(libc::ENOTCONN) {
+        MountState::Stale
+    } else {
+        MountState::Mounted
     }
 }
 

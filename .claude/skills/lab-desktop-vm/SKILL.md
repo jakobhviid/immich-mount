@@ -95,6 +95,10 @@ JPEGs: `fixtures`, then `open <name> <dir>` (cold cache, settle, screenshot, who
   since it shows what happens on installs without them, but remember it when something "should" be running.
 - **GNOME's Eval** (`exp/input.sh`) has no `Clutter` global (use `imports.gi`), and drops clicks unless they use
   `Clutter.CURRENT_TIME`, one Eval per event, with hot corners off.
+- **A key combination by Eval** (Ctrl+L, Alt+Left) takes one Eval per press and per release, and each Eval is slow
+  enough for the key to repeat: turn repeat off first (`gsettings set org.gnome.desktop.peripherals.keyboard repeat
+  false` in the session), or Files fills its search with the key. A key whose release was lost stays held; send its
+  release alone. Files' grid view swallows Alt+Up; its bottom bar's back and forward buttons, clicked, always work.
 - **`gio info` hides `filesystem::*`** unless given `-f`.
 - **gvfs coalesces a quick unmount and remount,** keeping the old volume and its name. Wait until the mount is gone
   from `gio mount -l` before mounting again.

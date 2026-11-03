@@ -185,7 +185,11 @@ the daemon's wiring.
 
 1. **Start:**
    - Read the config and the credential. A locked keyring brings up the system's unlock prompt.
-   - A stale mount left by a crash is detached first (`fusermount3 -uz`).
+   - A stale mount left by a crash is detached first (`fusermount3 -uz`). Staleness is asked with `statfs`, which
+     always reaches the daemon: `stat` of the root is answered from the kernel's attribute cache for a minute, so a
+     daemon restarted after a crash took the dead mount for another daemon's and stopped (seen on Bazzite).
+   - The server's version is asked with its own limit of 10 s, not the client's retries (four minutes when the
+     server drops requests, with the mount point an empty folder all along).
    - Mount, and answer from the metadata store at once. The server connection comes up in the background.
      *(Built so far: the daemon asks the server for its version and media types first, up to about ten seconds each
      when it does not answer, then mounts; listings kept in the metadata store answer offline.)*
@@ -456,7 +460,12 @@ Two quirks are handled:
 remains only as the fallback for a server that refuses ranges.
 
 **Never hang.** Every task that answers a FUSE request has a deadline:
-- listings: about 10 s, then `EIO` (the fetch continues, and the next visit gets its result)
+- listings: about 10 s, then an older listing if there is one, else `EIO` (the fetch continues, and the next visit
+  gets its result). A listing that waited that long and ran out marks the server silent for 30 s, and listings then
+  wait at most 1 s: rom-properties (on Bazzite) looks for extracted game discs in every folder Files shows, from
+  Files' main thread, and a server that drops requests froze all of Files for 3 minutes at 10 s a name. A probed
+  name (below) waits half a second for its folder's listing and is otherwise answered absent. Verified with the
+  kernel-level mount tests, against a library whose listings never answer.
 - reads: 30 s without progress, then `EIO`
 - uploads on close: their own limit (Uploads)
 

@@ -60,9 +60,13 @@ fn unit_of_cgroup(cgroup: &str) -> Option<String> {
     (last.ends_with(".service") && !last.starts_with("user@")).then(|| last.to_owned())
 }
 
-/// Whether the user service `unit` exists, installed by anyone.
+/// Whether the user service `unit` exists, installed by anyone: by its load state, which a drop-in removed without a
+/// reload does not change (`systemctl cat` then fails, chasing the missing file).
 pub fn is_installed(unit: &str) -> bool {
-    installed(unit)
+    std::process::Command::new("systemctl")
+        .args(["--user", "show", "--property=LoadState", "--value", "--", unit])
+        .output()
+        .is_ok_and(|outcome| outcome.status.success() && String::from_utf8_lossy(&outcome.stdout).trim() == "loaded")
 }
 
 fn installed(unit: &str) -> bool {
