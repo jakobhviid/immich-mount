@@ -112,6 +112,16 @@ system without one of its files for a moment, `bootc usr-overlay` makes `/usr` w
 - **No Flatpaks, so no Firefox:** Bazzite's ISO installs its Flatpaks, a bootc install does not. And
   `xdg-desktop-portal` cannot start in the headless session (`graphical-session.target` is inactive), so the browser
   sign-in and the `app.immich` hand-off through the portal cannot be checked here yet.
+- **A cask's `zap delete:` runs through sudo** (`sudo -A rm -rf`, with Bazzite's `SUDO_ASKPASS`, which needs a
+  display), and `tester` has no password: the zap stops after removing the artifacts, the cask stays listed, and a
+  plain retry fails with "already a Generic Artifact". Our cask zaps with `trash:` only for that reason. If a zap
+  asks anyway, give `tester` a throwaway password (`chpasswd` as root), point `SUDO_ASKPASS` at a script that
+  prints it, and retry with `--force`.
+- **No `tc` on Bazzite** to slow a copy into Photos. Copy slowly from one process instead (a short Python loop that
+  writes and sleeps): a shell loop such as `for ...; do dd ...; done > file` closes the file from every child, and
+  the daemon takes the first close for the end of the copy.
+- **Measure each folder with its pages out of memory** (`echo 3 > /proc/sys/vm/drop_caches` as root, the file
+  manager closed): reads the kernel answers from memory never reach the daemon, and the measurement shows nothing.
 - **Harmless:** `ublue-os-media-automount.service` fails on every boot (a bootc install writes no `/etc/fstab`
   entries); the VM's empty root disk shows as a blank device under Dolphin's Devices.
 - **A dead guest's journal:** stop the VM, remove its `bazzite` disk device, attach its volume to another VM (the

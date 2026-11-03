@@ -1660,6 +1660,7 @@ name = "immich-mount-linux"
 version = "0.0.0"
 dependencies = [
  "chrono",
+ "flate2",
  "fuser",
  "image",
  "immich-mount-core",

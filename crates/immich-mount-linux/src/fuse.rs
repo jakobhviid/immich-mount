@@ -530,7 +530,11 @@ where
             Some(record) if !matches!(record.kind, EntryKind::Folder) || matches!(record.node, MountNode::Virtual(_)) => {
                 // The kernel keeps its pages of the file from an earlier open, unless the original changed since.
                 let keep = match &record.kind {
-                    EntryKind::File { asset_id, .. } => self.content.keep_page_cache(asset_id),
+                    EntryKind::File { asset_id, .. } => {
+                        // Each open starts its own run of reads, so a program peeking at the file again peeks.
+                        self.content.forget_run(asset_id);
+                        self.content.keep_page_cache(asset_id)
+                    }
                     EntryKind::Folder => true,
                 };
                 self.open_files.fetch_add(1, Ordering::Relaxed);

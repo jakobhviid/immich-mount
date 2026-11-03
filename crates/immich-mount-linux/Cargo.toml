@@ -20,6 +20,8 @@ log = "0.4"
 thiserror = "2"
 image = { version = "0.25", default-features = false, features = ["webp", "jpeg", "png"] }
 png = "0.18"
+# Thumbnails other programs wrote keep their URI compressed (zTXt); png already brings it.
+flate2 = "1"
 md-5 = "0.11"
 
 [dev-dependencies]

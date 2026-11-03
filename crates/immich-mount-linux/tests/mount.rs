@@ -143,7 +143,7 @@ fn the_mount_lists_and_reads_like_a_normal_folder() {
     drop(session);
 }
 
-/// A library of one small and one large photo, mounted: the mount point, and what must live as long as the mount.
+/// A library of a small, a medium and a large photo, mounted: the mount point, and what must live as long as the mount.
 struct Mounted {
     library: Arc<Library>,
     mountpoint: tempfile::TempDir,
@@ -155,10 +155,15 @@ struct Mounted {
 impl Mounted {
     fn new() -> Mounted {
         let (small, small_bytes) = asset("asset-small", 7, 1000);
+        let (medium, medium_bytes) = asset("asset-medium", 8, 900_000);
         let (large, large_bytes) = asset("asset-large", 9, 5 * 1024 * 1024 + 123);
         let library = Arc::new(Library {
-            assets: vec![small, large],
-            originals: HashMap::from([("asset-small".to_string(), small_bytes), ("asset-large".to_string(), large_bytes)]),
+            assets: vec![small, medium, large],
+            originals: HashMap::from([
+                ("asset-small".to_string(), small_bytes),
+                ("asset-medium".to_string(), medium_bytes),
+                ("asset-large".to_string(), large_bytes),
+            ]),
             fetched: Default::default(),
         });
         let runtime = tokio::runtime::Runtime::new().unwrap();
@@ -220,6 +225,19 @@ fn a_peek_fetches_only_what_it_reads() {
     photo.read_at(&mut page, size - 4096).unwrap();
     let fetched = mounted.library.fetched.load(std::sync::atomic::Ordering::SeqCst);
     assert!(fetched < 256 * 1024, "a peek fetched {fetched} bytes of a {size}-byte original");
+    // A photo under one block, looked at three times with its pages gone from memory in between (it is in a month
+    // and an album, or the folder is opened again later): each look a peek, never the original.
+    drop(photo);
+    let medium = mounted.month().join("2024-03-15 14.32.08.jpg");
+    for _ in 0..3 {
+        let photo = std::fs::File::open(&medium).unwrap();
+        unsafe { libc::posix_fadvise(std::os::fd::AsRawFd::as_raw_fd(&photo), 0, 0, libc::POSIX_FADV_DONTNEED) };
+        let size = photo.metadata().unwrap().len();
+        photo.read_at(&mut page, 0).unwrap();
+        photo.read_at(&mut page, size - 4096).unwrap();
+    }
+    let again = mounted.library.fetched.load(std::sync::atomic::Ordering::SeqCst) - fetched;
+    assert!(again < 3 * 128 * 1024, "three peeks at a 900 KB photo fetched {again} bytes");
 }
 
 #[test]

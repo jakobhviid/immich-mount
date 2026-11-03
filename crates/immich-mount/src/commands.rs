@@ -204,7 +204,8 @@ pub fn unmount(paths: &Paths) -> Result<UnmountReport> {
                     .map(|runtime| runtime.block_on(immich_mount_linux::dbus::uploads_in_flight()))
                     .unwrap_or_default();
                 if let Some((name, _, _)) = uploads.first() {
-                    anyhow::bail!("{name} is still being copied into Photos; unmount once it has finished");
+                    // Short: the apps show it in a toast.
+                    anyhow::bail!("{name} is still uploading; unmount when it is done");
                 }
                 mounts::unmount(&mount_point, true).map_err(anyhow::Error::msg)?;
             }

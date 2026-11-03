@@ -410,8 +410,11 @@ map beside it (`<id>.blocks`, a line per block), which survives restarts:
   last partial page, which the kernel turns into three requests (0+16 KiB, the last page, and its own read-ahead of
   32 KiB). With whole blocks that fetched every original whole, 5.7 MB for a month of 3 photos and 25 MB for a
   folder of 121, on GNOME and KDE alike (measured on Bazzite 44 with the kernel tracing reads); as peeks it costs at
-  most 53 KB per file. A copy or a viewer passes 64 KiB at its first or second read, so it pays one or two small
-  requests more. rom-properties after 2.9 counts unknown FUSE filesystems as remote and skips them; on KDE,
+  most 53 KB per file. A run belongs to one open, so a photo peeked again (it is in a month and an album, or a folder
+  is opened again once its pages left memory) is peeked again, not fetched whole. A copy or a viewer passes 64 KiB at
+  its first or second read, so it pays one or two small requests more. Verified on Bazzite 44, GNOME and KDE: a
+  month of 3 photos opened fresh fetched 160 KB, and the "Holiday Mix" album 275 KB, where 1.3.2 fetched 5.7 MB
+  and 10 MB. rom-properties after 2.9 counts unknown FUSE filesystems as remote and skips them; on KDE,
   `ShowDangerousPermissionsOverlayIcon=false` in its settings stops Dolphin's plugin already.
 - **Crash safety:** a block counts as present only after it is written and synced, so a crash never serves zeros.
 - **Validation:** the block map records the original's size and its weak ETag (`W/"<size>-<mtime>"`, sent with every

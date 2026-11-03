@@ -327,6 +327,13 @@ impl<Source: ContentSource> BlockCache<Source> {
         }
     }
 
+    /// Forget the Asset's run of reads, when it is opened: a run belongs to one open, so the reads of an earlier peek
+    /// never add up with the next one's past `PEEK_LIMIT` (a photo shown in a month and an album, a folder looked at
+    /// again once its pages left memory).
+    pub fn forget_run(&self, asset_id: &str) {
+        self.read_ahead.lock().expect("read-ahead lock").remove(asset_id);
+    }
+
     /// Whether a read of `length` bytes at `offset` is a peek (`PEEK_LIMIT`): small, and in a run of reads that
     /// stays small with it. The run is the one `read_ahead` keeps, with the same slack for reads out of order.
     fn is_peek(&self, asset_id: &str, offset: u64, length: u64) -> bool {
@@ -708,6 +715,14 @@ mod tests {
         }
         assert_eq!(cache.source.requests.load(Ordering::SeqCst), 3);
         assert_eq!(cache.used_bytes(), 0, "a peek caches nothing");
+        // Opened again, it is peeked again: the earlier reads do not add up with these.
+        cache.forget_run("peeked");
+        for (offset, length) in [(0, 16384), (size - 3000, 4096), (16384, 32768)] {
+            let read = cache.read("peeked", size, offset, length).await.unwrap();
+            cache.read_ahead("peeked", size, offset, read.len() as u64);
+        }
+        assert_eq!(cache.source.requests.load(Ordering::SeqCst), 6);
+        assert_eq!(cache.used_bytes(), 0, "a second peek caches nothing either");
         // A copy goes on from there: past 64 KiB of run, whole blocks.
         cache.read("peeked", size, 49152, 131072).await.unwrap();
         assert!(cache.used_bytes() >= BLOCK_SIZE);

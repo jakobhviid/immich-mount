@@ -245,13 +245,13 @@ pub fn remove_thumbnails(thumbnail_root: &Path, uri: &str) -> Result<(), Thumbna
     }
 }
 
-/// The `Thumb::URI` a thumbnail PNG carries, read from its `tEXt` chunks without decoding the image.
+/// The `Thumb::URI` a thumbnail PNG carries, read from its text chunks without decoding the image.
 pub fn uri_of_thumbnail(png_bytes: &[u8]) -> Option<String> {
     thumbnail_text(png_bytes, "Thumb::URI")
 }
 
-/// A `tEXt` value of a thumbnail PNG, such as `Thumb::MTime`. The chunks that matter come before the image data, so
-/// the first few kilobytes of the file are enough.
+/// A text value of a thumbnail PNG, such as `Thumb::MTime`: plain (`tEXt`, ours and GNOME's), compressed (`zTXt`,
+/// KDE's) or international (`iTXt`). Ours come before the image data, so the first few kilobytes of a seed are enough.
 pub fn thumbnail_text(png_bytes: &[u8], keyword: &str) -> Option<String> {
     let prefix = [keyword.as_bytes(), b"\0"].concat();
     let mut position = 8; // the PNG signature
@@ -259,17 +259,35 @@ pub fn thumbnail_text(png_bytes: &[u8], keyword: &str) -> Option<String> {
         let length = u32::from_be_bytes(png_bytes[position..position + 4].try_into().ok()?) as usize;
         let kind = &png_bytes[position + 4..position + 8];
         let data = png_bytes.get(position + 8..position + 8 + length)?;
-        if kind == b"tEXt" {
-            if let Some(text) = data.strip_prefix(prefix.as_slice()) {
-                return String::from_utf8(text.to_vec()).ok();
+        if let Some(text) = data.strip_prefix(prefix.as_slice()) {
+            match kind {
+                // Ours, and GNOME's: the text as it is.
+                b"tEXt" => return String::from_utf8(text.to_vec()).ok(),
+                // KDE's thumbnailer: a compression method (0, zlib), then the text compressed.
+                b"zTXt" => return inflated(text.strip_prefix(&[0])?),
+                // International text: a compression flag and method, a language and a translated keyword, then the text.
+                b"iTXt" => {
+                    let (&compressed, rest) = text.split_first()?;
+                    let rest = rest.get(1..)?;
+                    let after_language = &rest[rest.iter().position(|&byte| byte == 0)? + 1..];
+                    let body = &after_language[after_language.iter().position(|&byte| byte == 0)? + 1..];
+                    return if compressed == 1 { inflated(body) } else { String::from_utf8(body.to_vec()).ok() };
+                }
+                _ => {}
             }
         }
-        if kind == b"IDAT" || kind == b"IEND" {
+        if kind == b"IEND" {
             return None;
         }
         position += 12 + length;
     }
     None
+}
+
+fn inflated(compressed: &[u8]) -> Option<String> {
+    let mut text = String::new();
+    std::io::Read::read_to_string(&mut flate2::read::ZlibDecoder::new(compressed), &mut text).ok()?;
+    Some(text)
 }
 
 /// Remove every thumbnail, in every bucket and in GNOME's failure records, whose URI lies under `uri_prefix`
@@ -404,6 +422,27 @@ mod tests {
         let reader = png::Decoder::new(Cursor::new(&rendered)).read_info().unwrap();
         assert_eq!((reader.info().width, reader.info().height), (114, 256));
         assert_eq!(reader.info().color_type, png::ColorType::Rgba);
+    }
+
+    #[test]
+    fn compressed_and_international_text_is_read_too() {
+        fn chunk(kind: &[u8], data: &[u8]) -> Vec<u8> {
+            let mut bytes = (data.len() as u32).to_be_bytes().to_vec();
+            bytes.extend_from_slice(kind);
+            bytes.extend_from_slice(data);
+            bytes.extend_from_slice(&[0, 0, 0, 0]); // the CRC, which the reader does not check
+            bytes
+        }
+        let uri = "file:///home/me/Immich/Photos/slow%20copy.jpg";
+        let mut compressed = Vec::new();
+        std::io::Write::write_all(&mut flate2::write::ZlibEncoder::new(&mut compressed, flate2::Compression::default()), uri.as_bytes()).unwrap();
+        let mut ztxt = b"Thumb::URI\0\0".to_vec();
+        ztxt.extend_from_slice(&compressed);
+        let png = [b"\x89PNG\r\n\x1a\n".to_vec(), chunk(b"zTXt", &ztxt), chunk(b"IEND", b"")].concat();
+        assert_eq!(thumbnail_text(&png, "Thumb::URI").as_deref(), Some(uri));
+        let itxt = [b"Thumb::URI\0\0\0en\0\0".as_slice(), uri.as_bytes()].concat();
+        let png = [b"\x89PNG\r\n\x1a\n".to_vec(), chunk(b"iTXt", &itxt), chunk(b"IEND", b"")].concat();
+        assert_eq!(thumbnail_text(&png, "Thumb::URI").as_deref(), Some(uri));
     }
 
     #[test]
