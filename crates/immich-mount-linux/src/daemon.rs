@@ -1,9 +1,11 @@
 //! The daemon's life (ARCHITECTURE.md, "The daemon's lifecycle"): detach a dead mount, mount, serve until stopped
 //! or ejected, then unmount cleanly.
 
+use std::os::unix::fs::MetadataExt;
 use std::path::{Path, PathBuf};
+use std::sync::atomic::Ordering;
 use std::sync::Arc;
-use std::time::Duration;
+use std::time::{Duration, Instant};
 
 use immich_mount_core::content::{BlockCache, ContentSource};
 use immich_mount_core::settings::Config;
@@ -20,6 +22,11 @@ use crate::staging::Staging;
 
 /// How often the daemon checks whether the user ejected the mount.
 const EJECT_POLL: Duration = Duration::from_secs(2);
+/// How often the daemon looks at the program it was started from, which an upgrade replaces and an uninstall removes.
+const PROGRAM_POLL: Duration = Duration::from_secs(30);
+/// How long the program may be missing before the daemon takes it as uninstalled: an upgrade removes the old version
+/// before it puts the new one in place.
+const UNINSTALL_GRACE: Duration = Duration::from_secs(120);
 /// How often the daemon asks Immich what changed, so a change made elsewhere shows within seconds. Unchanged, that
 /// costs two 304 answers, and for a session an empty sync stream.
 const CHANGE_POLL: Duration = Duration::from_secs(10);
@@ -41,6 +48,66 @@ pub enum StopReason {
     Signal,
     /// The user ejected the mount in the file manager. Respected until the next start.
     Ejected,
+    /// The program was upgraded: the daemon left once nothing was open or uploading, so its service starts the new one.
+    Upgraded,
+    /// The program was uninstalled: the daemon left once idle, and its service is to be turned off.
+    Uninstalled,
+}
+
+/// What became of the program the daemon was started from.
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+enum ProgramChange {
+    Unchanged,
+    Upgraded,
+    Uninstalled,
+}
+
+/// The program the user service started: the path it ran (`argv[0]`, which systemd gives absolute) and the file this
+/// process runs. A package manager replaces a program by putting a new file in its place, so the path then names a
+/// file other than the running one; an uninstall leaves nothing there.
+struct ProgramWatch {
+    path: PathBuf,
+    running: (u64, u64),
+    missing_since: Option<Instant>,
+}
+
+impl ProgramWatch {
+    /// `None` when started by a relative name (from a terminal), where there is no path to watch.
+    fn new() -> Option<ProgramWatch> {
+        let path = PathBuf::from(std::env::args_os().next()?);
+        if !path.is_absolute() {
+            return None;
+        }
+        let running = std::fs::metadata("/proc/self/exe").ok()?;
+        Some(ProgramWatch { path, running: (running.dev(), running.ino()), missing_since: None })
+    }
+
+    fn check(&mut self, now: Instant) -> ProgramChange {
+        let found = std::fs::metadata(&self.path).ok().map(|metadata| (metadata.dev(), metadata.ino()));
+        self.judge(found, now)
+    }
+
+    /// The change, given the file now at the path (device and inode), if any.
+    fn judge(&mut self, found: Option<(u64, u64)>, now: Instant) -> ProgramChange {
+        match found {
+            Some(file) if file == self.running => {
+                self.missing_since = None;
+                ProgramChange::Unchanged
+            }
+            Some(_) => {
+                self.missing_since = None;
+                ProgramChange::Upgraded
+            }
+            None => {
+                let since = *self.missing_since.get_or_insert(now);
+                if now.duration_since(since) >= UNINSTALL_GRACE {
+                    ProgramChange::Uninstalled
+                } else {
+                    ProgramChange::Unchanged
+                }
+            }
+        }
+    }
 }
 
 /// The server the daemon serves, as the app sees it over D-Bus.
@@ -122,6 +189,10 @@ where
         filesystem = filesystem.with_uploads(area.clone(), media.unwrap_or_default(), Arc::new(source.clone()));
         staging = Some(area);
     }
+    // The daemon leaves for an upgrade or an uninstall only when nothing is open or uploading.
+    let open_files = filesystem.open_files();
+    let staging_for_idle = staging.clone();
+    let idle = move || open_files.load(Ordering::Relaxed) == 0 && staging_for_idle.as_ref().is_none_or(|area| area.is_idle());
     let session = mount(filesystem, mount_point).map_err(|error| DaemonError::Mount { path: mount_point.to_path_buf(), message: error.to_string() })?;
     log::info!("mounted at {}", mount_point.display());
 
@@ -142,10 +213,12 @@ where
     let connection = runtime.block_on(crate::dbus::serve(state.clone(), &mount_text, &server.url, &version, &account, actions));
     runtime.spawn(follow_changes(source.clone(), tree.clone(), state, connection.clone()));
 
-    let reason = runtime.block_on(wait_for_stop(mount_point));
+    let reason = runtime.block_on(wait_for_stop(mount_point, idle));
     match reason {
         StopReason::Signal => log::info!("stopping"),
         StopReason::Ejected => log::info!("{} was unmounted from outside (eject); stopping", mount_point.display()),
+        StopReason::Upgraded => log::info!("Immich Mount was upgraded and nothing is open or uploading; stopping so the new version starts"),
+        StopReason::Uninstalled => log::info!("Immich Mount was uninstalled and nothing is open or uploading; stopping"),
     }
     drop(session);
     drop(connection);
@@ -215,7 +288,7 @@ async fn follow_changes<Source, Names>(
     }
 }
 
-async fn wait_for_stop(mount_point: &Path) -> StopReason {
+async fn wait_for_stop(mount_point: &Path, idle: impl Fn() -> bool) -> StopReason {
     let mut terminate = match tokio::signal::unix::signal(tokio::signal::unix::SignalKind::terminate()) {
         Ok(signal) => signal,
         Err(error) => {
@@ -224,6 +297,9 @@ async fn wait_for_stop(mount_point: &Path) -> StopReason {
         }
     };
     let mut ticker = tokio::time::interval(EJECT_POLL);
+    let mut program = ProgramWatch::new();
+    let mut last_look = Instant::now();
+    let mut change = ProgramChange::Unchanged;
     loop {
         tokio::select! {
             _ = tokio::signal::ctrl_c() => return StopReason::Signal,
@@ -232,7 +308,46 @@ async fn wait_for_stop(mount_point: &Path) -> StopReason {
                 if mount_state(mount_point) == MountState::NotMounted {
                     return StopReason::Ejected;
                 }
+                if let Some(watch) = program.as_mut().filter(|_| last_look.elapsed() >= PROGRAM_POLL) {
+                    last_look = Instant::now();
+                    let seen = watch.check(last_look);
+                    // An upgrade seen once stays seen; a program missing then back counts as an upgrade.
+                    if change != ProgramChange::Upgraded {
+                        if change == ProgramChange::Unchanged && seen != ProgramChange::Unchanged {
+                            log::info!("{} was {}; leaving once nothing is open or uploading", watch.path.display(), match seen {
+                                ProgramChange::Upgraded => "replaced by an upgrade",
+                                _ => "uninstalled",
+                            });
+                        }
+                        change = seen;
+                    }
+                }
+                match change {
+                    ProgramChange::Upgraded if idle() => return StopReason::Upgraded,
+                    ProgramChange::Uninstalled if idle() => return StopReason::Uninstalled,
+                    _ => {}
+                }
             }
         }
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn a_replaced_program_is_an_upgrade_and_a_long_missing_one_an_uninstall() {
+        let start = Instant::now();
+        let mut watch = ProgramWatch { path: PathBuf::from("/usr/bin/immich-mount"), running: (1, 10), missing_since: None };
+        assert_eq!(watch.judge(Some((1, 10)), start), ProgramChange::Unchanged);
+        assert_eq!(watch.judge(Some((1, 11)), start), ProgramChange::Upgraded);
+        // Missing for a while is an upgrade in progress, not yet an uninstall.
+        assert_eq!(watch.judge(None, start), ProgramChange::Unchanged);
+        assert_eq!(watch.judge(None, start + UNINSTALL_GRACE / 2), ProgramChange::Unchanged);
+        assert_eq!(watch.judge(None, start + UNINSTALL_GRACE), ProgramChange::Uninstalled);
+        // Back in place, as a new file: the upgrade finished.
+        assert_eq!(watch.judge(Some((1, 12)), start + UNINSTALL_GRACE), ProgramChange::Upgraded);
+        assert_eq!(watch.missing_since, None);
     }
 }

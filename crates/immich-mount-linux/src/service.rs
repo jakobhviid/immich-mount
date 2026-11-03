@@ -49,6 +49,17 @@ pub fn write_user_service(paths: &Paths, daemon: &Path) -> std::io::Result<&'sta
     Ok(PACKAGED)
 }
 
+/// The user service this process runs in, from its control group (`.../app.slice/immich-mount.service`), so the
+/// daemon turns off the unit that started it and no other. `None` outside a service.
+pub fn own_unit() -> Option<String> {
+    unit_of_cgroup(&std::fs::read_to_string("/proc/self/cgroup").ok()?)
+}
+
+fn unit_of_cgroup(cgroup: &str) -> Option<String> {
+    let last = cgroup.lines().last()?.rsplit('/').next()?;
+    (last.ends_with(".service") && !last.starts_with("user@")).then(|| last.to_owned())
+}
+
 fn installed(unit: &str) -> bool {
     std::process::Command::new("systemctl").args(["--user", "cat", "--", unit]).output().is_ok_and(|outcome| outcome.status.success())
 }
@@ -58,10 +69,20 @@ mod tests {
     use super::*;
 
     #[test]
+    fn the_unit_is_read_from_the_control_group() {
+        let service = "0::/user.slice/user-1000.slice/user@1000.service/app.slice/immich-mount.service\n";
+        assert_eq!(unit_of_cgroup(service).as_deref(), Some("immich-mount.service"));
+        let terminal = "0::/user.slice/user-1000.slice/user@1000.service/app.slice/app-org.gnome.Terminal.slice/vte-spawn-1.scope\n";
+        assert_eq!(unit_of_cgroup(terminal), None);
+        assert_eq!(unit_of_cgroup("0::/user.slice/user-1000.slice/user@1000.service\n"), None);
+    }
+
+    #[test]
     fn the_written_unit_runs_the_daemon_it_was_given() {
         let unit = unit_text(Path::new("/home/linuxbrew/.linuxbrew/bin/immich-mount"));
         assert!(unit.contains("ExecStart=\"/home/linuxbrew/.linuxbrew/bin/immich-mount\" daemon"), "{unit}");
         assert!(unit.contains("Restart=on-failure"));
+        assert!(unit.contains("RestartForceExitStatus=75"));
         assert!(!unit.contains('@'));
     }
 }

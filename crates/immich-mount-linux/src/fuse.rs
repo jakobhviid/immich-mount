@@ -9,7 +9,7 @@ use std::collections::HashMap;
 use std::ffi::OsStr;
 use std::future::Future;
 use std::path::{Path, PathBuf};
-use std::sync::atomic::{AtomicU64, Ordering};
+use std::sync::atomic::{AtomicU64, AtomicUsize, Ordering};
 use std::sync::{Arc, Mutex};
 use std::time::{Duration, SystemTime};
 
@@ -221,7 +221,13 @@ pub struct ImmichFilesystem<Library, Names, Content> {
     /// skips or repeats an entry (a `cp -r` of a large folder while Immich changes it).
     listings: Arc<Mutex<HashMap<u64, Arc<Listing>>>>,
     next_folder_handle: AtomicU64,
+    /// How many library files are open, which the daemon waits on before it restarts into an upgrade.
+    open_files: Arc<AtomicUsize>,
 }
+
+/// The handle of an open library file: one value for all of them, since reads go by inode, kept apart from the
+/// staged files' handles so `release` can count it.
+const LIBRARY_FILE_HANDLE: u64 = u64::MAX;
 
 /// One folder's entries as `readdir` hands them out: inode, type and name, `.` and `..` first.
 type Listing = Vec<(u64, FileType, String)>;
@@ -262,7 +268,13 @@ where
             uploads: None,
             listings: Arc::new(Mutex::new(HashMap::new())),
             next_folder_handle: AtomicU64::new(1),
+            open_files: Arc::new(AtomicUsize::new(0)),
         }
+    }
+
+    /// The count of open library files, for the daemon to read once the filesystem is mounted.
+    pub fn open_files(&self) -> Arc<AtomicUsize> {
+        self.open_files.clone()
     }
 
     /// Accept new files in Photos, staged in `staging` and uploaded to `target` on close.
@@ -519,7 +531,8 @@ where
                     EntryKind::File { asset_id, .. } => self.content.keep_page_cache(asset_id),
                     EntryKind::Folder => true,
                 };
-                reply.opened(FileHandle(0), if keep { FopenFlags::FOPEN_KEEP_CACHE } else { FopenFlags::empty() })
+                self.open_files.fetch_add(1, Ordering::Relaxed);
+                reply.opened(FileHandle(LIBRARY_FILE_HANDLE), if keep { FopenFlags::FOPEN_KEEP_CACHE } else { FopenFlags::empty() })
             }
             Some(_) => reply.error(Errno::EISDIR),
             None => reply.error(Errno::ENOENT),
@@ -747,6 +760,11 @@ where
         _flush: bool,
         reply: ReplyEmpty,
     ) {
+        if handle.0 == LIBRARY_FILE_HANDLE {
+            // Each such handle came from one counted open, and the kernel releases each open once.
+            self.open_files.fetch_sub(1, Ordering::Relaxed);
+            return reply.ok();
+        }
         let record = self.inodes.lock().expect("inode table lock").record(inode.0);
         if let (Some(InodeRecord { node: MountNode::Staged(_), .. }), Some(uploads)) = (record, &self.uploads) {
             uploads.staging.release(handle.0);

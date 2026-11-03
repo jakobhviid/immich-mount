@@ -398,6 +398,13 @@ pub fn daemon(paths: &Paths) -> Result<Option<StopReason>> {
             log::warn!("{} is already mounted by another immich-mount daemon; this one stops", path.display());
             Ok(None)
         }
+        // Its program is gone: turn off the service that started it, so it does not fail at every login.
+        Ok(StopReason::Uninstalled) => {
+            if let Some(unit) = immich_mount_linux::service::own_unit() {
+                let _ = std::process::Command::new("systemctl").args(["--user", "disable", &unit]).output();
+            }
+            Ok(Some(StopReason::Uninstalled))
+        }
         outcome => Ok(Some(outcome?)),
     }
 }

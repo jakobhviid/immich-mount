@@ -198,6 +198,25 @@ the daemon's wiring.
 4. **Server or account change:** refused while uploads are staged or in flight. Otherwise unmount, switch to the
    new account's cache namespace, and remount. Old namespaces are deleted.
 5. **Stop** (logout, `systemctl --user stop`): finish or cancel in-flight work, then unmount cleanly.
+6. **Upgrade and uninstall.** Homebrew, rpm and dpkg replace a program by putting a new file in its place, which
+   Linux allows while the old one runs: nothing blocks, and the running daemon keeps its old file until it exits.
+   Left alone it would serve the old version against the new app until the next login, and after an uninstall keep
+   the mount up and its service enabled, failing at every login. So the daemon looks every 30 seconds at the path it
+   was started from (`argv[0]`, which systemd gives absolute):
+   - **A different file there** is an upgrade. The daemon leaves once nothing on the mount is open or uploading
+     (it counts open library files, and asks the staging area), with status 75; the unit's
+     `RestartForceExitStatus=75` starts the new version, and `SuccessExitStatus=75` keeps it from counting as a
+     failure (a unit written before these lines restarts it all the same, through `Restart=on-failure`).
+   - **Nothing there for two minutes** is an uninstall; a Homebrew upgrade removes the old version before it adds
+     the new one, hence the grace. The daemon leaves once idle and disables the unit it runs in, named by its own
+     control group, so it touches no other unit.
+   - **Verified** on the development host with a transient user unit: a file held open on the mount held the
+     restart until it closed, then the new binary mounted about 9 seconds later; with the binary removed, the daemon
+     unmounted after the grace and was not restarted.
+   - **Not chosen: restarting from the packages** (`%systemd_user_postun_with_restart`, a postinst, a cask
+     postflight). It restarts at once, with a copy into Photos in flight or a video open, and needs three channels
+     to get it right, Homebrew's steps running in a sandbox. **Flatpak impact:** none; a Flatpak would update the
+     app, while the daemon and this check stay on the host.
 
 **The user service** is the packages' `immich-mount.service` (the .rpm, the .deb and the tarball install it), or
 Homebrew's `homebrew.immich-mount-headless.service`, which `brew services start immich-mount-headless` writes. The

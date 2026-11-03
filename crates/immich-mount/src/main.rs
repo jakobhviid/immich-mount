@@ -11,10 +11,14 @@ mod online;
 mod ui;
 
 use clap::{CommandFactory, Parser, Subcommand};
+use immich_mount_linux::daemon::StopReason;
 use immich_mount_linux::doctor::Status;
 use immich_mount_linux::paths::Paths;
 use serde::Serialize;
 use std::process::ExitCode;
+
+/// The daemon's exit status after an upgrade (EX_TEMPFAIL), on which its user service starts the new version.
+const UPGRADED_EXIT_STATUS: u8 = 75;
 
 #[derive(Parser)]
 #[command(
@@ -136,7 +140,11 @@ fn main() -> ExitCode {
         })),
         Some(Command::Daemon) => {
             ui::init_log();
-            finish(online::daemon(&paths).map(|_| ()))
+            match online::daemon(&paths) {
+                // The user service starts the new version on this status (`RestartForceExitStatus=75`).
+                Ok(Some(StopReason::Upgraded)) => ExitCode::from(UPGRADED_EXIT_STATUS),
+                outcome => finish(outcome.map(|_| ())),
+            }
         }
         Some(Command::Configure { action }) => finish(run_configure(&paths, action, json)),
         Some(Command::Doctor) => finish(commands::doctor(&paths).map(|report| {

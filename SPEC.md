@@ -322,7 +322,7 @@ One binary: the daemon and the command line.
 |---|---|
 | `immich-mount` | Opens the app where there is a display (as `immich-mount app`); prints this help where there is none |
 | `immich-mount app` | Opens the app in the interface native to the desktop: Kirigami on Plasma, GTK elsewhere (on Plasma GTK too, if the Kirigami one does not load) |
-| `immich-mount daemon` | Runs the daemon in the foreground (what the user service starts) |
+| `immich-mount daemon` | Runs the daemon in the foreground (what the user service starts). Once the program it was started from is replaced by an upgrade and nothing is open or uploading, it unmounts and exits with status 75, on which the service starts the new version; once the program has been gone for two minutes (uninstalled), it unmounts, turns off the service that started it, and exits 0 |
 | `immich-mount login [--password \| --api-key] [--server URL]` | Signs in; prompts only on a terminal |
 | `immich-mount logout` | Unmounts, then removes the seeded thumbnails, the credential and the caches |
 | `immich-mount mount` / `unmount` | Mounts (starts the user service, writing it first where no install brought one and enabling it when `mount.at_login` is on, and waits up to 15 s for the mount) or unmounts (which stops the daemon, as an eject does) |

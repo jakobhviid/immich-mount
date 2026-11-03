@@ -538,6 +538,11 @@ impl Staging {
     }
 
     /// Files being written or uploaded: name, phase (`writing` or `uploading`) and bytes.
+    /// Whether nothing staged is open or uploading, so the mount may go away without cutting a copy short.
+    pub fn is_idle(&self) -> bool {
+        self.lock().files.values().all(|staged| staged.open_handles == 0 && !matches!(staged.state, StagedState::Uploading(_)))
+    }
+
     pub fn in_flight(&self) -> Vec<(String, String, u64)> {
         self.lock()
             .files

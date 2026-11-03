@@ -19,6 +19,10 @@ brew install jakobhviid/tap/immich-mount
 Then open **Immich Mount** from the app grid: its first run signs you in and starts the mount, with no service to
 start by hand.
 
+**Upgrades** need nothing from you: once nothing on the mount is open or uploading, the mount restarts into the new
+version by itself (within about a minute), with any channel. **Uninstalling** stops it as well: about two and a half
+minutes after the program is gone, the mount goes away and its service is turned off.
+
 From 1.1 and earlier, where Homebrew had the formula `immich-mount` and the cask `immich-mount-linux`, move to the
 one cask (`brew update` moves the cask over; the old formula's `immich-mount` would collide with the cask's):
 
