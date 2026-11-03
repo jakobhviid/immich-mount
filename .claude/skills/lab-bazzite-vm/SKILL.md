@@ -126,6 +126,9 @@ system without one of its files for a moment, `bootc usr-overlay` makes `/usr` w
   plain retry fails with "already a Generic Artifact". Our cask zaps with `trash:` only for that reason. If a zap
   asks anyway, give `tester` a throwaway password (`chpasswd` as root), point `SUDO_ASKPASS` at a script that
   prints it, and retry with `--force`.
+- **Homebrew's broken pipe:** a first `brew install` on a fresh VM, its output not a terminal, sometimes stops
+  right after tapping with `Error: Broken pipe` (seen in 3 of 7 tries); the same command then succeeds.
+  `lab/check/run.sh` tries once more for exactly that. Not seen in a terminal.
 - **No `tc` on Bazzite** to slow a copy into Photos. Copy slowly from one process instead (a short Python loop that
   writes and sleeps): a shell loop such as `for ...; do dd ...; done > file` closes the file from every child, and
   the daemon takes the first close for the end of the copy.

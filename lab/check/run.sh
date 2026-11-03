@@ -96,8 +96,14 @@ push_check_files() {
 install_release() {
   case $channel in
     brew)
-      # WORKFLOWS.md, "Install": the one command, in a terminal.
-      logged install in_session bash -ic 'brew install jakobhviid/tap/immich-mount' ;;
+      # WORKFLOWS.md, "Install": the one command, in a terminal. Homebrew sometimes stops a first install on a fresh
+      # system with "Error: Broken pipe" when its output is not a terminal (the lab-bazzite-vm skill's traps); the
+      # same command then succeeds, so it gets one more try for that, and only for that.
+      if ! in_session bash -ic 'brew install jakobhviid/tap/immich-mount' >"$logs/install" 2>&1; then
+        grep -q 'Error: Broken pipe' "$logs/install" || { tail -15 "$logs/install" >&2; die "install failed"; }
+        step "Homebrew's broken pipe; installing again"
+        logged install in_session bash -ic 'brew install jakobhviid/tap/immich-mount'
+      fi ;;
     rpm)
       # WORKFLOWS.md, "Install", Fedora 44: the daemon's package and the interface for the desktop, from the release.
       local base=https://github.com/jakobhviid/immich-mount/releases/download/v$version
