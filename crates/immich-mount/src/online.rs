@@ -386,6 +386,12 @@ pub fn daemon(paths: &Paths) -> Result<Option<StopReason>> {
         }
     };
     let mount_point = paths.expand(&config.mount_path);
+    // GVfs lists no mount in a home reached through a symlink until its volume monitor has the resolved home.
+    match immich_mount_linux::gnome::show_mounts_in_sidebar(paths, &mount_point) {
+        Ok(true) => log::info!("gave GVfs's volume monitor the resolved home, so Files lists the mount as a drive"),
+        Ok(false) => {}
+        Err(error) => log::warn!("could not set GVfs up for this home, so Files may not list the mount: {error}"),
+    }
     let account_cache = paths.account_cache(&account_name(&client));
     // Shown by the apps; an API key without `user.read` is simply not named.
     let account = version.is_some().then(|| runtime.block_on(client.my_email()).ok()).flatten();

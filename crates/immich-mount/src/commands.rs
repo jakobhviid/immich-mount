@@ -239,6 +239,9 @@ pub fn logout(paths: &Paths, session_ended: bool) -> Result<LogoutReport> {
     if let Err(error) = immich_mount_linux::gnome::remove_bookmark(paths, &mount_point) {
         eprintln!("warning: could not remove the mount's bookmark from Files' sidebar: {error}");
     }
+    if let Err(error) = immich_mount_linux::gnome::remove_sidebar_drop_in(paths) {
+        eprintln!("warning: could not remove the GVfs drop-in: {error}");
+    }
 
     // Every thumbnail under the mount goes: our seeds, and anything a thumbnailer made or recorded as failed there,
     // since their URIs carry album and person names.

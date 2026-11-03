@@ -379,7 +379,8 @@ The credential itself never crosses D-Bus.
 | A browser sign-in waiting for its redirect (KDE app) | `$XDG_RUNTIME_DIR/immich-mount-sign-in`, mode 0600: the server, the state and the PKCE verifier, replaced by the outcome once the redirect arrives, and removed when the app reads it |
 | Dolphin's previews of remote files (KDE app, only when the user turns them on) | `[PreviewSettings] MaximumRemoteSize=104857600` in `~/.config/kdeglobals`; turning them off removes the key |
 | The mount in Dolphin's Places (KDE) | A bookmark for the mount point, titled "Immich", in `~/.local/share/user-places.xbel`: added once by the KDE app's setup, removed by `logout` |
-| The mount in Files' sidebar, where GVfs does not list it (GNOME app) | A line `file://<mount point> Immich` in `~/.config/gtk-3.0/bookmarks`: added once by the GNOME app's setup when home is reached through a symlink, removed by `logout` (with a bookmark of the resolved path) |
+| The resolved home for GVfs, where home is reached through a symlink | `~/.config/systemd/user/gvfs-udisks2-volume-monitor.service.d/immich-mount.conf`, `Environment=HOME=<resolved home>`: written by the daemon as it starts, which then restarts the volume monitor, so Files lists the mount as a drive; removed by `logout` |
+| The mount in Files' sidebar, where GVfs still does not list it (GNOME app) | A line `file://<mount point> Immich` in `~/.config/gtk-3.0/bookmarks`: added once by the GNOME app's setup, removed by the daemon once the drive is listed, and by `logout` (with a bookmark of the resolved path) |
 | The sign-in redirect's handler | `x-scheme-handler/app.immich` in `~/.config/mimeapps.list`, set by the app that last started a browser sign-in |
 | Logs | journald (`journalctl --user -u immich-mount`) |
 

@@ -145,7 +145,7 @@ fn sidebar(paths: &Paths, mount_point: &Path) -> Check {
     }
     let resolved = std::fs::canonicalize(&paths.home).unwrap_or_else(|_| paths.home.clone());
     let reason = format!(
-        "GVfs lists no mount in a home reached through a symlink ({} is {})",
+        "GVfs lists no mount in a home reached through a symlink ({} is {}) until the daemon gives it the resolved home",
         paths.home.display(),
         resolved.display()
     );
@@ -156,7 +156,7 @@ fn sidebar(paths: &Paths, mount_point: &Path) -> Check {
             "location",
             Status::Warning,
             format!("Files' sidebar will not show the mount: {reason}"),
-            Some("Open the mount in Files and press Ctrl+D to bookmark it"),
+            Some("Run `immich-mount unmount`, then `immich-mount mount`: the daemon sets GVfs up as it starts"),
         )
     }
 }

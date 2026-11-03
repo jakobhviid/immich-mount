@@ -60,6 +60,11 @@ fn unit_of_cgroup(cgroup: &str) -> Option<String> {
     (last.ends_with(".service") && !last.starts_with("user@")).then(|| last.to_owned())
 }
 
+/// Whether the user service `unit` exists, installed by anyone.
+pub fn is_installed(unit: &str) -> bool {
+    installed(unit)
+}
+
 fn installed(unit: &str) -> bool {
     std::process::Command::new("systemctl").args(["--user", "cat", "--", unit]).output().is_ok_and(|outcome| outcome.status.success())
 }

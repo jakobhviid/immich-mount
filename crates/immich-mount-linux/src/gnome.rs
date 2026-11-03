@@ -4,7 +4,8 @@
 //! `$HOME`, or under `/media` or `/run/media/$USER`, and never inside a hidden folder. It compares the path the kernel
 //! reports, which is always resolved, with `$HOME` as written. So where home is reached through a symlink, as on
 //! Fedora's atomic desktops and Bazzite (`HOME=/home/me`, with `/home` a link to `/var/home`), no mount in it ever
-//! matches, and the app's setup gives the mount a bookmark in the sidebar instead.
+//! matches. The daemon then gives the volume monitor, and only it, the resolved home through a drop-in for its user
+//! service, so the mount is listed as a drive. Where that cannot be done, the app's setup bookmarks the mount.
 
 use std::path::{Path, PathBuf};
 
@@ -27,16 +28,80 @@ fn gvfs_lists(mount_point: &Path, home: &Path, user: &str) -> bool {
     below_media.is_some_and(|rest| rest.strip_prefix(user).is_some_and(|after| after.starts_with('/')) || !rest.contains('/'))
 }
 
-/// Whether GVfs lists the mount at `mount_point` in Files' sidebar by itself.
+/// Whether GVfs lists the mount at `mount_point` in Files' sidebar, as a drive.
 pub fn listed_in_sidebar(paths: &Paths, mount_point: &Path) -> bool {
     let user = std::env::var("USER").unwrap_or_default();
-    gvfs_lists(&canonical_mount_point(mount_point), &paths.home, &user)
+    gvfs_lists(&canonical_mount_point(mount_point), &gvfs_home(paths), &user)
+}
+
+/// GVfs's volume monitor: the user service that decides which mounts Files' sidebar lists.
+const VOLUME_MONITOR: &str = "gvfs-udisks2-volume-monitor.service";
+
+/// Our drop-in for the volume monitor's user service.
+fn volume_monitor_drop_in(paths: &Paths) -> PathBuf {
+    config_home(paths).join("systemd").join("user").join(format!("{VOLUME_MONITOR}.d")).join("immich-mount.conf")
+}
+
+fn drop_in_text(resolved_home: &Path) -> String {
+    format!(
+        "# Immich Mount: GVfs compares mounts with $HOME as written, and this home is reached through a symlink.\n\
+         [Service]\nEnvironment=HOME={}\n",
+        resolved_home.display()
+    )
+}
+
+/// The home the volume monitor compares with: the one our drop-in gives it, else `$HOME`.
+fn gvfs_home(paths: &Paths) -> PathBuf {
+    let text = std::fs::read_to_string(volume_monitor_drop_in(paths)).unwrap_or_default();
+    text.lines().find_map(|line| line.strip_prefix("Environment=HOME=")).map(PathBuf::from).unwrap_or_else(|| paths.home.clone())
+}
+
+/// Where home is reached through a symlink, give the volume monitor the resolved home and restart it, so it lists the
+/// mount as a drive with an eject button; the setup's bookmark of the mount (titled "Immich") then goes, as the drive
+/// takes its place. Called by the daemon before it mounts. `Ok(true)` when it changed something.
+pub fn show_mounts_in_sidebar(paths: &Paths, mount_point: &Path) -> Result<bool, String> {
+    let Ok(resolved) = std::fs::canonicalize(&paths.home) else { return Ok(false) };
+    if resolved == paths.home || !crate::service::is_installed(VOLUME_MONITOR) {
+        return Ok(false);
+    }
+    let file = volume_monitor_drop_in(paths);
+    let text = drop_in_text(&resolved);
+    if std::fs::read_to_string(&file).is_ok_and(|current| current == text) {
+        return Ok(false);
+    }
+    let describe = |error: std::io::Error| format!("{}: {error}", file.display());
+    if let Some(parent) = file.parent() {
+        std::fs::create_dir_all(parent).map_err(describe)?;
+    }
+    std::fs::write(&file, text).map_err(describe)?;
+    for arguments in [["--user", "daemon-reload", ""], ["--user", "try-restart", VOLUME_MONITOR]] {
+        let _ = std::process::Command::new("systemctl").args(arguments.iter().filter(|argument| !argument.is_empty())).output();
+    }
+    remove_bookmark_titled(paths, mount_point, Some("Immich"))?;
+    Ok(true)
+}
+
+/// Take our drop-in away again (at logout); the volume monitor goes back to `$HOME` at its next start.
+pub fn remove_sidebar_drop_in(paths: &Paths) -> Result<bool, String> {
+    let file = volume_monitor_drop_in(paths);
+    match std::fs::remove_file(&file) {
+        Ok(()) => {
+            let _ = std::fs::remove_dir(file.parent().unwrap_or(&file));
+            let _ = std::process::Command::new("systemctl").args(["--user", "daemon-reload"]).output();
+            Ok(true)
+        }
+        Err(error) if error.kind() == std::io::ErrorKind::NotFound => Ok(false),
+        Err(error) => Err(format!("{}: {error}", file.display())),
+    }
+}
+
+fn config_home(paths: &Paths) -> &Path {
+    paths.config_directory.parent().unwrap_or(&paths.home)
 }
 
 /// The sidebar's bookmarks, which GTK keeps (Files' Ctrl+D writes here).
 fn bookmarks(paths: &Paths) -> PathBuf {
-    let config_home = paths.config_directory.parent().unwrap_or(&paths.home);
-    config_home.join("gtk-3.0").join("bookmarks")
+    config_home(paths).join("gtk-3.0").join("bookmarks")
 }
 
 /// The URIs a bookmark of the mount may carry: the mount point as configured, and resolved.
@@ -73,11 +138,20 @@ pub fn add_bookmark(paths: &Paths, mount_point: &Path, title: &str) -> Result<bo
 
 /// Take the mount's bookmark out of the sidebar (at logout). Nothing to remove is not an error.
 pub fn remove_bookmark(paths: &Paths, mount_point: &Path) -> Result<bool, String> {
+    remove_bookmark_titled(paths, mount_point, None)
+}
+
+/// Take out the mount's bookmarks, or only the one titled `title` (the setup's, not one the user made).
+fn remove_bookmark_titled(paths: &Paths, mount_point: &Path, title: Option<&str>) -> Result<bool, String> {
     let file = bookmarks(paths);
     let Ok(mut text) = std::fs::read_to_string(&file) else { return Ok(false) };
     let mut removed = false;
     for uri in uris(mount_point) {
-        if let Some(updated) = without_bookmark(&text, &uri) {
+        let bookmark = match title {
+            Some(title) => format!("{uri} {title}"),
+            None => uri,
+        };
+        if let Some(updated) = without_bookmark(&text, &bookmark) {
             text = updated;
             removed = true;
         }
@@ -99,8 +173,12 @@ fn write_bookmarks(file: &Path, text: &str) -> Result<(), String> {
     std::fs::rename(&temporary, file).map_err(describe)
 }
 
-/// The index of the line bookmarking `uri`: the URI, then optionally a space and its title.
+/// The index of the line bookmarking `uri`: the URI, then optionally a space and its title. `uri` with a title
+/// matches only that title.
 fn bookmark_line(bookmarks: &str, uri: &str) -> Option<usize> {
+    if uri.contains(' ') {
+        return bookmarks.lines().position(|line| line == uri);
+    }
     bookmarks.lines().position(|line| line.split(' ').next() == Some(uri))
 }
 
@@ -144,5 +222,15 @@ mod tests {
         assert_eq!(without_bookmark(&added, uri).as_deref(), Some("file:///home/me/Projects Projects\nfile:///home/me/Music\n"));
         assert_eq!(without_bookmark(mine, uri), None);
         assert_eq!(with_bookmark("", uri, "Immich"), "file:///home/me/Immich Immich\n");
+        // Only the setup's bookmark, by its title; one the user made without a title stays.
+        let both = "file:///home/me/Immich\nfile:///home/me/Immich Immich\n";
+        assert_eq!(without_bookmark(both, "file:///home/me/Immich Immich").as_deref(), Some("file:///home/me/Immich\n"));
+    }
+
+    #[test]
+    fn the_drop_in_gives_the_volume_monitor_the_resolved_home() {
+        let text = drop_in_text(Path::new("/var/home/me"));
+        assert!(text.contains("[Service]\nEnvironment=HOME=/var/home/me\n"), "{text}");
+        assert_eq!(text.lines().find_map(|line| line.strip_prefix("Environment=HOME=")), Some("/var/home/me"));
     }
 }
