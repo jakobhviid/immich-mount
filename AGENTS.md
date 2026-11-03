@@ -146,6 +146,7 @@ The procedures are skills in `.claude/skills/`; agents that do not load skills r
 | `lab/plasma-vm/` | A fresh Fedora 44 VM with a headless Plasma 6 session and Dolphin, driven by the names on screen (`act.py`); nothing of ours preinstalled | `lab-desktop-vm` |
 | `lab/bazzite-vm/` | A stock Bazzite VM, GNOME or KDE edition, booted from a kept base disk built from the published bootc images: Bazzite's own Homebrew, `/home` a link to `/var/home`, SELinux enforcing, and the headless sessions and input helpers of the two VMs above | `lab-bazzite-vm` |
 | `lab/packaging/` | A release's .rpm and .deb installed, checked and removed on several distributions at once; with the server up, each also mounts it and checks originals against Immich's checksums | `lab-packaging-matrix` |
+| `lab/check/` | The release check: a desktop VM of one kind (Fedora GNOME or Plasma, Bazzite GNOME or KDE) and the server, warm, with the release installed as its users install it, signed in from the command line, and one PASS or FAIL line per documented claim, in about a minute; on Bazzite also the cask's uninstall | `lab-release-check` |
 
 Rules:
 - **Lab instances are disposable, and stay warm for a working session.** A VM or server may stay up between checks
