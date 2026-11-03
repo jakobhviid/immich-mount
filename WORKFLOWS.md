@@ -69,7 +69,8 @@ xdg-mime default dev.hviid.ImmichMount.Kde.desktop x-scheme-handler/app.immich
 ```
 
 **Homebrew** (any Linux, x86_64 or ARM): the daemon and CLI. FUSE comes from your distribution (`sudo dnf install
-fuse3` or `sudo apt install fuse3`), and `brew services` runs the daemon in place of the packages' user unit:
+fuse3` or `sudo apt install fuse3`), and `brew services` runs the daemon in place of the packages' user unit. For the
+desktop app, use the packages above instead: they bring their own daemon, and the app starts it at its first run.
 
 ```sh
 brew install jakobhviid/tap/immich-mount

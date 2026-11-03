@@ -16,5 +16,6 @@ pub mod mounts;
 pub mod notify;
 pub mod paths;
 pub mod seeding;
+pub mod service;
 pub mod staging;
 pub mod thumbnails;

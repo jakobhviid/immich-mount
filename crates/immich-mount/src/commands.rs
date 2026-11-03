@@ -8,6 +8,7 @@ use immich_mount_core::settings::{self, Config, SETTINGS};
 use immich_mount_linux::doctor::{self, DoctorReport};
 use immich_mount_linux::mounts;
 use immich_mount_linux::seeding;
+use immich_mount_linux::service;
 use immich_mount_linux::paths::Paths;
 use serde::Serialize;
 
@@ -81,7 +82,7 @@ pub fn configure_set(paths: &Paths, key: &str, value: &str) -> Result<SettingRow
 fn mount_at_login(key: &str, value: &str) {
     if key == "mount.at_login" {
         let verb = if value == "false" { "disable" } else { "enable" };
-        let _ = std::process::Command::new("systemctl").args(["--user", verb, "immich-mount.service"]).output();
+        let _ = std::process::Command::new("systemctl").args(["--user", verb, service::user_service()]).output();
     }
 }
 
@@ -153,13 +154,14 @@ pub fn mount(paths: &Paths) -> Result<MountReport> {
     if mounts::mount_state(&mount_point) == mounts::MountState::Mounted {
         return Ok(MountReport { mount_point, was_mounted: true });
     }
+    let unit = service::user_service();
     let started = std::process::Command::new("systemctl")
-        .args(["--user", "start", "immich-mount.service"])
+        .args(["--user", "start", unit])
         .output()
         .context("running systemctl --user")?;
     if !started.status.success() {
         anyhow::bail!(
-            "could not start the user service: {}; is immich-mount.service installed in ~/.config/systemd/user?",
+            "could not start the user service {unit}: {}; with Homebrew, run `brew services start immich-mount` once",
             String::from_utf8_lossy(&started.stderr).trim()
         );
     }
@@ -203,7 +205,7 @@ pub struct LogoutReport {
 }
 
 /// The user services that run the daemon: the packages' own, and Homebrew's (`brew services`).
-const USER_SERVICES: [&str; 2] = ["immich-mount.service", "homebrew.immich-mount.service"];
+const USER_SERVICES: [&str; 2] = [service::PACKAGED, service::HOMEBREW];
 
 /// Unmount, remove every seeded thumbnail, then the credential and every cache. Settings are kept. The caller ends
 /// the session on the server first, while the credential still exists.

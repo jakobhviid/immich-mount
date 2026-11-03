@@ -194,7 +194,7 @@ pub async fn save(url: String, credential: Credential) -> Result<String, String>
         },
     };
     remember_server(&paths, &url)?;
-    let _ = Command::new("systemctl").args(["--user", "enable", "immich-mount.service"]).output();
+    let _ = Command::new("systemctl").args(["--user", "enable", immich_mount_linux::service::user_service()]).output();
     Ok(place)
 }
 
@@ -260,7 +260,8 @@ fn remember_server(paths: &Paths, url: &str) -> Result<(), String> {
 
 /// Enable the user service and restart it, so it picks up the new credential.
 fn start_daemon() -> Result<(), String> {
-    for arguments in [["--user", "enable", "immich-mount.service"], ["--user", "restart", "immich-mount.service"]] {
+    let unit = immich_mount_linux::service::user_service();
+    for arguments in [["--user", "enable", unit], ["--user", "restart", unit]] {
         let outcome = Command::new("systemctl").args(arguments).output().map_err(|error| format!("systemctl: {error}"))?;
         if !outcome.status.success() {
             return Err(format!(

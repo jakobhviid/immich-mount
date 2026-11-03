@@ -197,6 +197,14 @@ the daemon's wiring.
    new account's cache namespace, and remount. Old namespaces are deleted.
 5. **Stop** (logout, `systemctl --user stop`): finish or cancel in-flight work, then unmount cleanly.
 
+**The user service** is the packages' `immich-mount.service` (the .rpm, the .deb and the tarball install it), or
+Homebrew's `homebrew.immich-mount.service`, which `brew services start immich-mount` writes. The apps' first-run
+setup, `immich-mount mount` and the `mount.at_login` switch use the packages' unit where it is installed, else
+Homebrew's, so nobody starts a service by hand after the app's setup; `logout` turns off both. A daemon that finds
+the mount already served by another (both services on) leaves cleanly, so its service is not restarted every few
+seconds. The desktop apps ship as packages that depend on the daemon's package, so Homebrew carries the daemon and
+CLI only, for machines without the app.
+
 ## The tree
 
 ### Identity and inodes

@@ -44,7 +44,8 @@ class ImmichMount < Formula
       Sign in, then mount it now and at every login:
         immich-mount login --server https://photos.example.org
         brew services start immich-mount
-      The GNOME and KDE apps are .rpm and .deb packages on the GitHub releases.
+      For the GNOME or KDE app, use the .rpm or .deb packages on the GitHub releases instead of this
+      formula: they bring their own daemon, and the app starts it at its first run.
       Immich Mount is an independent, unofficial project, not affiliated with the Immich project or FUTO.
     EOS
   end

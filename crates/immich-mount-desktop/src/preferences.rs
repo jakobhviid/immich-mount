@@ -63,7 +63,7 @@ pub fn change(key: &str, value: &str) -> Result<bool, String> {
     if key == "mount.at_login" {
         let verb = if value == "true" { "enable" } else { "disable" };
         std::thread::spawn(move || {
-            let _ = std::process::Command::new("systemctl").args(["--user", verb, "immich-mount.service"]).status();
+            let _ = std::process::Command::new("systemctl").args(["--user", verb, immich_mount_linux::service::user_service()]).status();
         });
         return Ok(false);
     }
@@ -73,7 +73,7 @@ pub fn change(key: &str, value: &str) -> Result<bool, String> {
 /// The daemon reads its settings at start: restart it, if it is running, off the caller's thread.
 pub fn restart_daemon() {
     std::thread::spawn(|| {
-        let _ = std::process::Command::new("systemctl").args(["--user", "try-restart", "immich-mount.service"]).status();
+        let _ = std::process::Command::new("systemctl").args(["--user", "try-restart", immich_mount_linux::service::user_service()]).status();
     });
 }
 

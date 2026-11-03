@@ -207,12 +207,15 @@ fn run_login(paths: &Paths, password: bool, api_key: bool, server: Option<String
         let user = report.user.as_deref().map(|user| format!(" as {user}")).unwrap_or_default();
         println!("✓ signed in to {} (Immich {}){user} with {}, kept in {}", report.server, report.server_version, report.method, report.stored_in);
         // A logout turns the user service off; say how to turn it on, unless it already is.
+        let unit = immich_mount_linux::service::user_service();
         let enabled = std::process::Command::new("systemctl")
-            .args(["--user", "is-enabled", "--quiet", "immich-mount.service"])
+            .args(["--user", "is-enabled", "--quiet", unit])
             .status()
             .is_ok_and(|status| status.success());
-        if !enabled {
-            println!("next: `systemctl --user enable --now immich-mount` mounts it now and at every login");
+        if !enabled && immich_mount_linux::service::from_homebrew() && unit != immich_mount_linux::service::PACKAGED {
+            println!("next: `brew services start immich-mount` mounts it now and at every login");
+        } else if !enabled {
+            println!("next: `systemctl --user enable --now {unit}` mounts it now and at every login");
         }
     }
     Ok(())
