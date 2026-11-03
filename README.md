@@ -55,6 +55,7 @@ One app, which opens in the interface native to your desktop: Kirigami on KDE Pl
 else. With Homebrew (any Linux that has it, Bazzite included, with nothing layered onto the system):
 
 ```sh
+brew trust --tap jakobhviid/tap   # once: Homebrew loads a third-party tap only once it is trusted
 brew install --cask jakobhviid/tap/immich-mount-linux
 ```
 

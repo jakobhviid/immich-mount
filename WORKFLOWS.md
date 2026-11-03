@@ -12,6 +12,7 @@ on KDE Plasma and GTK with libadwaita everywhere else. Without a display, `immic
 daemon in one step, x86_64:
 
 ```sh
+brew trust --tap jakobhviid/tap   # once: Homebrew loads a third-party tap only once it is trusted
 brew install --cask jakobhviid/tap/immich-mount-linux
 ```
 
@@ -23,6 +24,7 @@ libadwaita 1.8 for the GTK one); on a Plasma whose Qt is not Fedora 44's, the GT
 (`sudo dnf install fuse3` or `sudo apt install fuse3`), and `brew services` runs the daemon:
 
 ```sh
+brew trust --tap jakobhviid/tap   # once: Homebrew loads a third-party tap only once it is trusted
 brew install jakobhviid/tap/immich-mount
 immich-mount login --server https://photos.example.org
 brew services start immich-mount
