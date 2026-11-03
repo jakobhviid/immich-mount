@@ -198,13 +198,15 @@ the daemon's wiring.
 5. **Stop** (logout, `systemctl --user stop`): finish or cancel in-flight work, then unmount cleanly.
 
 **The user service** is the packages' `immich-mount.service` (the .rpm, the .deb and the tarball install it), or
-Homebrew's `homebrew.immich-mount.service`, which `brew services start immich-mount` writes. The apps' first-run
-setup, `immich-mount mount` and the `mount.at_login` switch use the packages' unit where it is installed, else
-Homebrew's, so nobody starts a service by hand after the app's setup; `logout` turns off both. A daemon that finds
-the mount already served by another (both services on) leaves cleanly, so its service is not restarted every few
-seconds. Where no service is installed at all (the app from Homebrew's cask, the daemon from its formula), the
-app's first run writes the packages' unit into `~/.config/systemd/user`, running the daemon it finds, and starts it.
-**Flatpak impact:** a Flatpak app could not write that unit; it would rely on the host's daemon and its service.
+Homebrew's `homebrew.immich-mount-headless.service`, which `brew services start immich-mount-headless` writes. The
+apps' first-run setup, `immich-mount mount` and the `mount.at_login` switch use the packages' unit where it is
+installed, else Homebrew's, so nobody starts a service by hand; `logout` turns off both. Where no service is
+installed at all (Homebrew's cask and formula, a build from source), the first of them to need it writes the
+packages' unit into `~/.config/systemd/user`, running the daemon it finds, and starts it. It looks first in the
+`bin` of the Homebrew prefix it runs from, whose links survive an upgrade, never in one version's folder. A daemon
+that finds the mount already served by another (both services on) leaves cleanly, so its service is not restarted
+every few seconds. **Flatpak impact:** a Flatpak app could not write that unit; it would rely on the host's daemon
+and its service.
 
 ## The tree
 
@@ -806,8 +808,15 @@ Each platform gets a native app that looks and reads like a first-party app (pri
   whichever interface is in use.
   - **Packaging:** the daemon's package carries the launcher entry and the AppStream data; `immich-mount-gnome`
     and `immich-mount-kde` carry the interfaces, and on Fedora the daemon's package recommends the one for the
-    installed desktop. Homebrew's cask `immich-mount-linux` holds both interfaces, built on Fedora 44, and
-    depends on the formula for the daemon.
+    installed desktop. With Homebrew the whole app is one cask, `immich-mount`: both interfaces, built on Fedora 44,
+    with the static daemon and command line, its man page and completions. `brew install jakobhviid/tap/immich-mount`
+    finds it without `--cask`, since no formula has that name. The formula `immich-mount-headless` is the daemon
+    alone, for x86_64 and ARM servers; the two hold the same binary, so they do not go together.
+  - **Not chosen for Homebrew: a formula for the daemon and a cask for the app that depends on it,** after
+    Homebrew's own split (formulae for command-line tools and services, casks for apps). It had a desktop user
+    install the cask under a second name to get the app, while the obvious name gave a command line with no app,
+    and a cask's dependency from a third-party tap needs `brew trust --tap` first where naming the cask does not. A
+    GUI-first app is installed by its own name, in one step.
   - **Notifications:** on Plasma the daemon's notifications name the app (`desktop-entry`), which heads them with its
     name and icon; Plasma is detected as for seeding (the environment, or Plasma's shell on the session bus). Elsewhere
     they carry the name and our symbolic icon and no `desktop-entry`: GNOME 50 drops a notification whose
@@ -871,17 +880,20 @@ Each platform gets a native app that looks and reads like a first-party app (pri
 
 ## Packaging and releases
 
-- **First release:** Homebrew (a formula for the static daemon with `brew services`, and a Linux cask for the app),
-  RPM (COPR), DEB (GitHub Releases) and AUR. All four package the same CI-built artifacts.
+- **First release:** Homebrew (the cask `immich-mount`, the whole app, and the formula `immich-mount-headless` for
+  servers), RPM (COPR), DEB (GitHub Releases) and AUR. All four package the same CI-built artifacts.
 - **The daemon and CLI follow the house release pipeline:**
   - the version is derived from Conventional Commits: the first commit is 1.0.0, then a breaking change bumps the
     major version, a feature the minor, anything else the patch (AGENTS.md, "Versioning")
   - the clippy gate and the tests run first; the build needs them
   - static musl builds for x86_64 and aarch64
   - releases pruned to the last ten
-  - the Homebrew formula (`ci/immich-mount.rb.tmpl`) with an x86_64 Linux bottle, pushed to a candidate branch of the
-    maintainer's tap (`jakobhviid/homebrew-tap`), whose gate installs and tests it before it lands; `brew services`
-    runs the daemon as `homebrew.immich-mount.service`, which `logout` turns off like the packages' unit
+  - the headless Homebrew formula (`ci/immich-mount-headless.rb.tmpl`) with an x86_64 Linux bottle, pushed to a
+    candidate branch of the maintainer's tap (`jakobhviid/homebrew-tap`), whose gate installs and tests it before it
+    lands; `brew services` runs the daemon as `homebrew.immich-mount-headless.service`, which `logout` turns off like
+    the packages' unit
+  - the cask's archive, `immich-mount-app-x86_64.tar.gz`: the interfaces from the `fedora:44` job, with the static
+    x86_64 daemon, its man page and completions; the tap bumps the cask daily from the releases
   - not built yet: `install.sh` for headless machines
 - **The GNOME app** links the system's GTK 4 and libadwaita, so it ships through the native packages and the cask,
   not as a static bottle.

@@ -262,15 +262,8 @@ fn remember_server(paths: &Paths, url: &str) -> Result<(), String> {
 /// from Homebrew's cask, the daemon from its formula), the app writes the packages' one for the daemon it finds, so
 /// nobody has to start a service by hand.
 fn start_daemon() -> Result<(), String> {
-    let unit = match immich_mount_linux::service::installed_user_service() {
-        Some(unit) => unit,
-        None => {
-            let daemon = immich_mount_linux::programs::find("immich-mount")
-                .ok_or("Signed in, but the mount cannot start: immich-mount is not installed.")?;
-            immich_mount_linux::service::write_user_service(&Paths::from_environment(), &daemon)
-                .map_err(|error| format!("Signed in, but the mount cannot start: {error}"))?
-        }
-    };
+    let unit = immich_mount_linux::service::ensure_user_service(&Paths::from_environment())
+        .map_err(|error| format!("Signed in, but the mount cannot start: {error}."))?;
     for arguments in [["--user", "enable", unit], ["--user", "restart", unit]] {
         let outcome = Command::new("systemctl").args(arguments).output().map_err(|error| format!("systemctl: {error}"))?;
         if !outcome.status.success() {

@@ -1,10 +1,10 @@
 //! The user service that runs the daemon (ARCHITECTURE.md, "The daemon's lifecycle"): the packages' own
-//! `immich-mount.service`, or Homebrew's `homebrew.immich-mount.service`, which `brew services` writes.
+//! `immich-mount.service`, or Homebrew's `homebrew.immich-mount-headless.service`, which `brew services` writes.
 
 /// The unit the .rpm, the .deb and the tarball install.
 pub const PACKAGED: &str = "immich-mount.service";
-/// Homebrew's unit, there once `brew services start immich-mount` has run.
-pub const HOMEBREW: &str = "homebrew.immich-mount.service";
+/// Homebrew's unit for the headless formula, there once `brew services start immich-mount-headless` has run.
+pub const HOMEBREW: &str = "homebrew.immich-mount-headless.service";
 
 use std::path::Path;
 
@@ -27,9 +27,19 @@ pub fn unit_text(daemon: &Path) -> String {
         .replace("@BINDIR@/immich-mount", &format!("\"{}\"", daemon.display()))
 }
 
-/// Write the packages' unit into the user's own systemd folder, running `daemon`, and have systemd read it: for an app
-/// installed without the daemon's package (Homebrew's cask beside the formula, a build from source), so its first run
-/// starts the mount itself. Returns the unit's name.
+/// The installed unit, else the packages' unit written for the daemon found on this system: what the app and `mount`
+/// start, so an install that brought no unit (Homebrew, a build from source) mounts all the same.
+pub fn ensure_user_service(paths: &Paths) -> std::io::Result<&'static str> {
+    if let Some(unit) = installed_user_service() {
+        return Ok(unit);
+    }
+    let daemon = crate::programs::find("immich-mount")
+        .ok_or_else(|| std::io::Error::new(std::io::ErrorKind::NotFound, "immich-mount is not installed"))?;
+    write_user_service(paths, &daemon)
+}
+
+/// Write the packages' unit into the user's own systemd folder, running `daemon`, and have systemd read it. Returns the
+/// unit's name.
 pub fn write_user_service(paths: &Paths, daemon: &Path) -> std::io::Result<&'static str> {
     let config_home = paths.config_directory.parent().unwrap_or(&paths.home);
     let directory = config_home.join("systemd").join("user");
@@ -37,13 +47,6 @@ pub fn write_user_service(paths: &Paths, daemon: &Path) -> std::io::Result<&'sta
     std::fs::write(directory.join(PACKAGED), unit_text(daemon))?;
     let _ = std::process::Command::new("systemctl").args(["--user", "daemon-reload"]).output();
     Ok(PACKAGED)
-}
-
-/// Whether this binary came from Homebrew (it runs from a keg in the Cellar).
-pub fn from_homebrew() -> bool {
-    std::env::current_exe()
-        .and_then(std::fs::canonicalize)
-        .is_ok_and(|executable| executable.to_string_lossy().contains("/Cellar/immich-mount/"))
 }
 
 fn installed(unit: &str) -> bool {

@@ -8,27 +8,30 @@ it works this way. Where a step is not built yet, it says so.
 Immich Mount is one app, GUI first: open **Immich Mount** and it shows the interface native to your desktop, Kirigami
 on KDE Plasma and GTK with libadwaita everywhere else. Without a display, `immich-mount` is a command line.
 
-**With Homebrew** (any Linux that has it, such as Bazzite; nothing is layered onto an atomic system): the app and the
-daemon in one step, x86_64:
+**With Homebrew** (any Linux that has it, such as Bazzite; nothing is layered onto an atomic system): the whole app,
+x86_64, in one command. It is a cask holding the interfaces, the daemon and the command line, and `brew install`
+finds it by name:
 
 ```sh
-brew trust --tap jakobhviid/tap   # once: Homebrew loads a third-party tap only once it is trusted
-brew install --cask jakobhviid/tap/immich-mount-linux
+brew install jakobhviid/tap/immich-mount
 ```
 
 Then open **Immich Mount** from the app grid: its first run signs you in and starts the mount, with no service to
 start by hand. The interfaces are built on Fedora 44, so the system needs to be at least as new (GTK 4.18 and
 libadwaita 1.8 for the GTK one); on a Plasma whose Qt is not Fedora 44's, the GTK interface stands in for Kirigami.
 
-**Without a desktop, with Homebrew** (x86_64 or ARM): the daemon and CLI alone. FUSE comes from your distribution
-(`sudo dnf install fuse3` or `sudo apt install fuse3`), and `brew services` runs the daemon:
+**Without a desktop, with Homebrew** (x86_64 or ARM): the daemon and CLI alone, as the formula
+`immich-mount-headless`. It and the app hold the same `immich-mount`, so a machine has one or the other. FUSE comes
+from your distribution (`sudo dnf install fuse3` or `sudo apt install fuse3`):
 
 ```sh
-brew trust --tap jakobhviid/tap   # once: Homebrew loads a third-party tap only once it is trusted
-brew install jakobhviid/tap/immich-mount
+brew install jakobhviid/tap/immich-mount-headless
 immich-mount login --server https://photos.example.org
-brew services start immich-mount
+immich-mount mount                                       # mounts it now, and at every login
 ```
+
+`immich-mount mount` writes the user service itself; `brew services start immich-mount-headless` is the same, kept
+by Homebrew, for those who prefer it.
 
 **As packages,** from the [release](https://github.com/jakobhviid/immich-mount/releases/latest): download the ones for
 your system into a folder, and install them from there. The daemon's package carries the launcher; the interface
@@ -55,7 +58,7 @@ of the same version. The daemon's package is also built for ARM (`aarch64` in th
   ```sh
   sudo dnf install ./immich-mount-[0-9]*.rpm     # or: sudo apt install ./immich-mount_*.deb
   immich-mount login --server https://photos.example.org
-  systemctl --user enable --now immich-mount
+  immich-mount mount
   ```
 
 The launcher registers the `app.immich` scheme, so single sign-on in the browser hands back to the app.
@@ -124,7 +127,8 @@ the address the browser ends on from stdin; the other methods read their secrets
 
 - It appears at `~/Immich` and in the Files sidebar as **Immich**, with an eject button. On KDE it is in Dolphin's
   Places as **Immich**, added by the app's first run (remove it like any place; it is not added back).
-- It starts at login, through the user service: `systemctl --user enable --now immich-mount`.
+- It starts at login, through the user service, which the app's first run and `immich-mount mount` turn on (and the
+  `mount.at_login` setting turns off).
 - **Eject** in Files unmounts it until the next login, or until `immich-mount mount` or **Mount again** in the app.
 - `immich-mount unmount` and `immich-mount mount` do the same from a terminal.
 
@@ -228,8 +232,7 @@ Logs: `journalctl --user -u immich-mount`.
 
   It also turns the user service off (Homebrew's too), which would otherwise fail at every login without a
   credential. After the
-  next `immich-mount login`, `systemctl --user enable --now immich-mount` turns it on again (the apps do that at
-  their first-run setup).
+  next `immich-mount login`, `immich-mount mount` turns it on again (the apps do that at their first-run setup).
 - Settings are kept, and so are files that could not be uploaded (`~/.local/share/immich-mount/not-uploaded/`).
   So is KDE's remote-preview limit if **Show thumbnails** turned it on (turn it off in the KDE app first, or with
   `kwriteconfig6 --file kdeglobals --group PreviewSettings --key MaximumRemoteSize --delete`).

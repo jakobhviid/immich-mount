@@ -46,7 +46,7 @@ Qt drops the name of password fields on the accessibility bus, so fill those by 
 encrypted file", then Finish, then `set` on "Password:" and "Verify:" and OK.
 
 **Signing in on GNOME without clicking:** `printf '%s\n%s\n' <email> <password> | immich-mount login --server <url>
---password` in the session, then `systemctl --user enable --now immich-mount`; the app then opens on its status
+--password` in the session, then `immich-mount mount`; the app then opens on its status
 page. Storing the first credential brings up "Choose password for new keyring": answer it with `exp/input.sh type`
 (twice, `key Tab` between, then `key Return`). `exp/input.sh` often drops the first event it sends, so check typed
 text on a screenshot. The overview is hidden in the lab session; `org.gnome.Shell.Eval` with

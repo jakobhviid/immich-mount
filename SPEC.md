@@ -325,7 +325,7 @@ One binary: the daemon and the command line.
 | `immich-mount daemon` | Runs the daemon in the foreground (what the user service starts) |
 | `immich-mount login [--password \| --api-key] [--server URL]` | Signs in; prompts only on a terminal |
 | `immich-mount logout` | Unmounts, then removes the seeded thumbnails, the credential and the caches |
-| `immich-mount mount` / `unmount` | Mounts (starts the user service and waits up to 15 s for the mount) or unmounts (which stops the daemon, as an eject does) |
+| `immich-mount mount` / `unmount` | Mounts (starts the user service, writing it first where no install brought one and enabling it when `mount.at_login` is on, and waits up to 15 s for the mount) or unmounts (which stops the daemon, as an eject does) |
 | `immich-mount status` | Connection state, server and its version, account, credential, mount point, cache usage |
 | `immich-mount doctor` | A read-only health check (see WORKFLOWS) |
 | `immich-mount configure list \| keys \| get \| set \| unset` | Reads and writes settings |

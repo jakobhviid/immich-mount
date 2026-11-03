@@ -73,16 +73,19 @@ pub fn configure_set(paths: &Paths, key: &str, value: &str) -> Result<SettingRow
     }
     let updated = settings::set_value(&config_text(paths)?, key, value)?;
     write_config(paths, &updated)?;
-    mount_at_login(key, value);
+    mount_at_login(paths, key, value);
     configure_get(paths, key)
 }
 
 /// Mounting at login is the user service being enabled, as the apps' switch does. systemctl's own messages are kept
 /// off stdout, which `--json` reserves for one document.
-fn mount_at_login(key: &str, value: &str) {
+fn mount_at_login(paths: &Paths, key: &str, value: &str) {
     if key == "mount.at_login" {
-        let verb = if value == "false" { "disable" } else { "enable" };
-        let _ = std::process::Command::new("systemctl").args(["--user", verb, service::user_service()]).output();
+        let (verb, unit) = match value {
+            "false" => ("disable", service::user_service()),
+            _ => ("enable", service::ensure_user_service(paths).unwrap_or_else(|_| service::user_service())),
+        };
+        let _ = std::process::Command::new("systemctl").args(["--user", verb, unit]).output();
     }
 }
 
@@ -90,7 +93,7 @@ fn mount_at_login(key: &str, value: &str) {
 pub fn configure_unset(paths: &Paths, key: &str) -> Result<SettingRow> {
     let updated = settings::unset_value(&config_text(paths)?, key)?;
     write_config(paths, &updated)?;
-    mount_at_login(key, "true");
+    mount_at_login(paths, key, "true");
     configure_get(paths, key)
 }
 
@@ -147,21 +150,26 @@ pub struct MountReport {
 /// How long `mount` waits for the daemon to mount.
 const MOUNT_WAIT: std::time::Duration = std::time::Duration::from_secs(15);
 
-/// Start the user service (the daemon) and wait until the mount is up. Until the daemon has its D-Bus control, the
-/// service is how the mount is started (ARCHITECTURE.md, "The daemon's lifecycle").
+/// Start the user service (the daemon), writing it first if no install brought one, enable it when `mount.at_login`
+/// says so, and wait until the mount is up. Until the daemon has its D-Bus control, the service is how the mount is
+/// started (ARCHITECTURE.md, "The daemon's lifecycle").
 pub fn mount(paths: &Paths) -> Result<MountReport> {
-    let mount_point = mount_point(paths)?;
+    let config = load_config(paths)?;
+    let mount_point = paths.expand(&config.mount_path);
     if mounts::mount_state(&mount_point) == mounts::MountState::Mounted {
         return Ok(MountReport { mount_point, was_mounted: true });
     }
-    let unit = service::user_service();
+    let unit = service::ensure_user_service(paths).context("setting up the user service")?;
+    if config.mount_at_login {
+        let _ = std::process::Command::new("systemctl").args(["--user", "enable", unit]).output();
+    }
     let started = std::process::Command::new("systemctl")
         .args(["--user", "start", unit])
         .output()
         .context("running systemctl --user")?;
     if !started.status.success() {
         anyhow::bail!(
-            "could not start the user service {unit}: {}; with Homebrew, run `brew services start immich-mount` once",
+            "could not start the user service {unit}: {}",
             String::from_utf8_lossy(&started.stderr).trim()
         );
     }

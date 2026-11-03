@@ -1,5 +1,7 @@
-class ImmichMount < Formula
-  desc "Your Immich photos and videos as a drive in your file manager (unofficial)"
+# Immich Mount without the app, for a server or a session with no desktop. A desktop installs the cask
+# `immich-mount` instead, which is the whole app and has the same daemon in it; the two do not go together.
+class ImmichMountHeadless < Formula
+  desc "Immich photos and videos as a drive, without the desktop app (unofficial)"
   homepage "https://github.com/jakobhviid/immich-mount"
   # Linux-only (FUSE), but Homebrew needs a url on EVERY platform just to parse the formula: with the url only
   # inside `on_linux`, macOS sees an empty spec and every `brew` command errors. So x86_64 Linux is the top-level
@@ -30,7 +32,8 @@ class ImmichMount < Formula
     (man1/"immich-mount.1").write Utils.safe_popen_read(bin/"immich-mount", "--man")
   end
 
-  # `brew services start immich-mount` mounts at every login; an eject or `immich-mount unmount` exits cleanly and is
+  # For those who keep their services in Homebrew: `brew services start immich-mount-headless` mounts at every login,
+  # as `immich-mount mount` does with a user unit of its own. An eject or `immich-mount unmount` exits cleanly and is
   # not restarted.
   service do
     run [opt_bin/"immich-mount", "daemon"]
@@ -43,9 +46,10 @@ class ImmichMount < Formula
         sudo dnf install fuse3      # or: sudo apt install fuse3
       Sign in, then mount it now and at every login:
         immich-mount login --server https://photos.example.org
-        brew services start immich-mount
-      For the app, install the cask instead, which brings this formula with it:
-        brew install --cask jakobhviid/tap/immich-mount-linux
+        immich-mount mount
+      On a desktop, install the app instead, which has this in it:
+        brew uninstall immich-mount-headless
+        brew install jakobhviid/tap/immich-mount
       Immich Mount is an independent, unofficial project, not affiliated with the Immich project or FUTO.
     EOS
   end

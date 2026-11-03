@@ -1,7 +1,8 @@
 name: release
 
 # The house release pipeline, adapted: Linux musl builds of the daemon and CLI, the desktop apps' packages, and a
-# GitHub release, and the formula in the Homebrew tap (jakobhviid/homebrew-tap).
+# GitHub release, and the headless formula in the Homebrew tap (jakobhviid/homebrew-tap), whose own pipeline bumps the
+# app's cask.
 
 on:
   push:
@@ -81,13 +82,13 @@ jobs:
           rpmbuild -bb --define "_topdir $PWD/dist/rpmbuild" --define "pkg_version $VERSION" --define "payload $kde" \
             packaging/rpm/immich-mount-kde.spec
           cp dist/rpmbuild/RPMS/*/*.rpm dist/
-          # For Homebrew's cask (the daemon comes from the formula): both interfaces, the launcher entry with its
-          # @BINDIR@ left for the cask to fill in, and the icons. Built here, so it links this Fedora's GTK and Qt.
+          # For Homebrew's cask: both interfaces, the launcher entry with its @BINDIR@ left for the cask to fill in,
+          # and the icons. Built here, so it links this Fedora's GTK and Qt; the release job adds the static daemon.
           app="$PWD/dist/app"
           mkdir -p "$app"
           cp target/release/immich-mount-gnome target/release/immich-mount-kde LICENSE packaging/icons/*.svg "$app/"
           cp packaging/desktop/dev.hviid.ImmichMount.desktop.in "$app/dev.hviid.ImmichMount.desktop"
-          python3 packaging/third-party-licenses.py "$app/THIRD-PARTY-LICENSES.md" immich-mount-gnome immich-mount-kde
+          python3 packaging/third-party-licenses.py "$app/THIRD-PARTY-LICENSES.md" immich-mount-gnome immich-mount-kde immich-mount
           tar czf dist/immich-mount-app-x86_64.tar.gz -C "$app" .
           ls -l dist/*.rpm dist/*.tar.gz
       - uses: actions/upload-artifact@v4
@@ -251,9 +252,9 @@ jobs:
           echo "VERSION=$VERSION" >> "$GITHUB_ENV"
       - name: Homebrew bottle (x86_64 Linux)
         run: |
-          # The prebuilt binary as a bottle, so `brew install` pours it. A poured bottle skips the formula's install,
-          # so the keg holds what install would make: the binary, its man page and the completions.
-          keg="immich-mount/${VERSION}"
+          # The prebuilt binary as a bottle of the headless formula, so `brew install` pours it. A poured bottle skips
+          # the formula's install, so the keg holds what install would make: the binary, its man page and the completions.
+          keg="immich-mount-headless/${VERSION}"
           stage=bottlestage
           mkdir -p "$stage/$keg/bin" "$stage/$keg/share/man/man1" "$stage/$keg/share/zsh/site-functions" \
             "$stage/$keg/share/bash-completion/completions" "$stage/$keg/share/fish/vendor_completions.d"
@@ -263,8 +264,23 @@ jobs:
           "$bin" completions zsh > "$stage/$keg/share/zsh/site-functions/_immich-mount"
           "$bin" completions bash > "$stage/$keg/share/bash-completion/completions/immich-mount"
           "$bin" completions fish > "$stage/$keg/share/fish/vendor_completions.d/immich-mount.fish"
-          ( cd "$stage" && tar czf "../art/immich-mount-${VERSION}.x86_64_linux.bottle.tar.gz" immich-mount )
-          echo "BOTTLE_SHA=$(sha256sum "art/immich-mount-${VERSION}.x86_64_linux.bottle.tar.gz" | awk '{print $1}')" >> "$GITHUB_ENV"
+          bottle="art/immich-mount-headless-${VERSION}.x86_64_linux.bottle.tar.gz"
+          ( cd "$stage" && tar czf "../$bottle" immich-mount-headless )
+          echo "BOTTLE_SHA=$(sha256sum "$bottle" | awk '{print $1}')" >> "$GITHUB_ENV"
+      - name: The whole app for Homebrew's cask (x86_64 Linux)
+        run: |
+          # One install for a desktop: the interfaces from fedora-apps, with the static daemon and command line, its
+          # man page and its completions, so the cask needs no formula beside it.
+          app=appstage
+          mkdir -p "$app"
+          tar xzf art/immich-mount-app-x86_64.tar.gz -C "$app"
+          tar xzf art/immich-mount-x86_64-unknown-linux-musl.tar.gz -C "$app" ./immich-mount
+          "$app/immich-mount" --man > "$app/immich-mount.1"
+          "$app/immich-mount" completions zsh > "$app/_immich-mount"
+          "$app/immich-mount" completions bash > "$app/immich-mount.bash"
+          "$app/immich-mount" completions fish > "$app/immich-mount.fish"
+          tar czf art/immich-mount-app-x86_64.tar.gz -C "$app" .
+          tar tzf art/immich-mount-app-x86_64.tar.gz
       - name: Publish release
         env:
           GH_TOKEN: ${{ github.token }}
@@ -295,15 +311,15 @@ jobs:
           x=$(sha256sum art/immich-mount-x86_64-unknown-linux-musl.tar.gz | awk '{print $1}')
           a=$(sha256sum art/immich-mount-aarch64-unknown-linux-musl.tar.gz | awk '{print $1}')
           sed -e "s/@VERSION@/${VERSION}/g" -e "s/@BOTTLE_SHA@/${BOTTLE_SHA}/g" -e "s/@X86_SHA@/${x}/g" -e "s/@ARM_SHA@/${a}/g" \
-            ci/immich-mount.rb.tmpl > /tmp/immich-mount.rb
+            ci/immich-mount-headless.rb.tmpl > /tmp/immich-mount-headless.rb
           git clone git@github.com:jakobhviid/homebrew-tap tap
           mkdir -p tap/Formula
-          cp /tmp/immich-mount.rb tap/Formula/immich-mount.rb
+          cp /tmp/immich-mount-headless.rb tap/Formula/immich-mount-headless.rb
           cd tap
           git config user.name "tap-bot"
           git config user.email "tap-bot@users.noreply.github.com"
-          git add Formula/immich-mount.rb
-          git commit -m "immich-mount ${VERSION}" || { echo "no formula change"; exit 0; }
+          git add Formula/immich-mount-headless.rb
+          git commit -m "immich-mount-headless ${VERSION}" || { echo "no formula change"; exit 0; }
           # To a candidate branch, not main: the tap's gate installs and tests the formula on every platform it
           # claims and lands it only if it passes, opening an issue there if not. Force: the branch holds one candidate.
-          git push --force origin "HEAD:refs/heads/auto/formula-immich-mount"
+          git push --force origin "HEAD:refs/heads/auto/formula-immich-mount-headless"

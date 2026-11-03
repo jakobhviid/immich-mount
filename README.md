@@ -52,11 +52,11 @@ sharing and editing stay in Immich's web and mobile apps.
 ## Install
 
 One app, which opens in the interface native to your desktop: Kirigami on KDE Plasma, GTK and libadwaita everywhere
-else. With Homebrew (any Linux that has it, Bazzite included, with nothing layered onto the system):
+else. With Homebrew (any Linux that has it, Bazzite included, with nothing layered onto the system), one command
+installs all of it, and **Immich Mount** is then in the app grid:
 
 ```sh
-brew trust --tap jakobhviid/tap   # once: Homebrew loads a third-party tap only once it is trusted
-brew install --cask jakobhviid/tap/immich-mount-linux
+brew install jakobhviid/tap/immich-mount
 ```
 
 Or from the [latest release](https://github.com/jakobhviid/immich-mount/releases/latest):
@@ -66,7 +66,7 @@ Or from the [latest release](https://github.com/jakobhviid/immich-mount/releases
 | Fedora 44 | `immich-mount-*.x86_64.rpm`, plus `immich-mount-gnome-*.rpm` (GNOME) or `immich-mount-kde-*.rpm` (KDE Plasma) |
 | Ubuntu 26.04, Kubuntu 26.04 | `immich-mount_*.deb`, plus `immich-mount-gnome_*.deb` or `immich-mount-kde_*.deb` |
 | Fedora 43, Ubuntu 24.04, Debian 13 | `immich-mount` (.rpm or .deb): the mount and the command line, without the app |
-| A server, with Homebrew | `brew install jakobhviid/tap/immich-mount`: the mount and the command line |
+| A server, with Homebrew | `brew install jakobhviid/tap/immich-mount-headless`: the mount and the command line |
 | Any other Linux | `immich-mount-*-linux-musl.tar.gz`, a static binary with its user service |
 
 ```sh
@@ -106,7 +106,7 @@ the thumbnails:
 
 ```sh
 immich-mount login --server https://photos.example.org   # single sign-on: open the printed address in a browser
-systemctl --user enable --now immich-mount               # mount now, and at every login
+immich-mount mount                                       # mount now, and at every login
 immich-mount status                                      # or: immich-mount doctor, when something is wrong
 ```
 

@@ -223,10 +223,8 @@ fn run_login(paths: &Paths, password: bool, api_key: bool, server: Option<String
             .args(["--user", "is-enabled", "--quiet", unit])
             .status()
             .is_ok_and(|status| status.success());
-        if !enabled && immich_mount_linux::service::from_homebrew() && unit != immich_mount_linux::service::PACKAGED {
-            println!("next: `brew services start immich-mount` mounts it now and at every login");
-        } else if !enabled {
-            println!("next: `systemctl --user enable --now {unit}` mounts it now and at every login");
+        if !enabled {
+            println!("next: `immich-mount mount` mounts it now and at every login");
         }
     }
     Ok(())

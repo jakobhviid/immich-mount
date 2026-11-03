@@ -119,11 +119,11 @@ for Fedora 44 and a .deb for Ubuntu 26.04.
 **Status (2026-11-02): .deb and .rpm of the daemon and CLI are built** by the release workflow with the
 distributions' own tools (`dpkg-deb`, `rpmbuild` on the prebuilt static binary) and attached to the GitHub
 releases; tested by installing on Fedora 44 and Debian 13. The app is packaged as an rpm for Fedora 44, built in
-the release workflow's `fedora:44` job, with AppStream metadata (validated) and the scheme handler. AUR, Homebrew,
-COPR and Flatpak wait for the repository to go public. The app is also a .deb for Ubuntu 26.04 (GTK 4.22,
+the release workflow's `fedora:44` job, with AppStream metadata (validated) and the scheme handler. Homebrew is built
+(below); COPR, the AUR and Flatpak are not yet. The app is also a .deb for Ubuntu 26.04 (GTK 4.22,
 libadwaita 1.9), built in an `ubuntu:26.04` job and tested by installing in a container.
 
-- Homebrew (formula and Linux cask), RPM (COPR), DEB (GitHub Releases) and AUR. Each is tested on Erebus, with the
+- Homebrew (the app's cask and the headless formula), RPM (COPR), DEB (GitHub Releases) and AUR. Each is tested on Erebus, with the
   install matrix plus a full GNOME VM run (`lab/packaging/`). **The install matrix is built** (`lab/packaging/matrix.sh`)
   and passes: Fedora 44 and Ubuntu 26.04 with both apps, Fedora 43, Ubuntu 24.04 and Debian 13 with the
   daemon; each installed, checked and removed.
@@ -132,10 +132,11 @@ libadwaita 1.9), built in an `ubuntu:26.04` job and tested by installing in a co
 - AppStream metadata.
 - **Public (2026-11-02):** the history is a single 1.0.0 commit, the repository is public, and GitHub's private
   vulnerability reporting is on (SECURITY.md points to it).
-- **Homebrew: the formula is built.** The release workflow renders `ci/immich-mount.rb.tmpl` with an x86_64 Linux
-  bottle and pushes it to the maintainer's tap (`jakobhviid/homebrew-tap`), whose gate installs and tests it before
-  it lands. The cask `immich-mount-linux` carries the app (both interfaces, built on Fedora 44) and depends on the
-  formula; the tap bumps it daily from the releases. Next: COPR and the AUR, and Fedora 45 builds of the
+- **Homebrew is built:** `brew install jakobhviid/tap/immich-mount` installs the whole app, a cask with both
+  interfaces (built on Fedora 44), the daemon and the command line, which the tap bumps daily from the releases. The
+  formula `immich-mount-headless` is the daemon alone, for servers: the release workflow renders
+  `ci/immich-mount-headless.rb.tmpl` with an x86_64 Linux bottle and pushes it to the maintainer's tap
+  (`jakobhviid/homebrew-tap`), whose gate installs and tests it before it lands. Next: COPR and the AUR, and Fedora 45 builds of the
   interfaces once Fedora 45 based systems need them (the Kirigami one is tied to its Fedora's Qt).
 - An independent adversarial review before tagging.
 
