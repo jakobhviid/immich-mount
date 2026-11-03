@@ -63,6 +63,11 @@ pub mod qobject {
         #[qinvokable]
         fn refresh(self: Pin<&mut Backend>);
 
+        /// Mount, or unmount as an eject does.
+        #[qinvokable]
+        #[cxx_name = "switchMount"]
+        fn switch_mount(self: Pin<&mut Backend>, mounted: bool);
+
         #[qinvokable]
         fn disconnect(self: Pin<&mut Backend>);
 
@@ -423,6 +428,17 @@ impl qobject::Backend {
         if std::mem::take(&mut self.as_mut().rust_mut().settings_changed) {
             preferences::restart_daemon();
         }
+    }
+
+    pub fn switch_mount(mut self: Pin<&mut Self>, mounted: bool) {
+        self.as_mut().set_busy(true);
+        run(self, async move { session::set_mounted(mounted) }, |mut backend, outcome: Result<(), String>| {
+            match outcome {
+                Ok(()) => backend.as_mut().set_busy(false),
+                Err(message) => backend.as_mut().fail(&message),
+            }
+            backend.refresh();
+        });
     }
 
     pub fn disconnect(mut self: Pin<&mut Self>) {

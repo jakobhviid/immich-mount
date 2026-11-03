@@ -386,11 +386,13 @@ Kirigami.ApplicationWindow {
                     text: backend.signedout ? "Signed Out of Immich" : (backend.mounted ? "Your Library Is in Dolphin" : "Not Mounted")
                     explanation: backend.signedout ? "Sign in again to keep browsing. Your caches are kept."
                         : (backend.mounted ? "Browse it like any folder. Originals download only when you open them."
-                        : "The mount is not running. It starts again at your next login.")
+                        : "Mount it to browse your library in Dolphin.")
                     helpfulAction: Kirigami.Action {
-                        icon.name: backend.signedout ? "im-user" : "system-file-manager"
-                        text: backend.signedout ? "Sign In Again" : "Open in Dolphin"
-                        onTriggered: backend.signedout ? backend.signInAgain() : Qt.openUrlExternally("file://" + backend.location)
+                        icon.name: backend.signedout ? "im-user" : (backend.mounted ? "system-file-manager" : "media-mount")
+                        text: backend.signedout ? "Sign In Again" : (backend.mounted ? "Open in Dolphin" : "Mount")
+                        enabled: !backend.busy
+                        onTriggered: backend.signedout ? backend.signInAgain()
+                            : (backend.mounted ? Qt.openUrlExternally("file://" + backend.location) : backend.switchMount(true))
                     }
                 }
                 Kirigami.FormLayout {
@@ -404,12 +406,21 @@ Kirigami.ApplicationWindow {
                     Controls.Label { Kirigami.FormData.label: "Uploading:"; text: backend.uploads; visible: text.length > 0 }
                     PreviewsSwitch { Kirigami.FormData.label: "Dolphin:"; Kirigami.FormData.labelAlignment: Qt.AlignTop }
                 }
-                Controls.Button {
+                RowLayout {
                     Layout.alignment: Qt.AlignHCenter
-                    text: "Disconnect"
-                    icon.name: "network-disconnect"
-                    enabled: !backend.busy
-                    onClicked: backend.disconnect()
+                    Controls.Button {
+                        text: "Unmount"
+                        icon.name: "media-eject"
+                        visible: backend.mounted
+                        enabled: !backend.busy
+                        onClicked: backend.switchMount(false)
+                    }
+                    Controls.Button {
+                        text: "Disconnect"
+                        icon.name: "network-disconnect"
+                        enabled: !backend.busy
+                        onClicked: backend.disconnect()
+                    }
                 }
                 Controls.Label {
                     Layout.fillWidth: true

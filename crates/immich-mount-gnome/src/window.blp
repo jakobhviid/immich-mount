@@ -213,16 +213,43 @@ template $ImmichMountWindow: Adw.ApplicationWindow {
                 orientation: vertical;
                 spacing: 24;
 
-                Button {
-                  label: _("_Open in Files");
-                  use-underline: true;
+                Box {
                   halign: center;
-                  clicked => $on_open_in_files() swapped;
+                  spacing: 12;
 
-                  styles [
-                    "pill",
-                    "suggested-action",
-                  ]
+                  Button open_button {
+                    label: _("_Open in Files");
+                    use-underline: true;
+                    clicked => $on_open_in_files() swapped;
+
+                    styles [
+                      "pill",
+                      "suggested-action",
+                    ]
+                  }
+
+                  Button unmount_button {
+                    label: _("_Unmount");
+                    use-underline: true;
+                    tooltip-text: _("Take it out of Files until you mount it again or log in");
+                    clicked => $on_unmount() swapped;
+
+                    styles [
+                      "pill",
+                    ]
+                  }
+
+                  Button mount_button {
+                    label: _("_Mount");
+                    use-underline: true;
+                    visible: false;
+                    clicked => $on_mount() swapped;
+
+                    styles [
+                      "pill",
+                      "suggested-action",
+                    ]
+                  }
                 }
 
                 Adw.PreferencesGroup sign_in_again_group {

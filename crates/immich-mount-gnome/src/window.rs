@@ -52,6 +52,12 @@ mod imp {
         #[template_child]
         pub sign_in_again_group: TemplateChild<adw::PreferencesGroup>,
         #[template_child]
+        pub open_button: TemplateChild<gtk::Button>,
+        #[template_child]
+        pub unmount_button: TemplateChild<gtk::Button>,
+        #[template_child]
+        pub mount_button: TemplateChild<gtk::Button>,
+        #[template_child]
         pub photos_switch: TemplateChild<adw::SwitchRow>,
         #[template_child]
         pub albums_switch: TemplateChild<adw::SwitchRow>,
@@ -132,6 +138,16 @@ mod imp {
         #[template_callback]
         fn on_open_in_files(&self, #[rest] _values: &[glib::Value]) {
             self.obj().open_in_files();
+        }
+
+        #[template_callback]
+        fn on_mount(&self, #[rest] _values: &[glib::Value]) {
+            self.obj().set_mounted(true);
+        }
+
+        #[template_callback]
+        fn on_unmount(&self, #[rest] _values: &[glib::Value]) {
+            self.obj().set_mounted(false);
         }
 
         #[template_callback]
@@ -411,8 +427,11 @@ impl Window {
         let (title, description) = match (signed_out, status.mounted) {
             (true, _) => ("Signed Out of Immich", "Sign in again to keep browsing. Your caches are kept."),
             (false, true) => ("Your Library Is in Files", "Browse it like any folder. Originals download only when you open them."),
-            (false, false) => ("Not Mounted", "The mount is not running. It starts again at your next login."),
+            (false, false) => ("Not Mounted", "Mount it to browse your library in Files."),
         };
+        imp.open_button.set_visible(status.mounted);
+        imp.unmount_button.set_visible(status.mounted);
+        imp.mount_button.set_visible(!status.mounted);
         imp.status_page.set_title(title);
         imp.status_page.set_description(Some(description));
         imp.mount_point.replace(Some(status.mount_point.clone()));
@@ -426,6 +445,24 @@ impl Window {
     fn open_in_files(&self) {
         let Some(mount_point) = self.imp().mount_point.borrow().clone() else { return };
         gtk::FileLauncher::new(Some(&gio::File::for_path(mount_point))).launch(Some(self), gio::Cancellable::NONE, |_| {});
+    }
+
+    /// Mount or unmount, off the main loop, then show the status as it is.
+    fn set_mounted(&self, mounted: bool) {
+        self.set_busy(true);
+        let window = self.clone();
+        run(async move { session::set_mounted(mounted) }, move |outcome| {
+            if let Err(message) = outcome {
+                window.toast(&message);
+            }
+            let refreshed = window.clone();
+            run(session::current_status(), move |status| {
+                refreshed.set_busy(false);
+                if let Some(status) = status {
+                    refreshed.update_status(&status);
+                }
+            });
+        });
     }
 
     fn disconnect(&self) {

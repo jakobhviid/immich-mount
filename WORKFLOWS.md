@@ -134,7 +134,8 @@ the address the browser ends on from stdin; the other methods read their secrets
   in the mount brings it back.
 - It starts at login, through the user service, which the app's first run and `immich-mount mount` turn on (and the
   `mount.at_login` setting turns off).
-- **Eject** in Files unmounts it until the next login, or until `immich-mount mount` or **Mount again** in the app.
+- **Unmount** on the app's status page, or **Eject** in Files, takes it out until the next login, or until **Mount**
+  on the status page or `immich-mount mount`.
 - `immich-mount unmount` and `immich-mount mount` do the same from a terminal.
 
 Browse it like any folder: Photos by year and month (busy months by day), Albums (`2023 - Summer trip`),

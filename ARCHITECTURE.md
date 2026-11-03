@@ -192,7 +192,9 @@ the daemon's wiring.
 2. **Server unreachable:** stay mounted. Serve cached listings and content, fail uncached reads fast, notify once.
 3. **Eject from the file manager:** respected. The daemon notices within two seconds and exits cleanly. The
    user service restarts only on failure, so the next login (or `systemctl --user start immich-mount`) mounts again.
-   Once the app can control the daemon over D-Bus (M4), it will offer "Mount again" too.
+   The app's status page offers **Mount** then, and **Unmount** while mounted, which matters where Files shows a
+   bookmark with no eject button; both run the command line's `mount` and `unmount`, so the app and a terminal take
+   the same steps.
 4. **Server or account change:** refused while uploads are staged or in flight. Otherwise unmount, switch to the
    new account's cache namespace, and remount. Old namespaces are deleted.
 5. **Stop** (logout, `systemctl --user stop`): finish or cancel in-flight work, then unmount cleanly.
@@ -748,8 +750,7 @@ What the API does, verified on v3.3.5, all of which the client encodes:
     the drive symbol.
   - **Elsewhere:** a mount under `/run/user` is invisible unless bookmarked.
   - **Eject** really unmounts. The daemon treats that as the user's choice and exits cleanly; the user service is
-    not restarted, so the next login (or `systemctl --user start immich-mount`) mounts again. "Mount again" in the
-    app comes with its D-Bus control.
+    not restarted, so the next login, **Mount** on the app's status page or `immich-mount mount` mounts again.
   - **Remounting:** gvfs ignores a quick unmount-and-remount, so the daemon waits for the old mount to disappear
     first.
   - **No `DCIM` folder at the root:** gvfs scans new mounts for camera layouts *(untested)*.

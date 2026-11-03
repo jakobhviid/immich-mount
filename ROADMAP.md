@@ -109,7 +109,7 @@ Exit: a fresh GNOME VM goes from install to a working mount using only the app.
 creating the keyring), offers the sections and the location, and opens the mount in Files. `immich-mount-gnome`
 (gtk4-rs, libadwaita, Blueprint) has the connect page, sign-in offering only what the server supports, first-run
 setup, the status page (Immich's version, connection, cache and uploads in flight, read from the daemon over
-D-Bus), "Sign In Again", "Disconnect", the preferences dialog from the settings table, a keyboard shortcuts dialog,
+D-Bus), "Mount" and "Unmount", "Sign In Again", "Disconnect", the preferences dialog from the settings table, a keyboard shortcuts dialog,
 and the About dialog with the notice and credits. Verified in the GNOME 50 VM: single sign-on through Firefox and
 Dex, handed back by the `app.immich` scheme handler, kept in the keyring, and the mount started. Packaged as an rpm
 for Fedora 44 and a .deb for Ubuntu 26.04.

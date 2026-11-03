@@ -399,6 +399,20 @@ pub async fn current_status() -> Option<Status> {
 
 /// Sign out through the command line's `logout`, which unmounts and removes the credential, the caches and the
 /// seeded thumbnails. The two programs ship together, so the command sits next to this one.
+/// Mount, or unmount as an eject does, with the command line's `mount` and `unmount`, so the app takes the steps a
+/// terminal would: mounting starts the user service, written first where no install brought one; unmounting lets the
+/// daemon leave cleanly, and its service is not restarted until the next login.
+pub fn set_mounted(mounted: bool) -> Result<(), String> {
+    let program = immich_mount_linux::programs::find("immich-mount").unwrap_or_else(|| PathBuf::from("immich-mount"));
+    let verb = if mounted { "mount" } else { "unmount" };
+    let outcome = Command::new(&program).arg(verb).output().map_err(|error| format!("{}: {error}", program.display()))?;
+    if !outcome.status.success() {
+        let message = String::from_utf8_lossy(&outcome.stderr);
+        return Err(message.trim().trim_start_matches("error:").trim().to_owned());
+    }
+    Ok(())
+}
+
 pub fn disconnect() -> Result<(), String> {
     let program = immich_mount_linux::programs::find("immich-mount").unwrap_or_else(|| PathBuf::from("immich-mount"));
     let outcome = Command::new(&program).arg("logout").output().map_err(|error| format!("{}: {error}", program.display()))?;
