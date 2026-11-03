@@ -144,6 +144,7 @@ The procedures are skills in `.claude/skills/`; agents that do not load skills r
 | `lab/immich-server/` | A disposable Immich server (Docker CE in a nested Debian 13 container, no machine learning), seeded with 50 Creative Commons photos and edge cases, a full-access and a read-only API key, and optionally Dex for OIDC sign-in | `lab-immich-server` |
 | `lab/gnome-vm/` | A Fedora 44 VM with a headless GNOME 50 session and Files, that you can drive, screenshot and trace | `lab-desktop-vm` |
 | `lab/plasma-vm/` | A fresh Fedora 44 VM with a headless Plasma 6 session and Dolphin, driven by the names on screen (`act.py`); nothing of ours preinstalled | `lab-desktop-vm` |
+| `lab/bazzite-vm/` | A stock Bazzite VM, GNOME or KDE edition, booted from a kept base disk built from the published bootc images: Bazzite's own Homebrew, `/home` a link to `/var/home`, SELinux enforcing, and the headless sessions and input helpers of the two VMs above | `lab-bazzite-vm` |
 | `lab/packaging/` | A release's .rpm and .deb installed, checked and removed on several distributions at once; with the server up, each also mounts it and checks originals against Immich's checksums | `lab-packaging-matrix` |
 
 Rules:

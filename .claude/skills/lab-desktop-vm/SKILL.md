@@ -35,7 +35,8 @@ the toolbox and push the binary:
   ind-gnome-1/usr/local/bin/immich-mount --mode 0755 </dev/null
 ```
 
-**An atomic desktop's home** (Bazzite, Silverblue: `HOME=/home/tester` while the folder is `/var/home/tester`),
+**An atomic desktop's home** (Bazzite, Silverblue: `HOME=/home/tester` while the folder is `/var/home/tester`) is
+what a real Bazzite VM gives as it is (the `lab-bazzite-vm` skill). To imitate it in these Fedora VMs instead,
 between `up.sh` and `session.sh`, as root in the VM:
 `loginctl disable-linger tester; systemctl stop user@<uid>.service; mv /home /var/home; ln -s var/home /home;
 loginctl enable-linger tester`. **Homebrew as a user installs it:** pre-create `/home/linuxbrew/.linuxbrew` owned
