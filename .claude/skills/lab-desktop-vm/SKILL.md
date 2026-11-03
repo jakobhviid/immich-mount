@@ -18,11 +18,17 @@ server (the `lab-immich-server` skill).
 ## The loop
 
 ```sh
-lab/gnome-vm/up.sh && lab/gnome-vm/session.sh              # about 90 s, then 4 s
+lab/gnome-vm/up.sh && lab/gnome-vm/session.sh              # warm: about 14 s, then 4 s; built: about 115 s
 lab/gnome-vm/run-in-session.sh -d nautilus /home/tester/Immich   # -d: a GUI app, detached
 lab/gnome-vm/shot.sh /tmp/files.png                         # then look at it with the Read tool
-lab/gnome-vm/down.sh
+lab/gnome-vm/down.sh                                        # when the working session ends
 ```
+
+**Warm VMs** (AGENTS.md, "Testing on Erebus"): `up.sh` restores a VM that has its `fresh` snapshot, taken once it
+was built and stopped, so each check starts clean; without one, or with `--fresh`, it builds the VM (deleting one in
+the way) and takes the snapshot. Each start renews `user.expires` and deletes the project's expired `ind-` instances
+(`lab/warm.sh`). Run `up.sh` before every check, not only the first: it is what puts the VM back. Helpers (`exp/`,
+`in-session`, `act.py`) are pushed on every start.
 
 The Plasma scripts take the same shape. `run-in-session.sh` runs as `tester` with the session's bus and Wayland
 display; single-quote `~` and `$HOME` so they expand inside the VM.
