@@ -477,6 +477,11 @@ accepts PNGs smaller than the bucket as they are, and a valid thumbnail wins ove
    the session bus, since at login a user service can start before Plasma hands over its environment.
 3. **Server thumbnails are cached by asset id,** so writing them for more Appearances, or rewriting them after a
    name change, needs no network.
+4. **A thumbnail is found by its URI,** so where home is reached through a symlink (Fedora's atomic desktops,
+   Bazzite) each file is seeded under both paths a file manager reaches it by: the resolved one, which GVfs's drive
+   opens (`/var/home/me/Immich`), and the configured one, which browsing from Home, the app's **Open in Files** and
+   Dolphin's place use (`/home/me/Immich`). With only the first, every folder opened from Home showed generic icons
+   (verified in a GNOME 50 VM with `/home` a link to `/var/home`); with both, its thumbnails show.
 
 **Not chosen, for now: prefetching the folders one level below.** Seeding before `readdir` answers already makes a
 first visit fast (600 files in under half a second), and a prefetch would fetch thumbnails for folders that
@@ -527,7 +532,7 @@ editor) would silently get a small JPEG instead of the photo (principle 3).
 
 Seeds are small copies of private photos in a shared directory. Every seeded file is recorded, and deleted when
 signing out, together with any `fail/` entries for our URIs. Signing out also sweeps
-the thumbnail cache for any entry whose `Thumb::URI` lies under the mount, including thumbnails a thumbnailer made
+the thumbnail cache for any entry whose `Thumb::URI` lies under the mount, by either of its paths, including thumbnails a thumbnailer made
 there and failure records for search hits that were never seeded, since those URIs carry album and person names.
 
 ## Uploads
@@ -746,6 +751,17 @@ What the API does, verified on v3.3.5, all of which the client encodes:
   `status` field; search defaults include archived (and, in the new dialect, trashed) Assets.
 
 ## GNOME integration
+
+- **Modes are what copies get; `access()` is what the mount allows.** Files are `0644` and folders `0755`, and the
+  mount has no `default_permissions`: the daemon refuses each change itself, and answers `access()`, from which GNOME
+  Files draws its read-only emblem (the lock) and greys out Rename and Move to Trash. Only the mounting user reaches
+  the mount either way (no `allow_other`).
+  - **Why:** a copy takes its source's mode bits, with `cp` and in Files alike (Nautilus resets them only for a
+    copy from a CD, `isofs`), so read-only modes made every photo copied out a read-only file, and every copied
+    album a folder nothing could be added to or deleted from (seen on Bazzite).
+  - **Not chosen: writable modes with `default_permissions`.** Copies would be right, but the kernel answers
+    `access()` from the modes, so Files would offer Rename and Move to Trash everywhere and show no lock, and each
+    would fail.
 
 - **The mount lives at `~/Immich`** (verified in a GNOME 50 VM):
   - **In the sidebar:** a FUSE mount under home appears in the Files sidebar as its own volume, with a drive icon and

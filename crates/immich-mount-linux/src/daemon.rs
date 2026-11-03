@@ -156,9 +156,15 @@ where
     if std::fs::read_dir(mount_point).map_err(|error| prepare_error(mount_point, error.to_string()))?.next().is_some() {
         return Err(prepare_error(mount_point, "the folder is not empty, and mounting over it would hide its files; choose an empty folder".to_owned()));
     }
-    // The mount table, Files and the thumbnail URIs all use the resolved path; comparing against anything else
-    // would read as an eject at once.
+    // The mount table and GVfs use the resolved path; comparing against anything else would read as an eject at once.
+    // Where home is reached through a symlink, file managers browsing from home use the configured one, so
+    // thumbnails are seeded under both.
+    let configured_mount_point = mount_point.to_path_buf();
     let mount_point = &crate::mounts::canonical_mount_point(mount_point);
+    let mut thumbnail_roots = vec![mount_point.clone()];
+    if configured_mount_point != *mount_point {
+        thumbnail_roots.push(configured_mount_point);
+    }
 
     let store = MetadataStore::open(&account_cache.join("metadata.redb")).map_err(|error| prepare_error(account_cache, error.to_string()))?;
     let (sharp_thumbnails, safety_net, cache_limit_bytes) = (config.sharp_thumbnails, config.thumbnail_safety_net, config.cache_limit_bytes);
@@ -179,7 +185,7 @@ where
             .with_disk_floor(disk_room),
     );
     let mut filesystem = ImmichFilesystem::new(tree.clone(), content.clone(), runtime.handle().clone())
-        .with_thumbnails(Arc::new(seeder), mount_point, safety_net);
+        .with_thumbnails(Arc::new(seeder), &thumbnail_roots, safety_net);
     let mut staging = None;
     if uploads_enabled {
         let staging_directory = account_cache.join("staging");

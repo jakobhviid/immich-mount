@@ -14,7 +14,7 @@ use std::sync::{Arc, Mutex};
 use std::time::{Duration, SystemTime};
 
 use fuser::{
-    BackgroundSession, BsdFileFlags, Config, Errno, FileAttr, FileHandle, FileType, Filesystem, FopenFlags, Generation,
+    AccessFlags, BackgroundSession, BsdFileFlags, Config, Errno, FileAttr, FileHandle, FileType, Filesystem, FopenFlags, Generation,
     INodeNo, LockOwner, MountOption, OpenFlags, RenameFlags, ReplyAttr, ReplyCreate, ReplyData, ReplyDirectory, ReplyEmpty,
     ReplyEntry, ReplyOpen, ReplyStatfs, ReplyWrite, ReplyXattr, Request, TimeOrNow, WriteFlags,
 };
@@ -242,7 +242,9 @@ struct UploadSetup<Content> {
 /// Seeding and the safety net (SPEC.md, "Thumbnails").
 struct ThumbnailSetup<Content> {
     seeder: Arc<Seeder<Content>>,
-    mount_point: PathBuf,
+    /// The paths file managers reach the mount by: resolved, and as configured where home is reached through a
+    /// symlink. A thumbnail is found by its URI, so each gets its own seed.
+    mount_points: Vec<PathBuf>,
     safety_net: bool,
 }
 
@@ -284,8 +286,8 @@ where
     }
 
     /// Seed thumbnails for the folders listed, and keep thumbnailers away from originals when `safety_net` is on.
-    pub fn with_thumbnails(mut self, seeder: Arc<Seeder<Content>>, mount_point: &Path, safety_net: bool) -> Self {
-        self.thumbnails = Some(ThumbnailSetup { seeder, mount_point: mount_point.to_path_buf(), safety_net });
+    pub fn with_thumbnails(mut self, seeder: Arc<Seeder<Content>>, mount_points: &[PathBuf], safety_net: bool) -> Self {
+        self.thumbnails = Some(ThumbnailSetup { seeder, mount_points: mount_points.to_vec(), safety_net });
         self
     }
 
@@ -656,7 +658,8 @@ where
                     log::debug!("not seeding {} for a search crawl", folder_path.display());
                     None
                 } else {
-                    Some((thumbnails.seeder.clone(), thumbnails.mount_point.join(&folder_path)))
+                    let folders: Vec<PathBuf> = thumbnails.mount_points.iter().map(|root| root.join(&folder_path)).collect();
+                    Some((thumbnails.seeder.clone(), folders))
                 }
             }
             _ => None,
@@ -668,14 +671,17 @@ where
                 Ok(Err(error)) => return reply.error(errno_for(&error)),
                 Err(_) => return reply.error(Errno::EIO),
             };
-            if let Some((seeder, folder)) = seeding {
-                let files: Vec<SeedFile> = entries
+            if let Some((seeder, folders)) = seeding {
+                // Each path is an Appearance to the seeder: one server thumbnail, a seed for each.
+                let files: Vec<SeedFile> = folders
                     .iter()
-                    .filter_map(|entry| match &entry.kind {
-                        EntryKind::File { asset_id, modified, .. } => {
-                            Some(SeedFile { path: folder.join(&entry.name), asset_id: asset_id.clone(), modified: *modified })
-                        }
-                        EntryKind::Folder => None,
+                    .flat_map(|folder| {
+                        entries.iter().filter_map(move |entry| match &entry.kind {
+                            EntryKind::File { asset_id, modified, .. } => {
+                                Some(SeedFile { path: folder.join(&entry.name), asset_id: asset_id.clone(), modified: *modified })
+                            }
+                            EntryKind::Folder => None,
+                        })
                     })
                     .collect();
                 if !files.is_empty() {
@@ -950,6 +956,44 @@ where
         }
     }
 
+    /// Whether the caller may read, write or search here, which file managers ask before they offer a change (GNOME
+    /// Files draws its read-only emblem from it). Only Photos' folders, with uploads, and the files being copied in
+    /// may be written; the modes would say yes everywhere, since they are what copies get.
+    fn access(&self, _request: &Request, inode: INodeNo, mask: AccessFlags, reply: ReplyEmpty) {
+        let Some(record) = self.inodes.lock().expect("inode table lock").record(inode.0) else { return reply.error(Errno::ENOENT) };
+        let writable = match (&record.node, &record.kind) {
+            (MountNode::Staged(_), _) => true,
+            (MountNode::Tree(key), EntryKind::Folder) => self.uploads.is_some() && is_photos_folder(key),
+            _ => false,
+        };
+        let searchable = matches!(record.kind, EntryKind::Folder);
+        if (mask.contains(AccessFlags::W_OK) && !writable) || (mask.contains(AccessFlags::X_OK) && !searchable) {
+            return reply.error(Errno::EACCES);
+        }
+        reply.ok();
+    }
+
+    fn mknod(&self, _request: &Request, parent: INodeNo, _name: &OsStr, _mode: u32, _umask: u32, _rdev: u32, reply: ReplyEntry) {
+        match self.parent_folder(parent) {
+            Ok((folder, _)) => reply.error(self.refusal(&folder)),
+            Err(errno) => reply.error(errno),
+        }
+    }
+
+    fn symlink(&self, _request: &Request, parent: INodeNo, _link_name: &OsStr, _target: &Path, reply: ReplyEntry) {
+        match self.parent_folder(parent) {
+            Ok((folder, _)) => reply.error(self.refusal(&folder)),
+            Err(errno) => reply.error(errno),
+        }
+    }
+
+    fn link(&self, _request: &Request, _inode: INodeNo, new_parent: INodeNo, _new_name: &OsStr, reply: ReplyEntry) {
+        match self.parent_folder(new_parent) {
+            Ok((folder, _)) => reply.error(self.refusal(&folder)),
+            Err(errno) => reply.error(errno),
+        }
+    }
+
     fn mkdir(&self, _request: &Request, parent: INodeNo, _name: &OsStr, _mode: u32, _umask: u32, reply: ReplyEntry) {
         match self.parent_folder(parent) {
             Ok((folder, _)) => reply.error(self.refusal(&folder)),
@@ -1013,7 +1057,6 @@ impl<Library, Names, Content> ImmichFilesystem<Library, Names, Content> {
             owner_gid: self.owner_gid,
             mounted_at: self.mounted_at,
             generation: self.generation,
-            photos_writable: self.uploads.is_some(),
         }
     }
 }
@@ -1025,22 +1068,16 @@ struct AttributeMaker {
     owner_gid: u32,
     mounted_at: SystemTime,
     generation: Generation,
-    /// Photos' folders take new files (0755); everything else is read-only (0555, 0444).
-    photos_writable: bool,
 }
 
 impl AttributeMaker {
     fn attributes(&self, inode: u64, node: &MountNode, kind: &EntryKind) -> FileAttr {
+        // The modes are what a copy of the file or folder gets, so a photo copied out is an ordinary file (0644) and
+        // a copied album an ordinary folder (0755). What the mount allows is `access()`'s answer and each operation's.
         let (file_type, permissions, size, modified) = match (node, kind) {
-            (MountNode::Virtual(name), _) => (FileType::RegularFile, 0o444, virtual_content(name).len() as u64, self.mounted_at),
-            (MountNode::Staged(_), EntryKind::File { size, modified, .. }) => {
-                (FileType::RegularFile, 0o644, size.unwrap_or(0), SystemTime::from(*modified))
-            }
-            (MountNode::Tree(key), EntryKind::Folder) if self.photos_writable && is_photos_folder(key) => {
-                (FileType::Directory, 0o755, 0, self.mounted_at)
-            }
-            (_, EntryKind::Folder) => (FileType::Directory, 0o555, 0, self.mounted_at),
-            (_, EntryKind::File { size, modified, .. }) => (FileType::RegularFile, 0o444, size.unwrap_or(0), SystemTime::from(*modified)),
+            (MountNode::Virtual(name), _) => (FileType::RegularFile, 0o644, virtual_content(name).len() as u64, self.mounted_at),
+            (_, EntryKind::Folder) => (FileType::Directory, 0o755, 0, self.mounted_at),
+            (_, EntryKind::File { size, modified, .. }) => (FileType::RegularFile, 0o644, size.unwrap_or(0), SystemTime::from(*modified)),
         };
         FileAttr {
             ino: INodeNo(inode),
@@ -1087,7 +1124,9 @@ where
         MountOption::NoSuid,
         MountOption::NoDev,
         MountOption::NoExec,
-        MountOption::DefaultPermissions,
+        // No `default_permissions`: the modes are what copies get (0644, 0755), so the kernel would allow every
+        // change; the daemon refuses each one itself, and answers `access()`. Only the mounting user reaches the
+        // mount either way (no `allow_other`).
     ];
     if filesystem.uploads.is_none() {
         config.mount_options.push(MountOption::RO);

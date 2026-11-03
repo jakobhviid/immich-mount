@@ -154,7 +154,8 @@ cameras. Clashes are detected case-insensitively, after Unicode NFC normalisatio
 |---|---|---|
 | `st_size` | The original's exact size (`exifInfo.fileSizeInByte`; if missing, a `HEAD` of the original). A size that stays unknown makes reads fail with `EIO`, never look empty | 0 |
 | `st_mtime`, `st_atime`, `st_ctime` | The capture time (`fileCreatedAt`), so sorting by date follows shooting order and copies keep it | The mount time |
-| `st_mode` | `0444` | `0555` (Photos becomes `0755` with uploads) |
+| `st_mode` | `0644` | `0755` |
+| `access()` | Read; never write | Read and search; write only for Photos and its folders, with uploads |
 | owner | The mounting user | The mounting user |
 | `st_nlink` | 1 (Appearances are separate files, not hard links) | 2 |
 | `st_blocks` | `ceil(size / 512)` | 0 |
@@ -171,9 +172,13 @@ cameras. Clashes are detected case-insensitively, after Unicode NFC normalisatio
 
 ### What the mount refuses
 
-- Existing Assets are read-only: write access, rename, delete and `setattr` on them fail with `EACCES`, `EPERM` or
-  `EROFS`. "Move to Trash" in the file manager therefore fails.
-- `mkdir` anywhere, and new files anywhere except Photos, fail with `EPERM`.
+- The modes are what a copy gets, so a photo copied out is an ordinary file (`0644`) and a copied folder an ordinary
+  folder (`0755`). What the mount allows is `access()`'s answer, which file managers read for their read-only
+  emblem (GNOME Files' lock), and each operation's own refusal.
+- Existing Assets are read-only: write access, rename, delete and `setattr` on them fail with `EPERM` or `EROFS`.
+  "Move to Trash" in the file manager therefore fails.
+- `mkdir` anywhere, and new files anywhere except Photos, fail with `EPERM` (in Photos) or `EROFS`; so do
+  `mknod`, `symlink` and `link`.
 - With uploads off (`uploads.enabled = false`), the mount is read-only as a whole (`ro`).
 - Desktop indexers get `EIO` when they open an original: KDE's Baloo extractor (`baloo_file_extractor`) and GNOME's
   (`localsearch-extractor-3`, `tracker-extract-3`). Always, not a setting: indexing the contents would download the
@@ -254,7 +259,7 @@ cameras. Clashes are detected case-insensitively, after Unicode NFC normalisatio
   | The credential may not upload | `EACCES` on `close()` |
   | Server unreachable or busy past the limit | `EIO` on `close()` |
   | Deleting, renaming, or changing an existing Asset, or a new folder, in Photos | `EPERM` |
-  | Any change outside Photos | `EACCES` (its folders are `0555`, so the kernel refuses first); `EROFS` with uploads off |
+  | Any change outside Photos | `EROFS` |
 
 ## Signing in and credentials
 
@@ -375,7 +380,7 @@ The credential itself never crosses D-Bus.
 | Upload staging | `~/.cache/immich-mount/<account>/staging/` |
 | Files not uploaded | `~/.local/share/immich-mount/not-uploaded/`; `logout` keeps them |
 | Server thumbnails | `~/.cache/immich-mount/<account>/server-thumbnails/` (Immich's own, by Asset id) |
-| Seeded thumbnails | `$HOME/.cache/thumbnails/{x-large,xx-large}/`, and on KDE `{normal,large}/` too, each URI recorded in `~/.cache/immich-mount/<account>/seeded-thumbnails` |
+| Seeded thumbnails | `$HOME/.cache/thumbnails/{x-large,xx-large}/`, and on KDE `{normal,large}/` too, each URI recorded in `~/.cache/immich-mount/<account>/seeded-thumbnails`; where home is reached through a symlink, under both the resolved and the configured path |
 | A browser sign-in waiting for its redirect (KDE app) | `$XDG_RUNTIME_DIR/immich-mount-sign-in`, mode 0600: the server, the state and the PKCE verifier, replaced by the outcome once the redirect arrives, and removed when the app reads it |
 | Dolphin's previews of remote files (KDE app, only when the user turns them on) | `[PreviewSettings] MaximumRemoteSize=104857600` in `~/.config/kdeglobals`; turning them off removes the key |
 | The mount in Dolphin's Places (KDE) | A bookmark for the mount point, titled "Immich", in `~/.local/share/user-places.xbel`: added once by the KDE app's setup, removed by `logout` |

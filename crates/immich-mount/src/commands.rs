@@ -245,9 +245,17 @@ pub fn logout(paths: &Paths, session_ended: bool) -> Result<LogoutReport> {
 
     // Every thumbnail under the mount goes: our seeds, and anything a thumbnailer made or recorded as failed there,
     // since their URIs carry album and person names.
-    let mount_prefix = immich_mount_linux::thumbnails::file_uri(&mounts::canonical_mount_point(&mount_point));
-    let mut seeded_thumbnails_removed =
-        immich_mount_linux::thumbnails::remove_thumbnails_under(&paths.thumbnail_directory, &format!("{}/", mount_prefix.trim_end_matches('/')));
+    // Under the resolved path, and the configured one where home is reached through a symlink (both are seeded).
+    let mut mount_prefixes = vec![immich_mount_linux::thumbnails::file_uri(&mounts::canonical_mount_point(&mount_point))];
+    let configured_prefix = immich_mount_linux::thumbnails::file_uri(&mount_point);
+    if !mount_prefixes.contains(&configured_prefix) {
+        mount_prefixes.push(configured_prefix);
+    }
+    let mut seeded_thumbnails_removed = 0;
+    for prefix in &mount_prefixes {
+        seeded_thumbnails_removed +=
+            immich_mount_linux::thumbnails::remove_thumbnails_under(&paths.thumbnail_directory, &format!("{}/", prefix.trim_end_matches('/')));
+    }
     if let Ok(accounts) = std::fs::read_dir(&paths.cache_directory) {
         for account in accounts.flatten() {
             // The sweep above found them already, unless the mount point moved since; the ledger catches those.
