@@ -21,8 +21,9 @@ start by hand.
 
 **Upgrades** need nothing from you: once nothing on the mount is open or uploading, the mount restarts into the new
 version by itself (within about a minute), with any channel. It is gone for a few seconds then, so a file manager
-window showing it may leave it (Dolphin says the location is no longer accessible); open it again. **Uninstalling** stops it as well: about two and a half
-minutes after the program is gone, the mount goes away and its service is turned off.
+window showing it may leave it (Dolphin says the location is no longer accessible); open it again.
+**Uninstalling** stops it as well: about two and a half minutes after the program is gone, the mount goes away and
+its service is turned off.
 
 From 1.1 and earlier, where Homebrew had the formula `immich-mount` and the cask `immich-mount-linux`, move to the
 one cask (`brew update` moves the cask over; the old formula's `immich-mount` would collide with the cask's):
