@@ -127,6 +127,11 @@ the address the browser ends on from stdin; the other methods read their secrets
 
 - It appears at `~/Immich` and in the Files sidebar as **Immich**, with an eject button. On KDE it is in Dolphin's
   Places as **Immich**, added by the app's first run (remove it like any place; it is not added back).
+- **On Fedora's atomic desktops and Bazzite** (a home reached through the `/home` symlink, `$HOME` being
+  `/home/you` while the folder is `/var/home/you`), Files lists no mount in the home folder by itself, ours or any
+  other. The app's first run bookmarks it in the sidebar instead: **Immich** under the bookmarks, without an eject
+  button (unmount it from the app or with `immich-mount unmount`). A bookmark you remove is not added back; `Ctrl+D`
+  in the mount brings it back.
 - It starts at login, through the user service, which the app's first run and `immich-mount mount` turn on (and the
   `mount.at_login` setting turns off).
 - **Eject** in Files unmounts it until the next login, or until `immich-mount mount` or **Mount again** in the app.
@@ -173,7 +178,7 @@ within about 10 seconds. `account.email` appears only when the credential may re
 | Server | Answers, and which Immich version it runs |
 | Credential | Found (in the keyring or the credential file) and accepted by the server, with the permissions the mount needs. A locked or missing keyring shows here |
 | Thumbnails | `$HOME/.cache/thumbnails` is writable |
-| Location | The mount point is under `$HOME` and not hidden (otherwise it will not show in the sidebar) |
+| Location | The mount point is under `$HOME` and not hidden (otherwise it will not show in the sidebar), and, outside KDE, that Files lists it: by itself, or as a bookmark where home is reached through a symlink |
 | Dolphin previews | On KDE: whether Dolphin may preview files on the mount (KIO counts it as remote, where previews are off until `MaximumRemoteSize` allows them), with the `kwriteconfig6` line that turns them on (the KDE app's **Show thumbnails** switch does the same) |
 
 The loop for scripts: act, run `immich-mount doctor --json`, decide from the counts, act again.
@@ -215,6 +220,7 @@ The apps' preferences (GNOME's dialog, KDE's page) edit the same settings. The k
 | Dolphin shows generic icons on the whole mount | KDE keeps previews of remote locations off: turn on **Show thumbnails** in the KDE app, or run the line `immich-mount doctor` prints |
 | Files shows generic icons in a folder opened while the server was unreachable | Once it is reachable again, close Files and open it again: Files remembers the failed thumbnails until then, F5 included |
 | Files shows generic icons for some photos | They were search results from folders never opened. Open the folder once |
+| The mount is not in Files' sidebar | On an atomic desktop (`$HOME` reached through the `/home` symlink), Files lists no mount in home by itself. Open `~/Immich` in Files and press `Ctrl+D`; `immich-mount doctor` says whether this is the case |
 | "Transport endpoint is not connected" | The daemon died. `immich-mount doctor` confirms it; `systemctl --user restart immich-mount` cleans up and remounts |
 | A large upload fails with "This computer lets a file operation take at most N seconds" | The system sets `fs.fuse.default_request_timeout`; the mount stops each upload just before that limit so as not to be aborted. Set it to 0 (`sudo sysctl fs.fuse.default_request_timeout=0`) for longer uploads |
 | A backup tool wants to copy `~/Immich` | Exclude it: Déjà Dup "Folders to ignore"; restic and borg `--exclude ~/Immich`, or `--one-file-system` |
@@ -228,7 +234,7 @@ Logs: `journalctl --user -u immich-mount`.
   - the session on the server, so the device leaves Immich's "Authorized devices"
   - the metadata store and the content cache
   - every thumbnail the daemon seeded
-  - the mount's place in Dolphin's Places, on KDE
+  - the mount's place in Dolphin's Places, on KDE, and its bookmark in Files' sidebar, where it has one
 
   It also turns the user service off (Homebrew's too), which would otherwise fail at every login without a
   credential. After the

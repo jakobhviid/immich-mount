@@ -5,6 +5,7 @@ use std::path::Path;
 
 use serde::Serialize;
 
+use crate::gnome;
 use crate::kde;
 use crate::mounts::{mount_state, MountState};
 use crate::paths::Paths;
@@ -109,16 +110,7 @@ pub fn local_checks(paths: &Paths, mount_point: &Path) -> Vec<Check> {
         ),
     });
 
-    checks.push(if paths.is_visible_under_home(mount_point) {
-        check("location", Status::Ok, "the mount point shows in the file manager's sidebar", None)
-    } else {
-        check(
-            "location",
-            Status::Warning,
-            format!("{} is outside home or hidden, so the sidebar will not show it", mount_point.display()),
-            Some("Use a visible folder in your home, such as ~/Immich"),
-        )
-    });
+    checks.push(sidebar(paths, mount_point));
 
     let thumbnails_writable = is_writable(&paths.thumbnail_directory) || paths.thumbnail_directory.parent().is_some_and(is_writable);
     checks.push(if thumbnails_writable {
@@ -135,6 +127,38 @@ pub fn local_checks(paths: &Paths, mount_point: &Path) -> Vec<Check> {
         checks.push(dolphin);
     }
     checks
+}
+
+/// Whether the file manager's sidebar shows the mount. On KDE the app's setup gives it a place in Dolphin; elsewhere
+/// GVfs lists it by its path, except in a home reached through a symlink, where a bookmark stands in (`gnome.rs`).
+fn sidebar(paths: &Paths, mount_point: &Path) -> Check {
+    if !paths.is_visible_under_home(mount_point) {
+        return check(
+            "location",
+            Status::Warning,
+            format!("{} is outside home or hidden, so the sidebar will not show it", mount_point.display()),
+            Some("Use a visible folder in your home, such as ~/Immich"),
+        );
+    }
+    if kde::is_running() || gnome::listed_in_sidebar(paths, mount_point) {
+        return check("location", Status::Ok, "the mount point shows in the file manager's sidebar", None);
+    }
+    let resolved = std::fs::canonicalize(&paths.home).unwrap_or_else(|_| paths.home.clone());
+    let reason = format!(
+        "GVfs lists no mount in a home reached through a symlink ({} is {})",
+        paths.home.display(),
+        resolved.display()
+    );
+    if gnome::has_bookmark(paths, mount_point) {
+        check("location", Status::Ok, format!("Files' sidebar has the mount as a bookmark: {reason}"), None)
+    } else {
+        check(
+            "location",
+            Status::Warning,
+            format!("Files' sidebar will not show the mount: {reason}"),
+            Some("Open the mount in Files and press Ctrl+D to bookmark it"),
+        )
+    }
 }
 
 /// Put checks together into a report, counting what needs attention.

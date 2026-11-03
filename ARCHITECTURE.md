@@ -729,6 +729,21 @@ What the API does, verified on v3.3.5, all of which the client encodes:
 - **The mount lives at `~/Immich`** (verified in a GNOME 50 VM):
   - **In the sidebar:** a FUSE mount under home appears in the Files sidebar as its own volume, with a drive icon and
     an eject button.
+  - **Except in a home reached through a symlink** (Fedora's atomic desktops and Bazzite: `HOME=/home/me`, `/home` a
+    link to `/var/home`). GVfs's volume monitor (`should_include`) lists a FUSE mount by its path: under `$HOME`,
+    `/media` or `/run/media/$USER`. It compares the kernel's path, always resolved (`/var/home/me/Immich`), with
+    `$HOME` as written, so no mount in such a home is listed, sshfs and rclone's included (seen on Bazzite). There
+    the GNOME app's setup bookmarks the mount in the sidebar, once, in GTK's bookmarks file; `logout` removes it and
+    `doctor` applies GVfs's rule to say which case a machine is in. A bookmark has no drive icon or eject button.
+    **Flatpak impact:** none; the bookmarks file is the user's, as Dolphin's Places file is.
+    - **Not chosen: the `x-gvfs-show` mount option,** which GVfs honours before the path. Only root may record a
+      user-space option, so it reaches GVfs only through `fusermount3`: from fuse3 3.17, and only into a
+      `/run/mount/utab` that already exists, which it does not on a Bazzite where nothing has mounted a drive since
+      boot (seen there). An older `fusermount3` hands the option to the kernel, which refuses the mount.
+    - **Not chosen: a mount point under `/run/media/$USER`,** which GVfs lists anywhere; only root may create one.
+    - **The fix belongs in GVfs** (and GLib's `g_unix_mount_entry_guess_should_display`, which has the same
+      comparison): resolving `$HOME` before comparing would list every such mount. Once that ships, the rule in
+      `gnome.rs` follows it, so the setup stops adding a bookmark where GVfs lists the mount itself.
   - **Its name** comes from `/.xdg-volume-info`. The icon set there only affects full-colour icons; the sidebar keeps
     the drive symbol.
   - **Elsewhere:** a mount under `/run/user` is invisible unless bookmarked.

@@ -231,9 +231,13 @@ pub fn logout(paths: &Paths, session_ended: bool) -> Result<LogoutReport> {
         let _ = std::process::Command::new("systemctl").args(["--user", "stop", unit]).output();
     }
 
-    // Dolphin's place for the mount goes with it (the KDE app added it at setup).
+    // Dolphin's place for the mount goes with it (the KDE app added it at setup), and so does its bookmark in Files'
+    // sidebar (the GNOME app's setup added one where GVfs does not list the mount).
     if let Err(error) = immich_mount_linux::kde::remove_place(paths, &mount_point) {
         eprintln!("warning: could not remove the mount from Dolphin's Places: {error}");
+    }
+    if let Err(error) = immich_mount_linux::gnome::remove_bookmark(paths, &mount_point) {
+        eprintln!("warning: could not remove the mount's bookmark from Files' sidebar: {error}");
     }
 
     // Every thumbnail under the mount goes: our seeds, and anything a thumbnailer made or recorded as failed there,

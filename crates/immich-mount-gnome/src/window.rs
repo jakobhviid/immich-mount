@@ -352,6 +352,14 @@ impl Window {
         glib::timeout_add_seconds_local_once(1, move || {
             run(session::current_status(), move |status| match status {
                 Some(status) if status.mounted => {
+                    // GVfs lists no mount in a home reached through a symlink (an atomic desktop's /home): give the
+                    // sidebar a bookmark instead, once.
+                    let paths = immich_mount_linux::paths::Paths::from_environment();
+                    if !immich_mount_linux::gnome::listed_in_sidebar(&paths, &status.mount_point) {
+                        if let Err(error) = immich_mount_linux::gnome::add_bookmark(&paths, &status.mount_point, "Immich") {
+                            eprintln!("could not bookmark the mount in Files' sidebar: {error}");
+                        }
+                    }
                     window.set_busy(false);
                     window.show_status(&status);
                     window.open_in_files();

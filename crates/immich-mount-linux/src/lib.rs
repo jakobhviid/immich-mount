@@ -11,6 +11,7 @@ pub mod dbus;
 pub mod doctor;
 pub mod keyring;
 pub mod fuse;
+pub mod gnome;
 pub mod kde;
 pub mod mounts;
 pub mod notify;
