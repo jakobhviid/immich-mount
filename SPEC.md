@@ -16,8 +16,9 @@ Use these words in code, docs and issues.
   "Immich". Avoid: sync folder (nothing is synchronised).
 - **Daemon**: the per-user background process `immich-mount daemon`. It owns the mount, the caches and the uploads.
   It runs without a display.
-- **App**: the desktop program for sign-in, settings and status. `immich-mount-gnome` on GNOME, and
-  `immich-mount-kde` on KDE Plasma. It controls the daemon and can be closed at any time without stopping work.
+- **App**: the desktop program for sign-in, settings and status, one launcher (`immich-mount app`) that opens the
+  interface native to the desktop: `immich-mount-kde` (Kirigami) on KDE Plasma, `immich-mount-gnome` (GTK) elsewhere.
+  It controls the daemon and can be closed at any time without stopping work.
 - **Core**: the portable code (`immich-api`, `immich-mount-core`). It has no OS or desktop dependencies.
 - **Adapter**: the platform code that presents the Core through one native mechanism (FUSE and freedesktop
   services on Linux now). Avoid: driver, plugin.
@@ -275,11 +276,11 @@ cameras. Clashes are detected case-insensitively, after Unicode NFC normalisatio
 - A revoked credential (401) leads to one notification, and the app reopens sign-in for the same server and account.
   Caches are kept.
 - The redirect to `app.immich:///oauth-callback` opens the app that handles the scheme. A redirect carrying the
-  provider's refusal (`error`, with our state) ends the waiting sign-in with that message. Both desktop apps declare
-  it, so the app that starts a browser sign-in first makes itself the scheme's default handler (in
-  `~/.config/mimeapps.list`), and the redirect comes back to it. The GNOME app is single instance and receives it
-  in its open window. The KDE app is started a second time with the address, finishes the
-  sign-in from the waiting attempt (Files on disk), and exits; its open window then continues to setup.
+  provider's refusal (`error`, with our state) ends the waiting sign-in with that message. The app's launcher entry
+  declares it, and the app makes it the scheme's default handler (in `~/.config/mimeapps.list`) as it starts a
+  browser sign-in; the launcher hands the address to the interface for the desktop. The GTK interface is single
+  instance and receives it in its open window. The Kirigami one is started a second time with the address, finishes
+  the sign-in from the waiting attempt (Files on disk), and exits; its open window then continues to setup.
 - Immich's password login has no two-factor step. Two-factor comes through the server's OIDC option, and the
   password form says so.
 
@@ -319,6 +320,8 @@ One binary: the daemon and the command line.
 
 | Command | Does |
 |---|---|
+| `immich-mount` | Opens the app where there is a display (as `immich-mount app`); prints this help where there is none |
+| `immich-mount app` | Opens the app in the interface native to the desktop: Kirigami on Plasma, GTK elsewhere (on Plasma GTK too, if the Kirigami one does not load) |
 | `immich-mount daemon` | Runs the daemon in the foreground (what the user service starts) |
 | `immich-mount login [--password \| --api-key] [--server URL]` | Signs in; prompts only on a terminal |
 | `immich-mount logout` | Unmounts, then removes the seeded thumbnails, the credential and the caches |

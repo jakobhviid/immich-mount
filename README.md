@@ -25,9 +25,9 @@ your editor, or drag new pictures in to upload them, without downloading the lib
   never loses a photo: Files keeps the source until Immich has the file, and anything that fails to upload is kept
   in a folder of its own.
 - **Changes in Immich show within seconds,** in an open folder after a refresh.
-- **Native on both desktops:** a GNOME app (GTK and libadwaita) and a KDE Plasma app (Kirigami) to sign in, choose
-  what to show, and see the status. Sign in with your server's single sign-on in your own browser (passkeys and
-  password managers work as usual), with email and password, or with an API key. The credential stays in your
+- **One app, native on each desktop:** it opens in GTK and libadwaita on GNOME and in Kirigami on KDE Plasma, to sign
+  in, choose what to show, and see the status. Sign in with your server's single sign-on in your own browser (passkeys
+  and password managers work as usual), with email and password, or with an API key. The credential stays in your
   keyring (GNOME Keyring or KWallet).
 - **A command line and a background service** (`immich-mount`, a FUSE filesystem written in Rust), which also run
   headless, without a desktop.
@@ -51,15 +51,21 @@ sharing and editing stay in Immich's web and mobile apps.
 
 ## Install
 
-Download the packages for your system from the
-[latest release](https://github.com/jakobhviid/immich-mount/releases/latest):
+One app, which opens in the interface native to your desktop: Kirigami on KDE Plasma, GTK and libadwaita everywhere
+else. With Homebrew (any Linux that has it, Bazzite included, with nothing layered onto the system):
+
+```sh
+brew install --cask jakobhviid/tap/immich-mount-linux
+```
+
+Or from the [latest release](https://github.com/jakobhviid/immich-mount/releases/latest):
 
 | System | Packages |
 |---|---|
 | Fedora 44 | `immich-mount-*.x86_64.rpm`, plus `immich-mount-gnome-*.rpm` (GNOME) or `immich-mount-kde-*.rpm` (KDE Plasma) |
 | Ubuntu 26.04, Kubuntu 26.04 | `immich-mount_*.deb`, plus `immich-mount-gnome_*.deb` or `immich-mount-kde_*.deb` |
-| Fedora 43, Ubuntu 24.04, Debian 13 | `immich-mount` (.rpm or .deb): the mount and the command line, without the desktop app |
-| Any Linux, with Homebrew | `brew install jakobhviid/tap/immich-mount`: the mount and the command line |
+| Fedora 43, Ubuntu 24.04, Debian 13 | `immich-mount` (.rpm or .deb): the mount and the command line, without the app |
+| A server, with Homebrew | `brew install jakobhviid/tap/immich-mount`: the mount and the command line |
 | Any other Linux | `immich-mount-*-linux-musl.tar.gz`, a static binary with its user service |
 
 ```sh
@@ -74,7 +80,8 @@ apps from source: [WORKFLOWS.md](WORKFLOWS.md#1-install).
 ## Getting started
 
 **On the desktop,** open **Immich Mount** from the app grid, enter your server's address and sign in. Choose the
-sections you want, and the library opens in Files or Dolphin. It mounts again at every login.
+sections you want, and the library opens in Files or Dolphin. The app starts the mount itself, and it mounts again
+at every login.
 
 <table><tr>
 <td><img src="docs/screenshots/app-connect.png" alt="Immich Mount asking for the server address"></td>
@@ -83,7 +90,8 @@ sections you want, and the library opens in Files or Dolphin. It mounts again at
 <td><img src="docs/screenshots/app-status.png" alt="The status page: the library is in Files, with Open in Files"></td>
 </tr></table>
 
-On KDE Plasma, the app puts the mount in Dolphin's Places and offers to let Dolphin show the thumbnails:
+On KDE Plasma, the same app opens in Kirigami, puts the mount in Dolphin's Places, and offers to let Dolphin show
+the thumbnails:
 
 ![An Immich album in Dolphin, with thumbnails from the server and Immich in Places](docs/screenshots/dolphin-album.png)
 

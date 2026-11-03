@@ -12,8 +12,9 @@ use std::sync::OnceLock;
 use cxx_qt_lib::{QGuiApplication, QQmlApplicationEngine, QQuickStyle, QString, QUrl};
 use immich_mount_desktop::session;
 
-/// The desktop entry's name, without `.desktop`. Distinct from the GNOME app's, so both packages can be installed.
-const DESKTOP_ID: &str = "dev.hviid.ImmichMount.Kde";
+/// The desktop entry's name, without `.desktop`: the one app's, shared with the GNOME interface (`immich-mount app`
+/// chooses between them).
+const DESKTOP_ID: &str = "dev.hviid.ImmichMount";
 
 /// The runtime the Immich client runs on, beside Qt's event loop.
 pub fn runtime() -> &'static tokio::runtime::Runtime {
@@ -24,6 +25,10 @@ pub fn runtime() -> &'static tokio::runtime::Runtime {
 }
 
 fn main() {
+    // `immich-mount app` asks whether this interface loads here, before choosing it: reaching main is the answer.
+    if std::env::args().nth(1).as_deref() == Some("--probe") {
+        return;
+    }
     if let Some(redirect) = std::env::args().skip(1).find(|argument| argument.starts_with("app.immich:")) {
         std::process::exit(finish_redirect(&redirect));
     }
@@ -48,8 +53,8 @@ fn main() {
     }
 }
 
-/// Make this app the handler of `app.immich`, so the browser's redirect comes back here even where the GNOME app is
-/// installed too (both declare the scheme).
+/// Make the app the handler of `app.immich`, so the browser's redirect comes back to it (`immich-mount app` hands it
+/// to this interface on Plasma).
 pub fn claim_redirect() {
     let desktop_id = format!("{DESKTOP_ID}.desktop");
     match std::process::Command::new("xdg-mime").args(["default", &desktop_id, "x-scheme-handler/app.immich"]).status() {

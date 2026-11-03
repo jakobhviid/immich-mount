@@ -6,17 +6,16 @@
 Name:           immich-mount-kde
 Version:        %{pkg_version}
 Release:        1%{?dist}
-Summary:        Immich Mount for KDE Plasma: sign in, status and settings for the Immich drive in Dolphin
+Summary:        Immich Mount's KDE Plasma interface: sign in, status and settings for the Immich drive in Dolphin
 License:        MIT
 URL:            https://github.com/jakobhviid/immich-mount
+# The daemon, and the launcher entry that opens this interface on Plasma.
 Requires:       immich-mount = %{version}
 # QML modules the pages import; the Qt libraries themselves are found from the binary.
 Requires:       kf6-kirigami
 Requires:       kf6-qqc2-desktop-style
 # xdg-open, through which Qt opens the browser for single sign-on and the folder in Dolphin.
 Requires:       xdg-utils
-# Its file trigger refreshes the MIME cache, which registers the app.immich scheme for the browser's redirect.
-Requires:       desktop-file-utils
 
 %description
 Signs in to a self-hosted Immich server (single sign-on in the browser, email and
@@ -29,14 +28,10 @@ describe the server this software works with, and remains the mark of its owner.
 
 %install
 install -Dm755 %{payload}/immich-mount-kde %{buildroot}%{_bindir}/immich-mount-kde
-install -Dm644 %{payload}/dev.hviid.ImmichMount.Kde.desktop %{buildroot}%{_datadir}/applications/dev.hviid.ImmichMount.Kde.desktop
-install -Dm644 %{payload}/dev.hviid.ImmichMount.Kde.metainfo.xml %{buildroot}%{_metainfodir}/dev.hviid.ImmichMount.Kde.metainfo.xml
 install -Dm644 %{payload}/LICENSE %{buildroot}%{_licensedir}/%{name}/LICENSE
 install -Dm644 %{payload}/THIRD-PARTY-LICENSES.md %{buildroot}%{_licensedir}/%{name}/THIRD-PARTY-LICENSES.md
 
 %files
 %{_bindir}/immich-mount-kde
-%{_datadir}/applications/dev.hviid.ImmichMount.Kde.desktop
-%{_metainfodir}/dev.hviid.ImmichMount.Kde.metainfo.xml
 %license %{_licensedir}/%{name}/LICENSE
 %license %{_licensedir}/%{name}/THIRD-PARTY-LICENSES.md

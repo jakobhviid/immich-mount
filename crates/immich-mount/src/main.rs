@@ -4,6 +4,7 @@
 //! stdout, or as one JSON document with `--json`. Progress and errors go to stderr. `--llm` and `--man` are answered
 //! before argument parsing, from the leading arguments only, so they never steal a subcommand's own arguments.
 
+mod app;
 mod commands;
 mod completions;
 mod online;
@@ -37,6 +38,13 @@ pub(crate) struct Cli {
 
 #[derive(Subcommand)]
 enum Command {
+    /// Open the app, in the interface native to this desktop (KDE's on Plasma, GNOME's elsewhere). Running
+    /// `immich-mount` with no command does the same where there is a display
+    App {
+        /// Handed to the app, such as the sign-in redirect the browser returns
+        #[arg(trailing_var_arg = true, allow_hyphen_values = true, hide = true)]
+        arguments: Vec<String>,
+    },
     /// Sign in to an Immich server and remember it. Without a flag, sign in through the server's OIDC provider in
     /// your browser: it prints an address to open, then reads the address the browser ends on
     Login {
@@ -190,6 +198,9 @@ fn main() -> ExitCode {
             completions::print_completions(shell);
             ExitCode::SUCCESS
         }
+        Some(Command::App { arguments }) => finish(Err(app::open(&arguments))),
+        // The app first; the command line where there is no display to show it on.
+        None if app::has_display() => finish(Err(app::open(&[]))),
         None => finish(Cli::command().print_help().map_err(anyhow::Error::from)),
     }
 }

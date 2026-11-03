@@ -27,6 +27,10 @@ pub fn runtime() -> &'static tokio::runtime::Runtime {
 }
 
 fn main() -> glib::ExitCode {
+    // `immich-mount app` asks whether this interface loads here, before choosing it: reaching main is the answer.
+    if std::env::args().nth(1).as_deref() == Some("--probe") {
+        return glib::ExitCode::SUCCESS;
+    }
     let application = adw::Application::builder().application_id(APP_ID).flags(gio::ApplicationFlags::HANDLES_OPEN).build();
     application.connect_activate(|application| window_of(application).present());
     application.connect_open(|application, files, _hint| {

@@ -258,9 +258,19 @@ fn remember_server(paths: &Paths, url: &str) -> Result<(), String> {
     std::fs::rename(&temporary, paths.config_file()).map_err(|error| error.to_string())
 }
 
-/// Enable the user service and restart it, so it picks up the new credential.
+/// Enable the user service and restart it, so it picks up the new credential. Where no service is installed (the app
+/// from Homebrew's cask, the daemon from its formula), the app writes the packages' one for the daemon it finds, so
+/// nobody has to start a service by hand.
 fn start_daemon() -> Result<(), String> {
-    let unit = immich_mount_linux::service::user_service();
+    let unit = match immich_mount_linux::service::installed_user_service() {
+        Some(unit) => unit,
+        None => {
+            let daemon = immich_mount_linux::programs::find("immich-mount")
+                .ok_or("Signed in, but the mount cannot start: immich-mount is not installed.")?;
+            immich_mount_linux::service::write_user_service(&Paths::from_environment(), &daemon)
+                .map_err(|error| format!("Signed in, but the mount cannot start: {error}"))?
+        }
+    };
     for arguments in [["--user", "enable", unit], ["--user", "restart", unit]] {
         let outcome = Command::new("systemctl").args(arguments).output().map_err(|error| format!("systemctl: {error}"))?;
         if !outcome.status.success() {
@@ -397,8 +407,7 @@ pub async fn current_status() -> Option<Status> {
 /// Sign out through the command line's `logout`, which unmounts and removes the credential, the caches and the
 /// seeded thumbnails. The two programs ship together, so the command sits next to this one.
 pub fn disconnect() -> Result<(), String> {
-    let beside_us = std::env::current_exe().ok().map(|path| path.with_file_name("immich-mount")).filter(|path| path.exists());
-    let program = beside_us.unwrap_or_else(|| PathBuf::from("immich-mount"));
+    let program = immich_mount_linux::programs::find("immich-mount").unwrap_or_else(|| PathBuf::from("immich-mount"));
     let outcome = Command::new(&program).arg("logout").output().map_err(|error| format!("{}: {error}", program.display()))?;
     // `logout` also turns the user service off, once signed out; a failed logout keeps the mount at the next login.
     if !outcome.status.success() {

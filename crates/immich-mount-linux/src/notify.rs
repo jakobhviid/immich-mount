@@ -13,8 +13,8 @@ const APP_NAME: &str = "Immich Mount";
 /// Our own symbolic icon, which the `immich-mount` package installs (ARCHITECTURE.md, "The icon"). Never the Immich
 /// logo (AGENTS.md, "Hard rules").
 const ICON: &str = "dev.hviid.ImmichMount-symbolic";
-/// The KDE app's launcher entry, which Plasma heads the notification with.
-const KDE_DESKTOP_ENTRY: &str = "dev.hviid.ImmichMount.Kde";
+/// The app's launcher entry, which Plasma heads the notification with.
+const KDE_DESKTOP_ENTRY: &str = "dev.hviid.ImmichMount";
 
 /// How long one kind of notification stays quiet after it was shown, so a folder of refused files gives one
 /// notification, not one per file.
@@ -55,7 +55,7 @@ pub fn notify_in_background(summary: String, body: String) {
 
 async fn send(summary: &str, body: &str) -> zbus::Result<()> {
     let connection = zbus::Connection::session().await?;
-    // Plasma heads a notification with the app its `desktop-entry` names, so the KDE app's name and icon show and no
+    // Plasma heads a notification with the app its `desktop-entry` names, so the app's name and icon show and no
     // picture is needed. GNOME drops a notification whose `desktop-entry` names an app it did not come from, and the
     // daemon is not the app, so there it carries our symbolic icon and no entry.
     let (icon, hints): (&str, HashMap<&str, zbus::zvariant::Value<'_>>) = if crate::kde::plasma_is_running().await {

@@ -134,7 +134,9 @@ libadwaita 1.9), built in an `ubuntu:26.04` job and tested by installing in a co
   vulnerability reporting is on (SECURITY.md points to it).
 - **Homebrew: the formula is built.** The release workflow renders `ci/immich-mount.rb.tmpl` with an x86_64 Linux
   bottle and pushes it to the maintainer's tap (`jakobhviid/homebrew-tap`), whose gate installs and tests it before
-  it lands. Not built: a Linux cask for the apps. Next: COPR and the AUR.
+  it lands. The cask `immich-mount-linux` carries the app (both interfaces, built on Fedora 44) and depends on the
+  formula; the tap bumps it daily from the releases. Next: COPR and the AUR, and Fedora 45 builds of the
+  interfaces once Fedora 45 based systems need them (the Kirigami one is tied to its Fedora's Qt).
 - An independent adversarial review before tagging.
 
 ## M6. KDE edition

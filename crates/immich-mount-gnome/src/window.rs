@@ -432,8 +432,8 @@ impl Window {
     }
 }
 
-/// Make this app the handler of `app.immich`, so the browser's redirect comes back here even where the KDE app is
-/// installed too (both declare the scheme).
+/// Make the app the handler of `app.immich`, so the browser's redirect comes back to it (`immich-mount app` hands it
+/// to this interface outside Plasma).
 fn claim_redirect() {
     let desktop_id = format!("{}.desktop", crate::APP_ID);
     if let Some(info) = gio::AppInfo::all().into_iter().find(|info| info.id().as_deref() == Some(desktop_id.as_str())) {

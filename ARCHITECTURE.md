@@ -85,8 +85,8 @@ icon style, and is MIT like the rest.
   validator wants the categories repeated there too).
 - **The Files sidebar** keeps its own drive symbol: it draws mounts with the theme's symbolic icons, whatever the
   mount supplies.
-- **Flatpak impact:** a Flatpak exports icons named after its own app ID, so the GNOME app's Flatpak ships the
-  icon as it is, and a KDE Flatpak (`dev.hviid.ImmichMount.Kde`) renames its copy at build time.
+- **Flatpak impact:** a Flatpak exports icons named after its own app ID, `dev.hviid.ImmichMount`, so it ships the
+  icon as it is.
 
 ## Two processes: a daemon and an app
 
@@ -202,8 +202,9 @@ Homebrew's `homebrew.immich-mount.service`, which `brew services start immich-mo
 setup, `immich-mount mount` and the `mount.at_login` switch use the packages' unit where it is installed, else
 Homebrew's, so nobody starts a service by hand after the app's setup; `logout` turns off both. A daemon that finds
 the mount already served by another (both services on) leaves cleanly, so its service is not restarted every few
-seconds. The desktop apps ship as packages that depend on the daemon's package, so Homebrew carries the daemon and
-CLI only, for machines without the app.
+seconds. Where no service is installed at all (the app from Homebrew's cask, the daemon from its formula), the
+app's first run writes the packages' unit into `~/.config/systemd/user`, running the daemon it finds, and starts it.
+**Flatpak impact:** a Flatpak app could not write that unit; it would rely on the host's daemon and its service.
 
 ## The tree
 
@@ -794,15 +795,25 @@ Each platform gets a native app that looks and reads like a first-party app (pri
 - **The About dialog** carries the non-affiliation notice, the credits, and the AI disclosure.
 - **Accessibility:** keyboard navigation everywhere, a keyboard-shortcuts dialog, and accessible labels on every
   control.
-- **One app per desktop:** GNOME gets the GTK app and Plasma the Kirigami app, never the other's look. They are
-  separate packages, and where both are installed the launchers sort it out: the KDE entry says `OnlyShowIn=KDE;`
-  and the GNOME entry `NotShowIn=KDE;`, so Plasma lists only the KDE app and every other desktop only the GNOME
-  app. Both declare the `app.immich` scheme, so each makes itself its handler as it starts a browser sign-in, and
-  the redirect returns to the app in use. On Plasma the daemon's notifications name the KDE app (`desktop-entry`),
-  which heads them with its name and icon; Plasma is detected as for seeding (the environment, or Plasma's shell
-  on the session bus). Elsewhere they carry the name and our symbolic icon and no `desktop-entry`: GNOME 50 drops a
-  notification whose `desktop-entry` names an app it did not come from, and the daemon is not the app (verified in
-  both VMs).
+- **One app, native on each desktop:** one launcher entry, `dev.hviid.ImmichMount`, runs `immich-mount app`, which
+  opens the Kirigami interface on Plasma (`XDG_CURRENT_DESKTOP` names KDE) and the GTK one everywhere else, never
+  the other's look. Bare `immich-mount` does the same where there is a display, so the app comes first and the
+  command line is the fallback for a machine without one. The two interfaces stay separate binaries: one linking
+  both GTK and Qt would not start where either is missing. Each answers `--probe` before it touches its toolkit,
+  and the launcher passes over one that does not load; so on a Plasma whose Qt is not the one the Kirigami build
+  links (cxx-qt's QML registration uses Qt's private API), the GTK interface stands in. Outside Plasma the Kirigami
+  one never does. The launcher entry declares the `app.immich` scheme and hands the redirect on, so it reaches
+  whichever interface is in use.
+  - **Packaging:** the daemon's package carries the launcher entry and the AppStream data; `immich-mount-gnome`
+    and `immich-mount-kde` carry the interfaces, and on Fedora the daemon's package recommends the one for the
+    installed desktop. Homebrew's cask `immich-mount-linux` holds both interfaces, built on Fedora 44, and
+    depends on the formula for the daemon.
+  - **Notifications:** on Plasma the daemon's notifications name the app (`desktop-entry`), which heads them with its
+    name and icon; Plasma is detected as for seeding (the environment, or Plasma's shell on the session bus). Elsewhere
+    they carry the name and our symbolic icon and no `desktop-entry`: GNOME 50 drops a notification whose
+    `desktop-entry` names an app it did not come from, and the daemon is not the app (verified in both VMs).
+  - **Not chosen:** two launcher entries, one per desktop (`OnlyShowIn=KDE;` and `NotShowIn=KDE;`): two apps to explain,
+    two scheme handlers that had to claim the scheme in turn, and two casks.
 - **How the KDE app is written:** Kirigami pages in QML over one Rust object, bound with **cxx-qt** (KDAB's
   Rust/Qt bridge). The object is a thin layer over `immich-mount-desktop`, so the two apps share every step but
   the widgets.
@@ -889,9 +900,8 @@ Each platform gets a native app that looks and reads like a first-party app (pri
   - the binaries
   - `immich-mount.service` (`Type=notify`, `ExecStop` unmounts, `Restart=on-failure`)
   - a D-Bus activation file
-  - the launcher entry (`dev.hviid.ImmichMount.desktop` for GNOME, `dev.hviid.ImmichMount.Kde.desktop` for KDE),
-    named "Immich Mount", with the keywords `Immich;Drive;Mount;Photos;Videos;Files;` and the
-    `x-scheme-handler/app.immich` handler
+  - the one launcher entry (`dev.hviid.ImmichMount.desktop`, running `immich-mount app`), named "Immich Mount", with the
+    keywords `Immich;Drive;Mount;Photos;Videos;Files;` and the `x-scheme-handler/app.immich` handler
   - the icon, `dev.hviid.ImmichMount` and its symbolic variant, in the `immich-mount` package ("The icon")
   - AppStream metadata carrying the non-affiliation notice
   - the license notices: `LICENSE`, and `THIRD-PARTY-LICENSES.md`, written at release by

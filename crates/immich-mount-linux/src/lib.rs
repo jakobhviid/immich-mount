@@ -15,6 +15,7 @@ pub mod kde;
 pub mod mounts;
 pub mod notify;
 pub mod paths;
+pub mod programs;
 pub mod seeding;
 pub mod service;
 pub mod staging;

@@ -70,24 +70,32 @@ jobs:
           cargo build --release -p immich-mount-gnome -p immich-mount-kde
           payload="$PWD/dist/payload"
           mkdir -p "$payload"
-          cp target/release/immich-mount-gnome LICENSE crates/immich-mount-gnome/data/dev.hviid.ImmichMount.metainfo.xml "$payload/"
+          cp target/release/immich-mount-gnome LICENSE "$payload/"
           python3 packaging/third-party-licenses.py "$payload/THIRD-PARTY-LICENSES.md" immich-mount-gnome
-          sed 's|@BINDIR@|/usr/bin|' crates/immich-mount-gnome/data/dev.hviid.ImmichMount.desktop.in > "$payload/dev.hviid.ImmichMount.desktop"
           rpmbuild -bb --define "_topdir $PWD/dist/rpmbuild" --define "pkg_version $VERSION" --define "payload $payload" \
             packaging/rpm/immich-mount-gnome.spec
           kde="$PWD/dist/payload-kde"
           mkdir -p "$kde"
-          cp target/release/immich-mount-kde LICENSE crates/immich-mount-kde/data/dev.hviid.ImmichMount.Kde.metainfo.xml "$kde/"
+          cp target/release/immich-mount-kde LICENSE "$kde/"
           python3 packaging/third-party-licenses.py "$kde/THIRD-PARTY-LICENSES.md" immich-mount-kde
-          sed 's|@BINDIR@|/usr/bin|' crates/immich-mount-kde/data/dev.hviid.ImmichMount.Kde.desktop.in > "$kde/dev.hviid.ImmichMount.Kde.desktop"
           rpmbuild -bb --define "_topdir $PWD/dist/rpmbuild" --define "pkg_version $VERSION" --define "payload $kde" \
             packaging/rpm/immich-mount-kde.spec
           cp dist/rpmbuild/RPMS/*/*.rpm dist/
-          ls -l dist/*.rpm
+          # For Homebrew's cask (the daemon comes from the formula): both interfaces, the launcher entry with its
+          # @BINDIR@ left for the cask to fill in, and the icons. Built here, so it links this Fedora's GTK and Qt.
+          app="$PWD/dist/app"
+          mkdir -p "$app"
+          cp target/release/immich-mount-gnome target/release/immich-mount-kde LICENSE packaging/icons/*.svg "$app/"
+          cp packaging/desktop/dev.hviid.ImmichMount.desktop.in "$app/dev.hviid.ImmichMount.desktop"
+          python3 packaging/third-party-licenses.py "$app/THIRD-PARTY-LICENSES.md" immich-mount-gnome immich-mount-kde
+          tar czf dist/immich-mount-app-x86_64.tar.gz -C "$app" .
+          ls -l dist/*.rpm dist/*.tar.gz
       - uses: actions/upload-artifact@v4
         with:
           name: fedora-apps
-          path: dist/*.rpm
+          path: |
+            dist/*.rpm
+            dist/*.tar.gz
 
 
   ubuntu-apps:
@@ -126,9 +134,6 @@ jobs:
           cargo build --release -p immich-mount-gnome -p immich-mount-kde
           root=dist/deb-app
           install -Dm755 target/release/immich-mount-gnome "$root/usr/bin/immich-mount-gnome"
-          sed 's|@BINDIR@|/usr/bin|' crates/immich-mount-gnome/data/dev.hviid.ImmichMount.desktop.in > dev.hviid.ImmichMount.desktop
-          install -Dm644 dev.hviid.ImmichMount.desktop "$root/usr/share/applications/dev.hviid.ImmichMount.desktop"
-          install -Dm644 crates/immich-mount-gnome/data/dev.hviid.ImmichMount.metainfo.xml "$root/usr/share/metainfo/dev.hviid.ImmichMount.metainfo.xml"
           install -Dm644 LICENSE "$root/usr/share/doc/immich-mount-gnome/copyright"
           python3 packaging/third-party-licenses.py "$root/usr/share/doc/immich-mount-gnome/THIRD-PARTY-LICENSES.md" immich-mount-gnome
           mkdir -p "$root/DEBIAN"
@@ -136,9 +141,6 @@ jobs:
           dpkg-deb --root-owner-group --build "$root" "dist/immich-mount-gnome_${VERSION}_amd64.deb"
           root=dist/deb-kde
           install -Dm755 target/release/immich-mount-kde "$root/usr/bin/immich-mount-kde"
-          sed 's|@BINDIR@|/usr/bin|' crates/immich-mount-kde/data/dev.hviid.ImmichMount.Kde.desktop.in > dev.hviid.ImmichMount.Kde.desktop
-          install -Dm644 dev.hviid.ImmichMount.Kde.desktop "$root/usr/share/applications/dev.hviid.ImmichMount.Kde.desktop"
-          install -Dm644 crates/immich-mount-kde/data/dev.hviid.ImmichMount.Kde.metainfo.xml "$root/usr/share/metainfo/dev.hviid.ImmichMount.Kde.metainfo.xml"
           install -Dm644 LICENSE "$root/usr/share/doc/immich-mount-kde/copyright"
           python3 packaging/third-party-licenses.py "$root/usr/share/doc/immich-mount-kde/THIRD-PARTY-LICENSES.md" immich-mount-kde
           mkdir -p "$root/DEBIAN" debian
@@ -203,14 +205,17 @@ jobs:
           payload="$PWD/dist/payload"
           mkdir -p "$payload"
           cp "target/${{ matrix.target }}/release/immich-mount" LICENSE README.md dist/stage/THIRD-PARTY-LICENSES.md \
-            packaging/icons/*.svg "$payload/"
+            packaging/icons/*.svg packaging/desktop/dev.hviid.ImmichMount.metainfo.xml "$payload/"
           sed 's|@BINDIR@|/usr/bin|' packaging/systemd/immich-mount.service.in > "$payload/immich-mount.service"
+          sed 's|@BINDIR@|/usr/bin|' packaging/desktop/dev.hviid.ImmichMount.desktop.in > "$payload/dev.hviid.ImmichMount.desktop"
           root=dist/deb
           install -Dm755 "$payload/immich-mount" "$root/usr/bin/immich-mount"
           install -Dm644 "$payload/immich-mount.service" "$root/usr/lib/systemd/user/immich-mount.service"
           install -Dm644 packaging/icons/dev.hviid.ImmichMount.svg "$root/usr/share/icons/hicolor/scalable/apps/dev.hviid.ImmichMount.svg"
           install -Dm644 packaging/icons/dev.hviid.ImmichMount-symbolic.svg \
             "$root/usr/share/icons/hicolor/symbolic/apps/dev.hviid.ImmichMount-symbolic.svg"
+          install -Dm644 "$payload/dev.hviid.ImmichMount.desktop" "$root/usr/share/applications/dev.hviid.ImmichMount.desktop"
+          install -Dm644 "$payload/dev.hviid.ImmichMount.metainfo.xml" "$root/usr/share/metainfo/dev.hviid.ImmichMount.metainfo.xml"
           install -Dm644 LICENSE "$root/usr/share/doc/immich-mount/copyright"
           install -Dm644 README.md "$root/usr/share/doc/immich-mount/README.md"
           install -Dm644 "$payload/THIRD-PARTY-LICENSES.md" "$root/usr/share/doc/immich-mount/THIRD-PARTY-LICENSES.md"

@@ -6,12 +6,11 @@
 Name:           immich-mount-gnome
 Version:        %{pkg_version}
 Release:        1%{?dist}
-Summary:        Immich Mount for GNOME: sign in, status and settings for the Immich drive in Files
+Summary:        Immich Mount's GNOME interface: sign in, status and settings for the Immich drive in Files
 License:        MIT
 URL:            https://github.com/jakobhviid/immich-mount
+# The daemon, and the launcher entry that opens this interface outside Plasma.
 Requires:       immich-mount = %{version}
-# Its file trigger refreshes the MIME cache, which registers the app.immich scheme for the browser's redirect.
-Requires:       desktop-file-utils
 
 %description
 Signs in to a self-hosted Immich server (single sign-on in the browser, email and
@@ -24,14 +23,10 @@ describe the server this software works with, and remains the mark of its owner.
 
 %install
 install -Dm755 %{payload}/immich-mount-gnome %{buildroot}%{_bindir}/immich-mount-gnome
-install -Dm644 %{payload}/dev.hviid.ImmichMount.desktop %{buildroot}%{_datadir}/applications/dev.hviid.ImmichMount.desktop
-install -Dm644 %{payload}/dev.hviid.ImmichMount.metainfo.xml %{buildroot}%{_metainfodir}/dev.hviid.ImmichMount.metainfo.xml
 install -Dm644 %{payload}/LICENSE %{buildroot}%{_licensedir}/%{name}/LICENSE
 install -Dm644 %{payload}/THIRD-PARTY-LICENSES.md %{buildroot}%{_licensedir}/%{name}/THIRD-PARTY-LICENSES.md
 
 %files
 %{_bindir}/immich-mount-gnome
-%{_datadir}/applications/dev.hviid.ImmichMount.desktop
-%{_metainfodir}/dev.hviid.ImmichMount.metainfo.xml
 %license %{_licensedir}/%{name}/LICENSE
 %license %{_licensedir}/%{name}/THIRD-PARTY-LICENSES.md

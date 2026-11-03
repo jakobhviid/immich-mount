@@ -3,6 +3,8 @@ Version: @VERSION@
 Architecture: @ARCH@
 Maintainer: Jakob Hviid <jakob@hviid.phd>
 Depends: fuse3
+Recommends: desktop-file-utils
+Suggests: immich-mount-gnome | immich-mount-kde
 Section: utils
 Priority: optional
 Homepage: https://github.com/jakobhviid/immich-mount

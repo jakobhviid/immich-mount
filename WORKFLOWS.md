@@ -5,37 +5,61 @@ it works this way. Where a step is not built yet, it says so.
 
 ## 1. Install
 
-Every [release](https://github.com/jakobhviid/immich-mount/releases/latest) carries the packages. Download the ones
-for your system into a folder, and install them from there. The daemon and CLI package is also built for ARM
-(`aarch64` in the .rpm's name, `arm64` in the .deb's); the apps are x86_64.
+Immich Mount is one app, GUI first: open **Immich Mount** and it shows the interface native to your desktop, Kirigami
+on KDE Plasma and GTK with libadwaita everywhere else. Without a display, `immich-mount` is a command line.
 
-**Fedora 44:** the daemon and the app for your desktop, of the same version. The GNOME app is
-`immich-mount-gnome-*.rpm`, the KDE Plasma app `immich-mount-kde-*.rpm` (it pulls in Kirigami and the KDE style):
+**With Homebrew** (any Linux that has it, such as Bazzite; nothing is layered onto an atomic system): the app and the
+daemon in one step, x86_64:
 
 ```sh
-sudo dnf install ./immich-mount-[0-9]*.x86_64.rpm ./immich-mount-gnome-*.rpm    # or ./immich-mount-kde-*.rpm
+brew install --cask jakobhviid/tap/immich-mount-linux
 ```
 
-**Ubuntu 26.04 and Kubuntu 26.04:** the same pair as .debs:
+Then open **Immich Mount** from the app grid: its first run signs you in and starts the mount, with no service to
+start by hand. The interfaces are built on Fedora 44, so the system needs to be at least as new (GTK 4.18 and
+libadwaita 1.8 for the GTK one); on a Plasma whose Qt is not Fedora 44's, the GTK interface stands in for Kirigami.
+
+**Without a desktop, with Homebrew** (x86_64 or ARM): the daemon and CLI alone. FUSE comes from your distribution
+(`sudo dnf install fuse3` or `sudo apt install fuse3`), and `brew services` runs the daemon:
 
 ```sh
-sudo apt install ./immich-mount_*_amd64.deb ./immich-mount-gnome_*_amd64.deb    # or ./immich-mount-kde_*_amd64.deb
-```
-
-Install the app for your desktop. Both register the `app.immich` scheme, so single sign-on in the browser hands back
-to the app. With both installed, Plasma lists only the KDE app and other desktops only the GNOME app.
-
-**Fedora 43, Ubuntu 24.04, Debian 13, or a server:** the daemon and CLI alone, `immich-mount-*.rpm` or
-`immich-mount_*.deb`, then sign in from a terminal (section 2). Both packages install `/usr/bin/immich-mount`, the
-user unit and the icon, and pull in `fuse3`:
-
-```sh
-sudo dnf install ./immich-mount-[0-9]*.rpm     # or: sudo apt install ./immich-mount_*.deb
+brew install jakobhviid/tap/immich-mount
 immich-mount login --server https://photos.example.org
-systemctl --user enable --now immich-mount
+brew services start immich-mount
 ```
 
-**Any other Linux:** the static build, into your home directory (use `aarch64` in the name on ARM):
+**As packages,** from the [release](https://github.com/jakobhviid/immich-mount/releases/latest): download the ones for
+your system into a folder, and install them from there. The daemon's package carries the launcher; the interface
+packages add GTK (`immich-mount-gnome`) or Kirigami (`immich-mount-kde`, which pulls in Kirigami and the KDE style),
+of the same version. The daemon's package is also built for ARM (`aarch64` in the .rpm's name, `arm64` in the
+.deb's); the interfaces are x86_64.
+
+- **Fedora 44:** the daemon's package recommends the interface for your desktop, so dnf adds it:
+
+  ```sh
+  sudo dnf install ./immich-mount-[0-9]*.x86_64.rpm ./immich-mount-gnome-*.rpm    # or ./immich-mount-kde-*.rpm
+  ```
+
+- **Ubuntu 26.04 and Kubuntu 26.04:**
+
+  ```sh
+  sudo apt install ./immich-mount_*_amd64.deb ./immich-mount-gnome_*_amd64.deb    # or ./immich-mount-kde_*_amd64.deb
+  ```
+
+- **Fedora 43, Ubuntu 24.04, Debian 13, or a server:** the daemon and CLI alone, `immich-mount-*.rpm` or
+  `immich-mount_*.deb`, then sign in from a terminal (section 2). The package installs `/usr/bin/immich-mount`, the
+  user unit and the icon, and pulls in `fuse3`:
+
+  ```sh
+  sudo dnf install ./immich-mount-[0-9]*.rpm     # or: sudo apt install ./immich-mount_*.deb
+  immich-mount login --server https://photos.example.org
+  systemctl --user enable --now immich-mount
+  ```
+
+The launcher registers the `app.immich` scheme, so single sign-on in the browser hands back to the app.
+
+**Any other Linux:** the static build of the daemon and CLI, into your home directory (use `aarch64` in the name on
+ARM):
 
 ```sh
 curl -fLO https://github.com/jakobhviid/immich-mount/releases/latest/download/immich-mount-x86_64-unknown-linux-musl.tar.gz
@@ -50,38 +74,22 @@ systemctl --user daemon-reload && systemctl --user enable --now immich-mount
 immich-mount doctor
 ```
 
-**The desktop app elsewhere, from source.** The GNOME app needs GTK 4.18, libadwaita 1.8 and `blueprint-compiler`;
-the KDE app needs Qt 6 development files (`qt6-qtbase-devel`, `qt6-qtdeclarative-devel`) to build, and Kirigami
-and `qqc2-desktop-style` to run. Build where those are installed, such as a toolbox, and run on the same release:
+**The app from source.** The GTK interface needs GTK 4.18, libadwaita 1.8 and `blueprint-compiler`; the Kirigami one
+needs Qt 6 development files (`qt6-qtbase-devel`, `qt6-qtdeclarative-devel`) to build, and Kirigami and
+`qqc2-desktop-style` to run. Build where those are installed, such as a toolbox, beside the daemon from a release:
 
 ```sh
-cargo build --release -p immich-mount-gnome
-install -Dm755 target/release/immich-mount-gnome ~/.local/bin/immich-mount-gnome
-sed "s|@BINDIR@|$HOME/.local/bin|" crates/immich-mount-gnome/data/dev.hviid.ImmichMount.desktop.in \
+cargo build --release -p immich-mount-gnome -p immich-mount-kde      # or just the one for your desktop
+install -Dm755 target/release/immich-mount-gnome target/release/immich-mount-kde -t ~/.local/bin
+sed "s|@BINDIR@|$HOME/.local/bin|" packaging/desktop/dev.hviid.ImmichMount.desktop.in \
   > ~/.local/share/applications/dev.hviid.ImmichMount.desktop
-gio mime x-scheme-handler/app.immich dev.hviid.ImmichMount.desktop   # the browser hands sign-in back to the app
-
-cargo build --release -p immich-mount-kde                            # the same for KDE
-install -Dm755 target/release/immich-mount-kde ~/.local/bin/immich-mount-kde
-sed "s|@BINDIR@|$HOME/.local/bin|" crates/immich-mount-kde/data/dev.hviid.ImmichMount.Kde.desktop.in \
-  > ~/.local/share/applications/dev.hviid.ImmichMount.Kde.desktop
-xdg-mime default dev.hviid.ImmichMount.Kde.desktop x-scheme-handler/app.immich
-```
-
-**Homebrew** (any Linux, x86_64 or ARM): the daemon and CLI. FUSE comes from your distribution (`sudo dnf install
-fuse3` or `sudo apt install fuse3`), and `brew services` runs the daemon in place of the packages' user unit. For the
-desktop app, use the packages above instead: they bring their own daemon, and the app starts it at its first run.
-
-```sh
-brew install jakobhviid/tap/immich-mount
-immich-mount login --server https://photos.example.org
-brew services start immich-mount
+update-desktop-database ~/.local/share/applications   # registers app.immich, so the browser hands sign-in back
 ```
 
 **Coming:** COPR for Fedora, and the AUR.
 
-Requirements: `fusermount3` (package `fuse3`) and a keyring (GNOME Keyring or KWallet) for normal use. The app needs
-the current or previous GNOME release.
+Requirements: `fusermount3` (package `fuse3`) and a keyring (GNOME Keyring or KWallet) for normal use. The GTK
+interface needs the current or previous GNOME release.
 
 ## 2. Sign in
 
