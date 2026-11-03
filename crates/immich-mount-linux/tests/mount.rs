@@ -1,7 +1,7 @@
 //! Mounts a small in-memory library for real and reads it through the kernel.
 //!
 //! Needs `/dev/fuse` and `fusermount3`, so it is ignored by default: run it with
-//! `cargo test -p immich-mount-linux --test mount -- --ignored`.
+//! `cargo test -p immich-mount-linux --test mount -- --ignored`, as CI does on every push.
 
 use std::collections::HashMap;
 use std::sync::Arc;
@@ -19,6 +19,8 @@ use immich_mount_linux::fuse::{mount, ImmichFilesystem};
 struct Library {
     assets: Vec<Asset>,
     originals: HashMap<String, Vec<u8>>,
+    /// Bytes of originals fetched, as a server would count them.
+    fetched: std::sync::atomic::AtomicU64,
 }
 
 impl LibrarySource for Library {
@@ -54,6 +56,7 @@ impl LibrarySource for Library {
 impl ContentSource for Library {
     async fn read_range(&self, asset_id: &str, start: u64, end_inclusive: u64) -> Result<RangeBytes, SourceError> {
         let bytes = self.originals.get(asset_id).ok_or(SourceError::NotFound)?;
+        self.fetched.fetch_add(end_inclusive - start + 1, std::sync::atomic::Ordering::SeqCst);
         Ok(RangeBytes { bytes: bytes[start as usize..=end_inclusive as usize].to_vec(), version: None })
     }
 }
@@ -105,6 +108,7 @@ fn the_mount_lists_and_reads_like_a_normal_folder() {
     let library = Arc::new(Library {
         assets: vec![small, large],
         originals: HashMap::from([("asset-small".to_string(), small_bytes.clone()), ("asset-large".to_string(), large_bytes.clone())]),
+        fetched: Default::default(),
     });
 
     let runtime = tokio::runtime::Runtime::new().unwrap();
@@ -137,4 +141,112 @@ fn the_mount_lists_and_reads_like_a_normal_folder() {
 
     assert!(std::fs::write(month.join("new.jpg"), b"x").is_err(), "the mount is read-only");
     drop(session);
+}
+
+/// A library of one small and one large photo, mounted: the mount point, and what must live as long as the mount.
+struct Mounted {
+    library: Arc<Library>,
+    mountpoint: tempfile::TempDir,
+    _cache: tempfile::TempDir,
+    _runtime: tokio::runtime::Runtime,
+    session: Option<fuser::BackgroundSession>,
+}
+
+impl Mounted {
+    fn new() -> Mounted {
+        let (small, small_bytes) = asset("asset-small", 7, 1000);
+        let (large, large_bytes) = asset("asset-large", 9, 5 * 1024 * 1024 + 123);
+        let library = Arc::new(Library {
+            assets: vec![small, large],
+            originals: HashMap::from([("asset-small".to_string(), small_bytes), ("asset-large".to_string(), large_bytes)]),
+            fetched: Default::default(),
+        });
+        let runtime = tokio::runtime::Runtime::new().unwrap();
+        let cache = tempfile::tempdir().unwrap();
+        let mountpoint = tempfile::tempdir().unwrap();
+        let tree = Arc::new(Tree::new(library.clone(), InMemoryNames::default(), Config::from_toml("").unwrap()));
+        let content = Arc::new(BlockCache::new(library.clone(), cache.path(), u64::MAX).unwrap());
+        let filesystem = ImmichFilesystem::new(tree, content, runtime.handle().clone());
+        let session = mount(filesystem, mountpoint.path()).expect("mounts");
+        std::thread::sleep(Duration::from_millis(200));
+        Mounted { library, mountpoint, _cache: cache, _runtime: runtime, session: Some(session) }
+    }
+
+    fn month(&self) -> std::path::PathBuf {
+        self.mountpoint.path().join("Photos").join("2024").join("03 March")
+    }
+}
+
+fn errno(outcome: std::io::Result<impl Sized>) -> Option<i32> {
+    outcome.err().and_then(|error| error.raw_os_error())
+}
+
+fn access(path: &std::path::Path, mode: i32) -> bool {
+    let path = std::ffi::CString::new(path.as_os_str().as_encoded_bytes()).unwrap();
+    unsafe { libc::access(path.as_ptr(), mode) == 0 }
+}
+
+#[test]
+#[ignore = "needs /dev/fuse and fusermount3"]
+fn copies_are_ordinary_files_and_access_says_what_the_mount_allows() {
+    use std::os::unix::fs::PermissionsExt;
+    let mounted = Mounted::new();
+    let root = mounted.mountpoint.path();
+    let photo = mounted.month().join("2024-03-15 14.32.07.jpg");
+    // The modes are what copies get; cp and GIO carry them over.
+    assert_eq!(std::fs::metadata(&photo).unwrap().permissions().mode() & 0o777, 0o644);
+    assert_eq!(std::fs::metadata(root.join("Albums")).unwrap().permissions().mode() & 0o777, 0o755);
+    let elsewhere = tempfile::tempdir().unwrap();
+    let copy = elsewhere.path().join("copy.jpg");
+    std::fs::copy(&photo, &copy).unwrap();
+    assert_eq!(std::fs::metadata(&copy).unwrap().permissions().mode() & 0o200, 0o200, "a copy is writable");
+    // access() says what the mount allows, which file managers draw their read-only emblem from.
+    assert!(access(&photo, libc::R_OK) && !access(&photo, libc::W_OK));
+    assert!(access(&root.join("Albums"), libc::R_OK | libc::X_OK) && !access(&root.join("Albums"), libc::W_OK));
+    assert!(!access(&mounted.month(), libc::W_OK), "without uploads, Photos takes nothing either");
+}
+
+#[test]
+#[ignore = "needs /dev/fuse and fusermount3"]
+fn a_peek_fetches_only_what_it_reads() {
+    use std::os::unix::fs::FileExt;
+    let mounted = Mounted::new();
+    let photo = std::fs::File::open(mounted.month().join("2024-03-15 14.32.09.jpg")).unwrap();
+    let size = photo.metadata().unwrap().len();
+    // rom-properties' pattern: the first pages and the last one, which the kernel widens with its own read-ahead.
+    let mut page = [0u8; 4096];
+    photo.read_at(&mut page, 0).unwrap();
+    photo.read_at(&mut page, 4096).unwrap();
+    photo.read_at(&mut page, size - 4096).unwrap();
+    let fetched = mounted.library.fetched.load(std::sync::atomic::Ordering::SeqCst);
+    assert!(fetched < 256 * 1024, "a peek fetched {fetched} bytes of a {size}-byte original");
+}
+
+#[test]
+#[ignore = "needs /dev/fuse and fusermount3"]
+fn a_mount_in_use_is_busy_until_detached_lazily() {
+    let mut mounted = Mounted::new();
+    let in_use = std::fs::File::open(mounted.month()).unwrap();
+    let refused = immich_mount_linux::mounts::unmount(mounted.mountpoint.path(), false).unwrap_err();
+    assert!(immich_mount_linux::mounts::is_busy(&refused), "{refused}");
+    immich_mount_linux::mounts::unmount(mounted.mountpoint.path(), true).expect("a lazy unmount detaches it");
+    drop(in_use);
+    drop(mounted.session.take());
+}
+
+#[test]
+#[ignore = "needs /dev/fuse and fusermount3"]
+fn links_device_nodes_and_ioctls_are_refused_cleanly() {
+    use std::os::fd::AsRawFd;
+    let mounted = Mounted::new();
+    let month = mounted.month();
+    assert_eq!(errno(std::os::unix::fs::symlink("/", month.join("link"))), Some(libc::EROFS));
+    assert_eq!(errno(std::fs::hard_link(month.join("2024-03-15 14.32.07.jpg"), month.join("hard"))), Some(libc::EROFS));
+    assert_eq!(errno(std::fs::create_dir(month.join("folder"))), Some(libc::EROFS));
+    // KIO asks for the filesystem's label; the answer is a plain "not supported", not a missing operation.
+    let photo = std::fs::File::open(month.join("2024-03-15 14.32.07.jpg")).unwrap();
+    let mut label = [0u8; 256];
+    const FS_IOC_GETFSLABEL: libc::c_ulong = 0x8100_9431;
+    let outcome = unsafe { libc::ioctl(photo.as_raw_fd(), FS_IOC_GETFSLABEL, label.as_mut_ptr()) };
+    assert_eq!((outcome, std::io::Error::last_os_error().raw_os_error()), (-1, Some(libc::ENOTTY)));
 }

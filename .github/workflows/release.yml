@@ -31,6 +31,12 @@ jobs:
           cargo clippy --workspace --exclude immich-mount-gnome --exclude immich-mount-kde --all-targets -- -D warnings
           cargo test --workspace --exclude immich-mount-gnome --exclude immich-mount-kde
           cargo check -p immich-api -p immich-mount-core --no-default-features --target aarch64-apple-darwin
+      - name: The mount through the kernel (FUSE), with an in-memory library
+        run: |
+          # The runner has /dev/fuse; fusermount3 comes with fuse3. These tests catch what only a real mount shows
+          # (modes copies get, access(), peeks, a busy unmount), before any release reaches a VM.
+          sudo apt-get install -y -qq fuse3 >/dev/null
+          cargo test -p immich-mount-linux --test mount -- --ignored
 
   fedora-apps:
     # The desktop apps need newer libraries than Ubuntu's (GTK 4.18, libadwaita 1.8 and blueprint-compiler for GNOME;
