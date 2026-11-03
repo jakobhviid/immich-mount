@@ -148,11 +148,16 @@ The procedures are skills in `.claude/skills/`; agents that do not load skills r
 | `lab/packaging/` | A release's .rpm and .deb installed, checked and removed on several distributions at once; with the server up, each also mounts it and checks originals against Immich's checksums | `lab-packaging-matrix` |
 
 Rules:
-- **Leave nothing behind.** Delete your own instances by name when done. Never run the Erebus teardown script with
-  `--delete`, because other agents may have instances running.
-- **Prefix instance names with `ind-`,** and work in the `lab` project.
-- **Use `--ephemeral`** for anything you will not come back to. Anything that must survive needs `user.keep=true`, and a
-  note to the maintainer.
+- **Lab instances are disposable, and stay warm for a working session.** A VM or server may stay up between checks
+  and is deleted when the session ends. Any `ind-` instance found at the start of a session may be destroyed and
+  created again at will, unless it is kept (`user.keep=true`) or another agent of this session is using it. Warm is
+  not dirty: snapshot an instance once it is set up, and restore that snapshot before each check, so no check passes
+  on what an earlier one left. Give each instance `user.expires` (a UTC time, at most 12 hours ahead); a session
+  starts by deleting the expired ones, so an abandoned session leaves nothing for long. Never run the Erebus
+  teardown script with `--delete`: other projects' instances run there too.
+- **Prefix instance names with `ind-`,** and work in the `lab` project. Agents that run at the same time use a name
+  suffix of their own (`ind-gnome-2`), and leave each other's instances alone.
+- **Kept things** need `user.keep=true` and a note to the maintainer: the Bazzite base disks are kept.
 - **Fixtures are Creative Commons or public domain,** and never upload personal photos to a test server.
 - **Test credentials are throwaway,** generated per deployment into a gitignored `.env.local`.
 - **Wait on conditions, never on bare sleeps,** with `wait_for` and `wait_cloud_init` from `lib/erebus.sh`. Incus

@@ -5,7 +5,7 @@ description: Use when a test needs a real Immich server - contract tests, mounti
 
 # A disposable Immich server
 
-Read AGENTS.md, "Testing on Erebus", first: its rules (the `ind-` prefix, the `lab` project, leave nothing behind,
+Read AGENTS.md, "Testing on Erebus", first: its rules (the `ind-` prefix, the `lab` project, disposable instances kept warm for a session,
 throwaway credentials, no personal photos) apply to everything here.
 
 ## Build it
