@@ -13,6 +13,14 @@ pub const BUS_NAME: &str = "dev.hviid.ImmichMount.Daemon";
 pub const OBJECT_PATH: &str = "/dev/hviid/ImmichMount/Daemon";
 const INTERFACE: &str = "dev.hviid.ImmichMount.Daemon1";
 
+/// Bytes of originals the running daemon fetched since it mounted, and in how many requests; `None` when no daemon
+/// answers.
+pub async fn fetched() -> Option<(u64, u64)> {
+    let connection = zbus::Connection::session().await.ok()?;
+    let proxy = zbus::Proxy::new(&connection, BUS_NAME, OBJECT_PATH, INTERFACE).await.ok()?;
+    proxy.get_property("Fetched").await.ok()
+}
+
 /// The files the running daemon is copying in or uploading (name, what, size); empty when no daemon answers.
 pub async fn uploads_in_flight() -> Vec<(String, String, u64)> {
     let Ok(connection) = zbus::Connection::session().await else { return Vec::new() };
@@ -44,6 +52,8 @@ impl State {
 pub struct Actions {
     /// Bytes the content cache holds, and its limit.
     pub cache_usage: Box<dyn Fn() -> (u64, u64) + Send + Sync>,
+    /// Bytes of originals fetched since the mount started, and in how many requests.
+    pub fetched: Box<dyn Fn() -> (u64, u64) + Send + Sync>,
     /// Uploads in flight: name, phase, bytes.
     pub uploads: Box<dyn Fn() -> Vec<(String, String, u64)> + Send + Sync>,
     /// Forget every listing, so the next visit reads Immich again.
@@ -95,6 +105,11 @@ impl Daemon {
     #[zbus(property)]
     fn cache_usage(&self) -> (u64, u64) {
         (self.actions.cache_usage)()
+    }
+
+    #[zbus(property)]
+    fn fetched(&self) -> (u64, u64) {
+        (self.actions.fetched)()
     }
 
     #[zbus(property)]

@@ -233,6 +233,15 @@ pub struct StatusReport {
     pub change_feed: &'static str,
     pub mount: MountStatus,
     pub cache: CacheStatus,
+    /// Originals fetched from the server since the mount started, from the running daemon.
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub fetched: Option<FetchedStatus>,
+}
+
+#[derive(Serialize)]
+pub struct FetchedStatus {
+    pub bytes: u64,
+    pub requests: u64,
 }
 
 #[derive(Serialize)]
@@ -276,6 +285,10 @@ pub fn status(paths: &Paths) -> Result<StatusReport> {
         // Set below once the credential is read: a session also follows the sync stream.
         mount: MountStatus { path, mounted: state_of_mount == MountState::Mounted, stale: state_of_mount == MountState::Stale },
         cache: CacheStatus { used_bytes: disk_usage(&paths.cache_directory), limit_bytes: config.cache_limit_bytes },
+        fetched: runtime()
+            .ok()
+            .and_then(|runtime| runtime.block_on(immich_mount_linux::dbus::fetched()))
+            .map(|(bytes, requests)| FetchedStatus { bytes, requests }),
     };
     let Some(server_url) = report.server.as_ref().map(|server| server.url.clone()) else {
         return Ok(report);

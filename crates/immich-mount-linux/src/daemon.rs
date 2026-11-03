@@ -207,6 +207,10 @@ where
         let (usage_cache, clear_cache, refresh_tree, unmount_point) = (content.clone(), content.clone(), tree.clone(), mount_point.to_path_buf());
         Actions {
             cache_usage: Box::new(move || (usage_cache.used_bytes(), usage_cache.limit_bytes())),
+            fetched: Box::new({
+                let content = content.clone();
+                move || content.fetched()
+            }),
             uploads: Box::new(move || staging.as_ref().map(|area| area.in_flight()).unwrap_or_default()),
             refresh: Box::new(move || refresh_tree.forget_all()),
             clear_cache: Box::new(move || clear_cache.clear()),

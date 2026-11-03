@@ -78,6 +78,9 @@ pub struct BlockCache<Source> {
     read_ahead: Mutex<HashMap<String, SequentialRun>>,
     /// Read-ahead fetches at once. Small, so reads someone is waiting for go first.
     read_ahead_budget: Arc<tokio::sync::Semaphore>,
+    /// Bytes of originals fetched from the server, and in how many requests, since the cache was made.
+    fetched_bytes: std::sync::atomic::AtomicU64,
+    fetch_requests: std::sync::atomic::AtomicU64,
 }
 
 /// A run of sequential reads of one Asset, which read-ahead follows.
@@ -189,6 +192,8 @@ impl<Source: ContentSource> BlockCache<Source> {
             writes: Mutex::new(HashMap::new()),
             read_ahead: Mutex::new(HashMap::new()),
             read_ahead_budget: Arc::new(tokio::sync::Semaphore::new(2)),
+            fetched_bytes: Default::default(),
+            fetch_requests: Default::default(),
         };
         cache.load()?;
         Ok(cache)
@@ -263,6 +268,7 @@ impl<Source: ContentSource> BlockCache<Source> {
             && !(first_block..=last_block).all(|block| self.is_present(asset_id, block))
         {
             let RangeBytes { bytes, .. } = self.source.read_range(asset_id, offset, end - 1).await?;
+            self.count_fetch(bytes.len());
             if bytes.len() as u64 != end - offset {
                 log::info!("asked for {} bytes of {asset_id} at {offset}, got {}; the original changed", end - offset, bytes.len());
                 return Err(SourceError::Changed);
@@ -325,6 +331,19 @@ impl<Source: ContentSource> BlockCache<Source> {
             None => entry.size = Some(total_size),
             Some(_) => {}
         }
+    }
+
+    /// Bytes of originals fetched from the server and the requests that fetched them, since the cache was made: what
+    /// browsing cost the network, which `immich-mount status` shows.
+    pub fn fetched(&self) -> (u64, u64) {
+        use std::sync::atomic::Ordering::Relaxed;
+        (self.fetched_bytes.load(Relaxed), self.fetch_requests.load(Relaxed))
+    }
+
+    fn count_fetch(&self, bytes: usize) {
+        use std::sync::atomic::Ordering::Relaxed;
+        self.fetched_bytes.fetch_add(bytes as u64, Relaxed);
+        self.fetch_requests.fetch_add(1, Relaxed);
     }
 
     /// Forget the Asset's run of reads, when it is opened: a run belongs to one open, so the reads of an earlier peek
@@ -449,6 +468,7 @@ impl<Source: ContentSource> BlockCache<Source> {
 
     async fn fetch_block(&self, asset_id: &str, total_size: u64, block: u64, start: u64, length: u64) -> Result<(), SourceError> {
         let RangeBytes { bytes, version } = self.source.read_range(asset_id, start, start + length - 1).await?;
+        self.count_fetch(bytes.len());
         if bytes.len() as u64 != length {
             // Fewer bytes than the listed size allows: the original is shorter now.
             log::info!("asked for {length} bytes of {asset_id} at {start}, got {}; the original changed", bytes.len());
@@ -715,6 +735,7 @@ mod tests {
         }
         assert_eq!(cache.source.requests.load(Ordering::SeqCst), 3);
         assert_eq!(cache.used_bytes(), 0, "a peek caches nothing");
+        assert_eq!(cache.fetched(), (16384 + 3000 + 32768, 3), "the counter sees what the server sent");
         // Opened again, it is peeked again: the earlier reads do not add up with these.
         cache.forget_run("peeked");
         for (offset, length) in [(0, 16384), (size - 3000, 4096), (16384, 32768)] {

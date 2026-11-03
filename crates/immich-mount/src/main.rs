@@ -136,6 +136,9 @@ fn main() -> ExitCode {
                 println!("mount:      {} ({mounted})", report.mount.path.display());
                 let mebibytes = |bytes: u64| bytes as f64 / (1024.0 * 1024.0);
                 println!("cache:      {:.1} MiB of {:.0} MiB", mebibytes(report.cache.used_bytes), mebibytes(report.cache.limit_bytes));
+                if let Some(fetched) = &report.fetched {
+                    println!("fetched:    {:.1} MiB of originals in {} requests since it mounted", mebibytes(fetched.bytes), fetched.requests);
+                }
             }
         })),
         Some(Command::Daemon) => {

@@ -359,6 +359,7 @@ The app ID is `dev.hviid.ImmichMount`. The daemon owns the bus name `dev.hviid.I
 | `Account` | property `s` | The signed-in account's email, read at start; empty when the credential may not read it (an API key without `user.read`) |
 | `Features` | property `as` | What the server and credential allow *(not built)* |
 | `CacheUsage` | property `(tt)` | Bytes used, bytes allowed |
+| `Fetched` | property `(tt)` | Bytes of originals fetched from the server since the mount started, and the requests that fetched them |
 | `Uploads` | property `a(sst)` | Uploads in flight: name, phase, bytes sent |
 | `ProbeServer(url s) → (version s, oauth b, password_login b, button_text s)` | method | Used by sign-in before a credential exists *(not built: the app asks the server itself)* |
 | `Reload()` | method | Re-read the config and the credential *(not built: the app restarts the user service)* |

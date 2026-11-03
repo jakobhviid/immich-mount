@@ -171,9 +171,13 @@ immich-mount status --json
   "account": { "email": "me@example.org", "credential": "session" },
   "change_feed": "sync-stream",
   "mount": { "path": "/home/me/Immich", "mounted": true, "stale": false },
-  "cache": { "used_bytes": 734003200, "limit_bytes": 10737418240 }
+  "cache": { "used_bytes": 734003200, "limit_bytes": 10737418240 },
+  "fetched": { "bytes": 160172, "requests": 9 }
 }
 ```
+
+`fetched` is what the running daemon has fetched of originals since it mounted (absent when it is not running): what
+browsing has cost the network. Opening a folder costs a few range requests per file; opening a file fetches it.
 
 `state` is one of `unconfigured`, `online`, `offline`, `signed-out`, `missing-permission` or `unmounted`; `detail`
 says why when it is not `online`.
