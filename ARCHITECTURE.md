@@ -571,7 +571,7 @@ shows in Photos under its own date, and wherever else Immich files it. With uplo
   that could not be kept. And a copy pasted beside its source (Ctrl+C, Ctrl+V in Files) uploaded the same bytes,
   Immich added nothing, and the pasted name stood as a receipt that could not be deleted (seen on Bazzite). In
   Upload a paste of that kind adds nothing too, says so in a notification, and goes like any upload.
-- **The lock** (`access()`) then reads simply: everything is read-only but Upload. Uploads also no longer depend on
+- **The lock** (`access()`) then reads simply: everything is read-only but Upload. And uploads do not depend on
   the Photos section being shown.
 - **Flatpak impact:** none; it is the mount's own layout.
 
