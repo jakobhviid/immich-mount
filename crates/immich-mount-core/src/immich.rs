@@ -260,25 +260,20 @@ impl LibrarySource for ImmichSource {
         self.check_online()?;
         let outcome: Result<Vec<Asset>, SourceError> = async {
             let bucket_month = immich_api::YearMonth::new(month.year, month.month).ok_or(SourceError::NotFound)?;
-            let members: HashSet<String> = self
-                .client
-                .time_bucket(&TimelineScope::Library, bucket_month)
-                .await
-                .map_err(source_error)?
-                .into_iter()
-                .filter(|member| !member.is_trashed)
-                .map(|member| member.id)
-                .collect();
-            if members.is_empty() {
-                return Ok(Vec::new());
-            }
-
             let query = AssetQuery {
                 taken: Some(bucket_month.utc_range_widened(Duration::hours(TIME_ZONE_MARGIN_HOURS))),
                 timeline_only: true,
                 ..AssetQuery::default()
             };
-            let mut assets: Vec<Asset> = self.search(query).await?.into_iter().filter(|asset| members.contains(&asset.id)).collect();
+            // Membership and details are asked for together: neither needs the other's answer.
+            let (bucket, found) =
+                futures_util::future::join(self.client.time_bucket(&TimelineScope::Library, bucket_month), self.search(query)).await;
+            let members: HashSet<String> =
+                bucket.map_err(source_error)?.into_iter().filter(|member| !member.is_trashed).map(|member| member.id).collect();
+            if members.is_empty() {
+                return Ok(Vec::new());
+            }
+            let mut assets: Vec<Asset> = found?.into_iter().filter(|asset| members.contains(&asset.id)).collect();
 
             let found: HashSet<&str> = assets.iter().map(|asset| asset.id.as_str()).collect();
             let missed: Vec<String> = members.iter().filter(|id| !found.contains(id.as_str())).cloned().collect();

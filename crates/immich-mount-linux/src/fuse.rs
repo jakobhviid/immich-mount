@@ -5,7 +5,7 @@
 //! sequence for the life of the mount. Every request that needs the network runs on the tokio runtime with a
 //! deadline, so a slow or unreachable server never hangs a program that touches the mount (principle 1).
 
-use std::collections::HashMap;
+use std::collections::{HashMap, HashSet};
 use std::ffi::OsStr;
 use std::future::Future;
 use std::path::{Path, PathBuf};
@@ -76,9 +76,172 @@ const SERVER_SILENT_FOR: Duration = Duration::from_secs(30);
 const IMPATIENT_DEADLINE: Duration = Duration::from_secs(1);
 /// Only a wait this long that ran out shows the server silent; a probe's or an impatient one's short wait does not.
 const SILENCE_PROOF: Duration = Duration::from_secs(5);
-/// How long a lookup of a probed name waits for its folder's listing: such names are next to never there, so when no
-/// listing is at hand they are answered absent.
-const PROBE_DEADLINE: Duration = Duration::from_millis(500);
+/// Folders listed at once because a probe found no listing at hand (`is_probe_name`): rom-properties probes every
+/// subfolder of a folder shown, and Albums can hold hundreds.
+const PROBE_LISTINGS: usize = 4;
+/// How many files of one folder a program peeks at in a row before the rest of the folder's edges are fetched ahead
+/// of it (`PeekWatch`), and how close together those peeks come.
+const PEEKS_BEFORE_PREFETCH: usize = 3;
+const PEEK_SERIES: Duration = Duration::from_secs(10);
+/// How long a folder whose edges were prefetched is remembered, so its later peeks do not start another prefetch.
+const PEEK_SERIES_KEPT: Duration = Duration::from_secs(60);
+/// A folder taking longer than this to list or seed is logged at `info`, with what took the time.
+const SLOW_FOLDER: Duration = Duration::from_secs(1);
+/// How soon after a folder is listed a listing of one of its subfolders counts as a file manager counting its items
+/// (`RecentListings`).
+const COUNTING_WINDOW: Duration = Duration::from_secs(3);
+
+/// When folders were last listed, to tell a visit from a count. Files and Dolphin count the items of every subfolder of
+/// a folder they show, one after another, by listing each (and Files looks up every file in it too), right after
+/// listing the folder; a year opened listed all its months. A count seeds its small thumbnails ahead, in the
+/// background, so the next click finds them, but makes nobody wait and fetches no previews (ARCHITECTURE.md, "Seeding
+/// the freedesktop cache"). A visit taken for a count is put right by `Counted`.
+#[derive(Default)]
+struct RecentListings {
+    listed: Mutex<HashMap<PathBuf, std::time::Instant>>,
+}
+
+impl RecentListings {
+    /// Note a listing of `folder` (its path in the mount) as it starts; whether it is a count: its parent's listing,
+    /// or another count in it, ended moments ago, a sibling was listed since, and it was not listed itself. A counter
+    /// lists the subfolders one after another; a program opening one subfolder (a file dialog, a script) lists no
+    /// sibling, and a subfolder listed again soon after (opened at once, after the file manager counted it) is a visit.
+    fn is_count(&self, folder: &Path) -> bool {
+        let mut listed = self.listed.lock().expect("recent listings lock");
+        listed.retain(|_, at| at.elapsed() < COUNTING_WINDOW);
+        let count = folder.parent().is_some_and(|parent| {
+            listed.contains_key(parent) && listed.keys().any(|other| other.parent() == Some(parent) && other != folder)
+        }) && !listed.contains_key(folder);
+        listed.insert(folder.to_path_buf(), std::time::Instant::now());
+        count
+    }
+
+    /// Note that `folder`'s listing ended: the counts of its subfolders come after it, however long it took; and a
+    /// count keeps its parent's window open, since a counter lists a large folder's subfolders one at a time.
+    fn ended(&self, folder: &Path, count: bool) {
+        let mut listed = self.listed.lock().expect("recent listings lock");
+        listed.retain(|_, at| at.elapsed() < COUNTING_WINDOW);
+        let now = std::time::Instant::now();
+        listed.insert(folder.to_path_buf(), now);
+        if let Some(parent) = folder.parent().filter(|_| count) {
+            listed.insert(parent.to_path_buf(), now);
+        }
+    }
+}
+
+/// How long a counted folder can still be promoted to a shown one (`Counted`).
+const COUNTED_KEPT: Duration = Duration::from_secs(60);
+
+/// Folders taken for counts, which a file manager may be showing after all: one opened at once, before the file
+/// manager got round to counting it, is listed once, as a count. Files asks each file's access rights as it shows it,
+/// right before it looks for the file's thumbnail, and a count asks none; so the first `access()` on a file of a
+/// counted folder promotes it, seeding it as a folder shown and waiting for that (verified with the kernel tracing a
+/// `gio info`: the stat, two `access()` calls, then the thumbnail paths). Dolphin's KIO asks them too.
+#[derive(Default)]
+struct Counted {
+    folders: Mutex<HashMap<NodeKey, CountedFolder>>,
+}
+
+enum CountedFolder {
+    Ahead { at: std::time::Instant, files: Vec<SeedFile> },
+    Promoted(tokio::sync::watch::Receiver<bool>),
+}
+
+impl Counted {
+    fn counted(&self, folder: NodeKey, files: Vec<SeedFile>) {
+        let mut folders = self.folders.lock().expect("counted lock");
+        folders.retain(|_, counted| match counted {
+            CountedFolder::Ahead { at, .. } => at.elapsed() < COUNTED_KEPT,
+            CountedFolder::Promoted(done) => !*done.borrow(),
+        });
+        if !matches!(folders.get(&folder), Some(CountedFolder::Promoted(_))) {
+            folders.insert(folder, CountedFolder::Ahead { at: std::time::Instant::now(), files });
+        }
+    }
+
+    /// The folder was listed as a visit, which is seeding it (`done`): a file manager showing it after an earlier
+    /// listing took it for a count waits for that seeding at its first `access()`.
+    fn visited(&self, folder: &NodeKey, done: tokio::sync::watch::Receiver<bool>) {
+        let mut folders = self.folders.lock().expect("counted lock");
+        if matches!(folders.get(folder), Some(CountedFolder::Ahead { .. })) {
+            folders.insert(folder.clone(), CountedFolder::Promoted(done));
+        }
+    }
+
+    fn holds(&self, folder: &NodeKey) -> bool {
+        match self.folders.lock().expect("counted lock").get(folder) {
+            Some(CountedFolder::Ahead { at, .. }) => at.elapsed() < COUNTED_KEPT,
+            Some(CountedFolder::Promoted(_)) => true,
+            None => false,
+        }
+    }
+
+    /// The seeding an `access()` in a counted `folder` waits for: started now when the folder was only counted. Runs
+    /// inside the runtime.
+    fn promote<Content>(self: &Arc<Self>, folder: &NodeKey, seeder: &Arc<Seeder<Content>>) -> Option<tokio::sync::watch::Receiver<bool>>
+    where
+        Content: ThumbnailSource + 'static,
+    {
+        let mut folders = self.folders.lock().expect("counted lock");
+        let files = match folders.remove(folder)? {
+            CountedFolder::Promoted(done) => {
+                folders.insert(folder.clone(), CountedFolder::Promoted(done.clone()));
+                return Some(done);
+            }
+            CountedFolder::Ahead { at, files } if at.elapsed() < COUNTED_KEPT => files,
+            CountedFolder::Ahead { .. } => return None,
+        };
+        log::debug!("{folder:?} was counted, and is being shown after all");
+        let (finished, done) = tokio::sync::watch::channel(false);
+        folders.insert(folder.clone(), CountedFolder::Promoted(done.clone()));
+        let seeding = seeder.seed(files);
+        let (registry, folder) = (self.clone(), folder.clone());
+        tokio::spawn(async move {
+            let _ = seeding.await;
+            let _ = finished.send(true);
+            let mut folders = registry.folders.lock().expect("counted lock");
+            if matches!(folders.get(&folder), Some(CountedFolder::Promoted(done)) if *done.borrow()) {
+                folders.remove(&folder);
+            }
+        });
+        Some(done)
+    }
+}
+
+/// Folders whose files a program is peeking at one after another: rom-properties, which Bazzite's file managers
+/// load, reads the start and end of every file of a folder shown, from the file manager's main thread, so each
+/// server round trip froze Files (measured on Bazzite 44: 450 photos, 1,350 requests, Files busy for 11 s). After
+/// `PEEKS_BEFORE_PREFETCH` peeks the rest of the folder's edges are fetched ahead of it, several at a time
+/// (`BlockCache::prefetch_edges`). A single peek (a properties dialog) prefetches nothing.
+#[derive(Default)]
+struct PeekWatch {
+    folders: Mutex<HashMap<NodeKey, PeekSeries>>,
+}
+
+struct PeekSeries {
+    started: std::time::Instant,
+    files: HashSet<String>,
+    prefetched: bool,
+}
+
+impl PeekWatch {
+    /// Note a peek at a file of `folder`; true when the folder's series just became long enough to prefetch.
+    fn note(&self, folder: &NodeKey, asset_id: &str) -> bool {
+        let mut folders = self.folders.lock().expect("peek watch lock");
+        folders.retain(|_, series| series.started.elapsed() < PEEK_SERIES_KEPT);
+        let fresh = || PeekSeries { started: std::time::Instant::now(), files: HashSet::new(), prefetched: false };
+        let series = folders.entry(folder.clone()).or_insert_with(fresh);
+        if series.prefetched {
+            return false;
+        }
+        if series.started.elapsed() > PEEK_SERIES {
+            *series = fresh();
+        }
+        series.files.insert(asset_id.to_string());
+        series.prefetched = series.files.len() >= PEEKS_BEFORE_PREFETCH;
+        series.prefetched
+    }
+}
 
 /// Whether a listing that waited `SILENCE_PROOF` or longer ran out within the last `SERVER_SILENT_FOR`.
 #[derive(Default)]
@@ -107,9 +270,9 @@ fn is_probe_name(name: &str) -> bool {
     const PROBED: &[&str] =
         &[".directory", ".hidden", ".Trash", ".DS_Store", ".nomedia", ".trackerignore", ".metadata_never_index", "autorun.inf", "desktop.ini", "Thumbs.db"];
     // rom-properties (Bazzite's file managers load it) probes every folder shown for extracted game discs: a Wii U
-    // folder's `code/app.xml`, an Xbox one's `default.xex` and `default.xbe`, in three spellings each.
+    // folder's `code/app.xml` and `title.tik`, an Xbox one's `default.xex` and `default.xbe`, in three spellings each.
     const ROM_PROPERTIES: &[&str] =
-        &["code", "default.xex", "Default.xex", "DEFAULT.XEX", "default.xbe", "Default.xbe", "DEFAULT.XBE"];
+        &["code", "title.tik", "default.xex", "Default.xex", "DEFAULT.XEX", "default.xbe", "Default.xbe", "DEFAULT.XBE"];
     PROBED.contains(&name) || ROM_PROPERTIES.contains(&name) || name.starts_with(".Trash-") || name.starts_with("._")
 }
 
@@ -239,6 +402,30 @@ where
     }
 }
 
+/// List a folder in the background for a probe that found no listing at hand: once however many probes ask, and at
+/// most `PROBE_LISTINGS` folders at a time, so a folder of hundreds of albums does not ask for them all at once.
+fn list_for_probe<Library, Names>(
+    tree: Arc<Tree<Library, Names>>,
+    folder: NodeKey,
+    listings: Arc<Mutex<HashSet<NodeKey>>>,
+    budget: Arc<tokio::sync::Semaphore>,
+) where
+    Library: LibrarySource + 'static,
+    Names: NameMemory + 'static,
+{
+    if !listings.lock().expect("probe listings lock").insert(folder.clone()) {
+        return;
+    }
+    tokio::spawn(async move {
+        if let Ok(_permit) = budget.acquire().await {
+            if let Err(error) = tree.list(&folder).await {
+                log::debug!("listing {folder:?} for a probe failed: {error}");
+            }
+        }
+        listings.lock().expect("probe listings lock").remove(&folder);
+    });
+}
+
 /// The error code a program sees for each kind of source failure (SPEC.md, "Errors").
 pub fn errno_for(error: &SourceError) -> Errno {
     match error {
@@ -265,6 +452,12 @@ pub struct ImmichFilesystem<Library, Names, Content> {
     listings: Arc<Mutex<HashMap<u64, Arc<Listing>>>>,
     next_folder_handle: AtomicU64,
     listing_patience: Arc<ListingPatience>,
+    peeks: Arc<PeekWatch>,
+    recent_listings: Arc<RecentListings>,
+    counted: Arc<Counted>,
+    /// Folders being listed because a probe found no listing at hand, and how many such listings may run at once.
+    probe_listings: Arc<Mutex<HashSet<NodeKey>>>,
+    probe_listing_budget: Arc<tokio::sync::Semaphore>,
     /// How many library files are open, which the daemon waits on before it restarts into an upgrade.
     open_files: Arc<AtomicUsize>,
 }
@@ -314,6 +507,11 @@ where
             uploads: None,
             listings: Arc::new(Mutex::new(HashMap::new())),
             listing_patience: Arc::default(),
+            peeks: Arc::default(),
+            recent_listings: Arc::default(),
+            counted: Arc::default(),
+            probe_listings: Arc::default(),
+            probe_listing_budget: Arc::new(tokio::sync::Semaphore::new(PROBE_LISTINGS)),
             next_folder_handle: AtomicU64::new(1),
             open_files: Arc::new(AtomicUsize::new(0)),
         }
@@ -517,11 +715,26 @@ where
         let folder = MountNode::Tree(parent_key.clone());
         let patience = self.listing_patience.clone();
         let probe = is_probe_name(&name);
+        let probing = probe.then(|| (self.probe_listings.clone(), self.probe_listing_budget.clone()));
         self.spawn(async move {
-            let deadline = if probe { PROBE_DEADLINE } else { within(LISTING_DEADLINE, 1) };
-            let found = list_detached(tree, parent_key, deadline, &patience)
-                .await
-                .map(|listing| listing.map(|entries| entries.into_iter().find(|entry| entry.name == name)));
+            // A probe never waits for the server. Programs probe every folder they show, from their main thread
+            // (rom-properties looks for game discs in each subfolder of the folder shown), so a probe is answered
+            // from the listing at hand; without one it is answered absent while the folder is listed in the
+            // background, ready for its visit.
+            let found = if let Some((listings, budget)) = probing {
+                match tree.stale_listing(&parent_key) {
+                    Some(entries) => Ok(Ok(entries.into_iter().find(|entry| entry.name == name))),
+                    None => {
+                        list_for_probe(tree, parent_key, listings, budget);
+                        // Not remembered: once listed, the folder may hold the name after all.
+                        return reply.error(Errno::ENOENT);
+                    }
+                }
+            } else {
+                list_detached(tree, parent_key, within(LISTING_DEADLINE, 1), &patience)
+                    .await
+                    .map(|listing| listing.map(|entries| entries.into_iter().find(|entry| entry.name == name)))
+            };
             match found {
                 Ok(Ok(Some(entry))) => {
                     let node = MountNode::Tree(entry.node.clone());
@@ -529,8 +742,7 @@ where
                     reply.entry(&ttl_for(&entry.kind), &filesystem.attributes(inode, &node, &entry.kind), filesystem.generation);
                 }
                 // A negative entry (node id 0) is `ENOENT` that the kernel remembers.
-                // A probed name is answered absent also when its folder's listing is not at hand.
-                Ok(Ok(None)) | Err(_) if probe => {
+                Ok(Ok(None)) if probe => {
                     reply.entry(&NEGATIVE_TTL, &filesystem.attributes(0, &folder, &EntryKind::Folder), filesystem.generation)
                 }
                 Ok(Ok(None)) => reply.error(Errno::ENOENT),
@@ -638,6 +850,24 @@ where
                     _ => None,
                 };
                 let tree = self.tree.clone();
+                if let Some(peeked) = folder.as_ref().filter(|_| content.is_peek_read(&asset_id, total_size, offset, size)) {
+                    if self.peeks.note(peeked, &asset_id) {
+                        let (tree, content, peeked) = (tree.clone(), content.clone(), peeked.clone());
+                        self.spawn(async move {
+                            let files: Vec<(String, u64)> = tree
+                                .stale_listing(&peeked)
+                                .unwrap_or_default()
+                                .into_iter()
+                                .filter_map(|entry| match entry.kind {
+                                    EntryKind::File { asset_id, size: Some(size), .. } => Some((asset_id, size)),
+                                    _ => None,
+                                })
+                                .collect();
+                            log::debug!("a program is peeking at the files of {peeked:?}; prefetching the edges of {}", files.len());
+                            content.prefetch_edges(files);
+                        });
+                    }
+                }
                 self.spawn(async move {
                     let generation = content.generation(&asset_id);
                     // The fetch runs as a task of its own: past the deadline it goes on filling the cache, so on a slow
@@ -713,7 +943,7 @@ where
         let folder_path = record.path.clone();
         let staged = self.uploads.as_ref().map(|uploads| uploads.staging.in_folder(&key)).unwrap_or_default();
         let listings = self.listings.clone();
-        // Only the first page of a listing seeds, and never for a search crawl.
+        // Only the first page of a listing seeds, never a search crawl's, and a count only ahead (`RecentListings`).
         let seeding = match &self.thumbnails {
             Some(thumbnails) if offset == 0 => {
                 if caller::is_search_crawl(request.pid()) {
@@ -721,20 +951,25 @@ where
                     None
                 } else {
                     let folders: Vec<PathBuf> = thumbnails.mount_points.iter().map(|root| root.join(&folder_path)).collect();
-                    Some((thumbnails.seeder.clone(), folders))
+                    Some((thumbnails.seeder.clone(), folders, self.recent_listings.is_count(&folder_path), self.counted.clone()))
                 }
             }
             _ => None,
         };
         let patience = self.listing_patience.clone();
+        let recent_listings = self.recent_listings.clone();
         self.spawn(async move {
+            let started = std::time::Instant::now();
             // Listing and seeding share the request: under a kernel limit each gets half of it.
             let entries: Vec<Entry> = match list_detached(tree, key.clone(), within(LISTING_DEADLINE, 2), &patience).await {
                 Ok(Ok(entries)) => entries,
                 Ok(Err(error)) => return reply.error(errno_for(&error)),
                 Err(_) => return reply.error(Errno::EIO),
             };
-            if let Some((seeder, folders)) = seeding {
+            let listed = started.elapsed();
+            recent_listings.ended(&folder_path, seeding.as_ref().is_some_and(|(_, _, count, _)| *count));
+            let mut seeded = "nothing to seed".to_string();
+            if let Some((seeder, folders, count, counted)) = seeding {
                 // Each path is an Appearance to the seeder: one server thumbnail, a seed for each.
                 let files: Vec<SeedFile> = folders
                     .iter()
@@ -747,10 +982,30 @@ where
                         })
                     })
                     .collect();
-                if !files.is_empty() {
+                if count {
+                    seeded = format!("a count: {} thumbnail paths to seed ahead", files.len());
+                    seeder.seed_ahead(files.clone());
+                    counted.counted(key.clone(), files);
+                } else if !files.is_empty() {
+                    let paths = files.len();
+                    let seeding = seeder.seed(files);
+                    let (finished, mut done) = tokio::sync::watch::channel(false);
+                    tokio::spawn(async move {
+                        let _ = seeding.await;
+                        let _ = finished.send(true);
+                    });
+                    counted.visited(&key, done.clone());
                     // Past the budget the listing answers anyway; the seeding task carries on.
-                    let _ = tokio::time::timeout(within(SEEDING_BUDGET, 2), seeder.seed(files)).await;
+                    let _ = tokio::time::timeout(within(SEEDING_BUDGET, 2), done.wait_for(|finished| *finished)).await;
+                    seeded = format!("{paths} thumbnail paths seeded in {} ms", (started.elapsed() - listed).as_millis());
                 }
+            }
+            let took = started.elapsed();
+            let report = format!("{} opened in {} ms: {} entries listed in {} ms, {seeded}", folder_path.display(), took.as_millis(), entries.len(), listed.as_millis());
+            if took >= SLOW_FOLDER {
+                log::info!("{report}");
+            } else {
+                log::debug!("{report}");
             }
             let mut listing: Listing = vec![
                 (inode.0, FileType::Directory, ".".to_string()),
@@ -1032,10 +1287,20 @@ where
             _ => false,
         };
         let searchable = matches!(record.kind, EntryKind::Folder);
-        if (mask.contains(AccessFlags::W_OK) && !writable) || (mask.contains(AccessFlags::X_OK) && !searchable) {
-            return reply.error(Errno::EACCES);
+        let allowed = !((mask.contains(AccessFlags::W_OK) && !writable) || (mask.contains(AccessFlags::X_OK) && !searchable));
+        // A file of a folder taken for a count, being shown after all: its seeds first (`Counted`).
+        if let (MountNode::Tree(NodeKey::Asset { parent, .. }), Some(thumbnails)) = (&record.node, &self.thumbnails) {
+            if self.counted.holds(parent) {
+                let (counted, seeder, folder) = (self.counted.clone(), thumbnails.seeder.clone(), (**parent).clone());
+                return self.spawn(async move {
+                    if let Some(mut done) = counted.promote(&folder, &seeder) {
+                        let _ = tokio::time::timeout(within(SEEDING_BUDGET, 1), done.wait_for(|finished| *finished)).await;
+                    }
+                    if allowed { reply.ok() } else { reply.error(Errno::EACCES) }
+                });
+            }
         }
-        reply.ok();
+        if allowed { reply.ok() } else { reply.error(Errno::EACCES) }
     }
 
     /// No ioctls: KIO asks for the filesystem's label (`FS_IOC_GETFSLABEL`) when it copies, and takes no for an answer.
@@ -1220,8 +1485,33 @@ mod tests {
     use super::*;
 
     #[test]
+    fn a_folder_is_prefetched_once_three_of_its_files_are_peeked() {
+        let watch = PeekWatch::default();
+        let folder = NodeKey::Root;
+        assert!(!watch.note(&folder, "a"));
+        assert!(!watch.note(&folder, "a"), "one file peeked again is no series");
+        assert!(!watch.note(&folder, "b"));
+        assert!(watch.note(&folder, "c"));
+        assert!(!watch.note(&folder, "d"), "a folder is prefetched once");
+    }
+
+    #[test]
+    fn a_subfolder_listed_right_after_its_parent_is_a_count() {
+        let recent = RecentListings::default();
+        assert!(!recent.is_count(Path::new("Photos/2024")), "its parent was not listed");
+        recent.ended(Path::new("Photos/2024"), false);
+        assert!(!recent.is_count(Path::new("Photos/2024/01 January")), "no sibling listed: one subfolder opened");
+        recent.ended(Path::new("Photos/2024/01 January"), false);
+        assert!(recent.is_count(Path::new("Photos/2024/03 March")), "a counter lists them one after another");
+        recent.ended(Path::new("Photos/2024/03 March"), true);
+        assert!(recent.is_count(Path::new("Photos/2024/04 April")));
+        assert!(!recent.is_count(Path::new("Photos/2024/03 March")), "listed again at once: opened");
+        assert!(!recent.is_count(Path::new("")), "the root has no parent");
+    }
+
+    #[test]
     fn only_names_that_never_name_an_asset_are_remembered_as_absent() {
-        for probe in [".directory", ".hidden", ".Trash-1000", "autorun.inf", "desktop.ini", "Thumbs.db"] {
+        for probe in [".directory", ".hidden", ".Trash-1000", "autorun.inf", "desktop.ini", "Thumbs.db", "title.tik", "code"] {
             assert!(is_probe_name(probe), "{probe}");
         }
         for asset in ["2024-03-15 14.32.07.jpg", "IMG_1234.JPG", "2023 - Summer trip", ".Private", ".hidden photo.jpg"] {

@@ -241,7 +241,7 @@ fn copies_are_ordinary_files_and_access_says_what_the_mount_allows() {
 
 #[test]
 #[ignore = "needs /dev/fuse and fusermount3"]
-fn a_peek_fetches_only_what_it_reads() {
+fn a_peek_fetches_the_edges_once() {
     use std::os::unix::fs::FileExt;
     let mounted = Mounted::new();
     let photo = std::fs::File::open(mounted.month().join("2024-03-15 14.32.09.jpg")).unwrap();
@@ -254,7 +254,7 @@ fn a_peek_fetches_only_what_it_reads() {
     let fetched = mounted.library.fetched.load(std::sync::atomic::Ordering::SeqCst);
     assert!(fetched < 256 * 1024, "a peek fetched {fetched} bytes of a {size}-byte original");
     // A photo under one block, looked at three times with its pages gone from memory in between (it is in a month
-    // and an album, or the folder is opened again later): each look a peek, never the original.
+    // and an album, or the folder is opened again later): its start and end fetched once, never the original.
     drop(photo);
     let medium = mounted.month().join("2024-03-15 14.32.08.jpg");
     for _ in 0..3 {
@@ -265,7 +265,7 @@ fn a_peek_fetches_only_what_it_reads() {
         photo.read_at(&mut page, size - 4096).unwrap();
     }
     let again = mounted.library.fetched.load(std::sync::atomic::Ordering::SeqCst) - fetched;
-    assert!(again < 3 * 128 * 1024, "three peeks at a 900 KB photo fetched {again} bytes");
+    assert_eq!(again, (64 + 16) * 1024, "three peeks at a 900 KB photo fetch its edges once");
 }
 
 #[test]

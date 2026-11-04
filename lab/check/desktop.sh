@@ -337,8 +337,8 @@ PYTHON
 export -f thumbnail_report
 
 # A peek is cheap: each file's first 8 KiB and last 4 KiB, as rom-properties reads every file of a folder its file
-# manager shows, cost a few small range requests, not the original (ARCHITECTURE.md, "Peeks fetch only their own
-# range"). The page cache is dropped first, so the reads reach the daemon.
+# manager shows, cost the file's start and end (two small range requests, kept), not the original (ARCHITECTURE.md,
+# "Peeks are served from the edges"). The page cache is dropped first, so the reads reach the daemon.
 check_peek() {
   local files=() before after count growth
   mapfile -t files < <(find "$peek_month" -maxdepth 1 -type f | sort)

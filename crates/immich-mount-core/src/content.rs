@@ -10,6 +10,9 @@
 //! - Every block carries the version of the original it came from (its ETag). A block of another version means the
 //!   original was replaced on the server: the old blocks are dropped, so a file never mixes the two, and a read
 //!   that overlapped the change reads again.
+//! - Peeks are served from an Asset's edges, `<id>.edges`: the start and end of the original, fetched together the
+//!   first time a program peeks at either, and for a whole folder once a program peeks at its files one after
+//!   another (`prefetch_edges`).
 //!
 //! Read-ahead comes on top of this (ROADMAP.md, M2).
 
@@ -78,6 +81,10 @@ pub struct BlockCache<Source> {
     read_ahead: Mutex<HashMap<String, SequentialRun>>,
     /// Read-ahead fetches at once. Small, so reads someone is waiting for go first.
     read_ahead_budget: Arc<tokio::sync::Semaphore>,
+    /// One gate per Asset whose edges are being fetched, so concurrent peeks wait for a single fetch.
+    edge_gates: Mutex<HashMap<String, Arc<tokio::sync::Mutex<()>>>>,
+    /// Edge fetches at once for prefetches; a peek someone is waiting for does not wait for these.
+    edge_prefetches: Arc<tokio::sync::Semaphore>,
     /// Bytes of originals fetched from the server, and in how many requests, since the cache was made.
     fetched_bytes: std::sync::atomic::AtomicU64,
     fetch_requests: std::sync::atomic::AtomicU64,
@@ -97,17 +104,102 @@ struct SequentialRun {
 }
 
 /// Read-ahead starts only after this much sequential reading, so a program peeking at a file's header (a type
-/// sniffer, a thumbnailer) never pulls more than it reads (principle 2).
+/// sniffer, a thumbnailer) never pulls a block, let alone the original (principle 2).
 const READ_AHEAD_AFTER: u64 = 2 * BLOCK_SIZE;
-/// A read into bytes the cache does not hold fetches just its own range, cached nowhere, while the run of reads it
-/// belongs to stays within this much: a program peeking at every file of a folder (rom-properties, which Bazzite's
-/// file managers load, reads each file's first 8 KiB and its last page) then costs a few small range requests per
-/// file instead of whole blocks, which for most photos are the whole original. The kernel's own read-ahead after a
-/// peek (16 to 48 KiB) stays within it; a copy or a viewer passes it at its first or second read.
+/// A read into bytes the cache does not hold is a peek while the run of reads it belongs to stays within this much:
+/// it is served from the Asset's edges (its first `HEAD_BYTES` and last `TAIL_BYTES`), or fetches just its own range,
+/// never whole blocks, which for most photos are the whole original. A program peeking at every file of a folder
+/// (rom-properties, which Bazzite's file managers load, reads each file's first 8 KiB and its last page) then costs
+/// two small requests per file, once. The kernel's own read-ahead after a peek (16 to 48 KiB) stays within it; a copy
+/// or a viewer passes it at its first or second read.
 const PEEK_LIMIT: u64 = 64 * 1024;
 /// The read-ahead window, in blocks: it starts at 2 and doubles up to 16 (32 MiB).
 const READ_AHEAD_MIN: u64 = 2;
 const READ_AHEAD_MAX: u64 = 16;
+/// How much of an original's start its edges keep: a peek at a file's first 8 KiB reaches the daemon as its first
+/// 48 KiB, after the kernel's own read-ahead.
+const HEAD_BYTES: u64 = PEEK_LIMIT;
+/// How much of an original's end its edges keep: the last page, with room to spare.
+const TAIL_BYTES: u64 = 16 * 1024;
+/// Files whose edges a folder's prefetch fetches at once (two requests each).
+const PARALLEL_EDGE_PREFETCHES: usize = 8;
+/// The most files one prefetch fetches the edges of, 80 MB: a folder of files holds fewer with the default date
+/// groups (`grouping`), and a program peeking at more reads the rest itself.
+const MOST_PREFETCHED: usize = 1000;
+
+/// The lengths of an original's edges, its start and its end; a file too small to part is kept whole as its start.
+fn edge_lengths(total_size: u64) -> (u64, u64) {
+    if total_size <= HEAD_BYTES + TAIL_BYTES {
+        (total_size, 0)
+    } else {
+        (HEAD_BYTES, TAIL_BYTES)
+    }
+}
+
+/// Which original an Asset's edges file holds the start and end of.
+#[derive(Debug, Clone, PartialEq, Eq)]
+struct Edges {
+    size: u64,
+    /// The original's version (its ETag), when the server sent one.
+    version: Option<String>,
+}
+
+impl Edges {
+    /// The bytes the edges hold.
+    fn length(&self) -> u64 {
+        let (head, tail) = edge_lengths(self.size);
+        head + tail
+    }
+
+    /// The first line of an edges file: what it holds, and a checksum of the bytes after it.
+    fn header(&self, payload: &[u8]) -> String {
+        let (head, tail) = edge_lengths(self.size);
+        format!("edges {} {head} {tail} {:016x} {}\n", self.size, fnv1a(payload), self.version.as_deref().unwrap_or("-"))
+    }
+
+    /// The edges and the checksum a header line names, if it is one this version writes.
+    fn parse_header(line: &str) -> Option<(Edges, u64)> {
+        let mut fields = line.trim_end_matches('\n').splitn(6, ' ');
+        if fields.next()? != "edges" {
+            return None;
+        }
+        let size: u64 = fields.next()?.parse().ok()?;
+        let head: u64 = fields.next()?.parse().ok()?;
+        let tail: u64 = fields.next()?.parse().ok()?;
+        let checksum = u64::from_str_radix(fields.next()?, 16).ok()?;
+        let version = match fields.next()? {
+            "-" => None,
+            version => Some(version.to_owned()),
+        };
+        ((head, tail) == edge_lengths(size)).then_some((Edges { size, version }, checksum))
+    }
+}
+
+/// FNV-1a, 64-bit: tells a torn edges file from a whole one. Edges files are not synced, since a torn one is merely
+/// fetched again.
+fn fnv1a(bytes: &[u8]) -> u64 {
+    bytes.iter().fold(0xcbf2_9ce4_8422_2325, |hash, byte| (hash ^ u64::from(*byte)).wrapping_mul(0x0000_0100_0000_01b3))
+}
+
+/// An edges file's record and the bytes after its header, if the file is whole.
+fn read_edges_file(path: &Path) -> Option<(Edges, Vec<u8>)> {
+    let mut contents = std::fs::read(path).ok()?;
+    let newline = contents.iter().position(|byte| *byte == b'\n')?;
+    let (edges, checksum) = Edges::parse_header(std::str::from_utf8(&contents[..newline]).ok()?)?;
+    let payload = contents.split_off(newline + 1);
+    (payload.len() as u64 == edges.length() && fnv1a(&payload) == checksum).then_some((edges, payload))
+}
+
+/// An edges file's record, from its header alone, if the file has the length the header promises.
+fn edges_file_record(path: &Path) -> Option<Edges> {
+    use std::io::{BufRead, Read};
+    let file = File::open(path).ok()?;
+    let length = file.metadata().ok()?.len();
+    let mut header = String::new();
+    std::io::BufReader::new(file).take(512).read_line(&mut header).ok()?;
+    let (edges, _) = Edges::parse_header(&header)?;
+    (length == header.len() as u64 + edges.length()).then_some(edges)
+}
 
 /// What the cache holds, kept in step with the files.
 #[derive(Default)]
@@ -137,13 +229,17 @@ struct CachedAsset {
     generation: u64,
     /// The generation at the last open, so the next open can tell whether the kernel's pages are still good.
     opened_generation: Option<u64>,
+    /// The original whose start and end the edges file holds, if there is one. Its bytes count in `bytes`.
+    edges: Option<Edges>,
 }
 
 impl CachedAsset {
-    /// Forget the blocks of an outdated original; returns the bytes they held.
+    /// Forget the blocks and edges of an outdated original; returns the bytes they held. The caller removes the
+    /// edges file (`BlockCache::drop_outdated`).
     fn drop_blocks(&mut self) -> u64 {
         let dropped = self.bytes;
         self.blocks.clear();
+        self.edges = None;
         self.bytes = 0;
         self.generation += 1;
         self.rewrite = true;
@@ -192,6 +288,8 @@ impl<Source: ContentSource> BlockCache<Source> {
             writes: Mutex::new(HashMap::new()),
             read_ahead: Mutex::new(HashMap::new()),
             read_ahead_budget: Arc::new(tokio::sync::Semaphore::new(2)),
+            edge_gates: Mutex::new(HashMap::new()),
+            edge_prefetches: Arc::new(tokio::sync::Semaphore::new(PARALLEL_EDGE_PREFETCHES)),
             fetched_bytes: Default::default(),
             fetch_requests: Default::default(),
         };
@@ -246,7 +344,7 @@ impl<Source: ContentSource> BlockCache<Source> {
             if let Some(entry) = state.entries.remove(&asset_id) {
                 state.bytes -= entry.bytes;
             }
-            for path in [self.map_path(&asset_id), self.data_path(&asset_id)] {
+            for path in [self.map_path(&asset_id), self.data_path(&asset_id), self.edges_path(&asset_id)] {
                 let _ = std::fs::remove_file(path);
             }
         }
@@ -267,6 +365,9 @@ impl<Source: ContentSource> BlockCache<Source> {
             && self.is_peek(asset_id, offset, end - offset)
             && !(first_block..=last_block).all(|block| self.is_present(asset_id, block))
         {
+            if let Some(bytes) = self.read_from_edges(asset_id, total_size, offset, end).await? {
+                return Ok(bytes);
+            }
             let RangeBytes { bytes, .. } = self.source.read_range(asset_id, offset, end - 1).await?;
             self.count_fetch(bytes.len());
             if bytes.len() as u64 != end - offset {
@@ -325,7 +426,7 @@ impl<Source: ContentSource> BlockCache<Source> {
         match entry.size {
             Some(size) if size != total_size => {
                 log::info!("the original of {asset_id} changed size on the server; its cached blocks are dropped");
-                *bytes -= entry.drop_blocks();
+                *bytes -= self.drop_outdated(asset_id, entry);
                 entry.size = Some(total_size);
             }
             None => entry.size = Some(total_size),
@@ -351,6 +452,202 @@ impl<Source: ContentSource> BlockCache<Source> {
     /// again once its pages left memory).
     pub fn forget_run(&self, asset_id: &str) {
         self.read_ahead.lock().expect("read-ahead lock").remove(asset_id);
+    }
+
+    /// Whether a read about to be made is a peek (`PEEK_LIMIT`), which the caller watches for a program peeking at
+    /// a folder's files one after another (`prefetch_edges`).
+    pub fn is_peek_read(&self, asset_id: &str, total_size: u64, offset: u64, length: u32) -> bool {
+        total_size > PEEK_LIMIT && offset < total_size && self.is_peek(asset_id, offset, u64::from(length))
+    }
+
+    /// Fetch the edges of a folder's files in the background, in the folder's order and a few at a time: a program
+    /// that peeks at every file of a folder from its main thread (rom-properties, in Bazzite's file managers) then
+    /// finds the bytes on disk instead of waiting for the server once per file. Files whose edges, or first and last
+    /// blocks, are cached already are skipped; a peek at a file not reached yet fetches its edges itself.
+    pub fn prefetch_edges(self: &Arc<Self>, files: Vec<(String, u64)>)
+    where
+        Source: 'static,
+    {
+        let cache = self.clone();
+        tokio::spawn(async move {
+            let mut fetches = tokio::task::JoinSet::new();
+            'files: for (asset_id, total_size) in files.into_iter().take(MOST_PREFETCHED) {
+                if total_size <= PEEK_LIMIT
+                    || cache.current_edges(&asset_id, total_size).is_some()
+                    || (cache.is_present(&asset_id, 0) && cache.is_present(&asset_id, (total_size - 1) / BLOCK_SIZE))
+                {
+                    continue;
+                }
+                // Taken in order, so the files are fetched in the order the program reads them.
+                let Ok(permit) = cache.edge_prefetches.clone().acquire_owned().await else { return };
+                let cache = cache.clone();
+                fetches.spawn(async move {
+                    let _permit = permit;
+                    let _pin = cache.pin(&asset_id);
+                    cache.check_size(&asset_id, total_size);
+                    match cache.ensure_edges(&asset_id, total_size).await {
+                        Ok(()) | Err(SourceError::NotFound | SourceError::Changed) => true,
+                        Err(error) => {
+                            log::debug!("prefetching the edges of {asset_id} failed: {error}");
+                            false
+                        }
+                    }
+                });
+                // The server stopped answering: the rest would fail too. The fetches under way finish.
+                while let Some(outcome) = fetches.try_join_next() {
+                    if !outcome.unwrap_or(false) {
+                        break 'files;
+                    }
+                }
+            }
+            while fetches.join_next().await.is_some() {}
+        });
+    }
+
+    /// The Asset's edges, if it has them for an original of `total_size` bytes that its blocks do not contradict.
+    fn current_edges(&self, asset_id: &str, total_size: u64) -> Option<Edges> {
+        let state = self.state.lock().expect("cache state lock");
+        let entry = state.entries.get(asset_id)?;
+        let edges = entry.edges.as_ref().filter(|edges| edges.size == total_size)?;
+        let contradicted = entry.version.as_ref().zip(edges.version.as_ref()).is_some_and(|(blocks, edges)| blocks != edges);
+        (!contradicted).then(|| edges.clone())
+    }
+
+    /// Bytes `offset..end` of a peek from the Asset's edges, which are fetched first if missing. `None` when the range
+    /// is not within them, or they could not be read: the peek then fetches its own range.
+    async fn read_from_edges(&self, asset_id: &str, total_size: u64, offset: u64, end: u64) -> Result<Option<Vec<u8>>, SourceError> {
+        let (head, tail) = edge_lengths(total_size);
+        let tail_start = total_size - tail;
+        let start_in_edges = if end <= head {
+            offset
+        } else if tail > 0 && offset >= tail_start {
+            head + offset - tail_start
+        } else {
+            return Ok(None);
+        };
+        self.ensure_edges(asset_id, total_size).await?;
+        let Some(wanted) = self.current_edges(asset_id, total_size) else { return Ok(None) };
+        let path = self.edges_path(asset_id);
+        let read = tokio::task::spawn_blocking(move || read_edges_file(&path)).await.ok().flatten();
+        match read {
+            // Still the same edges once read: a change of the original during the read would have dropped them.
+            Some((edges, payload)) if edges == wanted && self.current_edges(asset_id, total_size).as_ref() == Some(&wanted) => {
+                Ok(Some(payload[start_in_edges as usize..(start_in_edges + end - offset) as usize].to_vec()))
+            }
+            _ => {
+                log::debug!("the edges of {asset_id} could not be read; they will be fetched again");
+                self.forget_edges(asset_id, &wanted);
+                Ok(None)
+            }
+        }
+    }
+
+    /// Forget an Asset's edges when they are the ones given (torn on disk, say).
+    fn forget_edges(&self, asset_id: &str, edges: &Edges) {
+        let mut state = self.state.lock().expect("cache state lock");
+        let CacheState { entries, bytes, .. } = &mut *state;
+        if let Some(entry) = entries.get_mut(asset_id).filter(|entry| entry.edges.as_ref() == Some(edges)) {
+            entry.edges = None;
+            entry.bytes -= edges.length();
+            *bytes -= edges.length();
+            let _ = std::fs::remove_file(self.edges_path(asset_id));
+        }
+    }
+
+    /// Make sure the Asset has edges for an original of `total_size` bytes, fetching them once however many peeks
+    /// wait for them.
+    async fn ensure_edges(&self, asset_id: &str, total_size: u64) -> Result<(), SourceError> {
+        if self.current_edges(asset_id, total_size).is_some() {
+            return Ok(());
+        }
+        let gate = self.edge_gates.lock().expect("edge gates lock").entry(asset_id.to_string()).or_default().clone();
+        let _turn = gate.lock().await;
+        if self.current_edges(asset_id, total_size).is_some() {
+            return Ok(());
+        }
+        let fetched = self.fetch_edges(asset_id, total_size).await;
+        // The gate's work is done, whatever the outcome; failed edges are asked for afresh.
+        self.edge_gates.lock().expect("edge gates lock").remove(asset_id);
+        fetched?;
+        self.evict_over_limit();
+        Ok(())
+    }
+
+    /// Fetch an original's start and end at once, and keep them as the Asset's edges file.
+    async fn fetch_edges(&self, asset_id: &str, total_size: u64) -> Result<(), SourceError> {
+        let (head_length, tail_length) = edge_lengths(total_size);
+        let head = self.source.read_range(asset_id, 0, head_length - 1);
+        let (head, tail) = if tail_length == 0 {
+            (head.await?, None)
+        } else {
+            let (head, tail) = futures_util::future::join(head, self.source.read_range(asset_id, total_size - tail_length, total_size - 1)).await;
+            (head?, Some(tail?))
+        };
+        self.count_fetch(head.bytes.len());
+        if let Some(tail) = &tail {
+            self.count_fetch(tail.bytes.len());
+        }
+        let tail_bytes = tail.as_ref().map_or(0, |tail| tail.bytes.len() as u64);
+        if head.bytes.len() as u64 != head_length || tail_bytes != tail_length {
+            log::info!("the edges of {asset_id} came back shorter than its listed size allows; the original changed");
+            return Err(SourceError::Changed);
+        }
+        if tail.as_ref().is_some_and(|tail| tail.version != head.version) {
+            log::info!("the original of {asset_id} changed on the server between its start and its end");
+            return Err(SourceError::Changed);
+        }
+        let edges = Edges { size: total_size, version: head.version.clone() };
+        let mut payload = head.bytes;
+        if let Some(tail) = tail {
+            payload.extend_from_slice(&tail.bytes);
+        }
+        let write_gate = self.writes.lock().expect("write gates lock").entry(asset_id.to_string()).or_default().clone();
+        let writing = write_gate.lock().await;
+        {
+            let mut state = self.state.lock().expect("cache state lock");
+            let CacheState { entries, bytes, .. } = &mut *state;
+            let entry = entries.entry(asset_id.to_string()).or_default();
+            // The listing gave another size meanwhile: these edges are of an original no longer listed.
+            if entry.size.is_some_and(|size| size != total_size) {
+                return Ok(());
+            }
+            // Newer than the cached blocks: those go, map and all, so a restart cannot bring them back.
+            if entry.version.as_ref().zip(edges.version.as_ref()).is_some_and(|(blocks, fetched)| blocks != fetched) {
+                log::info!("the original of {asset_id} changed on the server; its cached blocks are dropped");
+                *bytes -= self.drop_outdated(asset_id, entry);
+                let _ = std::fs::remove_file(self.map_path(asset_id));
+                let _ = std::fs::remove_file(self.data_path(asset_id));
+            }
+        }
+        let path = self.edges_path(asset_id);
+        let header = edges.header(&payload);
+        tokio::task::spawn_blocking(move || {
+            let temporary = path.with_extension("edges.tmp");
+            let mut file = OpenOptions::new().create(true).write(true).truncate(true).mode(0o600).open(&temporary)?;
+            file.write_all(header.as_bytes())?;
+            file.write_all(&payload)?;
+            drop(file);
+            std::fs::rename(&temporary, &path)
+        })
+        .await
+        .map_err(|error| SourceError::Protocol(format!("cache write: {error}")))?
+        .map_err(|error| SourceError::Protocol(format!("cache edges: {error}")))?;
+        {
+            let mut state = self.state.lock().expect("cache state lock");
+            let CacheState { entries, bytes, .. } = &mut *state;
+            let entry = entries.entry(asset_id.to_string()).or_default();
+            if let Some(previous) = entry.edges.replace(edges.clone()) {
+                entry.bytes -= previous.length();
+                *bytes -= previous.length();
+            }
+            entry.size = Some(total_size);
+            entry.bytes += edges.length();
+            *bytes += edges.length();
+        }
+        drop(writing);
+        drop(write_gate);
+        self.writes.lock().expect("write gates lock").retain(|_, gate| Arc::strong_count(gate) > 1);
+        Ok(())
     }
 
     /// Whether a read of `length` bytes at `offset` is a peek (`PEEK_LIMIT`): small, and in a run of reads that
@@ -427,6 +724,19 @@ impl<Source: ContentSource> BlockCache<Source> {
 
     fn map_path(&self, asset_id: &str) -> PathBuf {
         self.directory.join(format!("{}.blocks", Self::file_stem(asset_id)))
+    }
+
+    fn edges_path(&self, asset_id: &str) -> PathBuf {
+        self.directory.join(format!("{}.edges", Self::file_stem(asset_id)))
+    }
+
+    /// Forget the blocks and edges of an outdated original (`CachedAsset::drop_blocks`), removing its edges file at
+    /// once: unlike the blocks, which the next write empties, nothing else would replace it. Returns the bytes held.
+    fn drop_outdated(&self, asset_id: &str, entry: &mut CachedAsset) -> u64 {
+        if entry.edges.is_some() {
+            let _ = std::fs::remove_file(self.edges_path(asset_id));
+        }
+        entry.drop_blocks()
     }
 
     /// Mark an Asset as being read, and as the most recently used.
@@ -528,9 +838,11 @@ impl<Source: ContentSource> BlockCache<Source> {
         let mut state = self.state.lock().expect("cache state lock");
         let CacheState { entries, bytes, .. } = &mut *state;
         let entry = entries.entry(asset_id.to_string()).or_default();
-        if entry.version.as_ref().zip(version.as_ref()).is_some_and(|(known, fetched)| known != fetched) {
+        // The blocks, or the edges when no block has a version yet: either way the file must not mix the two.
+        let known = entry.version.as_ref().or_else(|| entry.edges.as_ref().and_then(|edges| edges.version.as_ref()));
+        if known.zip(version.as_ref()).is_some_and(|(known, fetched)| known != fetched) {
             log::info!("the original of {asset_id} changed on the server; its cached blocks are dropped");
-            *bytes -= entry.drop_blocks();
+            *bytes -= self.drop_outdated(asset_id, entry);
         }
         let rewrite = std::mem::take(&mut entry.rewrite);
         let mut header = String::new();
@@ -565,7 +877,7 @@ impl<Source: ContentSource> BlockCache<Source> {
             if let Some(entry) = state.entries.remove(&asset_id) {
                 state.bytes -= entry.bytes;
             }
-            for path in [self.map_path(&asset_id), self.data_path(&asset_id)] {
+            for path in [self.map_path(&asset_id), self.data_path(&asset_id), self.edges_path(&asset_id)] {
                 if let Err(error) = std::fs::remove_file(&path) {
                     if error.kind() != std::io::ErrorKind::NotFound {
                         log::warn!("could not evict {}: {error}", path.display());
@@ -575,15 +887,34 @@ impl<Source: ContentSource> BlockCache<Source> {
         }
     }
 
-    /// Rebuild the state from the block maps, oldest first by modification time, then evict down to the limit.
+    /// Rebuild the state from the block maps and edges files, oldest first by modification time, then evict down to
+    /// the limit.
     fn load(&self) -> std::io::Result<()> {
-        let mut found: Vec<(std::time::SystemTime, String, CachedAsset)> = Vec::new();
+        let mut found: HashMap<String, (std::time::SystemTime, CachedAsset)> = HashMap::new();
+        let mut edges_found: Vec<(std::time::SystemTime, String, Edges)> = Vec::new();
         for item in std::fs::read_dir(&self.directory)? {
             let path = item?.path();
             let (Some(stem), Some(extension)) = (path.file_stem().and_then(|stem| stem.to_str()), path.extension()) else {
                 continue;
             };
             let asset_id = stem.to_string();
+            // An edges file a crash left half written.
+            if extension == "tmp" {
+                let _ = std::fs::remove_file(&path);
+                continue;
+            }
+            if extension == "edges" {
+                match edges_file_record(&path) {
+                    Some(edges) => {
+                        let modified = std::fs::metadata(&path)?.modified().unwrap_or(std::time::UNIX_EPOCH);
+                        edges_found.push((modified, asset_id, edges));
+                    }
+                    None => {
+                        let _ = std::fs::remove_file(&path);
+                    }
+                }
+                continue;
+            }
             if extension == "bin" && !self.map_path(&asset_id).exists() {
                 let _ = std::fs::remove_file(&path);
                 continue;
@@ -616,8 +947,25 @@ impl<Source: ContentSource> BlockCache<Source> {
                 }
             }
             let modified = std::fs::metadata(&path)?.modified().unwrap_or(std::time::UNIX_EPOCH);
-            found.push((modified, asset_id, entry));
+            found.insert(asset_id, (modified, entry));
         }
+        for (modified, asset_id, edges) in edges_found {
+            let (used, entry) = found.entry(asset_id.clone()).or_insert_with(|| (modified, CachedAsset::default()));
+            // Edges of another original than the blocks beside them are outdated, or the blocks are: the edges go,
+            // since only the blocks are checked against the server again.
+            let agrees = entry.size.is_none_or(|size| size == edges.size)
+                && !entry.version.as_ref().zip(edges.version.as_ref()).is_some_and(|(blocks, edges)| blocks != edges);
+            if !agrees {
+                let _ = std::fs::remove_file(self.edges_path(&asset_id));
+                continue;
+            }
+            *used = (*used).max(modified);
+            entry.size = Some(edges.size);
+            entry.bytes += edges.length();
+            entry.edges = Some(edges);
+        }
+        let mut found: Vec<(std::time::SystemTime, String, CachedAsset)> =
+            found.into_iter().map(|(asset_id, (modified, entry))| (modified, asset_id, entry)).collect();
         found.sort_by_key(|(modified, _, _)| *modified);
         {
             let mut state = self.state.lock().expect("cache state lock");
@@ -702,6 +1050,21 @@ mod tests {
         assert_eq!(restarted.used_bytes(), size, "the version and both blocks survive a restart");
     }
 
+    #[tokio::test]
+    async fn a_block_of_a_new_version_drops_the_edges_of_the_old() {
+        let directory = tempfile::tempdir().unwrap();
+        let size = BLOCK_SIZE * 2;
+        let cache = BlockCache::new(ReplacedSource { replaced: std::sync::atomic::AtomicBool::new(false) }, directory.path(), u64::MAX).unwrap();
+        assert_eq!(cache.read("asset", size, 0, 4096).await.unwrap()[..10], [1u8; 10], "a peek keeps the old edges");
+        cache.source.replaced.store(true, Ordering::SeqCst);
+        // A copy's first block comes from the new original: the old edges must not stand beside it.
+        assert_eq!(cache.read("asset", size, BLOCK_SIZE, BLOCK_READ).await.unwrap()[..10], [2u8; 10]);
+        assert_eq!(cache.generation("asset"), 1, "a change, so the kernel's pages of the old one go too");
+        assert!(!directory.path().join("asset.edges").exists());
+        cache.forget_run("asset");
+        assert_eq!(cache.read("asset", size, 0, 4096).await.unwrap()[..10], [2u8; 10]);
+    }
+
     fn original(length: usize) -> Vec<u8> {
         (0..length).map(|index| (index % 251) as u8).collect()
     }
@@ -720,30 +1083,35 @@ mod tests {
         assert!(cache.read("asset-1", size, size, 10).await.unwrap().is_empty());
     }
 
+    /// rom-properties' reads of one file after the kernel's read-ahead: the start, the last page, the start's
+    /// continuation.
+    fn rom_properties_reads(size: u64) -> [(u64, u32); 3] {
+        [(0, 16384), (size - 3000, 4096), (16384, 32768)]
+    }
+
     #[tokio::test]
-    async fn a_peek_fetches_its_own_range_and_a_run_fetches_blocks() {
+    async fn a_peek_is_served_from_the_edges_and_a_run_fetches_blocks() {
         let bytes = original((BLOCK_SIZE + 3000) as usize);
         let size = bytes.len() as u64;
         let directory = tempfile::tempdir().unwrap();
         let cache =
             Arc::new(BlockCache::new(CountingSource { bytes: bytes.clone(), requests: AtomicUsize::new(0) }, directory.path(), u64::MAX).unwrap());
-        // rom-properties' pattern after the kernel's read-ahead: the start, the last page, the start's continuation.
-        for (offset, length) in [(0, 16384), (size - 3000, 4096), (16384, 32768)] {
+        for (offset, length) in rom_properties_reads(size) {
             let read = cache.read("peeked", size, offset, length).await.unwrap();
             assert_eq!(read, bytes[offset as usize..(offset + u64::from(length)).min(size) as usize]);
             cache.read_ahead("peeked", size, offset, read.len() as u64);
         }
-        assert_eq!(cache.source.requests.load(Ordering::SeqCst), 3);
-        assert_eq!(cache.used_bytes(), 0, "a peek caches nothing");
-        assert_eq!(cache.fetched(), (16384 + 3000 + 32768, 3), "the counter sees what the server sent");
-        // Opened again, it is peeked again: the earlier reads do not add up with these.
+        assert_eq!(cache.source.requests.load(Ordering::SeqCst), 2, "the start and the end, fetched together once");
+        assert_eq!(cache.used_bytes(), HEAD_BYTES + TAIL_BYTES, "kept as the edges, no block");
+        assert_eq!(cache.fetched(), (HEAD_BYTES + TAIL_BYTES, 2), "the counter sees what the server sent");
+        // Opened again, it is peeked again, from the edges.
         cache.forget_run("peeked");
-        for (offset, length) in [(0, 16384), (size - 3000, 4096), (16384, 32768)] {
+        for (offset, length) in rom_properties_reads(size) {
             let read = cache.read("peeked", size, offset, length).await.unwrap();
+            assert_eq!(read, bytes[offset as usize..(offset + u64::from(length)).min(size) as usize]);
             cache.read_ahead("peeked", size, offset, read.len() as u64);
         }
-        assert_eq!(cache.source.requests.load(Ordering::SeqCst), 6);
-        assert_eq!(cache.used_bytes(), 0, "a second peek caches nothing either");
+        assert_eq!(cache.source.requests.load(Ordering::SeqCst), 2);
         // A copy goes on from there: past 64 KiB of run, whole blocks.
         cache.read("peeked", size, 49152, 131072).await.unwrap();
         assert!(cache.used_bytes() >= BLOCK_SIZE);
@@ -751,6 +1119,80 @@ mod tests {
         let before = cache.source.requests.load(Ordering::SeqCst);
         cache.read("peeked", size, 100, 512).await.unwrap();
         assert_eq!(cache.source.requests.load(Ordering::SeqCst), before);
+    }
+
+    #[tokio::test]
+    async fn edges_survive_a_restart_and_a_torn_file_is_fetched_again() {
+        let bytes = original((BLOCK_SIZE * 3) as usize);
+        let size = bytes.len() as u64;
+        let directory = tempfile::tempdir().unwrap();
+        let source = || CountingSource { bytes: bytes.clone(), requests: AtomicUsize::new(0) };
+        let cache = BlockCache::new(source(), directory.path(), u64::MAX).unwrap();
+        cache.read("photo", size, 0, 16384).await.unwrap();
+        drop(cache);
+        let restarted = BlockCache::new(source(), directory.path(), u64::MAX).unwrap();
+        assert_eq!(restarted.used_bytes(), HEAD_BYTES + TAIL_BYTES);
+        for (offset, length) in rom_properties_reads(size) {
+            let read = restarted.read("photo", size, offset, length).await.unwrap();
+            assert_eq!(read, bytes[offset as usize..(offset + u64::from(length)).min(size) as usize]);
+        }
+        assert_eq!(restarted.source.requests.load(Ordering::SeqCst), 0, "served from the kept edges");
+        // A torn file (no fsync is spent on them) fails its checksum, and is fetched again.
+        let path = directory.path().join("photo.edges");
+        let mut torn = std::fs::read(&path).unwrap();
+        let last = torn.len() - 1;
+        torn[last] ^= 0xff;
+        std::fs::write(&path, torn).unwrap();
+        let read = restarted.read("photo", size, size - 100, 100).await.unwrap();
+        assert_eq!(read, bytes[bytes.len() - 100..]);
+        assert_eq!(restarted.read("photo", size, size - 100, 100).await.unwrap(), bytes[bytes.len() - 100..]);
+        assert_eq!(restarted.source.requests.load(Ordering::SeqCst), 3, "one plain peek, then the edges again");
+        assert_eq!(restarted.used_bytes(), HEAD_BYTES + TAIL_BYTES);
+    }
+
+    #[tokio::test]
+    async fn a_new_size_drops_the_edges_and_eviction_takes_them() {
+        let directory = tempfile::tempdir().unwrap();
+        let bytes = original((BLOCK_SIZE * 2) as usize);
+        let cache = BlockCache::new(CountingSource { bytes, requests: AtomicUsize::new(0) }, directory.path(), u64::MAX).unwrap();
+        cache.read("photo", BLOCK_SIZE, 0, 4096).await.unwrap();
+        assert!(directory.path().join("photo.edges").exists());
+        // The listing gives another size: the original was replaced, and its edges go with its blocks.
+        cache.read("photo", BLOCK_SIZE * 2, 0, BLOCK_READ).await.unwrap();
+        assert!(!directory.path().join("photo.edges").exists());
+        assert_eq!(cache.used_bytes(), BLOCK_SIZE);
+        cache.read("other", BLOCK_SIZE * 2, 0, 4096).await.unwrap();
+        cache.clear();
+        assert_eq!(cache.used_bytes(), 0);
+        assert!(!directory.path().join("other.edges").exists());
+    }
+
+    #[tokio::test]
+    async fn a_folder_prefetch_fetches_each_files_edges_once() {
+        let bytes = original((BLOCK_SIZE + 5000) as usize);
+        let size = bytes.len() as u64;
+        let directory = tempfile::tempdir().unwrap();
+        let cache =
+            Arc::new(BlockCache::new(CountingSource { bytes: bytes.clone(), requests: AtomicUsize::new(0) }, directory.path(), u64::MAX).unwrap());
+        let files: Vec<(String, u64)> = (0..20).map(|index| (format!("photo-{index}"), size)).chain([("small".to_string(), 1000)]).collect();
+        cache.prefetch_edges(files.clone());
+        // Peeks while the prefetch runs wait for it, or fetch their own file's edges; either way once per file.
+        for (asset_id, _) in files.iter().take(20) {
+            for (offset, length) in rom_properties_reads(size) {
+                let read = cache.read(asset_id, size, offset, length).await.unwrap();
+                assert_eq!(read, bytes[offset as usize..(offset + u64::from(length)).min(size) as usize]);
+            }
+        }
+        for _ in 0..100 {
+            if cache.edge_prefetches.available_permits() == PARALLEL_EDGE_PREFETCHES {
+                break;
+            }
+            tokio::time::sleep(std::time::Duration::from_millis(10)).await;
+        }
+        assert_eq!(cache.source.requests.load(Ordering::SeqCst), 40, "two requests per photo; the small file is left to its reads");
+        cache.prefetch_edges(files);
+        tokio::time::sleep(std::time::Duration::from_millis(50)).await;
+        assert_eq!(cache.source.requests.load(Ordering::SeqCst), 40, "a folder seen before costs nothing");
     }
 
     #[tokio::test]
@@ -765,12 +1207,12 @@ mod tests {
     }
 
     #[tokio::test]
-    async fn reading_the_header_of_a_large_file_fetches_one_block() {
+    async fn reading_the_header_of_a_large_file_fetches_only_its_edges() {
         let bytes = original((BLOCK_SIZE * 5) as usize);
         let directory = tempfile::tempdir().unwrap();
         let cache = BlockCache::new(CountingSource { bytes, requests: AtomicUsize::new(0) }, directory.path(), u64::MAX).unwrap();
         cache.read("video", BLOCK_SIZE * 5, 0, 65536).await.unwrap();
-        assert_eq!(cache.source.requests.load(Ordering::SeqCst), 1);
+        assert_eq!(cache.fetched(), (HEAD_BYTES + TAIL_BYTES, 2));
     }
 
     #[tokio::test]

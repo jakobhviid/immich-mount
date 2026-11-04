@@ -17,17 +17,26 @@ use chrono::{DateTime, Utc};
 use immich_mount_core::source::{SourceError, ThumbnailKind, ThumbnailSource};
 use tokio::sync::Semaphore;
 
-use crate::thumbnails::{file_uri, remove_thumbnails, render_png, thumbnail_path, write_thumbnail, Bucket};
+use crate::thumbnails::{decode, encode_png, file_uri, remove_thumbnails, scale_for, thumbnail_path, write_thumbnail, Bucket};
 
-/// How many small thumbnails are fetched at once. A listing waits for these.
+/// How many small thumbnails are fetched at once for a folder being shown. Its listing waits for these.
 const PARALLEL_SMALL_FETCHES: usize = 12;
 /// How many previews are fetched at once, in the background. Their own budget, so they never hold up a listing.
 const PARALLEL_PREVIEW_FETCHES: usize = 4;
+/// How many previews are rendered at once. They come after the folder is shown, while the file manager draws it and
+/// its plugins read it, so they never take more than this of the CPU.
+const PARALLEL_PREVIEW_RENDERS: usize = 2;
+/// How many small thumbnails are fetched, and rendered, at once for folders seeded ahead (`Seeder::seed_ahead`).
+const PARALLEL_AHEAD_FETCHES: usize = 4;
+const PARALLEL_AHEAD_RENDERS: usize = 1;
 
 /// The ledger of seeded URIs, in the account's cache directory.
 const LEDGER_FILE: &str = "seeded-thumbnails";
 /// Server thumbnails by Asset id, in the account's cache directory.
 const SERVER_THUMBNAILS_DIRECTORY: &str = "server-thumbnails";
+
+/// The paths one Asset appears at in a folder being seeded, each with the buckets it lacks.
+type Appearances = Vec<(SeedFile, Vec<Bucket>)>;
 
 /// A file to seed: where it appears in the mount, which Asset it is, and its mtime.
 #[derive(Debug, Clone)]
@@ -49,6 +58,23 @@ async fn small_buckets() -> Vec<Bucket> {
     }
 }
 
+/// One kind of seeding work, with its own budgets, so a slower kind never holds up a faster one.
+#[derive(Debug, Clone, Copy)]
+enum Lane {
+    /// Small seeds for a folder being shown, which its listing waits for.
+    Shown,
+    /// Small seeds for a folder a file manager is counting the items of, in the background.
+    Ahead,
+    /// Sharp seeds from previews, in the background.
+    Sharp,
+}
+
+/// How many server thumbnails a lane fetches at once, and how many it renders.
+struct Budget {
+    fetches: Semaphore,
+    renders: Semaphore,
+}
+
 /// Writes seeds for one account.
 pub struct Seeder<Thumbs> {
     source: Arc<Thumbs>,
@@ -57,8 +83,11 @@ pub struct Seeder<Thumbs> {
     ledger_path: PathBuf,
     ledger_lock: Mutex<()>,
     sharp: bool,
-    small_fetches: Semaphore,
-    preview_fetches: Semaphore,
+    shown: Budget,
+    ahead: Budget,
+    sharp_budget: Budget,
+    /// One gate per server thumbnail being fetched, so lanes wanting the same one at once fetch it once.
+    fetch_gates: Mutex<HashMap<PathBuf, Arc<tokio::sync::Mutex<()>>>>,
 }
 
 impl<Thumbs: ThumbnailSource + 'static> Seeder<Thumbs> {
@@ -72,9 +101,23 @@ impl<Thumbs: ThumbnailSource + 'static> Seeder<Thumbs> {
             ledger_path: account_cache.join(LEDGER_FILE),
             ledger_lock: Mutex::new(()),
             sharp,
-            small_fetches: Semaphore::new(PARALLEL_SMALL_FETCHES),
-            preview_fetches: Semaphore::new(PARALLEL_PREVIEW_FETCHES),
+            // A folder being shown renders on every core: someone is waiting for it.
+            shown: Budget {
+                fetches: Semaphore::new(PARALLEL_SMALL_FETCHES),
+                renders: Semaphore::new(std::thread::available_parallelism().map_or(2, usize::from)),
+            },
+            ahead: Budget { fetches: Semaphore::new(PARALLEL_AHEAD_FETCHES), renders: Semaphore::new(PARALLEL_AHEAD_RENDERS) },
+            sharp_budget: Budget { fetches: Semaphore::new(PARALLEL_PREVIEW_FETCHES), renders: Semaphore::new(PARALLEL_PREVIEW_RENDERS) },
+            fetch_gates: Mutex::new(HashMap::new()),
         })
+    }
+
+    fn budget(&self, lane: Lane) -> &Budget {
+        match lane {
+            Lane::Shown => &self.shown,
+            Lane::Ahead => &self.ahead,
+            Lane::Sharp => &self.sharp_budget,
+        }
     }
 
     /// Seed `files`. The returned task finishes once every file has an `x-large` seed or has failed; dropping it
@@ -83,18 +126,30 @@ impl<Thumbs: ThumbnailSource + 'static> Seeder<Thumbs> {
         let seeder = self.clone();
         tokio::spawn(async move {
             let wanted = small_buckets().await;
-            let missing = seeder.lacking(&files, &wanted);
-            seeder.seed_all(&missing, ThumbnailKind::Small).await;
+            let (files, missing) = seeder.lacking(files, wanted).await;
+            seeder.seed_all(&missing, Lane::Shown).await;
             if seeder.sharp {
                 let seeder = seeder.clone();
                 tokio::spawn(async move {
                     // Every file without a sharp seed, also those that had a small one already (sharp thumbnails
                     // switched on later, or a pass cut short by a restart).
-                    let missing = seeder.lacking(&files, &[Bucket::XxLarge]);
-                    seeder.seed_all(&missing, ThumbnailKind::Preview).await;
+                    let (_, missing) = seeder.lacking(files, vec![Bucket::XxLarge]).await;
+                    seeder.seed_all(&missing, Lane::Sharp).await;
                 });
             }
         })
+    }
+
+    /// Seed the small thumbnails of a folder a file manager is only counting the items of, in the background and
+    /// behind the folders being shown, and fetch no previews for it: its visit, often the next click, then finds its
+    /// small seeds waiting, and a folder nobody opens costs no preview.
+    pub fn seed_ahead(self: &Arc<Self>, files: Vec<SeedFile>) {
+        let seeder = self.clone();
+        tokio::spawn(async move {
+            let wanted = small_buckets().await;
+            let (_, missing) = seeder.lacking(files, wanted).await;
+            seeder.seed_all(&missing, Lane::Ahead).await;
+        });
     }
 
     /// Whether a seed exists and still matches the file's mtime. A stale one (the date was edited in Immich) would
@@ -110,63 +165,61 @@ impl<Thumbs: ThumbnailSource + 'static> Seeder<Thumbs> {
         crate::thumbnails::thumbnail_text(&head, "Thumb::MTime").is_some_and(|mtime| mtime == file.modified.timestamp().to_string())
     }
 
-    /// Each file with the buckets of `wanted` it has no current seed in; files with all of them are left out.
-    fn lacking(&self, files: &[SeedFile], wanted: &[Bucket]) -> Vec<(SeedFile, Vec<Bucket>)> {
-        files
-            .iter()
-            .filter_map(|file| {
-                let buckets: Vec<Bucket> = wanted.iter().copied().filter(|bucket| !self.has_seed(file, *bucket)).collect();
-                (!buckets.is_empty()).then(|| (file.clone(), buckets))
-            })
-            .collect()
+    /// Each file with the buckets of `wanted` it has no current seed in; files with all of them are left out. The
+    /// seeds are read off the async workers; `files` is handed back for a later pass.
+    async fn lacking(self: &Arc<Self>, files: Vec<SeedFile>, wanted: Vec<Bucket>) -> (Vec<SeedFile>, Vec<(SeedFile, Vec<Bucket>)>) {
+        let seeder = self.clone();
+        tokio::task::spawn_blocking(move || {
+            let missing = files
+                .iter()
+                .filter_map(|file| {
+                    let buckets: Vec<Bucket> = wanted.iter().copied().filter(|bucket| !seeder.has_seed(file, *bucket)).collect();
+                    (!buckets.is_empty()).then(|| (file.clone(), buckets))
+                })
+                .collect();
+            (files, missing)
+        })
+        .await
+        .unwrap_or_default()
     }
 
-    /// Write each file's seed into the buckets it lacks, from one server thumbnail per Asset.
-    async fn seed_all(self: &Arc<Self>, files: &[(SeedFile, Vec<Bucket>)], kind: ThumbnailKind) {
+    /// Write each file's seed into the buckets it lacks, from one server thumbnail per Asset, in the files' order.
+    async fn seed_all(self: &Arc<Self>, files: &[(SeedFile, Vec<Bucket>)], lane: Lane) {
         // One fetch per Asset, however many of its Appearances the folder holds.
-        let mut by_asset: HashMap<&str, Vec<(SeedFile, Vec<Bucket>)>> = HashMap::new();
+        let mut by_asset: Vec<(String, Appearances)> = Vec::new();
+        let mut position: HashMap<&str, usize> = HashMap::new();
         for (file, buckets) in files {
-            by_asset.entry(file.asset_id.as_str()).or_default().push((file.clone(), buckets.clone()));
+            let index = *position.entry(file.asset_id.as_str()).or_insert_with(|| {
+                by_asset.push((file.asset_id.clone(), Vec::new()));
+                by_asset.len() - 1
+            });
+            by_asset[index].1.push((file.clone(), buckets.clone()));
         }
         let mut tasks = tokio::task::JoinSet::new();
         for (asset_id, appearances) in by_asset {
             let seeder = self.clone();
-            let asset_id = asset_id.to_owned();
             tasks.spawn(async move {
-                let image = match seeder.server_thumbnail(&asset_id, kind).await {
-                    Ok(image) => Arc::new(image),
+                let image = match seeder.server_thumbnail(&asset_id, lane).await {
+                    Ok(image) => image,
                     Err(error) => return log::debug!("no seed for Asset {asset_id}: {error}"),
                 };
-                for (file, buckets) in appearances {
-                    for bucket in &buckets {
-                        if let Err(message) = seeder.write_seed(&file, image.clone(), *bucket).await {
-                            log::debug!("no {} seed for {}: {message}", bucket.directory_name(), file.path.display());
-                        }
-                    }
+                let Ok(_render) = seeder.budget(lane).renders.acquire().await else { return };
+                let thumbnail_root = seeder.thumbnail_root.clone();
+                match tokio::task::spawn_blocking(move || write_seeds(&thumbnail_root, &image, &appearances)).await {
+                    Ok(written) => seeder.record(&written),
+                    Err(error) => log::warn!("seeding Asset {asset_id} failed: {error}"),
                 }
             });
         }
         while tasks.join_next().await.is_some() {}
     }
 
-    async fn write_seed(&self, file: &SeedFile, image: Arc<Vec<u8>>, bucket: Bucket) -> Result<(), String> {
-        let uri = file_uri(&file.path);
-        let thumbnail_root = self.thumbnail_root.clone();
-        let mtime = file.modified.timestamp();
-        let rendered_uri = uri.clone();
-        tokio::task::spawn_blocking(move || {
-            let png = render_png(&image, bucket, &rendered_uri, mtime)?;
-            write_thumbnail(&thumbnail_root, bucket, &rendered_uri, &png)
-        })
-        .await
-        .map_err(|error| error.to_string())?
-        .map_err(|error| error.to_string())?;
-        self.record(&uri);
-        Ok(())
-    }
-
-    /// The server's thumbnail of an Asset, from the account's cache when it is there.
-    async fn server_thumbnail(&self, asset_id: &str, kind: ThumbnailKind) -> Result<Vec<u8>, SourceError> {
+    /// The server's thumbnail of an Asset for `lane`, from the account's cache when it is there.
+    async fn server_thumbnail(&self, asset_id: &str, lane: Lane) -> Result<Vec<u8>, SourceError> {
+        let kind = match lane {
+            Lane::Shown | Lane::Ahead => ThumbnailKind::Small,
+            Lane::Sharp => ThumbnailKind::Preview,
+        };
         let suffix = match kind {
             ThumbnailKind::Small => "small",
             ThumbnailKind::Preview => "preview",
@@ -175,31 +228,78 @@ impl<Thumbs: ThumbnailSource + 'static> Seeder<Thumbs> {
         if let Ok(bytes) = tokio::fs::read(&cached).await {
             return Ok(bytes);
         }
-        let budget = match kind {
-            ThumbnailKind::Small => &self.small_fetches,
-            ThumbnailKind::Preview => &self.preview_fetches,
+        let _permit = self.budget(lane).fetches.acquire().await.map_err(|_| SourceError::Busy)?;
+        // Taken after the permit, so a folder being shown never waits behind a lane's queue, only behind a fetch of
+        // the same thumbnail already under way.
+        let gate = self.fetch_gates.lock().expect("fetch gates lock").entry(cached.clone()).or_default().clone();
+        let fetched = {
+            let _turn = gate.lock().await;
+            match tokio::fs::read(&cached).await {
+                Ok(bytes) => Ok(bytes),
+                Err(_) => match self.source.thumbnail(asset_id, kind).await {
+                    Ok(bytes) => {
+                        let temporary = cached.with_extension(format!("{suffix}.tmp"));
+                        if tokio::fs::write(&temporary, &bytes).await.is_ok() {
+                            let _ = tokio::fs::rename(&temporary, &cached).await;
+                        }
+                        Ok(bytes)
+                    }
+                    Err(error) => Err(error),
+                },
+            }
         };
-        let _permit = budget.acquire().await.map_err(|_| SourceError::Busy)?;
-        let bytes = self.source.thumbnail(asset_id, kind).await?;
-        let temporary = cached.with_extension(format!("{suffix}.tmp"));
-        if tokio::fs::write(&temporary, &bytes).await.is_ok() {
-            let _ = tokio::fs::rename(&temporary, &cached).await;
-        }
-        Ok(bytes)
+        drop(gate);
+        // Gates nobody holds go, so the map does not grow with every Asset ever seeded.
+        self.fetch_gates.lock().expect("fetch gates lock").retain(|_, gate| Arc::strong_count(gate) > 1);
+        fetched
     }
 
-    fn record(&self, uri: &str) {
+    /// Append seeded URIs to the ledger.
+    fn record(&self, uris: &[String]) {
+        if uris.is_empty() {
+            return;
+        }
+        let lines: String = uris.iter().map(|uri| format!("{uri}\n")).collect();
         let _guard = self.ledger_lock.lock().expect("ledger lock");
         let appended = std::fs::OpenOptions::new()
             .create(true)
             .append(true)
             .mode(0o600)
             .open(&self.ledger_path)
-            .and_then(|mut ledger| writeln!(ledger, "{uri}"));
+            .and_then(|mut ledger| ledger.write_all(lines.as_bytes()));
         if let Err(error) = appended {
             log::warn!("could not record a seeded thumbnail in {}: {error}", self.ledger_path.display());
         }
     }
+}
+
+/// Write one Asset's seeds: its server thumbnail decoded once, scaled once per bucket, and encoded for each path that
+/// lacks that bucket. Returns the URIs written, for the ledger.
+fn write_seeds(thumbnail_root: &Path, image_bytes: &[u8], appearances: &[(SeedFile, Vec<Bucket>)]) -> Vec<String> {
+    let image = match decode(image_bytes) {
+        Ok(image) => image,
+        Err(error) => {
+            log::debug!("no seed for Asset {}: {error}", appearances.first().map_or("", |(file, _)| file.asset_id.as_str()));
+            return Vec::new();
+        }
+    };
+    let mut written = Vec::new();
+    for bucket in Bucket::ALL {
+        if !appearances.iter().any(|(_, buckets)| buckets.contains(&bucket)) {
+            continue;
+        }
+        let scaled = scale_for(&image, bucket);
+        for (file, _) in appearances.iter().filter(|(_, buckets)| buckets.contains(&bucket)) {
+            let uri = file_uri(&file.path);
+            let outcome = encode_png(scaled.as_ref().unwrap_or(&image), &uri, file.modified.timestamp())
+                .and_then(|png| write_thumbnail(thumbnail_root, bucket, &uri, &png));
+            match outcome {
+                Ok(_) => written.push(uri),
+                Err(error) => log::debug!("no {} seed for {}: {error}", bucket.directory_name(), file.path.display()),
+            }
+        }
+    }
+    written
 }
 
 /// Asset ids are UUIDs; anything else is made safe as a file name.
@@ -235,10 +335,11 @@ mod tests {
     use super::*;
     use std::sync::atomic::{AtomicUsize, Ordering};
 
-    /// Serves one generated JPEG for every Asset, and counts the requests.
+    /// Serves one generated JPEG for every Asset, and counts the requests, and the previews among them.
     struct FakeThumbnails {
         jpeg: Vec<u8>,
         requests: AtomicUsize,
+        previews: AtomicUsize,
     }
 
     impl FakeThumbnails {
@@ -248,13 +349,18 @@ mod tests {
             image::DynamicImage::ImageRgb8(image)
                 .write_to(&mut std::io::Cursor::new(&mut jpeg), image::ImageFormat::Jpeg)
                 .expect("encode a test JPEG");
-            FakeThumbnails { jpeg, requests: AtomicUsize::new(0) }
+            FakeThumbnails { jpeg, requests: AtomicUsize::new(0), previews: AtomicUsize::new(0) }
         }
     }
 
     impl ThumbnailSource for FakeThumbnails {
-        async fn thumbnail(&self, asset_id: &str, _kind: ThumbnailKind) -> Result<Vec<u8>, SourceError> {
+        async fn thumbnail(&self, asset_id: &str, kind: ThumbnailKind) -> Result<Vec<u8>, SourceError> {
             self.requests.fetch_add(1, Ordering::SeqCst);
+            if matches!(kind, ThumbnailKind::Preview) {
+                self.previews.fetch_add(1, Ordering::SeqCst);
+            }
+            // Long enough for two lanes asking for one thumbnail to overlap.
+            tokio::time::sleep(std::time::Duration::from_millis(5)).await;
             if asset_id == "missing" {
                 return Err(SourceError::NotFound);
             }
@@ -278,6 +384,40 @@ mod tests {
         assert!(!seeder.has_seed(&edited, Bucket::XLarge), "the date changed in Immich");
         seeder.seed(vec![edited.clone()]).await.unwrap();
         assert!(seeder.has_seed(&edited, Bucket::XLarge));
+    }
+
+    #[tokio::test]
+    async fn seeding_ahead_writes_small_seeds_only_and_shares_each_fetch() {
+        let directory = tempfile::tempdir().unwrap();
+        let thumbnail_root = directory.path().join("thumbnails");
+        let source = Arc::new(FakeThumbnails::new());
+        let seeder = Arc::new(Seeder::new(source.clone(), &thumbnail_root, &directory.path().join("account"), true).unwrap());
+        let files: Vec<SeedFile> = (0..20).map(|index| file(&format!("/home/me/Immich/Photos/2024/03 March/{index}.jpg"), &format!("asset-{index}"))).collect();
+        // A count seeds ahead while the folder is opened: each Asset is fetched once between them.
+        seeder.seed_ahead(files.clone());
+        seeder.seed(files.clone()).await.unwrap();
+        for _ in 0..200 {
+            if files.iter().all(|file| seeder.has_seed(file, Bucket::XLarge)) && source.previews.load(Ordering::SeqCst) == 20 {
+                break;
+            }
+            tokio::time::sleep(std::time::Duration::from_millis(10)).await;
+        }
+        assert_eq!(source.requests.load(Ordering::SeqCst) - source.previews.load(Ordering::SeqCst), 20, "one small fetch per Asset");
+
+        // Ahead alone: small seeds, no previews.
+        let ahead_only: Vec<SeedFile> = (0..5).map(|index| file(&format!("/home/me/Immich/Photos/2024/04 April/{index}.jpg"), &format!("april-{index}"))).collect();
+        let previews_before = source.previews.load(Ordering::SeqCst);
+        seeder.seed_ahead(ahead_only.clone());
+        for _ in 0..200 {
+            if ahead_only.iter().all(|file| seeder.has_seed(file, Bucket::XLarge)) {
+                break;
+            }
+            tokio::time::sleep(std::time::Duration::from_millis(10)).await;
+        }
+        assert!(ahead_only.iter().all(|file| seeder.has_seed(file, Bucket::XLarge)));
+        tokio::time::sleep(std::time::Duration::from_millis(50)).await;
+        assert!(ahead_only.iter().all(|file| !seeder.has_seed(file, Bucket::XxLarge)), "no sharp seed for a folder only counted");
+        assert_eq!(source.previews.load(Ordering::SeqCst), previews_before);
     }
 
     #[tokio::test]

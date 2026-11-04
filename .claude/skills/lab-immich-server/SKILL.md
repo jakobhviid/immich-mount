@@ -52,6 +52,16 @@ Contract tests (`crates/immich-api/tests/contract.rs`) assert these numbers, so 
 Machine learning is off (a compose override keeps its container out, and `seed.sh` turns it off in the system
 config), so faces are never detected and smart search is unavailable.
 
+## A large library
+
+`lab/immich-server/bulk.sh 1997-01:450 1998:10` adds generated photos (ffmpeg's test pattern, so no licences and no
+personal photos): 450 in January 1997, and 10 in each month of 1998. It waits until Immich has made their
+thumbnails, about a minute for a thousand. Use it to measure how folders of many files behave (`lab-bazzite-vm`,
+"How long Files is busy"), each measurement on a month the daemon has not seen. The seeded snapshot does not keep
+them: run it again after each `up.sh`. Keep months under 500 photos to measure a folder of files: from 500, Photos
+splits a month into day folders (`grouping.photos`). The contract tests' numbers count only the seed, so run them
+before adding a bulk library, or on a server restored by `up.sh`.
+
 ## Fixtures
 
 `fixtures/manifest.json` pins 50 Wikimedia Commons files (CC0, public domain, CC BY, CC BY-SA) with their URLs,

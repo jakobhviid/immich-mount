@@ -126,24 +126,24 @@ pub fn thumbnail_path(thumbnail_root: &Path, bucket: Bucket, uri: &str) -> PathB
     thumbnail_root.join(bucket.directory_name()).join(thumbnail_file_name(uri))
 }
 
-/// Render a thumbnail PNG for `bucket` from a WebP or JPEG (Immich's `thumbnail` and `preview` sizes).
-///
-/// The image is scaled down to fit the bucket's longest side, keeping its aspect ratio, and never scaled up. The PNG
-/// carries the `tEXt` chunks `Thumb::URI` (`uri`, which must come from [`file_uri`]), `Thumb::MTime`
-/// (`mtime_seconds`, in decimal) and `Software`.
+/// Render a thumbnail PNG for `bucket` from a WebP or JPEG (Immich's `thumbnail` and `preview` sizes): [`decode`],
+/// [`scale_for`] and [`encode_png`] in one go. A caller writing one image for several buckets or paths calls those
+/// itself, so the image is decoded once and scaled once per bucket.
 pub fn render_png(source_image_bytes: &[u8], bucket: Bucket, uri: &str, mtime_seconds: i64) -> Result<Vec<u8>, ThumbnailError> {
-    // tEXt is Latin-1, and GLib's URIs are ASCII. Anything else would be stored in a form GNOME never matches.
-    if !uri.is_ascii() {
-        return Err(ThumbnailError::UriNotAscii(uri.to_string()));
-    }
-    let source = image::load_from_memory(source_image_bytes).map_err(|error| ThumbnailError::Decode(error.to_string()))?;
-    let (width, height) = fitted_dimensions(source.width(), source.height(), bucket.max_pixels());
-    let scaled = if (width, height) == (source.width(), source.height()) {
-        source
-    } else {
-        source.resize_exact(width, height, FilterType::CatmullRom)
-    };
-    encode_png(&scaled, uri, mtime_seconds)
+    let source = decode(source_image_bytes)?;
+    encode_png(scale_for(&source, bucket).as_ref().unwrap_or(&source), uri, mtime_seconds)
+}
+
+/// Decode a WebP or JPEG.
+pub fn decode(source_image_bytes: &[u8]) -> Result<DynamicImage, ThumbnailError> {
+    image::load_from_memory(source_image_bytes).map_err(|error| ThumbnailError::Decode(error.to_string()))
+}
+
+/// The image scaled down to fit `bucket`'s longest side, keeping its aspect ratio; `None` when it fits already, since
+/// it is never scaled up. A bilinear filter: a third faster than Catmull-Rom, and as good for scaling down this little.
+pub fn scale_for(image: &DynamicImage, bucket: Bucket) -> Option<DynamicImage> {
+    let (width, height) = fitted_dimensions(image.width(), image.height(), bucket.max_pixels());
+    ((width, height) != (image.width(), image.height())).then(|| image.resize_exact(width, height, FilterType::Triangle))
 }
 
 /// The size an image of `width` x `height` is given to fit `max_pixels` on its longest side: scaled down, keeping
@@ -158,8 +158,16 @@ fn fitted_dimensions(width: u32, height: u32, max_pixels: u32) -> (u32, u32) {
     (scale_side(width), scale_side(height))
 }
 
-/// Encode 8-bit RGB (or RGBA, if the image has alpha) as a PNG with the thumbnail's text chunks.
-fn encode_png(image: &DynamicImage, uri: &str, mtime_seconds: i64) -> Result<Vec<u8>, ThumbnailError> {
+/// Encode 8-bit RGB (or RGBA, if the image has alpha) as a PNG with the thumbnail's text chunks: `Thumb::URI` (`uri`,
+/// which must come from [`file_uri`]), `Thumb::MTime` (`mtime_seconds`, in decimal) and `Software`.
+///
+/// Compressed fast: at the default level a 1024-pixel seed took 100 ms of CPU, which on a busy folder starved the file
+/// manager itself; fast takes 3 ms, for a file 15 to 40 percent larger (measured on three of the lab's photos).
+pub fn encode_png(image: &DynamicImage, uri: &str, mtime_seconds: i64) -> Result<Vec<u8>, ThumbnailError> {
+    // tEXt is Latin-1, and GLib's URIs are ASCII. Anything else would be stored in a form GNOME never matches.
+    if !uri.is_ascii() {
+        return Err(ThumbnailError::UriNotAscii(uri.to_string()));
+    }
     let (color_type, pixels) = if image.color().has_alpha() {
         (png::ColorType::Rgba, image.to_rgba8().into_raw())
     } else {
@@ -170,6 +178,7 @@ fn encode_png(image: &DynamicImage, uri: &str, mtime_seconds: i64) -> Result<Vec
     let mut encoder = png::Encoder::new(&mut png_bytes, image.width(), image.height());
     encoder.set_color(color_type);
     encoder.set_depth(png::BitDepth::Eight);
+    encoder.set_compression(png::Compression::Fast);
     encoder.add_text_chunk("Thumb::URI".to_string(), uri.to_string()).map_err(encode_error)?;
     encoder.add_text_chunk("Thumb::MTime".to_string(), mtime_seconds.to_string()).map_err(encode_error)?;
     encoder.add_text_chunk("Software".to_string(), SOFTWARE.to_string()).map_err(encode_error)?;

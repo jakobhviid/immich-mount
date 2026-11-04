@@ -327,8 +327,10 @@ daemon holds the database's lock, or after a crash left the database unreadable.
 Why:
 - **FUSE forgets everything at unmount.** On macOS, the File Provider framework keeps its own database of items,
   which is why Finder shows folders instantly after a reboot.
-- **We have neither, so the store does both jobs.** Folders open instantly after a restart, listings work offline,
-  assigned names stay stable, and writes are incremental.
+- **We have neither, so the store does both jobs.** Folders still open after a restart when the server cannot
+  answer in time, listings work offline, assigned names stay stable, and writes are incremental. A folder's first
+  visit after a restart still waits for the server when it answers (ROADMAP, "Performance": "Kept listings at once
+  after a restart").
 
 The store carries a format version and is migrated in code, with tests.
 
@@ -401,25 +403,39 @@ metadata store makes later visits instant.
 
 Originals are fetched in 2 MiB blocks with HTTP range requests, and kept as one sparse file per Asset plus a block
 map beside it (`<id>.blocks`, a line per block), which survives restarts:
-- **Single flight:** each folder listing and content block is fetched once, however many FUSE calls wait for it,
-  and an Asset's server thumbnail once per folder being seeded (then kept on disk by Asset id).
+- **Single flight:** each folder listing, content block and Asset's edges (below) is fetched once, however many FUSE
+  calls wait for it, and an Asset's server thumbnail once, however many folders being seeded want it (then kept on
+  disk by Asset id).
 - **Read-ahead:** sequential reads (each starting where the last ended) widen a read-ahead window from 2 blocks up
   to 16 (32 MiB). Random access resets it. Read-ahead runs at lower priority than reads someone is waiting for
   (two fetches at once). It starts only after 4 MiB of sequential reading, so a program peeking at a header (a type
-  sniffer, a thumbnailer) never pulls more than it reads.
-- **Peeks fetch only their own range.** A read into bytes the cache does not hold, in a run of reads that stays
-  within 64 KiB, of a file larger than that, fetches exactly its range and caches nothing; past 64 KiB of run, reads
-  fetch whole blocks as above. Bazzite's file managers load rom-properties (a plugin for game images; 2.9 on Bazzite
-  44), which reads every file of a folder they show from their own main thread: each file's first 8 KiB and its
-  last partial page, which the kernel turns into three requests (0+16 KiB, the last page, and its own read-ahead of
-  32 KiB). With whole blocks that fetched every original whole, 5.7 MB for a month of 3 photos and 25 MB for a
-  folder of 121, on GNOME and KDE alike (measured on Bazzite 44 with the kernel tracing reads); as peeks it costs at
-  most 53 KB per file. A run belongs to one open, so a photo peeked again (it is in a month and an album, or a folder
-  is opened again once its pages left memory) is peeked again, not fetched whole. A copy or a viewer passes 64 KiB at
-  its first or second read, so it pays one or two small requests more. Verified on Bazzite 44, GNOME and KDE: a
-  month of 3 photos opened fresh fetched 160 KB, and the "Holiday Mix" album 275 KB, where 1.3.2 fetched 5.7 MB
-  and 10 MB. rom-properties after 2.9 counts unknown FUSE filesystems as remote and skips them; on KDE,
-  `ShowDangerousPermissionsOverlayIcon=false` in its settings stops Dolphin's plugin already.
+  sniffer, a thumbnailer) never pulls a block.
+- **Peeks are served from the edges.** A peek is a read into bytes the cache does not hold, in a run of reads that
+  stays within 64 KiB, of a file larger than that; past 64 KiB of run, reads fetch whole blocks as above. A peek
+  within an original's first 64 KiB or last 16 KiB fetches both at once (two requests, 80 KB) and keeps them as the
+  Asset's edges (`<id>.edges`, beside its blocks), which count towards `cache.limit`, are evicted with the Asset, and
+  are dropped with its blocks when the original changes; any other peek fetches exactly its range and caches nothing.
+  Bazzite's file managers load rom-properties (a plugin for game images; 2.9 on Bazzite 44), which reads every file of
+  a folder they show from their own main thread, one after another: each file's first 8 KiB and its last partial page,
+  which the kernel turns into three requests (0+16 KiB, the last page, and its own read-ahead of 32 KiB). Peeks
+  fetching whole blocks fetched every original whole (5.7 MB for a month of 3 photos, 25 MB for a folder of 121,
+  measured on Bazzite 44 with the kernel tracing reads). Fetched as they come, each a round trip on Files' main
+  thread, a month of 450 photos made 1,350 requests and kept Files busy for 7 to 9 s (2.0.1, measured on Bazzite 44
+  GNOME against the lab server, Files' main thread sampled over D-Bus; with rom-properties moved aside, 0.8 s). So
+  once a program has peeked at three files of one folder within 10 s, the edges of the rest of the folder, up to 1,000
+  files (80 MB), are fetched ahead of it, eight files at a time; it reads them from disk, and a single peek (a
+  properties dialog) prefetches nothing. This is the one place the mount fetches bytes of files no program has opened
+  yet, against the letter of principle 2: never an original, only the start and end of files in a folder that a
+  program is reading one after another, which it reaches within seconds; whether the principle should say so is open
+  (ROADMAP, "Performance"). Measured the same way: Files busy for 0.4 to 1 s and responsive again 2 to 2.5 s after the
+  click, 900 requests. How long rom-properties takes over the month, traced in the kernel: with the edges fetched only
+  as it reads, 3.4 s at the lab's latency and 12.9 s with 20 ms added; with the prefetch, 1.5 and 1.9 s; with every
+  edge already on disk (the most any earlier prefetch could give), 0.7 and 0.9 s. rom-properties reads the files in an
+  order of its own, not the listing's or the view's, so a peek at a file the prefetch has not reached fetches its
+  edges itself. Edges survive restarts, so a folder seen before costs nothing the next time; they carry a checksum
+  instead of being synced, since a torn one is merely fetched again. rom-properties after 2.9 counts unknown FUSE
+  filesystems as remote and skips them; on KDE, `ShowDangerousPermissionsOverlayIcon=false` in its settings stops
+  Dolphin's plugin already.
 - **Crash safety:** a block counts as present only after it is written and synced, so a crash never serves zeros.
 - **Validation:** the block map records the original's size and its weak ETag (`W/"<size>-<mtime>"`, sent with every
   206). Cached blocks are dropped, and fetched again from the new original, when the listing gives another size, when
@@ -443,8 +459,11 @@ map beside it (`<id>.blocks`, a line per block), which survives restarts:
 background check, and the result applies to later reads.
 
 **Concurrency** is bounded per kind of work: listings 4, thumbnails 8 to 16, content 4, uploads 2. Everything
-shares one HTTP/2 connection pool. *(Built so far: thumbnails only, 12 small and 4 previews at once, each with its
-own budget so previews never hold up a listing.)*
+shares one HTTP/2 connection pool. *(Built so far: thumbnails, 12 small for a folder being shown, 4 for folders
+seeded ahead and 4 previews at once, each with its own budget so the background never holds up a listing;
+listings started by probes, 4; edge prefetches, 8.)* The lab server answers 145 small range requests a second one
+at a time and 500 eight at a time, so a burst of peeks is worth spreading; what held the first prefetches back was
+the daemon's own CPU (Thumbnails, below), not the server.
 
 Why blocks:
 - **Many readers touch only part of a file:** content-type sniffing reads the first KB, EXIF readers read the
@@ -464,8 +483,10 @@ remains only as the fallback for a server that refuses ranges.
   gets its result). A listing that waited that long and ran out marks the server silent for 30 s, and listings then
   wait at most 1 s: rom-properties (on Bazzite) looks for extracted game discs in every folder Files shows, from
   Files' main thread, and a server that drops requests froze all of Files for 3 minutes at 10 s a name. A probed
-  name (below) waits half a second for its folder's listing and is otherwise answered absent. Verified with the
-  kernel-level mount tests, against a library whose listings never answer.
+  name (SPEC, "Files the mount answers") waits for nothing: it is answered from the folder's listing at hand,
+  however old, or else absent at once, not remembered, while the folder is listed in the background (four at a
+  time, since a folder of hundreds of albums is probed album by album). Verified with the kernel-level mount tests,
+  against a library whose listings never answer.
 - reads: 30 s without progress, then `EIO`
 - uploads on close: their own limit (Uploads)
 
@@ -507,10 +528,31 @@ accepts PNGs smaller than the bucket as they are, and a valid thumbnail wins ove
    opens (`/var/home/me/Immich`), and the configured one, which browsing from Home, the app's **Open in Files** and
    Dolphin's place use (`/home/me/Immich`). With only the first, every folder opened from Home showed generic icons
    (verified in a GNOME 50 VM with `/home` a link to `/var/home`); with both, its thumbnails show.
+5. **Each server thumbnail is decoded once, and scaled once per bucket,** for every path it is written to; the PNG is
+   compressed fast. At the default level the encoder took 100 of the 130 ms a 1024-pixel seed cost, and 2.0.1 spent
+   about 40 s of CPU on a month of 450 photos with both paths, which slowed the file manager and the daemon's own
+   answers on a 4-core VM (measured on Bazzite 44). Fast takes 3 ms, for a file 15 to 40 percent larger. Previews
+   are rendered two at a time, so the sharp pass never takes every core while the file manager draws the folder.
 
-**Not chosen, for now: prefetching the folders one level below.** Seeding before `readdir` answers already makes a
-first visit fast (600 files in under half a second), and a prefetch would fetch thumbnails for folders that
-may never be opened, multiplied by People and Places. Parked in ROADMAP.
+**Counts are seeded ahead, not waited for.** Files and Dolphin count the items of every subfolder of a folder they
+show, by listing each one, one after another, and Files' GIO workers then look up every file in it too: opening a
+year listed and seeded all its months, previews included (verified on Bazzite 44 GNOME with the kernel tracing
+listings and lookups). A listing is taken for a count when its parent's listing, or another count in it, ended less
+than 3 s before, a sibling was listed since, and it was not listed itself in that time: a counter lists siblings in
+a row, while a file dialog or a script opening one subfolder lists none. A count answers at once, and its small
+seeds are written in the background, four fetches and one render at a time, behind the folders being shown, with no
+previews. Its visit, often the next click, then finds them waiting (a month of 450 photos seeded in 0.2 s, where a
+cold one takes 0.5 s). A subfolder opened within those 3 s is listed a second time, which counts as the visit; one
+opened before the file manager counted it is listed once, as a count. That one is promoted: a file manager showing a
+file asks its access rights right before it looks for its thumbnail (GLib: the stat, two `access()` calls, then the
+thumbnail paths), and a count asks none, so the first `access()` on a file of a counted folder seeds it as a folder
+shown and waits for that. This relies on the mount having no `default_permissions`, so that the kernel passes every
+`access()` to the daemon (GNOME integration). Verified on Bazzite 44, GNOME and KDE: a month opened right after its
+year was listed showed every thumbnail, and GNOME recorded no failure.
+
+**Not chosen, for now: prefetching beyond what file managers list.** Seeding ahead covers the folders one level
+below, since file managers list them anyway; prefetching further would fetch thumbnails for folders nobody shows,
+multiplied by People and Places. ROADMAP, "Performance", weighs it with the other options.
 
 The URI that keys the cache file must match `g_filename_to_uri` byte for byte. A unit test compares our encoder
 with GLib's for awkward names (spaces, `#`, `%`, `?`, `[`, non-ASCII, combining characters). GLib is only a test

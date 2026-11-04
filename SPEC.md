@@ -170,10 +170,11 @@ cameras. Clashes are detected case-insensitively, after Unicode NFC normalisatio
   GNOME 50 VM).
 - `/.nomedia` and `/.trackerignore`: hidden; they keep GNOME's indexer out.
 - Anything else that tools probe for (`.hidden`, `.directory`, `.Trash-<uid>`, `autorun.inf`, `.DS_Store`, and
-  rom-properties' `code`, `default.xex` and `default.xbe` in their spellings): a fast `ENOENT`, which the kernel
-  remembers for a minute (a negative entry), so a folder's next probes never reach the daemon. When the folder's
-  listing is not at hand within half a second, such a name is answered absent all the same. Only these known names are remembered: any other missing name, a dot-name of an album or a file included,
-  may still arrive from Immich.
+  rom-properties' `code`, `title.tik`, `default.xex` and `default.xbe` in their spellings): a fast `ENOENT`, which
+  the kernel remembers for a minute (a negative entry), so a folder's next probes never reach the daemon. Such a
+  name never waits for the server: without the folder's listing at hand it is answered absent at once, not
+  remembered, and the folder is listed in the background. Only these known names are remembered: any other missing
+  name, a dot-name of an album or a file included, may still arrive from Immich.
 
 ### What the mount refuses
 
@@ -198,6 +199,10 @@ cameras. Clashes are detected case-insensitively, after Unicode NFC normalisatio
   answer from the server ends that early.
 - A read that makes no progress for 30 seconds fails with `EIO`. No filesystem call waits on the network without
   a deadline.
+- A small read near a file's start or end that the cache cannot answer (a peek: a run of reads within 64 KiB)
+  fetches the original's first 64 KiB and last 16 KiB together, and keeps them. Once a program has peeked at three
+  files of a folder within 10 seconds, the start and end of the folder's other files, up to 1,000 of them, are
+  fetched ahead of it, eight files at a time.
 - The content cache has a size limit (default 10 GiB). It evicts least-recently-used Assets that are not being
   read. It never takes the disk's last tenth: with less than 10% of the disk free, it evicts as if over its limit.
 - Originals are byte-identical to the server's.
@@ -215,8 +220,14 @@ cameras. Clashes are detected case-insensitively, after Unicode NFC normalisatio
   - **Format:** PNG `tEXt` chunks `Thumb::URI` and `Thumb::MTime`, file mode 0600, written atomically.
   - **Timing:** the listing waits up to 10 seconds for these. After that it answers anyway, and seeding continues
     in the background.
-- **Sharp thumbnails** (setting, on by default): each Appearance also gets an `xx-large/` (1024) thumbnail,
-  downscaled from Immich's `preview`, in the background.
+  - **Counts:** a listing of a folder whose parent's listing, or another count in it, ended less than 3 seconds
+    before, after a sibling was listed, and which was not listed itself in that time, is taken for a file manager
+    counting its items. It answers at once; its small thumbnails are written in the background, behind the folders
+    being shown, and it gets no sharp thumbnails. Within a minute of such a listing, the first `access()` on one of
+    its files (a file manager showing it after all) waits up to 10 seconds for its thumbnails, sharp ones following
+    in the background.
+- **Sharp thumbnails** (setting, on by default): each Appearance of a folder shown also gets an `xx-large/` (1024)
+  thumbnail, downscaled from Immich's `preview`, in the background.
 - **The safety net** (setting, on by default): when a known thumbnailer process opens an original (`glycin-thumbnailer`
   and others), it gets `EIO` instead of the bytes. It never gets substitute bytes.
 - Listings made by the file manager's search, or by an indexer walking the tree (`baloo_file`, `localsearch-3`), do
@@ -353,6 +364,9 @@ Streams and exit codes:
 - Exit code 0 means the command completed. A non-zero exit means it could not.
 - Problems with individual items do not change the exit code; they show in the output and the JSON.
 - Without a terminal, no command prompts. It fails with guidance instead.
+- `IMMICH_MOUNT_LOG` sets how much is logged: `error`, `warn`, `info` (the default), `debug` or `trace`. At `info`
+  the daemon logs a folder that took longer than a second to open, with what took the time; at `debug`, every
+  folder.
 
 ## The daemon's D-Bus interface
 
@@ -384,7 +398,7 @@ The credential itself never crosses D-Bus.
 | Settings | `~/.config/immich-mount/config.toml` |
 | Credential (headless fallback) | `~/.config/immich-mount/credential`, mode 0600 |
 | Metadata store | `~/.cache/immich-mount/<account>/metadata.redb` |
-| Content cache | `~/.cache/immich-mount/<account>/content/`: `<id>.bin` (sparse) and its block map `<id>.blocks` |
+| Content cache | `~/.cache/immich-mount/<account>/content/`: `<id>.bin` (sparse) and its block map `<id>.blocks`, and `<id>.edges`, the original's first 64 KiB and last 16 KiB |
 | Upload staging | `~/.cache/immich-mount/<account>/staging/` |
 | Files not uploaded | `~/.local/share/immich-mount/not-uploaded/`; `logout` keeps them |
 | Server thumbnails | `~/.cache/immich-mount/<account>/server-thumbnails/` (Immich's own, by Asset id) |

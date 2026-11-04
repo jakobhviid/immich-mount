@@ -58,7 +58,7 @@ Show thumbnails switch does), which also checks that doctor's advice works.
 | `places` (KDE) | Dolphin's Places hold it; SKIP unless `--app-setup`, since only the KDE app's first run adds it | SPEC "Files on disk" |
 | `access` | `access::can-write`: not the root, Albums or a photo; Photos, a year and a month | SPEC "Attributes" |
 | `thumbnails` | a listed month's files have `x-large` (and `normal`, `large` on KDE) at once and `xx-large` within 40 s, keyed by the MD5 of `gio info`'s URI, mode 0600, `Thumb::URI` right; under `/home` and `/var/home` where home is a link | SPEC "Thumbnails" |
-| `peek` | each file's first 8 KiB and last 4 KiB, page cache dropped first (`posix_fadvise`), cost under 100 KB per file in `status --json`'s `fetched.bytes`; nothing fetched fails as unmeasured | ARCHITECTURE "Peeks fetch only their own range" |
+| `peek` | each file's first 8 KiB and last 4 KiB, page cache dropped first (`posix_fadvise`), cost under 100 KB per file in `status --json`'s `fetched.bytes`; nothing fetched fails as unmeasured | ARCHITECTURE "Peeks are served from the edges" |
 | `copies` | a photo by `gio copy` and `cp`, and the smallest album by `cp -r`, come out 0644 and 0755, byte for byte the server's (SHA-1 asked of the server) | SPEC "What the mount refuses" |
 | `upload` | a photo the server lacks (a copied one with a new JPEG comment), `cp` into Upload, returns once the server has its SHA-1; the receipt stays | SPEC "Uploads" |
 | `upload-listed` | the asset shows in its date folder (its source's month) | WORKFLOWS "Uploading" |
@@ -103,7 +103,8 @@ at a release (the `lab-desktop-vm` and `lab-bazzite-vm` skills), for what no com
 - **An upload carries the upload's time until Immich has read its metadata,** so the server's first answer, and the
   mount for a moment, put it in the current month. `upload-listed` waits for its EXIF month.
 - **Run `run.sh`, not `desktop.sh` alone, for a verdict:** a second `desktop.sh` on the same VM copies the last run's
-  upload, and finds the thumbnails already there. The peek still measures (its reads cache nothing).
+  upload, and finds the thumbnails already there. Its peek fails as unmeasured: the edges the first run fetched
+  are kept, so no read reaches the server.
 - **The cask can lag a release by a few minutes:** `version` then fails with the cask's version. Wait, or check the
   previous release with `VERSION`.
 - **The zap trashes the unit and the drop-in while the daemon still runs;** the daemon's cleanup then finds them

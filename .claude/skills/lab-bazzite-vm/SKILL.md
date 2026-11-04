@@ -71,6 +71,17 @@ The scripts after `up.sh` find the VM by themselves; with both editions up, name
 - **Signing in:** the keyring prompt (GNOME) and KWallet's first-use wizard (KDE) appear as in the Fedora VMs: no
   PAM login made the login keyring. Answer them as the `lab-desktop-vm` skill says.
 
+## How long Files is busy
+
+`lab/bazzite-vm/freeze.sh "Photos/1997/01 January"` closes Files, drops the page cache, starts Files on Home, opens
+the folder, and samples Files' main thread over D-Bus (`lab/gnome-vm/exp/files-freeze.sh`): one line with the busy
+time, the longest wait, when Files was last busy, and what the daemon fetched. Measure folders the daemon has not
+seen since it started (a fresh month from `lab/immich-server/bulk.sh`, `1997-01:450`): edges and seeds of an earlier
+visit answer the rest. To see what took the daemon's time, `systemctl --user set-environment IMMICH_MOUNT_LOG=debug`
+and restart the service: each folder is logged with its listing and seeding times. Measured on Bazzite 44 GNOME
+with the lab server, a cold month of 450 photos: 2.0.1 kept Files busy for 7 to 9 s; the current daemon, 0.4 to
+1 s.
+
 ## Who reads the mount, without bpftrace
 
 Bazzite ships neither bpftrace nor strace, and nothing can be installed. The kernel's tracefs names the reader of
@@ -84,7 +95,9 @@ echo 0 > events/labfuse/enable; echo '-:labfuse/open' >> kprobe_events; echo '-:
 ```
 
 Probe arguments name the file and the range: `f=file:%pD` on `fuse_open`, and
-`f=iocb->ki_filp:%pD pos=iocb->ki_pos:s64 len=to->count:u64` on `fuse_file_read_iter`.
+`f=iocb->ki_filp:%pD pos=iocb->ki_pos:s64 len=to->count:u64` on `fuse_file_read_iter`. `fuse_readdir` with
+`f=file:%pD` names the folders listed, and `fuse_lookup` with `n=entry->d_name.name:string` the names looked up;
+`fuse_access` shows a program asking access rights, which Files does for each file it shows and not for a count.
 - **The READs the daemon gets,** after the kernel's read-ahead: `fuse_read_args_fill` is inlined into the file read
   path (kernel 7.2), so it shows only directory reads. Probe where requests are sent instead, `fuse_simple_background`
   and `__fuse_simple_request`, with `op=args->opcode:u32 nid=args->nodeid:u64 off=+8(+40(args)):u64
@@ -100,16 +113,24 @@ system without one of its files for a moment, `bootc usr-overlay` makes `/usr` w
 ## Traps
 
 - **Bazzite's file managers read the files in every folder they show.** Bazzite ships rom-properties (a plugin for
-  game images): its overlay-icon plugin in Dolphin and its extension in Files read the first 8 KiB and the last
-  partial page of every file in the folder, shown on screen or not, from the file manager's main thread; the daemon
-  answers them with small range requests (ARCHITECTURE.md, "Peeks fetch only their own range"). `ShowDangerousPermissionsOverlayIcon=false` under `[Options]` in
-  `~/.config/rom-properties/rom-properties.conf` turns Dolphin's off; Files' has no setting (version 2.9 reads the
+  game images; 2.9 on Bazzite 44): its overlay-icon plugin in Dolphin and its extension in Files read the first 8 KiB
+  and the last partial page of every file in the folder, shown on screen or not, from the file manager's main thread,
+  one file after another, in an order of their own; the daemon fetches each file's edges once, and the rest of the
+  folder's ahead of it after three (ARCHITECTURE.md, "Peeks are served from the edges"). That is about 80 KB per
+  file on a folder's first visit and nothing after. `ShowDangerousPermissionsOverlayIcon=false` under `[Options]`
+  in `~/.config/rom-properties/rom-properties.conf` turns Dolphin's off; Files' has no setting (version 2.9 reads the
   file before it looks at any). Know this before measuring that a folder opens without reading originals.
   Files' extension also probes inside every subfolder shown, from the main thread (libromdata's
-  `RomDataFactory::create`): `code/app.xml`, then `default.xex` and `default.xbe` in three spellings each, a statx
-  and an openat apiece. Each is a lookup in a folder the daemon may have to list first; the daemon answers these
-  names absent within half a second when the listing is not at hand (ARCHITECTURE.md, "Never hang"). A freeze of
-  Files with the server unreachable is therefore worth a look: its main thread's kernel stack shows who waits.
+  `RomDataFactory::create`): `code/app.xml`, `title.tik`, then `default.xex` and `default.xbe` in three spellings
+  each, a statx and an openat apiece. Each is a lookup in a folder the daemon may have to list first; the daemon
+  answers these names at once (ARCHITECTURE.md, "Never hang"), so a name rom-properties starts probing for that is
+  missing from `is_probe_name` shows as a wait on Files' main thread: trace the lookups (below). A freeze of Files is
+  therefore worth a look: its main thread's kernel stack shows who waits.
+- **Files lists every subfolder of a folder it shows, to count its items,** one after another from its GIO workers
+  (`pool-N`), and looks up every file in each: opening a year lists all its months. The daemon takes those for counts
+  (ARCHITECTURE.md, "Counts are seeded ahead"); the debug log says `a count` for each. To move rom-properties aside
+  for a control run, `bootc usr-overlay`, then move `/usr/lib64/nautilus/extensions-4/rom-properties-gtk4.so` away
+  and back.
 - **`/opt/exp/input.sh` runs as root,** through `incus exec`, not through `run-in-session.sh`: `runuser` refuses
   to start from the session user.
 - **The first boot reboots once:** `bazzite-hardware-setup` adds kernel arguments and reboots. `up.sh` waits

@@ -177,6 +177,31 @@ Dolphin, where it is in Places and shows the seeded thumbnails with no original 
   backups, but users would see an odd file in their Immich folder. Lean: yes.
 - **Trusting a self-signed server certificate** from the app, for homelabs without a private CA in the system store.
 
+## Performance
+
+Where opening a folder stands, measured on Bazzite 44 GNOME against the lab server, a month of 450 photos the daemon
+had not seen (`lab/bazzite-vm/freeze.sh`; the second figure with 20 ms added to every request):
+- The folder appears in 0.5 s (1.3 s): its listing, then its small thumbnails seeded.
+- Files' main thread is busy for 0.4 to 1 s, and responsive again 2 to 2.5 s after the click.
+- rom-properties, which Bazzite's Files loads, gets through the folder in 1.5 s (1.9 s); with every file's edges
+  already on disk it takes 0.7 s (0.9 s), the most any prefetch of originals could give.
+
+These are the options for when that is not enough on a real server, with what each gains and costs
+(ARCHITECTURE, "Content" and "Thumbnails", has the measurements behind them).
+
+| Option | What it gains | What it costs |
+|---|---|---|
+| **Principle 2 and the edge prefetch** (decide) | Keeping the prefetch keeps rom-properties' pass at 1.5 s (1.9 s); without it, 3.4 s (12.9 s), growing with the files and the round trip | It fetches the start and end of files a program has not opened yet, though it reads them within seconds: the same bytes either way, unless the folder is left early. Amend the principle to allow that, or drop the prefetch |
+| **Start the edge prefetch when a folder is listed,** once a program was seen peeking in this session | Most of what is left of rom-properties' pass (1.5 s towards 0.7 s), since the edges come while the folder's thumbnails are seeded; not measured | The same bytes as today, fetched earlier; a folder left at once still gets its edges, up to 80 MB |
+| **Edges for counted subfolders** | The best case (0.7 s) on the next click | 80 KB for every file of every subfolder shown: opening a year of 3,000 photos fetches 240 MB, most of it for folders never opened. Against principle 2 |
+| **Originals ahead,** a photo's neighbours when one is opened | Little: image viewers load the next and previous photo themselves | 2 to 10 MB a photo, gigabytes a folder: a mirror, against principle 2 |
+| **Prefetching thumbnails beyond what file managers list** | Folders two levels down open as fast as the next click does | The folders one level below are seeded ahead already, since Files and Dolphin list them to count their items; going further fetches thumbnails for folders nobody shows, multiplied by People and Places |
+| **Thumbhash placeholders** | A folder appears after a short wait whatever the server: Immich sends a thumbhash with every Asset, a blurred image in a few dozen bytes, and a seed made from it where the real one is late records no failure | A new dependency, and blurs instead of thumbnails on the first visit of a slow folder until the next. Seeding takes 0.5 s (1.1 s) for 450 photos |
+| **More small-thumbnail fetches at once** (12) | The folder's 0.5 s (1.3 s) on a slow link: the lab server answers 500 small requests a second eight at a time, 145 one at a time | More load on the server, whose limits differ from the lab's |
+| **Kept listings at once after a restart** | A folder's first visit after a login answers without waiting for its listing | It would need to know which kept listings changed while the daemon was down: the first sync stream of a run only sets the baseline, and a listing the change poll forgot must never come back from the store |
+| **The daemon's copy of Immich's thumbnails in `cache.limit`** | Bounded disk: at 30,000 photos the copy holds 13 GB (17 KB thumbnail and 415 KB preview each), and nothing evicts it before signing out | An evicted preview is fetched again when its folder is seeded again |
+| **Sharp thumbnails and GNOME's 512 MB thumbnail cache** | Revisits without seeding again | A sharp seed is 1.1 MB, written twice where home is a symlink: GNOME's housekeeping keeps about 200 photos' worth and deletes the rest, which the daemon writes again on the next visit (CPU, no download). Default PNG compression makes seeds 16% smaller for 30 times the CPU; sharp thumbnails off cuts a photo's seeds to 0.29 MB |
+
 ## Parked on purpose
 
 | Idea | Why it waits |
@@ -192,6 +217,5 @@ Dolphin, where it is in Places and shows the seeded thumbnails with no original 
 | **"Move to Trash" mapped to Immich's trash** | It makes a library-wide change one keystroke away in a file manager. Needs careful thought first |
 | **Tray icon** | Stock GNOME has none. Possible later as a StatusNotifierItem, for desktops with AppIndicator |
 | **Localisation** | Month folder names and the app's interface |
-| **Prefetching the folders one level below** | Seeding before a listing answers already makes a first visit fast (600 files in under half a second); a prefetch would fetch thumbnails for folders never opened, multiplied by People and Places |
 | **The websocket for `all` API keys** | Every credential is polled every 10 seconds, so changes show within seconds already; the websocket would shave those seconds for one kind of key, at the price of a socket.io client and a second connection |
 | **fanotify pre-content events** | Real placeholder files, the closest Linux match to macOS and Windows. They need root today |

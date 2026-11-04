@@ -77,6 +77,9 @@ This is the measurement that matters most: opening a folder must read no origina
   `__fuse_simple_request`; a plain kprobe cannot resolve `struct fuse_args`.
 - **The content cache** shows what the daemon fetched: an empty cache after browsing means no original was read.
 - **Thumbnails** are in `~/.cache/thumbnails/{normal,large,x-large,xx-large}/`, failures in `fail/`.
+- **How long Files is busy** after opening a folder: `/opt/exp/files-freeze.sh <folder>` in the session, with Files
+  running, samples its main thread over D-Bus (`lab/bazzite-vm/freeze.sh` starts Files fresh around it on Bazzite,
+  where rom-properties made this matter).
 - **Failure cases:** throttle the VM (`tc qdisc add dev eth0 root tbf ...`, or `netem delay`) and stop the server
   mid-operation (`docker stop immich_server` in the server's container).
 
