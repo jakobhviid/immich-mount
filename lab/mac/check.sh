@@ -61,6 +61,9 @@ read_back=$(mac "find $root/Photos -type f | sort | head -3 | while IFS= read -r
   openssl dgst -sha1 -binary \"\$file\" | base64; done")
 matching=$(grep -c -x -F -f <(printf '%s\n' "$checksums") <<<"$read_back" || true)
 verdict "originals read back as the server's" "$matching" "3"
+videos=$(mac "find $root/Photos -type f \\( -iname '*.mp4' -o -iname '*.mov' -o -iname '*.webm' \\) | while IFS= read -r file; do
+  openssl dgst -sha1 -binary \"\$file\" | base64; done")
+verdict "every timeline video read back as the server's" "$(grep -c -x -F -f <(printf '%s\n' "$checksums") <<<"$videos" || true)" "4"
 
 # Finder's way to a thumbnail (QLThumbnailGenerator), on a photo not downloaded; qlmanage reads the file instead.
 thumbnail=$(mac "file=\$(find \$HOME/$root/Photos -type f -exec stat -f '%Sf|%N' {} + | grep '^[^|]*dataless' | head -1 | cut -d'|' -f2-);
@@ -68,19 +71,34 @@ thumbnail=$(mac "file=\$(find \$HOME/$root/Photos -type f -exec stat -f '%Sf|%N'
   printf '%s %s' \"\$made\" \$(ls -lO \"\$file\" | grep -c dataless)")
 verdict "a thumbnail, and its original still not downloaded" "$thumbnail" "1 1"
 
-# A photo of January 2001, a year the library has none of, so a year and a month appear with it. Bytes appended to
-# a fixture make it unique, so Immich does not take it for a duplicate.
+# A photo added to an album on the server shows in it, and goes when taken out. Under the default layout the album's
+# folder may change its year with the photo, so every folder of the album is counted.
+album=$(api "$server/api/albums" | jq -r '.[] | select(.albumName=="Holiday Mix") | .id')
+members=$(api -X POST "$server/api/search/metadata" -H 'content-type: application/json' -d "{\"albumIds\":[\"$album\"],\"size\":100}" |
+  jq -r '.assets.items[].id')
+outsider=$(api -X POST "$server/api/search/metadata" -H 'content-type: application/json' -d '{"size":1000}' |
+  jq -r '.assets.items[].id' | grep -v -x -F -f <(printf '%s\n' "$members") | head -1)
+in_album="find $root/Albums -path '*Holiday Mix/*' -type f | wc -l | tr -d ' '"
+api -X PUT "$server/api/albums/$album/assets" -H 'content-type: application/json' -d "{\"ids\":[\"$outsider\"]}" >/dev/null
+wait_for_mac "a photo added to an album on the server shows in it" "$in_album" "6"
+api -X DELETE "$server/api/albums/$album/assets" -H 'content-type: application/json' -d "{\"ids\":[\"$outsider\"]}" >/dev/null
+wait_for_mac "and goes when taken out" "$in_album" "5"
+
+# A photo of January 2001, a year the library has none of, so a year and a month appear with it, added while the
+# extension is stopped: the app wakes it, and its kept poll sees the change. Bytes appended to a fixture make the
+# photo unique, so Immich does not take it for a duplicate.
+mac "pkill -x ImmichMountFileProvider" || true
 photo=$(mktemp --suffix=.jpg)
 cat "$here/../immich-server/fixtures/cache/001.jpg" >"$photo"
 head -c 64 /dev/urandom >>"$photo"
 asset=$(api -X POST "$server/api/assets" -F "assetData=@$photo;filename=\"MAC_CHECK.jpg\"" \
   -F "fileCreatedAt=2001-01-15T12:00:00.000Z" -F "fileModifiedAt=2001-01-15T12:00:00.000Z" | jq -r .id)
 rm -f "$photo"
-wait_for_mac "a photo added on the server shows" "find $root/Photos/2001 -type f 2>/dev/null | wc -l | tr -d ' '" "1"
+wait_for_mac "a photo added on the server while the extension was stopped shows" "find $root/Photos/2001 -type f 2>/dev/null | wc -l | tr -d ' '" "1"
 api -X DELETE "$server/api/assets" -H 'content-type: application/json' -d "{\"ids\":[\"$asset\"],\"force\":true}" >/dev/null
 wait_for_mac "a photo deleted on the server goes" "ls $root/Photos | grep -c '^2001\$'" "0"
 
-# A unique photo copied into Upload in Finder's terms: the server has it byte for byte, and it leaves Upload.
+# A unique photo moved into Upload: the server has it byte for byte, its source is gone, and it leaves Upload.
 photo=$(mktemp --suffix=.jpg)
 cat "$here/../immich-server/fixtures/cache/002.jpg" >"$photo"
 head -c 64 /dev/urandom >>"$photo"
@@ -89,7 +107,8 @@ mac "mkdir -p Developer/Private/immich-mount/apple/build/check" || true
 # shellcheck disable=SC2086
 scp -q ${MAC_SSH_OPTIONS:-} -o BatchMode=yes "$photo" "$MAC_HOST:Developer/Private/immich-mount/apple/build/check/MAC_UPLOAD.jpg"
 rm -f "$photo"
-mac "cp Developer/Private/immich-mount/apple/build/check/MAC_UPLOAD.jpg $root/Upload/ && rm -rf Developer/Private/immich-mount/apple/build/check"
+mac "mv Developer/Private/immich-mount/apple/build/check/MAC_UPLOAD.jpg $root/Upload/"
+verdict "the moved photo's source is gone" "$(mac "ls Developer/Private/immich-mount/apple/build/check | wc -l | tr -d ' '")" "0"
 found=""
 for _ in $(seq 1 30); do
   found=$(api -X POST "$server/api/search/metadata" -H 'content-type: application/json' \
@@ -97,8 +116,14 @@ for _ in $(seq 1 30); do
   [ -n "$found" ] && break
   sleep 2
 done
-verdict "a photo copied into Upload reaches the server byte for byte" "$([ -n "$found" ] && echo yes || echo no)" "yes"
+verdict "a photo moved into Upload reaches the server byte for byte" "$([ -n "$found" ] && echo yes || echo no)" "yes"
 wait_for_mac "and leaves Upload" "ls $root/Upload | wc -l | tr -d ' '" "0"
+# A file Immich does not take is refused, and stays in Upload rather than being lost; deleting it removes it.
+mac "printf 'not a photo\\n' > Developer/Private/immich-mount/apple/build/check/notes.txt
+  cp Developer/Private/immich-mount/apple/build/check/notes.txt $root/Upload/"
+sleep 15
+verdict "a file Immich does not take stays in Upload" "$(mac "ls $root/Upload | tr '\n' ' '")" "notes.txt "
+mac "rm $root/Upload/notes.txt; rm -rf Developer/Private/immich-mount/apple/build/check"
 if [ -n "$found" ]; then
   api -X DELETE "$server/api/assets" -H 'content-type: application/json' -d "{\"ids\":[\"$found\"],\"force\":true}" >/dev/null
 fi
