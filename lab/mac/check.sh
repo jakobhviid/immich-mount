@@ -1,8 +1,8 @@
 #!/usr/bin/env bash
 # The macOS edition's check, from this machine: Finder's view of the lab server on the maintainer's Mac, one PASS or
 # FAIL line per claim (the mac-dev skill). It needs, already in place: a signed build of the app, signed in to the lab
-# server through the tunnels, running, and the extension switched on. It reads a few originals, and adds one photo to
-# the lab server and deletes it again.
+# server through the tunnels, running, and the extension switched on. It reads a few originals, adds one photo on the
+# server and one through Upload, and deletes both from the server again.
 #
 #   lab/mac/check.sh
 #
@@ -49,7 +49,7 @@ verdict "listing downloads no original" "$(mac "ls -lOR $root/Photos | grep -c d
 checksums=$(api -X POST "$server/api/search/metadata" -H 'content-type: application/json' -d '{"size":1000}' |
   jq -r '.assets.items[].checksum')
 read_back=$(mac "find $root/Photos -type f | sort | head -3 | while IFS= read -r file; do
-  shasum -a 1 \"\$file\" | cut -c1-40 | xxd -r -p | base64; done")
+  openssl dgst -sha1 -binary \"\$file\" | base64; done")
 matching=$(grep -c -x -F -f <(printf '%s\n' "$checksums") <<<"$read_back" || true)
 verdict "originals read back as the server's" "$matching" "3"
 
@@ -70,6 +70,29 @@ rm -f "$photo"
 wait_for_mac "a photo added on the server shows" "find $root/Photos/2001 -type f 2>/dev/null | wc -l | tr -d ' '" "1"
 api -X DELETE "$server/api/assets" -H 'content-type: application/json' -d "{\"ids\":[\"$asset\"],\"force\":true}" >/dev/null
 wait_for_mac "a photo deleted on the server goes" "ls $root/Photos | grep -c '^2001\$'" "0"
+
+# A unique photo copied into Upload in Finder's terms: the server has it byte for byte, and it leaves Upload.
+photo=$(mktemp --suffix=.jpg)
+cat "$here/../immich-server/fixtures/cache/002.jpg" >"$photo"
+head -c 64 /dev/urandom >>"$photo"
+checksum=$(openssl dgst -sha1 -binary "$photo" | base64)
+mac "mkdir -p Developer/Private/immich-mount/apple/build/check" || true
+# shellcheck disable=SC2086
+scp -q ${MAC_SSH_OPTIONS:-} -o BatchMode=yes "$photo" "$MAC_HOST:Developer/Private/immich-mount/apple/build/check/MAC_UPLOAD.jpg"
+rm -f "$photo"
+mac "cp Developer/Private/immich-mount/apple/build/check/MAC_UPLOAD.jpg $root/Upload/ && rm -rf Developer/Private/immich-mount/apple/build/check"
+found=""
+for _ in $(seq 1 30); do
+  found=$(api -X POST "$server/api/search/metadata" -H 'content-type: application/json' \
+    -d "{\"checksum\":\"$checksum\"}" | jq -r '.assets.items[0].id // empty')
+  [ -n "$found" ] && break
+  sleep 2
+done
+verdict "a photo copied into Upload reaches the server byte for byte" "$([ -n "$found" ] && echo yes || echo no)" "yes"
+wait_for_mac "and leaves Upload" "ls $root/Upload | wc -l | tr -d ' '" "0"
+if [ -n "$found" ]; then
+  api -X DELETE "$server/api/assets" -H 'content-type: application/json' -d "{\"ids\":[\"$found\"],\"force\":true}" >/dev/null
+fi
 
 echo "$failures failed, $(($(date +%s) - started)) s"
 [ "$failures" -eq 0 ]
