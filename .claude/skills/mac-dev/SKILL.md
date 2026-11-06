@@ -103,7 +103,8 @@ Login Items & Extensions, File Providers. No command can do it for them.
 
 ## Check
 
-`lab/mac/check.sh` (from Linux, with `MAC_HOST` and `MAC_SSH_OPTIONS`) prints one PASS or FAIL line per claim: the
+`lab/mac/check.sh` (from Linux, with `MAC_HOST` and `MAC_SSH_OPTIONS`; pull the Mac's checkout first) starts fresh
+(the app signs out and in again with the lab's full key) and prints one PASS or FAIL line per claim: the
 sections, every timeline photo, listing downloads no original, originals read back as the server's (SHA-1), a
 thumbnail without its original, a photo added on the server shows and goes again when deleted there, and a photo
 copied into Upload reaches the server byte for byte and leaves Upload. It needs the app signed in through the
@@ -116,7 +117,10 @@ tunnels, running, and the extension switched on; it copies its photo through the
 - **The system's state:** `fileproviderctl dump` (domains, whether ours is enabled, its items); whether the
   extension is switched on: `fileproviderctl dump | grep -A4 '^domain: dev.hviid' | grep enabled`. macOS 27's
   `fileproviderctl` also has `diagnose`, `evaluate` and `check`.
-- **The location on disk:** `~/Library/CloudStorage/ImmichMount-Immich`, which SSH can list.
+- **The location on disk:** `~/Library/CloudStorage/ImmichMount-Immich`, which SSH can list and read (verified).
+- **Thumbnails as Finder asks for them:** `xcrun swift lab/mac/thumbnail.swift <file>` (QLThumbnailGenerator).
+  `qlmanage -t` reads the file itself, which downloads the original: no test of the extension's thumbnails.
+- **Info-level lines** (downloads, listings) show only with `/usr/bin/log show --info`.
 
 ## Record
 

@@ -1144,8 +1144,9 @@ Every design change states its Flatpak impact against this table.
 ## The macOS edition
 
 The same library in Finder's sidebar and in every file dialog, through Apple's File Provider, on the same core as
-the Linux edition. **Being built** on the `mac-support` branch (ROADMAP, M7), and not released. Nothing in this
-section is verified on a Mac yet; where a claim comes from Apple's documentation, it says so.
+the Linux edition. **Being built** on the `mac-support` branch (ROADMAP, M7), and not released. A claim marked
+*verified* was seen on the maintainer's Mac (macOS 27.0.1, Xcode 27.2) against the lab server, most of them by
+`lab/mac/check.sh`; where a claim comes from Apple's documentation, it says so.
 
 ```
  Finder, file dialogs ──▶ fileproviderd (macOS: the item replica, downloaded originals, eviction)
@@ -1198,8 +1199,9 @@ a file the system then keeps, and evicts under storage pressure; the block cache
 (ROADMAP, M7).
 
 **Thumbnails.** The system asks the extension for each item's thumbnail at a size, and the extension answers with
-Immich's small thumbnail (250 pixels on its short side) up to 320 pixels, and its preview (1440) above. Nothing is seeded, and there is no safety net:
-Finder asks the extension rather than reading originals (Apple's documentation).
+Immich's small thumbnail (250 pixels on its short side) up to 320 pixels, and its preview (1440) above. Nothing is
+seeded, and there is no safety net: QuickLook's thumbnail service, which Finder uses, asks the extension and leaves
+the original undownloaded (verified). `qlmanage -t` reads the file instead, so it is no test of this.
 
 **Changes.** The system keeps a replica of every item it was shown, and learns of changes only by asking the working
 set what changed since a sync anchor (Apple's documentation):
@@ -1255,9 +1257,12 @@ folder is `~/Library/CloudStorage/ImmichMount-Immich`.
 
 **Flatpak impact:** none. The Linux edition is unchanged, and the core's additions are platform-free.
 
-**Built so far** (ROADMAP, M7). On the maintainer's Mac (macOS 27.0.1, Xcode 27.2): the bridge's lab tests pass;
-the app and the extension build and are signed by a free Personal Team; the sandboxed app reaches the server,
-signs in and adds the location. Finder itself waits for the extension to be switched on.
+**Built so far** (ROADMAP, M7). Verified on the maintainer's Mac: the bridge's lab tests pass; the app and the
+extension build and are signed by a free Personal Team; the sandboxed app signs in with a key or a password and
+adds the location; and in Finder (`lab/mac/check.sh`, about a minute) every section and timeline photo lists with
+nothing downloaded, originals read back with the server's SHA-1, thumbnails come without their originals, a photo
+added on the server shows and goes again when deleted there, and a photo copied into Upload reaches the server
+byte for byte and leaves Upload.
 - **The bridge** (`immich-mount-apple`): items by identifier, listings, whole originals and thumbnails, from the
   core's tree over the metadata store, on a tokio runtime of its own, with a request's work stopped when the system
   cancels it. A listing that takes more than 20 seconds is answered from the kept one, or as unreachable. The
