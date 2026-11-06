@@ -1157,7 +1157,13 @@ when opened, eviction under storage pressure, the Finder sidebar and every file 
 - **The app** signs in, edits settings and shows status, and as a login item keeps changes flowing (below). Closing
   its window stops nothing.
 - **Only the extension opens the metadata store.** redb allows one process, and the extension is the one that needs
-  it. The app reads status from the extension over the File Provider service channel (`NSFileProviderServiceSource`).
+  it.
+- **Status goes through a file.** The extension writes what it last saw of the server (reachable or not, when, the
+  server's version) to `status.json` in the App Group at each change check, and the app's status page reads it
+  every few seconds. A file outlives the extension, which the system stops when idle, and needs no connection.
+  **Not chosen:** the File Provider service channel (`NSFileProviderServiceSource`), an XPC connection the app opens
+  through one of the location's items: it works only while the location is switched on and the extension answers,
+  and asks more code of both sides for a few lines of status.
 - **Shared through the App Group container:** `config.toml` (the settings table of Linux), the store and the
   extension's own files. **Shared through a Keychain access group:** the credential. The App Group is
   team-prefixed (`<team>.dev.hviid.ImmichMount`), which needs no provisioning entry; `group.` names do. A free
@@ -1258,7 +1264,8 @@ does not take stays in Upload, refused with its reason.
   again are the same Asset.
 - **The app** signs in with single sign-on, a password or an API key (the server check runs in the app, for the
   Local Network prompt), keeps the credential in the Keychain group and the address in the App Group, adds the
-  Finder location, wakes the extension for changes, opens at login when asked, shows the settings, and signs out.
+  Finder location, wakes the extension for changes, opens at login when asked, shows the settings and the
+  extension's status (the server's version, the account's email when known, the last check), and signs out.
   Its About panel carries the non-affiliation notice.
 - **CI's `macos` job** runs the portable crates' and the bridge's clippy and tests on a Mac, builds the bridge for
   Xcode, and builds the app and the extension unsigned.

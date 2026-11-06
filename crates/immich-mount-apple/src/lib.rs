@@ -540,6 +540,16 @@ impl Library {
         self.answers().working_set()
     }
 
+    /// The server's Immich version, as `v3.3.5`, for the app's status.
+    pub async fn server_version(&self) -> Result<String, BridgeError> {
+        let source = self.source.clone();
+        on_runtime(async move {
+            let version = source.client().server_version().await.map_err(immich_mount_core::immich::source_error)?;
+            Ok(version.to_string())
+        })
+        .await
+    }
+
     /// Upload the finished file at `path`, added to `folder` (only the Upload folder takes files) as `name`, and
     /// return its item there. Refused, with a message, when it is no photo or video Immich takes, or not whole.
     pub async fn upload(&self, folder: String, name: String, path: String, modified: SystemTime) -> Result<Item, BridgeError> {

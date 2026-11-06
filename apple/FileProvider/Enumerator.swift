@@ -5,6 +5,8 @@ import FileProvider
 final class Enumerator: NSObject, NSFileProviderEnumerator {
     /// How many items go to the system per call when it does not suggest a number.
     private static let batchSize = 200
+    /// The server's version, asked once per run of the extension, for the app's status.
+    private static var version: String?
 
     private let container: NSFileProviderItemIdentifier
     private let library: Library
@@ -64,8 +66,13 @@ final class Enumerator: NSObject, NSFileProviderEnumerator {
                 if from == (try library.currentAnchor()) {
                     do {
                         _ = try await library.poll()
+                        if Enumerator.version == nil {
+                            Enumerator.version = try? await library.serverVersion()
+                        }
+                        Status(online: true, problem: nil, version: Enumerator.version, checked: Date()).save()
                     } catch {
                         logger.info("asking the server what changed failed: \(String(describing: error), privacy: .public)")
+                        Status(online: false, problem: describe(error), version: Enumerator.version, checked: Date()).save()
                     }
                 }
                 let batch = try library.changesSince(anchor: from, limit: limit)

@@ -103,11 +103,25 @@ struct SignInView: View {
 struct StatusView: View {
     let server: String
     @EnvironmentObject private var model: AppModel
+    /// What the extension last saw of the server, read again every few seconds.
+    @State private var status = Status.load()
 
     var body: some View {
         Form {
             Section {
-                LabeledContent("Server", value: server)
+                LabeledContent("Server", value: [server, status?.version].compactMap { $0 }.joined(separator: ", Immich "))
+                if let email = Account.email {
+                    LabeledContent("Account", value: email)
+                }
+                if let status {
+                    LabeledContent("Connection") {
+                        if status.online {
+                            Text("Connected, checked \(status.checked, style: .relative) ago")
+                        } else {
+                            Text("Not reachable, \(status.checked, style: .relative) ago: \(status.problem ?? "no reason given")")
+                        }
+                    }
+                }
                 Text("Your library is in Finder's sidebar as Immich, and in every file dialog. Originals download when something opens them.")
             } header: {
                 Text("Immich is in Finder")
@@ -136,5 +150,11 @@ struct StatusView: View {
             }
         }
         .formStyle(.grouped)
+        .task {
+            while !Task.isCancelled {
+                status = Status.load()
+                try? await Task.sleep(for: .seconds(5))
+            }
+        }
     }
 }
