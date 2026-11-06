@@ -29,7 +29,7 @@ final class FileProviderExtension: NSObject, NSFileProviderReplicatedExtension, 
         }
         let config = (try? String(contentsOf: AppGroup.configFile, encoding: .utf8)) ?? ""
         do {
-            return try Library.open(server: account.server, apiKey: account.apiKey,
+            return try Library.open(server: account.server, credential: account.credential,
                                     directory: AppGroup.libraryDirectory.path, config: config)
         } catch {
             logger.error("the library did not open: \(String(describing: error), privacy: .public)")

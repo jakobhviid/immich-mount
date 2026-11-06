@@ -8,12 +8,13 @@
 //! cargo test -p immich-mount-apple --test lab -- --ignored
 //! ```
 //!
-//! Environment: `IMMICH_URL`, `IMMICH_API_KEY_READONLY`. The numbers are the seeded library's (the
-//! `lab-immich-server` skill, "What is in it"): 50 Assets on the timeline, no month big enough for day folders.
+//! Environment: `IMMICH_URL`, `IMMICH_API_KEY_READONLY`, `IMMICH_ADMIN_EMAIL`, `IMMICH_ADMIN_PASSWORD`. The numbers are
+//! the seeded library's (the `lab-immich-server` skill, "What is in it"): 50 Assets on the timeline, no month big
+//! enough for day folders.
 
 use base64::Engine;
-use immich_api::{Client, Credential};
-use immich_mount_apple::{check_server, BridgeError, Item, Library};
+use immich_api::{Client, Credential as ApiCredential};
+use immich_mount_apple::{end_session, probe, sign_in_with_api_key, sign_in_with_password, Credential, Item, Library};
 use sha1::{Digest, Sha1};
 
 fn env(name: &str) -> String {
@@ -22,10 +23,25 @@ fn env(name: &str) -> String {
 
 #[tokio::test]
 #[ignore = "needs the lab server"]
-async fn the_server_check_takes_the_lab_server_and_refuses_a_wrong_key() {
-    let server = check_server(env("IMMICH_URL"), env("IMMICH_API_KEY_READONLY")).await.unwrap();
-    assert!(server.version.starts_with('v'), "{}", server.version);
-    assert_eq!(check_server(env("IMMICH_URL"), "not-a-key".into()).await, Err(BridgeError::NotAuthenticated));
+async fn signing_in_takes_a_key_or_a_password_and_refuses_a_wrong_key() {
+    let offer = probe(env("IMMICH_URL")).await.unwrap();
+    assert!(offer.version.starts_with('v') && offer.password, "{offer:?}");
+    let key = sign_in_with_api_key(env("IMMICH_URL"), env("IMMICH_API_KEY_READONLY")).await.unwrap();
+    assert_eq!(key.credential, Credential::ApiKey { key: env("IMMICH_API_KEY_READONLY") });
+    let refused = sign_in_with_api_key(env("IMMICH_URL"), "not-a-key".into()).await.unwrap_err();
+    assert_eq!(refused.to_string(), "The server did not accept this API key.");
+
+    let session = sign_in_with_password(env("IMMICH_URL"), env("IMMICH_ADMIN_EMAIL"), env("IMMICH_ADMIN_PASSWORD")).await.unwrap();
+    assert_eq!(session.account, Some(env("IMMICH_ADMIN_EMAIL")));
+    let directory = tempfile::tempdir().unwrap();
+    let library = Library::open(env("IMMICH_URL"), session.credential.clone(), directory.path().display().to_string(), String::new()).unwrap();
+    assert_eq!(library.list("root".into()).await.unwrap().len(), 4, "a session browses as a key does");
+    assert!(!library.poll().await.unwrap(), "a session's first poll, through the sync stream, takes note only");
+    drop(library);
+    end_session(env("IMMICH_URL"), session.credential.clone()).await;
+    let ended = Library::open(env("IMMICH_URL"), session.credential, directory.path().join("again").display().to_string(), String::new()).unwrap();
+    assert!(ended.list("root".into()).await.is_ok(), "the root needs no server");
+    assert!(ended.list("section|Photos".into()).await.is_err(), "a session ended on the server is refused");
 }
 
 #[tokio::test]
@@ -34,12 +50,12 @@ async fn every_timeline_original_matches_the_servers_checksum() {
     let directory = tempfile::tempdir().unwrap();
     let library = Library::open(
         env("IMMICH_URL"),
-        env("IMMICH_API_KEY_READONLY"),
+        Credential::ApiKey { key: env("IMMICH_API_KEY_READONLY") },
         directory.path().join("library").display().to_string(),
         String::new(),
     )
     .unwrap();
-    let client = Client::new(&env("IMMICH_URL"), Some(Credential::ApiKey(env("IMMICH_API_KEY_READONLY"))), "ImmichMount/lab-tests (Linux; lab)").unwrap();
+    let client = Client::new(&env("IMMICH_URL"), Some(ApiCredential::ApiKey(env("IMMICH_API_KEY_READONLY"))), "ImmichMount/lab-tests (Linux; lab)").unwrap();
 
     let sections: Vec<String> = library.list("root".into()).await.unwrap().into_iter().map(|item| item.name).collect();
     assert_eq!(sections, ["Photos", "Albums", "People", "Places"], "no Upload folder before the macOS edition uploads");

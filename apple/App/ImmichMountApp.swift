@@ -2,6 +2,7 @@
 // stops nothing; the extension serves Finder on its own.
 
 import AppKit
+import AuthenticationServices
 import FileProvider
 import os
 import ServiceManagement
@@ -53,6 +54,8 @@ final class AppModel: ObservableObject {
 
     /// The signed-in server, `nil` before signing in.
     @Published private(set) var server: String? = Account.load()?.server
+    /// What the server being signed in to offers, once its address was checked.
+    @Published var offer: ServerOffer?
     @Published private(set) var busy = false
     @Published var message: String?
     /// Whether the app opens at login, so changes keep reaching Finder; the user's choice, off until made.
@@ -90,30 +93,69 @@ final class AppModel: ObservableObject {
         opensAtLogin = SMAppService.mainApp.status == .enabled
     }
 
-    /// Check the server and the key from the app, before the extension ever runs, so macOS's Local Network prompt
-    /// names the app; then keep them and add the Finder location.
-    func signIn(address: String, apiKey: String) async {
+    /// Check the server's address and what it offers. This runs in the app before the extension ever does, so
+    /// macOS's Local Network prompt names the app (ARCHITECTURE.md, "The macOS edition", "Signing in").
+    func check(address: String) async {
         busy = true
         message = nil
         defer { busy = false }
         do {
-            let key = apiKey.trimmingCharacters(in: .whitespacesAndNewlines)
-            let found = try await checkServer(address: address, apiKey: key)
-            try Account(server: found.address, apiKey: key).save()
+            offer = try await probe(address: address)
+        } catch {
+            message = AppModel.describe(error)
+        }
+    }
+
+    func useKey(_ key: String) async {
+        guard let server = offer?.address else { return }
+        await finishSignIn(on: server) { try await signInWithApiKey(server: server, key: key) }
+    }
+
+    func usePassword(email: String, password: String) async {
+        guard let server = offer?.address else { return }
+        await finishSignIn(on: server) { try await signInWithPassword(server: server, email: email, password: password) }
+    }
+
+    /// Sign in in a web authentication session, which ends at the address Immich's mobile app registers.
+    func useBrowser(_ session: WebAuthenticationSession) async {
+        guard let server = offer?.address else { return }
+        await finishSignIn(on: server) {
+            let attempt = try await beginBrowserSignIn(server: server)
+            guard let address = URL(string: attempt.address()) else {
+                throw BridgeError.Failed(message: "The server sent an address that cannot be opened.")
+            }
+            let redirect = try await session.authenticate(using: address, callbackURLScheme: attempt.callbackScheme(),
+                                                          preferredBrowserSession: nil)
+            return try await attempt.finish(redirect: redirect.absoluteString)
+        }
+    }
+
+    /// Keep the credential and add the Finder location.
+    private func finishSignIn(on server: String, _ signingIn: () async throws -> SignedIn) async {
+        busy = true
+        message = nil
+        defer { busy = false }
+        do {
+            let signedIn = try await signingIn()
+            try Account(server: server, credential: signedIn.credential).save()
             try await FinderLocation.add()
-            server = found.address
-            logger.notice("signed in to Immich \(found.version, privacy: .public); the Finder location is added")
+            self.server = server
+            offer = nil
+            logger.notice("signed in; the Finder location is added")
         } catch {
             message = AppModel.describe(error)
             logger.error("signing in failed: \(String(describing: error), privacy: .public)")
         }
     }
 
-    /// Remove the Finder location, the account and the extension's store.
+    /// End the session on the server, and remove the Finder location, the account and the extension's store.
     func signOut() async {
         busy = true
         message = nil
         defer { busy = false }
+        if let account = Account.load() {
+            await endSession(server: account.server, credential: account.credential)
+        }
         do {
             try await FinderLocation.remove()
         } catch {
@@ -127,15 +169,19 @@ final class AppModel: ObservableObject {
 
     #if DEBUG
     /// For driving a development build from a script (the `mac-dev` skill), with launch arguments: `-signOut YES`
-    /// signs out, and `-signInServer <address> -signInAPIKey <key>` signs in when nobody is. Not in release builds.
+    /// signs out, and `-signInServer <address>` with `-signInAPIKey <key>`, or `-signInEmail` and
+    /// `-signInPassword`, signs in when nobody is. Not in release builds.
     func followLaunchArguments() async {
         let arguments = UserDefaults.standard
         if arguments.bool(forKey: "signOut") {
             await signOut()
         }
-        if server == nil, let address = arguments.string(forKey: "signInServer"),
-           let apiKey = arguments.string(forKey: "signInAPIKey") {
-            await signIn(address: address, apiKey: apiKey)
+        guard server == nil, let address = arguments.string(forKey: "signInServer") else { return }
+        await check(address: address)
+        if let key = arguments.string(forKey: "signInAPIKey") {
+            await useKey(key)
+        } else if let email = arguments.string(forKey: "signInEmail"), let password = arguments.string(forKey: "signInPassword") {
+            await usePassword(email: email, password: password)
         }
     }
     #endif
