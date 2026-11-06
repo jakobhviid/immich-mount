@@ -15,6 +15,12 @@ case "$profile" in
   *) echo "usage: apple/build-rust.sh [debug|release]" >&2; exit 2 ;;
 esac
 out=apple/build
+
+# Where Homebrew's `rust` formula is installed beside Homebrew's rustup, its cargo comes first on the PATH and has only
+# the host's standard library; rustup's own cargo has both targets. Put it first, for this script only.
+if command -v brew >/dev/null && [ -x "$(brew --prefix rustup 2>/dev/null)/bin/cargo" ]; then
+  PATH="$(brew --prefix rustup)/bin:$PATH"
+fi
 targets=(aarch64-apple-darwin x86_64-apple-darwin)
 
 libraries=()
