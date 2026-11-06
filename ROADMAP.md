@@ -166,17 +166,17 @@ checked by CI's macOS job; the maintainer's Mac is needed only to run and debug 
    folders, fetches originals and answers thumbnails; the app signs in with an API key, reaches the server first
    (the Local Network prompt) and adds the Finder location; CI builds the whole Mac side on every branch push. A
    skill for driving the Mac over SSH, written in the first session on it.
-   **Built on Linux, built on the Mac, not yet run there** (ARCHITECTURE, "The macOS edition", "Built so far"):
-   the bridge, the item identifiers, the extension, the app's API key sign-in, the CI job, and the `mac-dev` skill.
-   On the maintainer's Mac (macOS 27.0.1, Xcode 27.2) the bridge's lab tests pass, the app and the extension build,
-   the free Personal Team provisions and signs them, and the app signs in and adds the location. Next: Finder,
-   which needs the extension switched on.
+   **Built, and nearly met (2026-11-06)** on the maintainer's Mac (macOS 27.0.1, Xcode 27.2), against the lab
+   server through a loopback tunnel (`lab/mac/check.sh`; ARCHITECTURE, "The macOS edition", "Built so far"): every
+   section browses in Finder, originals read back with the server's checksums, and thumbnails show with no
+   original downloaded. Not yet: a video opened, and the lab server in LAN mode, which brings the Local Network
+   prompt.
    Exit: on the maintainer's Mac, against the lab server in LAN mode, every section browses in Finder, photos and
    videos open, copied-out files match the server's checksums, and thumbnails show with no original downloaded.
 2. **Live changes.** The change journal in the store, the poll's state kept in the store, and the app as a login
    item that signals the working set.
-   **Built, not yet run on a Mac:** the journal, the kept poll, the bridge's changes and working set, the
-   extension's change reports and the app's signals.
+   **Built; added and deleted verified in Finder** (a photo shows, and goes, within the check's minute). Not yet:
+   a move between albums, and changes made while the extension was stopped.
    Exit: an Asset added, deleted, or moved between albums on the server shows in Finder within a poll interval, also
    after the extension was stopped.
 3. **Sign-in and settings as on Linux.** Password and browser sign-in, the preferences from the core's settings
@@ -186,7 +186,8 @@ checked by CI's macOS job; the maintainer's Mac is needed only to run and debug 
    sign-in; on the maintainer's Mac, password sign-in adds the location. The Settings window, which the extension
    follows. Not yet: status from the extension, the icon (an open question below).
 4. **Uploads** into the Upload folder, through the core's upload sequence.
-   **Built, not yet run in Finder:** the bridge's upload (tested against the lab server) and the extension's.
+   **Built and verified in Finder:** a photo copied into Upload reaches the server byte for byte and leaves Upload.
+   Not yet: a move from Finder (copy, then delete), and a refused file's message in Finder.
 5. **Distribution.** A notarized DMG built by the release workflow, and the Homebrew cask; it needs the paid Apple
    Developer Program.
    Exit: a Mac that never had it installs from Homebrew, switches the extension on, and browses.
