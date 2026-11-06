@@ -167,20 +167,28 @@ final class FileProviderExtension: NSObject, NSFileProviderReplicatedExtension, 
         }
         let kind = itemTemplate.contentType ?? nil
         let isFile = kind.map { !$0.conforms(to: .folder) && !$0.conforms(to: .symbolicLink) && !$0.conforms(to: .aliasFile) } ?? true
-        guard let url, isFile else {
-            completionHandler(nil, [], false, FileProviderExtension.refusal("Only photos and videos can be added; folders and links cannot."))
-            return progress
-        }
         let modified = (itemTemplate.contentModificationDate ?? nil) ?? Date()
         let (folder, name) = (itemTemplate.parentItemIdentifier.bridged, itemTemplate.filename)
+        let reimported = options.contains(.mayAlreadyExist)
         let cancel = Cancel()
         let task = Task {
             do {
+                // A reimport drops the system's database, and it finds what is on disk again as new items. Each is
+                // answered with the item the library has under that name, so the system matches them instead of
+                // keeping both (it would rename the library's own folder "People 2").
+                if reimported, let existing = try await library.list(identifier: folder, cancel: cancel).first(where: { $0.name == name }) {
+                    completionHandler(FileProviderItem(existing), [], false, nil)
+                    progress.completedUnitCount = 1
+                    return
+                }
+                guard let url, isFile else {
+                    throw FileProviderExtension.refusal("Only photos and videos can be added; folders and links cannot.")
+                }
                 let item = try await library.upload(folder: folder, name: name, path: url.path, modified: modified, cancel: cancel)
                 logger.notice("uploaded a file of \(item.size ?? 0) bytes")
                 completionHandler(FileProviderItem(item), [], false, nil)
             } catch {
-                logger.error("an upload failed: \(String(describing: error), privacy: .public)")
+                logger.error("adding an item failed: \(String(describing: error), privacy: .public)")
                 completionHandler(nil, [], false, error.forSystem)
             }
             progress.completedUnitCount = 1
