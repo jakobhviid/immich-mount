@@ -95,8 +95,28 @@ final class AppModel: ObservableObject {
     /// Whether the app opens at login, so changes keep reaching Finder; the user's choice, off until made.
     @Published private(set) var opensAtLogin = SMAppService.mainApp.status == .enabled
 
+    /// What the extension's items carry (their capabilities, their fields). The system keeps the items it was given and
+    /// never asks again, so a version that changes them raises this, and the app has the system read every item again
+    /// once (`refreshItemsAfterUpdate`).
+    private static let itemFormat = 2
+
     init() {
+        Task { await refreshItemsAfterUpdate() }
         Task { await keepChangesFlowing() }
+    }
+
+    /// Have the system read every item again when the item format changed since the last run.
+    private func refreshItemsAfterUpdate() async {
+        let file = AppGroup.container.appendingPathComponent("item-format")
+        let kept = (try? String(contentsOf: file, encoding: .utf8)).flatMap { Int($0) }
+        guard server != nil, kept != AppModel.itemFormat, let manager = NSFileProviderManager(for: FinderLocation.domain) else { return }
+        do {
+            try await manager.reimportItems(below: .rootContainer)
+            try String(AppModel.itemFormat).write(to: file, atomically: true, encoding: .utf8)
+            logger.notice("the items are read again for item format \(AppModel.itemFormat)")
+        } catch {
+            logger.error("the items were not read again: \(String(describing: error), privacy: .public)")
+        }
     }
 
     /// Wake the extension on the poll interval: the system stops it when idle, and it has no clock of its own. It
