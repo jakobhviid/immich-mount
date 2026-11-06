@@ -8,7 +8,8 @@
 //! cargo test -p immich-mount-apple --test lab -- --ignored
 //! ```
 //!
-//! Environment: `IMMICH_URL`, `IMMICH_API_KEY_READONLY`, `IMMICH_ADMIN_EMAIL`, `IMMICH_ADMIN_PASSWORD`. The numbers are
+//! Environment: `IMMICH_URL`, `IMMICH_API_KEY_READONLY`, `IMMICH_API_KEY_FULL`, `IMMICH_ADMIN_EMAIL`,
+//! `IMMICH_ADMIN_PASSWORD`; the upload test also reads the fixtures `seed.sh` downloaded. The numbers are
 //! the seeded library's (the `lab-immich-server` skill, "What is in it"): 50 Assets on the timeline, no month big
 //! enough for day folders.
 
@@ -35,13 +36,45 @@ async fn signing_in_takes_a_key_or_a_password_and_refuses_a_wrong_key() {
     assert_eq!(session.account, Some(env("IMMICH_ADMIN_EMAIL")));
     let directory = tempfile::tempdir().unwrap();
     let library = Library::open(env("IMMICH_URL"), session.credential.clone(), directory.path().display().to_string(), String::new()).unwrap();
-    assert_eq!(library.list("root".into()).await.unwrap().len(), 4, "a session browses as a key does");
+    assert_eq!(library.list("root".into()).await.unwrap().len(), 5, "a session browses as a key does");
     assert!(!library.poll().await.unwrap(), "a session's first poll, through the sync stream, takes note only");
     drop(library);
     end_session(env("IMMICH_URL"), session.credential.clone()).await;
     let ended = Library::open(env("IMMICH_URL"), session.credential, directory.path().join("again").display().to_string(), String::new()).unwrap();
     assert!(ended.list("root".into()).await.is_ok(), "the root needs no server");
     assert!(ended.list("section|Photos".into()).await.is_err(), "a session ended on the server is refused");
+}
+
+#[tokio::test]
+#[ignore = "needs the lab server"]
+async fn a_photo_added_to_upload_reaches_the_library_byte_for_byte() {
+    let directory = tempfile::tempdir().unwrap();
+    let key = env("IMMICH_API_KEY_FULL");
+    let library = Library::open(env("IMMICH_URL"), Credential::ApiKey { key: key.clone() }, directory.path().join("library").display().to_string(), String::new()).unwrap();
+    // A fixture with bytes appended after the image: whole, and unique, so Immich takes it as new.
+    let fixture = concat!(env!("CARGO_MANIFEST_DIR"), "/../../lab/immich-server/fixtures/cache/001.jpg");
+    let mut bytes = std::fs::read(fixture).expect("the fixtures are downloaded (lab/immich-server/seed.sh)");
+    bytes.extend(std::time::SystemTime::now().duration_since(std::time::UNIX_EPOCH).unwrap().as_nanos().to_le_bytes());
+    let photo = directory.path().join("MAC_UPLOAD.jpg");
+    std::fs::write(&photo, &bytes).unwrap();
+
+    let item = library.upload("upload".into(), "MAC_UPLOAD.jpg".into(), photo.display().to_string(), std::time::SystemTime::now()).await.unwrap();
+    assert_eq!(item.parent_identifier, "upload");
+    let asset_id = item.content_version.clone();
+    let client = Client::new(&env("IMMICH_URL"), Some(ApiCredential::ApiKey(key.clone())), "ImmichMount/lab-tests (Linux; lab)").unwrap();
+    let expected = base64::engine::general_purpose::STANDARD.encode(Sha1::digest(&bytes));
+    assert_eq!(client.asset(&asset_id).await.unwrap().checksum, expected, "the original, byte for byte");
+    let again = library.upload("upload".into(), "MAC_UPLOAD.jpg".into(), photo.display().to_string(), std::time::SystemTime::now()).await.unwrap();
+    assert_eq!(again.content_version, asset_id, "the same bytes again are the same Asset");
+
+    let deleted = reqwest::Client::new()
+        .delete(format!("{}/api/assets", env("IMMICH_URL")))
+        .header("x-api-key", key)
+        .json(&serde_json::json!({ "ids": [asset_id], "force": true }))
+        .send()
+        .await
+        .unwrap();
+    assert!(deleted.status().is_success(), "the test's Asset is deleted again");
 }
 
 #[tokio::test]
@@ -58,7 +91,7 @@ async fn every_timeline_original_matches_the_servers_checksum() {
     let client = Client::new(&env("IMMICH_URL"), Some(ApiCredential::ApiKey(env("IMMICH_API_KEY_READONLY"))), "ImmichMount/lab-tests (Linux; lab)").unwrap();
 
     let sections: Vec<String> = library.list("root".into()).await.unwrap().into_iter().map(|item| item.name).collect();
-    assert_eq!(sections, ["Photos", "Albums", "People", "Places"], "no Upload folder before the macOS edition uploads");
+    assert_eq!(sections, ["Photos", "Albums", "People", "Places", "Upload"]);
 
     // Walk Photos to its files, the way Finder would, folder by folder.
     let mut folders = vec!["section|Photos".to_owned()];

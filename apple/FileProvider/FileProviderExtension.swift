@@ -3,6 +3,7 @@
 
 import FileProvider
 import os
+import UniformTypeIdentifiers
 
 let logger = Logger(subsystem: "dev.hviid.ImmichMount", category: "extension")
 
@@ -146,15 +147,45 @@ final class FileProviderExtension: NSObject, NSFileProviderReplicatedExtension, 
 
     // MARK: Changes from Finder
 
-    // Nothing is added, changed or deleted from Finder yet: the Upload folder comes with uploads (ROADMAP, M7), and
-    // every other folder is a read-only view, as on Linux. The items' capabilities already keep Finder from offering
-    // these; a request that comes anyway is refused.
+    // Only the Upload folder takes anything: new files, which are uploaded and leave it a little later. Every other
+    // folder is a read-only view, as on Linux (ARCHITECTURE.md, "The macOS edition", "Uploads"). The items'
+    // capabilities keep Finder from offering the rest; a request that comes anyway is refused.
 
     func createItem(basedOn itemTemplate: NSFileProviderItem, fields: NSFileProviderItemFields, contents url: URL?,
                     options: NSFileProviderCreateItemOptions = [], request: NSFileProviderRequest,
                     completionHandler: @escaping (NSFileProviderItem?, NSFileProviderItemFields, Bool, Error?) -> Void) -> Progress {
-        completionHandler(nil, [], false, CocoaError(.featureUnsupported))
-        return Progress()
+        let progress = Progress(totalUnitCount: 1)
+        guard let library else {
+            completionHandler(nil, [], false, NSFileProviderError(.notAuthenticated))
+            return progress
+        }
+        let kind = itemTemplate.contentType ?? nil
+        let isFile = kind.map { !$0.conforms(to: .folder) && !$0.conforms(to: .symbolicLink) && !$0.conforms(to: .aliasFile) } ?? true
+        guard let url, isFile else {
+            completionHandler(nil, [], false, FileProviderExtension.refusal("Only photos and videos can be added; folders and links cannot."))
+            return progress
+        }
+        let modified = (itemTemplate.contentModificationDate ?? nil) ?? Date()
+        let (folder, name) = (itemTemplate.parentItemIdentifier.bridged, itemTemplate.filename)
+        let task = Task {
+            do {
+                let item = try await library.upload(folder: folder, name: name, path: url.path, modified: modified)
+                logger.notice("uploaded a file of \(item.size ?? 0) bytes")
+                completionHandler(FileProviderItem(item), [], false, nil)
+            } catch {
+                logger.error("an upload failed: \(String(describing: error), privacy: .public)")
+                completionHandler(nil, [], false, error.forSystem)
+            }
+            progress.completedUnitCount = 1
+        }
+        progress.cancellationHandler = { task.cancel() }
+        return progress
+    }
+
+    /// A refusal Finder shows with its reason.
+    private static func refusal(_ message: String) -> Error {
+        NSError(domain: NSFileProviderErrorDomain, code: NSFileProviderError.Code.cannotSynchronize.rawValue,
+                userInfo: [NSLocalizedDescriptionKey: message])
     }
 
     func modifyItem(_ item: NSFileProviderItem, baseVersion version: NSFileProviderItemVersion,
