@@ -183,7 +183,8 @@ checked by CI's macOS job; the maintainer's Mac is needed only to run and debug 
    table, status from the extension, the app's icon. The desktop crate's server check and sign-in move into the
    core, so both editions share them.
    **Built, not yet run on a Mac:** the shared sign-in, and the app's single sign-on, password and API key
-   sign-in. Not yet: the preferences, status from the extension, the icon.
+   sign-in; on the maintainer's Mac, password sign-in adds the location. Not yet: the preferences, status from the
+   extension, the icon (an open question below).
 4. **Uploads** into the Upload folder, through the core's upload sequence.
 5. **Distribution.** A notarized DMG built by the release workflow, and the Homebrew cask; it needs the paid Apple
    Developer Program.
@@ -196,6 +197,10 @@ Open:
   next visit, but the system revisits nothing it holds. Listing held folders again in the background, slowly?
 - **A command line on macOS** (`status`, `doctor`), or none: the sandbox keeps the store and the credential out of
   reach of a plain program.
+- **The app's icon on macOS.** The drive with Immich's colours is drawn in GNOME's style; macOS 26 and later expect
+  an app icon in its rounded square (made with Icon Composer), and show other shapes inside a grey one. It needs a
+  macOS variant of the same drive and lens, which is the maintainer's call (principle 9). macOS's own QuickLook
+  cannot render the SVG to size, so the variant is drawn or exported, not converted at build time.
 
 ## Watch upstream
 
