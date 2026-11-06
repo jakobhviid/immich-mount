@@ -221,10 +221,18 @@ final class AppModel: ObservableObject {
     }
     #endif
 
+    /// A Finder window on the location. The sandboxed app may not open the folder itself (macOS answers that it has
+    /// no permission to open it), but it may ask Finder to show it.
     func showInFinder() async {
         do {
             guard let url = try await FinderLocation.rootURL() else { return }
-            NSWorkspace.shared.open(url)
+            let scoped = url.startAccessingSecurityScopedResource()
+            defer {
+                if scoped { url.stopAccessingSecurityScopedResource() }
+            }
+            if !NSWorkspace.shared.selectFile(nil, inFileViewerRootedAtPath: url.path) {
+                NSWorkspace.shared.activateFileViewerSelecting([url])
+            }
         } catch {
             message = "Finder does not show Immich yet. Is the extension switched on in System Settings? (\(error.localizedDescription))"
         }
