@@ -78,7 +78,9 @@ socat TCP-LISTEN:2283,bind=127.0.0.1,reuseaddr,fork \
 ssh -N -o ExitOnForwardFailure=yes -o ServerAliveInterval=30 -R 127.0.0.1:2283:127.0.0.1:2283 "$MAC_HOST" &
 ```
 
-On the Mac the server is then `http://127.0.0.1:2283` (verified). Loopback is not the local network, so macOS's
+On the Mac the server is then `http://127.0.0.1:2283` (verified). The tunnel starts an `incus exec` per connection,
+which is slow when many open at once: a request that times out makes the extension take the server as offline for
+45 seconds ("the server was unreachable moments ago"), as Linux does, so run checks one at a time. Loopback is not the local network, so macOS's
 Local Network prompt never comes up; checking that prompt itself needs a LAN-mode server and the maintainer at the
 Mac. The bridge's lab tests run on the Mac too, against the tunnel: `IMMICH_URL=http://127.0.0.1:2283
 IMMICH_API_KEY_READONLY=<key> cargo test -p immich-mount-apple --test lab -- --ignored` (passed on macOS 27).
@@ -106,9 +108,10 @@ Login Items & Extensions, File Providers. No command can do it for them.
 `lab/mac/check.sh` (from Linux, with `MAC_HOST` and `MAC_SSH_OPTIONS`; pull the Mac's checkout first) starts fresh
 (the app signs out and in again with the lab's full key) and prints one PASS or FAIL line per claim: the
 sections, every timeline photo, listing downloads no original, originals read back as the server's (SHA-1), a
-thumbnail without its original, a photo added on the server shows and goes again when deleted there, and a photo
-copied into Upload reaches the server byte for byte and leaves Upload. It needs the app signed in through the
-tunnels, running, and the extension switched on; it copies its photo through the checkout's `apple/build/`.
+thumbnail without its original, videos byte for byte, a photo added to and taken out of an album, a photo added
+while the extension was stopped and deleted again, a photo moved into Upload (its source gone, the server has it,
+it leaves Upload), and a refused file staying in Upload. About 85 seconds. It needs a signed build, the tunnels and
+the extension switched on; it works through the checkout's `apple/build/check/`, and cleans up after itself.
 
 ## Look
 
