@@ -46,11 +46,12 @@ apple/build-rust.sh debug        # the bridge for both architectures, its Swift 
 cd apple && xcodegen             # ImmichMount.xcodeproj, git-ignored
 ```
 
-**Unsigned, over SSH,** to see that it compiles (`-derivedDataPath` keeps the build inside the checkout):
+**Unsigned, over SSH,** to see that it compiles. `-derivedDataPath` keeps the build inside the checkout, and a path
+of its own keeps it from replacing the signed app in `build/DerivedData`:
 
 ```sh
 xcodebuild -project ImmichMount.xcodeproj -scheme ImmichMount -configuration Debug -destination platform=macOS \
-  -derivedDataPath build/DerivedData CODE_SIGNING_ALLOWED=NO build
+  -derivedDataPath build/UnsignedData CODE_SIGNING_ALLOWED=NO build
 ```
 
 **Signed, in the maintainer's session.** Running needs a signed build (the extension's entitlements), and signing
@@ -63,7 +64,8 @@ provisions the App IDs, the App Group and the Keychain group (verified). The tea
 `security find-certificate -c "Apple Development" -p | openssl x509 -noout -subject`.
 
 The first signed build stops at a keychain dialog ("codesign wants to sign using key ..."), which waits for the
-maintainer's login password and **Always Allow**, once per key.
+maintainer's login password and **Always Allow**, once per key; later signed builds need nothing (verified). The
+script's Terminal window stays open after the build; the maintainer closes it.
 
 ## The server
 
@@ -93,7 +95,8 @@ open -n "$app" --args -signOut YES       # the Finder location, the account and 
 pkill -x "Immich Mount"                  # quit it; no Apple events, so no Automation prompt
 ```
 
-`open` from SSH starts the app in the maintainer's session, where the Keychain and File Provider work.
+`open` from SSH starts the app in the maintainer's session, where the Keychain and File Provider work (verified:
+signed in to the lab server through the tunnel, and added the Finder location).
 
 The extension serves Finder only once the maintainer has switched it on, once per Mac: System Settings, General,
 Login Items & Extensions, File Providers. No command can do it for them.
@@ -102,8 +105,10 @@ Login Items & Extensions, File Providers. No command can do it for them.
 
 - **Our log** (the app, the extension and the bridge): `/usr/bin/log show --last 10m --predicate 'subsystem ==
   "dev.hviid.ImmichMount"'`; the system's side: `subsystem == "com.apple.FileProvider"`.
-- **The system's state:** `fileproviderctl dump` (domains, whether ours is enabled, its items). macOS 27's
+- **The system's state:** `fileproviderctl dump` (domains, whether ours is enabled, its items); whether the
+  extension is switched on: `fileproviderctl dump | grep -A4 '^domain: dev.hviid' | grep enabled`. macOS 27's
   `fileproviderctl` also has `diagnose`, `evaluate` and `check`.
+- **The location on disk:** `~/Library/CloudStorage/ImmichMount-Immich`, which SSH can list.
 
 ## Record
 
