@@ -1259,10 +1259,12 @@ folder is `~/Library/CloudStorage/ImmichMount-Immich`.
 
 **Built so far** (ROADMAP, M7). Verified on the maintainer's Mac: the bridge's lab tests pass; the app and the
 extension build and are signed by a free Personal Team; the sandboxed app signs in with a key or a password and
-adds the location; and in Finder (`lab/mac/check.sh`, about a minute) every section and timeline photo lists with
-nothing downloaded, originals read back with the server's SHA-1, thumbnails come without their originals, a photo
-added on the server shows and goes again when deleted there, and a photo copied into Upload reaches the server
-byte for byte and leaves Upload.
+adds the location; and in Finder (`lab/mac/check.sh`, under a minute and a half) every section and timeline photo
+lists with nothing downloaded, photos and videos read back with the server's SHA-1, thumbnails come without their
+originals, a photo added to an album on the server shows in it and goes when taken out (within about 10 seconds),
+a photo added while the extension was stopped shows once the app wakes it, a photo deleted on the server goes, a
+photo moved into Upload loses its source, reaches the server byte for byte and leaves Upload, and a file Immich
+does not take stays in Upload, refused with its reason.
 - **The bridge** (`immich-mount-apple`): items by identifier, listings, whole originals and thumbnails, from the
   core's tree over the metadata store, on a tokio runtime of its own, with a request's work stopped when the system
   cancels it. A listing that takes more than 20 seconds is answered from the kept one, or as unreachable. The
