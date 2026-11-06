@@ -3,8 +3,6 @@
 import FileProvider
 
 final class Enumerator: NSObject, NSFileProviderEnumerator {
-    /// The anchor while changes are not tracked yet: nothing ever changes (ROADMAP, M7, "Live changes").
-    private static let unchanging = NSFileProviderSyncAnchor(Data("unchanging".utf8))
     /// How many items go to the system per call when it does not suggest a number.
     private static let batchSize = 200
 
@@ -22,16 +20,21 @@ final class Enumerator: NSObject, NSFileProviderEnumerator {
     }
 
     func enumerateItems(for observer: NSFileProviderEnumerationObserver, startingAt page: NSFileProviderPage) {
-        // The working set holds the items whose changes the system follows, which come with the change journal;
-        // there is no trash.
-        if container == .workingSet || container == .trashContainer {
+        // There is no trash. The working set is every item the system holds, asked for after an anchor expired.
+        if container == .trashContainer {
             observer.finishEnumerating(upTo: nil)
             return
         }
         let (container, library) = (container, library)
         task = Task {
             do {
-                let items = try await library.list(identifier: container.bridged).map(FileProviderItem.init)
+                let found: [Item]
+                if container == .workingSet {
+                    found = library.workingSet()
+                } else {
+                    found = try await library.list(identifier: container.bridged)
+                }
+                let items = found.map(FileProviderItem.init)
                 let batch = max(observer.suggestedPageSize ?? Enumerator.batchSize, 1)
                 for start in stride(from: 0, to: items.count, by: batch) {
                     observer.didEnumerate(Array(items[start..<min(start + batch, items.count)]))
@@ -45,11 +48,45 @@ final class Enumerator: NSObject, NSFileProviderEnumerator {
         }
     }
 
+    /// Changes reach the system through the working set, from the change journal (ARCHITECTURE.md, "The macOS
+    /// edition", "Changes"); a folder's own enumerator has none to report.
     func enumerateChanges(for observer: NSFileProviderChangeObserver, from anchor: NSFileProviderSyncAnchor) {
-        observer.finishEnumeratingChanges(upTo: Enumerator.unchanging, moreComing: false)
+        guard container == .workingSet else {
+            observer.finishEnumeratingChanges(upTo: anchor, moreComing: false)
+            return
+        }
+        let library = library
+        let limit = UInt32(clamping: max(observer.suggestedBatchSize ?? Enumerator.batchSize, 1))
+        task = Task {
+            do {
+                let from = String(decoding: anchor.rawValue, as: UTF8.self)
+                // The server is asked once the system has caught up; while changes wait, it comes back for them.
+                if from == (try library.currentAnchor()) {
+                    do {
+                        _ = try await library.poll()
+                    } catch {
+                        logger.info("asking the server what changed failed: \(String(describing: error), privacy: .public)")
+                    }
+                }
+                let batch = try library.changesSince(anchor: from, limit: limit)
+                if !batch.deleted.isEmpty {
+                    observer.didDeleteItems(withIdentifiers: batch.deleted.map(NSFileProviderItemIdentifier.init(bridged:)))
+                }
+                if !batch.updated.isEmpty {
+                    observer.didUpdate(batch.updated.map(FileProviderItem.init))
+                }
+                if !batch.deleted.isEmpty || !batch.updated.isEmpty {
+                    logger.info("changes: \(batch.updated.count) updated, \(batch.deleted.count) gone")
+                }
+                observer.finishEnumeratingChanges(upTo: NSFileProviderSyncAnchor(Data(batch.anchor.utf8)), moreComing: batch.more)
+            } catch {
+                logger.error("reporting changes failed: \(String(describing: error), privacy: .public)")
+                observer.finishEnumeratingWithError(error.forSystem)
+            }
+        }
     }
 
     func currentSyncAnchor(completionHandler: @escaping (NSFileProviderSyncAnchor?) -> Void) {
-        completionHandler(Enumerator.unchanging)
+        completionHandler((try? library.currentAnchor()).map { NSFileProviderSyncAnchor(Data($0.utf8)) })
     }
 }

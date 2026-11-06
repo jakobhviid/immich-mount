@@ -130,7 +130,7 @@ put the mount at the mercy of a display session and a toolkit, in the one proces
 | Crate | Portable | Kind | Holds |
 |---|---|---|---|
 | `immich-api` | yes | lib | The Immich REST client and models |
-| `immich-mount-core` | yes | lib | The library model, naming, membership, metadata store, content cache, upload logic, settings table, config |
+| `immich-mount-core` | yes | lib | The library model, naming, membership, metadata store and its change journal, content cache, upload logic, settings table, config |
 | `immich-mount-linux` | Linux | lib | FUSE adapter (inode table, kernel invalidation, staging), freedesktop thumbnail seeding, Secret Service, notifications, D-Bus service |
 | `immich-mount` | Linux | bin | Thin CLI plus the `daemon` subcommand: resolve inputs, call one core function, render the result |
 | `immich-mount-desktop` | Linux desktops | lib | What the desktop apps share, without a toolkit: checking a server, sign-in, the credential, first-run setup, status over D-Bus, the preferences' groups and labels |
@@ -1207,9 +1207,12 @@ set what changed since a sync anchor (Apple's documentation):
   identity and a sequence number. Old records are trimmed past a limit, and an anchor older than the oldest record
   is expired, after which the system enumerates again. Linux does not use the journal.
 - **Who polls.** The extension owns the poll (the same ETag and sync-stream poll as Linux) and lists again the
-  touched folders the system holds, which writes the journal. The app, as a login item, signals the working set on
-  the poll interval, which wakes the extension. The poll's state is kept in the store, so an extension started again
-  still sees what changed while it was stopped.
+  touched folders the system holds, which writes the journal. The app signals the working set every 10 seconds, as
+  often as Linux polls, which wakes the extension; it opens at login if the user turns that on. The poll's ETags and
+  counts are kept in the store, so an extension started again still sees what changed while it was stopped. The
+  server is asked only when the system has caught up with the journal.
+- **A folder that went away** takes what the store kept below it: its deletion and its contents' are recorded, and
+  its kept listing goes, so later polls stop asking for it.
 
 **Uploads.** The Upload folder lets items be added. The system hands the extension a finished file, which goes
 through the core's upload sequence; there is no staging, which Linux needs because files arrive there in writes.
@@ -1244,11 +1247,13 @@ extension on once, in System Settings (General, Login Items & Extensions); no pr
   server's SHA-1, an item asked for by identifier is the one listed, and the thumbnails are Immich's WebP and JPEG.
 - **The core's part:** `NodeKey::from_storage_key`, the reverse of the storage key, which accepts only the form it
   writes; and the tree's `parent_of` and `entry_of`. `immich-api` streams a whole original into a file.
-- **The extension** lists, fetches and answers thumbnails through the bridge; the working set is empty and its
-  anchor never moves, until the change journal. Changes from Finder are refused.
+- **The change journal** in the metadata store (off on Linux), the change poll's memory kept in the store, and the
+  bridge's poll, changes and working set, tested on Linux through a fake library whose server adds a photo.
+- **The extension** lists, fetches and answers thumbnails through the bridge, and reports changes through the
+  working set from the journal. Changes from Finder are refused.
 - **The app** signs in with an API key (the server check runs in the app, for the Local Network prompt), keeps the
-  key in the Keychain group and the address in the App Group, adds the Finder location, and signs out. Its About
-  panel carries the non-affiliation notice.
+  key in the Keychain group and the address in the App Group, adds the Finder location, wakes the extension for
+  changes, opens at login when asked, and signs out. Its About panel carries the non-affiliation notice.
 - **CI's `macos` job** runs the portable crates' and the bridge's clippy and tests on a Mac, builds the bridge for
   Xcode, and builds the app and the extension unsigned.
 

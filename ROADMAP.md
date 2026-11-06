@@ -177,6 +177,8 @@ checked by CI's macOS job; the maintainer's Mac is needed only to run and debug 
    videos open, copied-out files match the server's checksums, and thumbnails show with no original downloaded.
 2. **Live changes.** The change journal in the store, the poll's state kept in the store, and the app as a login
    item that signals the working set.
+   **Built, not yet run on a Mac:** the journal, the kept poll, the bridge's changes and working set, the
+   extension's change reports and the app's signals.
    Exit: an Asset added, deleted, or moved between albums on the server shows in Finder within a poll interval, also
    after the extension was stopped.
 3. **Sign-in and settings as on Linux.** Password and browser sign-in, the preferences from the core's settings
