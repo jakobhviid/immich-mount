@@ -1,0 +1,28 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="128" height="128" viewBox="0 0 128 128">
+  <!-- Immich Mount: a drive with a camera lens whose ring carries Immich's five colours (its colours, never its
+       shapes). Drawn for this project, MIT like the rest of it. -->
+  <defs>
+    <linearGradient id="face" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#ffffff"/><stop offset="1" stop-color="#deddda"/>
+    </linearGradient>
+    <linearGradient id="base" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#c0bfbc"/><stop offset="1" stop-color="#9a9996"/>
+    </linearGradient>
+    <radialGradient id="glass" cx="0.42" cy="0.38" r="0.75">
+      <stop offset="0" stop-color="#2d5c9e"/><stop offset="0.6" stop-color="#18294a"/><stop offset="1" stop-color="#0f0d16"/>
+    </radialGradient>
+  </defs>
+  <rect x="8" y="22" width="112" height="88" rx="12" fill="url(#base)"/>
+  <rect x="8" y="22" width="112" height="72" rx="12" fill="url(#face)"/>
+  <rect x="8.5" y="22.5" width="111" height="87" rx="11.5" fill="none"
+        stroke="#000000" stroke-opacity="0.10"/>
+  <rect x="96" y="98" width="12" height="3" rx="1.5" fill="#18C249"/>
+  <circle cx="64" cy="58" r="30" fill="#3d3846"/>
+  <circle cx="64" cy="58" r="28" fill="#241f31"/>
+  <path d="M 65.03 34.32 A 23.700000000000003 23.700000000000003 0 0 1 86.20 49.70" stroke="#FA2921" stroke-width="7.80" fill="none" stroke-linecap="butt"/><path d="M 86.84 51.67 A 23.700000000000003 23.700000000000003 0 0 1 78.75 76.55" stroke="#ED79B5" stroke-width="7.80" fill="none" stroke-linecap="butt"/><path d="M 77.08 77.76 A 23.700000000000003 23.700000000000003 0 0 1 50.92 77.76" stroke="#FFB400" stroke-width="7.80" fill="none" stroke-linecap="butt"/><path d="M 49.25 76.55 A 23.700000000000003 23.700000000000003 0 0 1 41.16 51.67" stroke="#1E83F7" stroke-width="7.80" fill="none" stroke-linecap="butt"/><path d="M 41.80 49.70 A 23.700000000000003 23.700000000000003 0 0 1 62.97 34.32" stroke="#18C249" stroke-width="7.80" fill="none" stroke-linecap="butt"/>
+  <circle cx="64" cy="58" r="18.00" fill="url(#glass)"/>
+  <circle cx="64" cy="58" r="11.16" fill="none" stroke="#ffffff" stroke-opacity="0.16" stroke-width="1.44"/>
+  <ellipse cx="58.24" cy="51.52" rx="5.40" ry="3.24"
+           transform="rotate(-35 58.24 51.52)" fill="#ffffff" opacity="0.75"/>
+  <circle cx="70.84" cy="63.40" r="1.44" fill="#ffffff" opacity="0.45"/>
+</svg>
