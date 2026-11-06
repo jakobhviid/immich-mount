@@ -92,7 +92,11 @@ icon style, and is MIT like the rest.
   are shown inside a grey one), a light blue-grey tile on Apple's 1024 grid. `apple/make-icons.sh` builds it from
   the SVG and renders the asset catalog's sizes with `rsvg-convert`; the PNGs are committed, since the Mac has no SVG
   renderer (QuickLook draws the SVG at its own size, not to a given one). The app and the extension both carry it:
-  the Dock, Login Items, System Settings' list of file providers and the About panel show it.
+  the Dock, Login Items, System Settings' list of file providers and the About panel show it, and the app's window
+  shows it over its title, as the GNOME app's welcome and status pages do. The About panel has the GNOME About
+  dialog's texts: the non-affiliation notice as its copyright line, then the credits and the AI disclosure.
+- **Finder's sidebar** shows the location with a one-colour symbol, which the extension names: Apple's external drive
+  (`externaldrive`), as Files' sidebar shows the mount with the theme's drive symbol on Linux.
 
 ## Two processes: a daemon and an app
 

@@ -24,10 +24,40 @@ struct ImmichMountApp: App {
                 .environmentObject(model)
         }
         .windowResizability(.contentSize)
+        .commands {
+            CommandGroup(replacing: .appInfo) {
+                Button("About Immich Mount") { showAbout() }
+            }
+        }
         Settings {
             PreferencesView()
         }
     }
+}
+
+/// The standard About panel, with the GNOME app's About texts: what it is, the credits and the AI disclosure. The
+/// non-affiliation notice is its copyright line (Info.plist), which the panel always shows.
+@MainActor
+private func showAbout() {
+    let credits = NSMutableAttributedString()
+    let body: [NSAttributedString.Key: Any] = [.font: NSFont.systemFont(ofSize: NSFont.smallSystemFontSize),
+                                               .foregroundColor: NSColor.labelColor]
+    let heading: [NSAttributedString.Key: Any] = [.font: NSFont.boldSystemFont(ofSize: NSFont.smallSystemFontSize),
+                                                  .foregroundColor: NSColor.labelColor]
+    func add(_ text: String, _ attributes: [NSAttributedString.Key: Any], link: String? = nil) {
+        var attributes = attributes
+        if let link { attributes[.link] = URL(string: link) }
+        credits.append(NSAttributedString(string: text, attributes: attributes))
+    }
+    add("Your Immich photos and videos as a drive in Finder. By Jakob Hviid, under the MIT license.\n\n", body)
+    add("Inspired by\n", heading)
+    add("Kartax/immich-desktop-app", body, link: "https://github.com/Kartax/immich-desktop-app")
+    add("\n\nThe Immich API layer\n", heading)
+    add("immich-rs", body, link: "https://github.com/boul2gom/immich-rs")
+    add("\n\nAI disclosure\n", heading)
+    add("Parts of this project were written with the assistance of AI coding agents. All changes are reviewed by the maintainer.", body)
+    NSApplication.shared.orderFrontStandardAboutPanel(options: [.credits: credits])
+    NSApplication.shared.activate(ignoringOtherApps: true)
 }
 
 /// The Finder location: one File Provider domain, shown as "Immich" in the sidebar, as the volume is on Linux.
