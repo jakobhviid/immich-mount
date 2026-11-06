@@ -15,6 +15,9 @@ case "$profile" in
   *) echo "usage: apple/build-rust.sh [debug|release]" >&2; exit 2 ;;
 esac
 out=apple/build
+# The oldest macOS the app runs on (project.yml's deploymentTarget): rustc and the C compiler behind ring and oslog
+# both read it. Without it the C parts are built for the SDK's own version, newer than the app's.
+export MACOSX_DEPLOYMENT_TARGET=14.0
 
 # Where Homebrew's `rust` formula is installed beside Homebrew's rustup, its cargo comes first on the PATH and has only
 # the host's standard library; rustup's own cargo has both targets. Put it first, for this script only.
