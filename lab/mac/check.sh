@@ -44,9 +44,13 @@ curl -sS -m 10 "$server/api/server/version" >/dev/null || { echo "the lab server
 mac true || { echo "the Mac does not answer at $MAC_HOST" >&2; exit 1; }
 started=$(date +%s)
 
+since=$(mac "date '+%Y-%m-%d %H:%M:%S'")
 mac "pkill -x 'Immich Mount'; sleep 1; open -n '$app' --args -signOut YES -signInServer $server \
   -signInAPIKey $IMMICH_API_KEY_FULL"
-wait_for_mac "the sections, after a fresh sign-in" "ls $root 2>/dev/null | sort | tr '\n' ' '" "Albums People Photos Places Upload "
+# The app logs its sign-in once the location is back; the old folder may still answer until then.
+wait_for_mac "a fresh sign-in" "/usr/bin/log show --start '$since' --style compact \
+  --predicate 'subsystem == \"dev.hviid.ImmichMount\"' | grep -c 'signed in; the Finder location is added'" "1"
+wait_for_mac "the sections" "ls $root 2>/dev/null | sort | tr '\n' ' '" "Albums People Photos Places Upload "
 verdict "every timeline photo" "$(mac "find $root/Photos -type f | wc -l | tr -d ' '")" "50"
 verdict "listing downloads no original" "$(mac "ls -lOR $root/Photos | grep -c dataless")" "50"
 
