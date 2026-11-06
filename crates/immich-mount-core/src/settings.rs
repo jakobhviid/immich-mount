@@ -63,6 +63,21 @@ pub const SETTINGS: &[Setting] = &[
     Setting { key: "credential.file", kind: Kind::Path, description: "Headless only: a 0600 file holding the credential", default: "" },
 ];
 
+/// How a choice reads in a dialog, in every edition's app.
+pub fn choice_label(word: &str) -> &str {
+    match word {
+        "never" => "Never",
+        "atLeast500" => "From 500 Items",
+        "always" => "Always",
+        "year-prefix" => "Year in the Name (2023 - Trip)",
+        "year-folders" => "Year Folders (2023/Trip)",
+        "flat" => "Name Only (Trip)",
+        "date-time" => "Date and Time Taken",
+        "original" => "Original File Names",
+        other => other,
+    }
+}
+
 /// Why a setting could not be read or changed.
 #[derive(Debug, thiserror::Error, PartialEq, Eq)]
 pub enum SettingError {
