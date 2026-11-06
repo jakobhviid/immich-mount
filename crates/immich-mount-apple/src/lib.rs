@@ -13,10 +13,10 @@ use std::sync::{Arc, Mutex, OnceLock, Weak};
 use std::task::{Context, Poll};
 use std::time::{Duration, Instant, SystemTime};
 
-use immich_api::{ApiError, Client, Credential};
-use immich_mount_core::immich::{source_error, ImmichSource};
+use immich_api::{ApiError, Client, Credential as ApiCredential};
+use immich_mount_core::immich::ImmichSource;
 use immich_mount_core::settings::Config;
-use immich_mount_core::sign_in::normalised_address;
+use immich_mount_core::sign_in::{self, normalised_address, BrowserSignIn};
 use immich_mount_core::source::{LibrarySource, SourceError, ThumbnailKind, ThumbnailSource};
 use immich_mount_core::store::{Anchor, Change, JournalRead, MetadataStore};
 use immich_mount_core::tree::{is_touched, Entry, EntryKind, NameMemory, NodeKey, Tree};
@@ -38,9 +38,9 @@ const POLL_MEMORY: &str = "change-poll";
 /// How long the server check keeps trying a connection that fails: macOS may refuse sockets while its Local Network
 /// prompt waits for an answer (Apple's TN3179).
 const LOCAL_NETWORK_PATIENCE: Duration = Duration::from_secs(30);
-/// How long one attempt of the server check may take; the client's own retries would wait minutes on a server that
-/// drops requests.
-const CHECK_ATTEMPT_LIMIT: Duration = Duration::from_secs(10);
+/// How long one request of signing in may take; the client's own retries would wait minutes on a server that drops
+/// requests.
+const SIGN_IN_LIMIT: Duration = Duration::from_secs(10);
 
 /// Why a request failed, in the kinds the system tells apart.
 #[derive(Debug, Clone, PartialEq, Eq, thiserror::Error, uniffi::Error)]
@@ -342,6 +342,31 @@ pub struct Library {
     answers: Arc<Answers<ImmichSource, MetadataStore>>,
 }
 
+/// What an account signs in with.
+#[derive(Debug, Clone, PartialEq, Eq, uniffi::Enum)]
+pub enum Credential {
+    /// An API key, made in Immich's account settings.
+    ApiKey { key: String },
+    /// A session from a password or browser sign-in.
+    Session { token: String },
+}
+
+impl Credential {
+    fn for_client(&self) -> ApiCredential {
+        match self {
+            Credential::ApiKey { key } => ApiCredential::ApiKey(key.trim().to_owned()),
+            Credential::Session { token } => ApiCredential::Session(token.trim().to_owned()),
+        }
+    }
+
+    fn secret(&self) -> &str {
+        match self {
+            Credential::ApiKey { key } => key.trim(),
+            Credential::Session { token } => token.trim(),
+        }
+    }
+}
+
 /// The libraries open in this process, by directory and credential: the system may make a new extension object
 /// before it lets go of the old one, and the metadata store can be opened only once.
 type OpenLibraries = Mutex<HashMap<(PathBuf, String, String), Weak<Library>>>;
@@ -356,18 +381,18 @@ impl Library {
     /// Open one account's library. `directory` holds its metadata store (in the App Group container), and `config`
     /// is the text of `config.toml`, empty for the defaults.
     #[uniffi::constructor]
-    pub fn open(server: String, api_key: String, directory: String, config: String) -> Result<Arc<Library>, BridgeError> {
-        let (server, api_key, directory) = (normalised_address(&server), api_key.trim().to_owned(), PathBuf::from(directory));
+    pub fn open(server: String, credential: Credential, directory: String, config: String) -> Result<Arc<Library>, BridgeError> {
+        let (server, directory) = (normalised_address(&server), PathBuf::from(directory));
         let mut open = open_libraries().lock().expect("open libraries lock");
         open.retain(|_, library| library.strong_count() > 0);
-        let key = (directory.clone(), server.clone(), api_key.clone());
+        let key = (directory.clone(), server.clone(), credential.secret().to_owned());
         if let Some(library) = open.get(&key).and_then(Weak::upgrade) {
             return Ok(library);
         }
         let mut config = Config::from_toml(&config).map_err(failed)?;
         // Not before the macOS edition uploads (ROADMAP, M7): the folder would refuse every file.
         config.uploads_enabled = false;
-        let client = Client::new(&server, Some(Credential::ApiKey(api_key)), USER_AGENT).map_err(failed)?;
+        let client = Client::new(&server, Some(credential.for_client()), USER_AGENT).map_err(failed)?;
         std::fs::create_dir_all(&directory).map_err(|error| failed(format!("{}: {error}", directory.display())))?;
         let store = MetadataStore::open(&directory.join("metadata.redb")).map_err(failed)?.with_journal(JOURNAL_LIMIT).map_err(failed)?;
         let kept_poll = store.kept_state(POLL_MEMORY);
@@ -426,45 +451,143 @@ impl Library {
     }
 }
 
-/// What a server check found.
+// Signing in, as on Linux: the core's `sign_in` (ARCHITECTURE.md, "Signing in"). Its errors are messages for people.
+
+/// What a server offers before anyone signs in.
 #[derive(Debug, Clone, PartialEq, Eq, uniffi::Record)]
-pub struct Server {
+pub struct ServerOffer {
     /// The address as it is used: `https://` added when none was typed.
     pub address: String,
     /// Immich's version, as `v3.3.5`.
     pub version: String,
+    /// The text of the server's single sign-on button, when it offers browser sign-in.
+    pub browser_button: Option<String>,
+    /// Whether it takes a password.
+    pub password: bool,
 }
 
-/// Check a server and an API key before they are kept: the server answers, runs a supported Immich, and accepts the
-/// key. The app calls this before the extension ever runs, so macOS's Local Network prompt names the app
-/// (ARCHITECTURE.md, "The macOS edition"); a connection that fails is tried again while that prompt may be open.
+/// A finished sign-in: the credential to keep, and the account's email when the sign-in told it.
+#[derive(Debug, Clone, PartialEq, Eq, uniffi::Record)]
+pub struct SignedIn {
+    pub credential: Credential,
+    pub account: Option<String>,
+}
+
+fn anonymous(server: &str) -> Result<Client, BridgeError> {
+    Client::new(server, None, USER_AGENT).map_err(failed)
+}
+
+/// A step of signing in, with its own limit.
+async fn in_time<Output>(step: impl Future<Output = Result<Output, String>>) -> Result<Output, BridgeError> {
+    match tokio::time::timeout(SIGN_IN_LIMIT * 3, step).await {
+        Ok(result) => result.map_err(failed),
+        Err(_) => Err(too_slow()),
+    }
+}
+
+/// Check the server at an address, and what sign-in methods it offers. The app calls this before the extension ever
+/// runs, so macOS's Local Network prompt names the app (ARCHITECTURE.md, "The macOS edition"); a connection that
+/// fails is tried again while that prompt may be open.
 #[uniffi::export]
-pub async fn check_server(address: String, api_key: String) -> Result<Server, BridgeError> {
+pub async fn probe(address: String) -> Result<ServerOffer, BridgeError> {
     on_runtime(async move {
         let address = normalised_address(&address);
-        let client = Client::new(&address, Some(Credential::ApiKey(api_key.trim().to_owned())), USER_AGENT).map_err(failed)?;
+        let client = anonymous(&address)?;
         let started = Instant::now();
-        let version = loop {
-            let attempt = tokio::time::timeout(CHECK_ATTEMPT_LIMIT, client.server_version()).await;
-            match attempt {
-                Ok(Ok(version)) => break version,
-                Ok(Err(ApiError::Offline(_))) | Err(_) if started.elapsed() < LOCAL_NETWORK_PATIENCE => {
-                    tokio::time::sleep(Duration::from_secs(1)).await;
-                }
-                Ok(Err(error)) => return Err(BridgeError::from(source_error(error))),
-                Err(_) => return Err(too_slow()),
+        while started.elapsed() < LOCAL_NETWORK_PATIENCE {
+            match tokio::time::timeout(SIGN_IN_LIMIT, client.server_version()).await {
+                Ok(Err(ApiError::Offline(_))) | Err(_) => tokio::time::sleep(Duration::from_secs(1)).await,
+                _ => break,
             }
-        };
-        if !version.is_supported() {
-            return Err(failed(format!(
-                "This server runs Immich {version}. Immich Mount needs {} or later.",
-                immich_api::version::MINIMUM_SUPPORTED
-            )));
         }
-        client.api_key_permissions().await.map_err(|error| BridgeError::from(source_error(error)))?;
-        Ok(Server { address, version: version.to_string() })
+        let offer = in_time(sign_in::probe(&client, &address)).await?;
+        Ok(ServerOffer { address: offer.url, version: offer.version, browser_button: offer.browser_button, password: offer.password })
     })
     .await
+}
+
+#[uniffi::export]
+pub async fn sign_in_with_api_key(server: String, key: String) -> Result<SignedIn, BridgeError> {
+    on_runtime(async move {
+        let credential = Credential::ApiKey { key: key.trim().to_owned() };
+        let client = Client::new(&normalised_address(&server), Some(credential.for_client()), USER_AGENT).map_err(failed)?;
+        in_time(sign_in::check_api_key(&client)).await?;
+        Ok(SignedIn { credential, account: None })
+    })
+    .await
+}
+
+#[uniffi::export]
+pub async fn sign_in_with_password(server: String, email: String, password: String) -> Result<SignedIn, BridgeError> {
+    on_runtime(async move {
+        let client = anonymous(&normalised_address(&server))?;
+        let session = in_time(sign_in::password_session(&client, &email, &password)).await?;
+        Ok(SignedIn { credential: Credential::Session { token: session.token }, account: Some(session.account) })
+    })
+    .await
+}
+
+/// One browser sign-in. Its secrets stay here; the app opens `address()` in a web authentication session that ends
+/// at the address Immich's mobile app registers (`app.immich:///oauth-callback`), and hands that back to `finish`.
+#[derive(uniffi::Object)]
+pub struct BrowserAttempt {
+    server: String,
+    secrets: BrowserSignIn,
+    address: String,
+}
+
+#[uniffi::export]
+pub async fn begin_browser_sign_in(server: String) -> Result<Arc<BrowserAttempt>, BridgeError> {
+    on_runtime(async move {
+        let server = normalised_address(&server);
+        let secrets = BrowserSignIn::new().map_err(failed)?;
+        let address = in_time(sign_in::begin_browser(&anonymous(&server)?, &secrets.state, &secrets.code_challenge)).await?;
+        Ok(Arc::new(BrowserAttempt { server, secrets, address }))
+    })
+    .await
+}
+
+#[uniffi::export]
+impl BrowserAttempt {
+    /// The identity provider's address to open.
+    pub fn address(&self) -> String {
+        self.address.clone()
+    }
+
+    /// The scheme the sign-in ends at, which the web authentication session waits for.
+    pub fn callback_scheme(&self) -> String {
+        sign_in::REDIRECT_URI.split("://").next().unwrap_or_default().to_owned()
+    }
+
+    /// Finish with the address the browser was sent to.
+    pub async fn finish(&self, redirect: String) -> Result<SignedIn, BridgeError> {
+        if let Some(refusal) = sign_in::provider_error(&redirect, &self.secrets.state) {
+            return Err(failed(refusal));
+        }
+        let (server, secrets) = (self.server.clone(), self.secrets.clone());
+        on_runtime(async move {
+            let session = in_time(sign_in::finish_browser(&anonymous(&server)?, &redirect, &secrets)).await?;
+            Ok(SignedIn { credential: Credential::Session { token: session.token }, account: Some(session.account) })
+        })
+        .await
+    }
+}
+
+/// End a session on the server, as signing out does; an API key has nothing to end. Signing out goes on whatever the
+/// server says.
+#[uniffi::export]
+pub async fn end_session(server: String, credential: Credential) {
+    let ended = on_runtime(async move {
+        if matches!(credential, Credential::Session { .. }) {
+            let client = Client::new(&normalised_address(&server), Some(credential.for_client()), USER_AGENT).map_err(failed)?;
+            let _ = tokio::time::timeout(SIGN_IN_LIMIT, client.logout()).await;
+        }
+        Ok(())
+    })
+    .await;
+    if let Err(error) = ended {
+        log::info!("the session was not ended on the server: {error}");
+    }
 }
 
 /// Send this process's log lines to macOS's unified log, under the subsystem `dev.hviid.ImmichMount`. Elsewhere it
@@ -783,10 +906,11 @@ mod tests {
     fn a_library_is_opened_once_per_directory_and_credential() {
         let directory = tempfile::tempdir().unwrap();
         let path = directory.path().display().to_string();
-        let first = Library::open("lab.example".into(), "key".into(), path.clone(), String::new()).unwrap();
-        let again = Library::open("https://lab.example/".into(), " key ".into(), path.clone(), String::new()).unwrap();
+        let key = |key: &str| Credential::ApiKey { key: key.into() };
+        let first = Library::open("lab.example".into(), key("key"), path.clone(), String::new()).unwrap();
+        let again = Library::open("https://lab.example/".into(), key(" key "), path.clone(), String::new()).unwrap();
         assert!(Arc::ptr_eq(&first, &again), "the store is opened once");
         drop((first, again));
-        assert!(Library::open("lab.example".into(), "key".into(), path, "bad = [".into()).is_err(), "a config that does not parse");
+        assert!(Library::open("lab.example".into(), key("key"), path, "bad = [".into()).is_err(), "a config that does not parse");
     }
 }

@@ -16,15 +16,7 @@ use immich_mount_linux::paths::Paths;
 
 const USER_AGENT: &str = concat!("immich-mount/", env!("CARGO_PKG_VERSION"));
 
-/// What a server offers, read before anyone signs in.
-#[derive(Debug, Clone)]
-pub struct ServerOffer {
-    pub url: String,
-    pub version: String,
-    /// The text of the server's single sign-on button, when it has one.
-    pub browser_button: Option<String>,
-    pub password: bool,
-}
+pub use immich_mount_core::sign_in::ServerOffer;
 
 /// A finished sign-in.
 pub struct SignedIn {
@@ -104,58 +96,28 @@ fn client(url: &str, credential: Option<&Credential>) -> Result<Client, String> 
 
 /// Check the server and what sign-in methods it offers. Needs no credential.
 pub async fn probe(url: String) -> Result<ServerOffer, String> {
-    let anonymous = client(&url, None)?;
-    let version = anonymous.server_version().await.map_err(|error| format!("Could not reach {url}: {error}"))?;
-    if !version.is_supported() {
-        return Err(format!(
-            "This server runs Immich {version}. Immich Mount needs {} or later.",
-            immich_api::version::MINIMUM_SUPPORTED
-        ));
-    }
-    let features = anonymous.server_features().await.map_err(|error| error.to_string())?;
-    let browser_button = if features.oauth {
-        let config = anonymous.server_config().await.map_err(|error| error.to_string())?;
-        Some(if config.oauth_button_text.trim().is_empty() { "Sign in with SSO".to_owned() } else { config.oauth_button_text })
-    } else {
-        None
-    };
-    Ok(ServerOffer { url, version: version.to_string(), browser_button, password: features.password_login })
+    sign_in::probe(&client(&url, None)?, &url).await
 }
 
 /// Start a browser sign-in: the identity provider's address to open.
 pub async fn begin_browser_sign_in(url: String, state: String, code_challenge: String) -> Result<String, String> {
-    client(&url, None)?
-        .oauth_authorize(sign_in::REDIRECT_URI, &state, &code_challenge)
-        .await
-        .map_err(|error| format!("The server could not start single sign-on: {error}"))
+    sign_in::begin_browser(&client(&url, None)?, &state, &code_challenge).await
 }
 
 /// Finish a browser sign-in with the address the browser was sent to.
 pub async fn finish_browser_sign_in(url: String, redirect: String, attempt: BrowserSignIn) -> Result<SignedIn, String> {
-    if !sign_in::is_redirect_for(&redirect, &attempt.state) {
-        return Err("That sign-in belongs to another attempt. Please sign in again.".to_owned());
-    }
-    let answer = client(&url, None)?
-        .oauth_callback(&redirect, &attempt.state, &attempt.code_verifier)
-        .await
-        .map_err(|error| format!("Signing in failed: {error}"))?;
-    Ok(SignedIn { credential: Credential::Session(answer.access_token), account: Some(answer.user_email) })
+    let session = sign_in::finish_browser(&client(&url, None)?, &redirect, &attempt).await?;
+    Ok(SignedIn { credential: Credential::Session(session.token), account: Some(session.account) })
 }
 
 pub async fn sign_in_with_password(url: String, email: String, password: String) -> Result<SignedIn, String> {
-    let answer = client(&url, None)?.login_password(&email, &password).await.map_err(|error| match error {
-        immich_api::ApiError::Unauthorized => "Wrong email or password.".to_owned(),
-        other => format!("Signing in failed: {other}"),
-    })?;
-    Ok(SignedIn { credential: Credential::Session(answer.access_token), account: Some(answer.user_email) })
+    let session = sign_in::password_session(&client(&url, None)?, &email, &password).await?;
+    Ok(SignedIn { credential: Credential::Session(session.token), account: Some(session.account) })
 }
 
 pub async fn sign_in_with_api_key(url: String, key: String) -> Result<SignedIn, String> {
     let credential = Credential::ApiKey(key.trim().to_owned());
-    client(&url, Some(&credential))?.api_key_permissions().await.map_err(|error| match error {
-        immich_api::ApiError::Unauthorized => "The server did not accept this API key.".to_owned(),
-        other => format!("Checking the key failed: {other}"),
-    })?;
+    sign_in::check_api_key(&client(&url, Some(&credential))?).await?;
     Ok(SignedIn { credential, account: None })
 }
 

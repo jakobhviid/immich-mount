@@ -181,7 +181,9 @@ checked by CI's macOS job; the maintainer's Mac is needed only to run and debug 
    after the extension was stopped.
 3. **Sign-in and settings as on Linux.** Password and browser sign-in, the preferences from the core's settings
    table, status from the extension, the app's icon. The desktop crate's server check and sign-in move into the
-   core, so both editions share them (the bridge has its own small check until then).
+   core, so both editions share them.
+   **Built, not yet run on a Mac:** the shared sign-in, and the app's single sign-on, password and API key
+   sign-in. Not yet: the preferences, status from the extension, the icon.
 4. **Uploads** into the Upload folder, through the core's upload sequence.
 5. **Distribution.** A notarized DMG built by the release workflow, and the Homebrew cask; it needs the paid Apple
    Developer Program.

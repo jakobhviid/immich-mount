@@ -6,6 +6,7 @@
 
 use base64::engine::general_purpose::URL_SAFE_NO_PAD;
 use base64::Engine;
+use immich_api::Client;
 use sha2::{Digest, Sha256};
 
 /// Where the identity provider sends the browser: the address Immich's mobile app registers, which providers set up
@@ -22,7 +23,82 @@ pub fn normalised_address(typed: &str) -> String {
     }
 }
 
+/// What a server offers, read before anyone signs in.
+#[derive(Debug, Clone)]
+pub struct ServerOffer {
+    pub url: String,
+    pub version: String,
+    /// The text of the server's single sign-on button, when it has one.
+    pub browser_button: Option<String>,
+    pub password: bool,
+}
+
+/// A session from a password or browser sign-in: its token, and the account's email.
+pub struct Session {
+    pub token: String,
+    pub account: String,
+}
+
+// Every edition's sign-in, over a client it made with its own user agent (`anonymous` has no credential). Errors are
+// messages for people.
+
+/// Check the server at `url` and what sign-in methods it offers. Needs no credential.
+pub async fn probe(anonymous: &Client, url: &str) -> Result<ServerOffer, String> {
+    let version = anonymous.server_version().await.map_err(|error| format!("Could not reach {url}: {error}"))?;
+    if !version.is_supported() {
+        return Err(format!(
+            "This server runs Immich {version}. Immich Mount needs {} or later.",
+            immich_api::version::MINIMUM_SUPPORTED
+        ));
+    }
+    let features = anonymous.server_features().await.map_err(|error| error.to_string())?;
+    let browser_button = if features.oauth {
+        let config = anonymous.server_config().await.map_err(|error| error.to_string())?;
+        Some(if config.oauth_button_text.trim().is_empty() { "Sign in with SSO".to_owned() } else { config.oauth_button_text })
+    } else {
+        None
+    };
+    Ok(ServerOffer { url: url.to_owned(), version: version.to_string(), browser_button, password: features.password_login })
+}
+
+/// Start a browser sign-in: the identity provider's address to open.
+pub async fn begin_browser(anonymous: &Client, state: &str, code_challenge: &str) -> Result<String, String> {
+    anonymous
+        .oauth_authorize(REDIRECT_URI, state, code_challenge)
+        .await
+        .map_err(|error| format!("The server could not start single sign-on: {error}"))
+}
+
+/// Finish a browser sign-in with the address the browser was sent to.
+pub async fn finish_browser(anonymous: &Client, redirect: &str, attempt: &BrowserSignIn) -> Result<Session, String> {
+    if !is_redirect_for(redirect, &attempt.state) {
+        return Err("That sign-in belongs to another attempt. Please sign in again.".to_owned());
+    }
+    let answer = anonymous
+        .oauth_callback(redirect, &attempt.state, &attempt.code_verifier)
+        .await
+        .map_err(|error| format!("Signing in failed: {error}"))?;
+    Ok(Session { token: answer.access_token, account: answer.user_email })
+}
+
+pub async fn password_session(anonymous: &Client, email: &str, password: &str) -> Result<Session, String> {
+    let answer = anonymous.login_password(email, password).await.map_err(|error| match error {
+        immich_api::ApiError::Unauthorized => "Wrong email or password.".to_owned(),
+        other => format!("Signing in failed: {other}"),
+    })?;
+    Ok(Session { token: answer.access_token, account: answer.user_email })
+}
+
+/// Check that the server takes the API key `with_key` carries.
+pub async fn check_api_key(with_key: &Client) -> Result<(), String> {
+    with_key.api_key_permissions().await.map(|_| ()).map_err(|error| match error {
+        immich_api::ApiError::Unauthorized => "The server did not accept this API key.".to_owned(),
+        other => format!("Checking the key failed: {other}"),
+    })
+}
+
 /// One sign-in attempt's state and PKCE pair. Never logged.
+#[derive(Clone)]
 pub struct BrowserSignIn {
     pub state: String,
     pub code_verifier: String,

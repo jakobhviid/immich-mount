@@ -1,5 +1,5 @@
 // Where the app and the extension meet (ARCHITECTURE.md, "The macOS edition"): the App Group container holds the
-// server's address, config.toml and the extension's metadata store; a Keychain access group holds the API key.
+// server's address, config.toml and the extension's metadata store; a Keychain access group holds the credential.
 
 import Foundation
 import Security
@@ -32,10 +32,10 @@ enum AppGroup {
     }
 }
 
-/// The signed-in account: the server's address and its API key.
+/// The signed-in account: the server's address and its credential, an API key or a session.
 struct Account {
     let server: String
-    let apiKey: String
+    let credential: Credential
 
     private static let service = "dev.hviid.ImmichMount"
 
@@ -48,16 +48,28 @@ struct Account {
         query[kSecMatchLimit as String] = kSecMatchLimitOne
         var found: CFTypeRef?
         guard SecItemCopyMatching(query as CFDictionary, &found) == errSecSuccess,
-              let data = found as? Data, let apiKey = String(data: data, encoding: .utf8) else { return nil }
-        return Account(server: server, apiKey: apiKey)
+              let data = found as? Data, let kept = String(data: data, encoding: .utf8) else { return nil }
+        // The kind, a line break, and the secret.
+        let parts = kept.split(separator: "\n", maxSplits: 1).map(String.init)
+        guard parts.count == 2 else { return nil }
+        switch parts[0] {
+        case "api-key": return Account(server: server, credential: .apiKey(key: parts[1]))
+        case "session": return Account(server: server, credential: .session(token: parts[1]))
+        default: return nil
+        }
     }
 
-    /// Keep the account: the key in the Keychain, readable by the extension after the first unlock, and the address
-    /// beside it.
+    /// Keep the account: the credential in the Keychain, readable by the extension after the first unlock, and the
+    /// address beside it.
     func save() throws {
         Account.forget()
+        let kept: String
+        switch credential {
+        case .apiKey(let key): kept = "api-key\n\(key)"
+        case .session(let token): kept = "session\n\(token)"
+        }
         var item = Account.keychainQuery(server: server)
-        item[kSecValueData as String] = Data(apiKey.utf8)
+        item[kSecValueData as String] = Data(kept.utf8)
         item[kSecAttrAccessible as String] = kSecAttrAccessibleAfterFirstUnlock
         let status = SecItemAdd(item as CFDictionary, nil)
         guard status == errSecSuccess else { throw KeychainError(status: status) }
@@ -90,6 +102,6 @@ struct KeychainError: LocalizedError {
 
     var errorDescription: String? {
         let detail = (SecCopyErrorMessageString(status, nil) as String?) ?? "error \(status)"
-        return "The Keychain refused the API key: \(detail)"
+        return "The Keychain refused the credential: \(detail)"
     }
 }
