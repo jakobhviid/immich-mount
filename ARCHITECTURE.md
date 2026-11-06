@@ -1188,7 +1188,9 @@ when opened, eviction under storage pressure, the Finder sidebar and every file 
 looked up in the album list.
 
 **Content.** The system asks for an original when something opens the file. The extension downloads it whole into
-a file the system then keeps, and evicts under storage pressure; the block cache is not used. Partial fetching
+a file the system then keeps, and evicts under storage pressure; the block cache is not used. Every item allows
+evicting, so Finder offers "Remove Download" on a file or a folder, which frees the local copies and leaves the
+library alone. Partial fetching
 (`NSFileProviderPartialContentFetching`, macOS 12.3 and later) would bring range reads back for long videos
 (ROADMAP, M7).
 
