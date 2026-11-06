@@ -14,6 +14,9 @@ struct ContentView: View {
             }
         }
         .frame(width: 480)
+        #if DEBUG
+        .task { await model.followLaunchArguments() }
+        #endif
     }
 }
 

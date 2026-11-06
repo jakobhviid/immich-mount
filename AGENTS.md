@@ -131,6 +131,7 @@ Build on Fedora 44, or in a Fedora 44 toolbox (the easy way on an immutable host
   extension on in System Settings (General, Login Items & Extensions) and allow the Local Network prompt.
 - **No macOS virtual machines on Erebus:** Apple's license allows macOS VMs only on Apple hardware. The
   maintainer's Mac is a laptop in daily use, so Mac work comes in sessions; between them, CI's macOS job is the Mac.
+  The `mac-dev` skill covers building, running and debugging on it over SSH, and the rules that keep it a laptop.
 
 ## Testing on Erebus
 

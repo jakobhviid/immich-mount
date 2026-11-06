@@ -3,7 +3,10 @@
 
 import AppKit
 import FileProvider
+import os
 import SwiftUI
+
+let logger = Logger(subsystem: "dev.hviid.ImmichMount", category: "app")
 
 @main
 struct ImmichMountApp: App {
@@ -61,8 +64,10 @@ final class AppModel: ObservableObject {
             try Account(server: found.address, apiKey: key).save()
             try await FinderLocation.add()
             server = found.address
+            logger.notice("signed in to Immich \(found.version, privacy: .public); the Finder location is added")
         } catch {
             message = AppModel.describe(error)
+            logger.error("signing in failed: \(String(describing: error), privacy: .public)")
         }
     }
 
@@ -79,7 +84,23 @@ final class AppModel: ObservableObject {
         Account.forget()
         try? FileManager.default.removeItem(at: AppGroup.libraryDirectory)
         server = nil
+        logger.notice("signed out; the Finder location is removed")
     }
+
+    #if DEBUG
+    /// For driving a development build from a script (the `mac-dev` skill), with launch arguments: `-signOut YES`
+    /// signs out, and `-signInServer <address> -signInAPIKey <key>` signs in when nobody is. Not in release builds.
+    func followLaunchArguments() async {
+        let arguments = UserDefaults.standard
+        if arguments.bool(forKey: "signOut") {
+            await signOut()
+        }
+        if server == nil, let address = arguments.string(forKey: "signInServer"),
+           let apiKey = arguments.string(forKey: "signInAPIKey") {
+            await signIn(address: address, apiKey: apiKey)
+        }
+    }
+    #endif
 
     func showInFinder() async {
         do {

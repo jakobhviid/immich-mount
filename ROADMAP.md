@@ -169,8 +169,10 @@ checked by CI's macOS job; the maintainer's Mac is needed only to run and debug 
    folders, fetches originals and answers thumbnails; the app signs in with an API key, reaches the server first
    (the Local Network prompt) and adds the Finder location; CI builds the whole Mac side on every branch push. A
    skill for driving the Mac over SSH, written in the first session on it.
-   **Built on Linux, not yet run on a Mac** (ARCHITECTURE, "The macOS edition", "Built so far"): the bridge, the
-   item identifiers, the extension, the app's API key sign-in and the CI job. Next: the first session on the Mac.
+   **Built on Linux, built on the Mac, not yet run there** (ARCHITECTURE, "The macOS edition", "Built so far"):
+   the bridge, the item identifiers, the extension, the app's API key sign-in, the CI job, and the `mac-dev` skill.
+   On the maintainer's Mac (macOS 27.0.1, Xcode 27.2) the bridge's lab tests pass, the app and the extension build,
+   and the free Personal Team provisions them. Next: running them, which needs the extension switched on.
    Exit: on the maintainer's Mac, against the lab server in LAN mode, every section browses in Finder, photos and
    videos open, copied-out files match the server's checksums, and thumbnails show with no original downloaded.
 2. **Live changes.** The change journal in the store, the poll's state kept in the store, and the app as a login
