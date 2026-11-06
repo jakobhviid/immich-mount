@@ -7,3 +7,7 @@ lab/**/screenshots/
 # Written by cxx-qt-build for the QML language server, with absolute paths.
 .qmlls.ini
 lab/**/evidence/
+# The macOS edition's generated files (apple/build-rust.sh, xcodegen) and the developer's own signing team.
+/apple/build/
+/apple/*.xcodeproj/
+/apple/Config/Local.xcconfig

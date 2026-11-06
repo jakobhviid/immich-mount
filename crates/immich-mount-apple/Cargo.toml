@@ -1,0 +1,40 @@
+[package]
+name = "immich-mount-apple"
+description = "The bridge the macOS edition's Swift code calls: File Provider items from the portable core, through uniffi"
+version.workspace = true
+edition.workspace = true
+license.workspace = true
+homepage.workspace = true
+repository.workspace = true
+
+[lib]
+# `staticlib` is what the Xcode project links; `cdylib` is what uniffi reads the bindings from; `lib` is for tests.
+crate-type = ["lib", "staticlib", "cdylib"]
+
+# uniffi's bindings generator, at this crate's uniffi version. A feature keeps its command-line dependencies out of
+# every other build: `cargo run -p immich-mount-apple --features bindgen --bin uniffi-bindgen -- ...`.
+[[bin]]
+name = "uniffi-bindgen"
+path = "src/bin/uniffi-bindgen.rs"
+required-features = ["bindgen"]
+
+[features]
+bindgen = ["uniffi/cli"]
+
+[dependencies]
+immich-api = { path = "../immich-api" }
+immich-mount-core = { path = "../immich-mount-core" }
+uniffi = "0.32"
+tokio = { version = "1", features = ["rt-multi-thread", "time"] }
+thiserror = "2"
+log = "0.4"
+sha2 = "0.10"
+
+# The extension's and the app's log lines go to macOS's unified log: `log stream --predicate 'subsystem == "dev.hviid.ImmichMount"'`.
+[target.'cfg(target_os = "macos")'.dependencies]
+oslog = "0.2"
+
+[dev-dependencies]
+tokio = { version = "1", features = ["macros", "rt-multi-thread", "time", "test-util"] }
+tempfile = "3"
+chrono = { version = "0.4", default-features = false, features = ["std", "clock"] }

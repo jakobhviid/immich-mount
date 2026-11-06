@@ -10,15 +10,26 @@
 //! - the ETag is weak (`W/"<size hex>-<mtime hex>"`) and is returned verbatim; HTTP forbids weak ETags in
 //!   `If-Range`, so callers compare it themselves
 //!
+//! Whole originals: `download_original` streams one into a file, for a platform that asks for whole files (the
+//! macOS edition's File Provider). It has no limit on the whole download, which for a long video takes minutes, only
+//! on a stall.
+//!
 //! Thumbnails: `thumbnail` is a WebP with a 250 px short side, `preview` a JPEG with a 1440 px short side.
 //! `fullsize` redirects to the original for JPEG sources, so it is not offered.
+
+use std::path::Path;
+use std::time::Duration;
 
 use bytes::Bytes;
 use reqwest::header::{CONTENT_LENGTH, CONTENT_RANGE, CONTENT_TYPE, ETAG, RANGE};
 use reqwest::{Method, StatusCode};
+use tokio::io::AsyncWriteExt;
 
 use crate::client::{check, header_text, Client, REQUEST_TIMEOUT};
 use crate::error::{from_transport, ApiError, RequestShape};
+
+/// How long a whole download may wait for its next bytes before it fails.
+const DOWNLOAD_STALL_LIMIT: Duration = Duration::from_secs(60);
 
 /// Some bytes of an original.
 #[derive(Debug, Clone, PartialEq, Eq)]
@@ -127,6 +138,32 @@ impl Client {
         Ok((total_size, header_text(&response, ETAG)))
     }
 
+    /// An Asset's whole original, written to `destination` as it arrives (`GET /assets/{id}/original`). Returns the
+    /// number of bytes written. A minute without bytes fails it, however long the whole download takes; on any
+    /// failure the file may hold part of the original, and the caller removes it.
+    pub async fn download_original(&self, id: &str, destination: &Path) -> Result<u64, ApiError> {
+        let builder = self.request(Method::GET, &["assets", id, "original"]);
+        let mut response = check(self.execute(builder).await?, RequestShape::Plain).await?;
+        let expected = header_text(&response, CONTENT_LENGTH).and_then(|text| text.trim().parse::<u64>().ok());
+        let local = |error: std::io::Error| ApiError::LocalFile(format!("{}: {error}", destination.display()));
+        let mut file = tokio::fs::File::create(destination).await.map_err(local)?;
+        let mut written = 0u64;
+        loop {
+            let chunk = tokio::time::timeout(DOWNLOAD_STALL_LIMIT, response.chunk())
+                .await
+                .map_err(|_| ApiError::Offline("the download stalled".to_owned()))?
+                .map_err(|error| from_transport(&error))?;
+            let Some(chunk) = chunk else { break };
+            file.write_all(&chunk).await.map_err(local)?;
+            written += chunk.len() as u64;
+        }
+        file.flush().await.map_err(local)?;
+        if expected.is_some_and(|expected| expected != written) {
+            return Err(ApiError::Offline(format!("the download ended after {written} of {} bytes", expected.unwrap_or_default())));
+        }
+        Ok(written)
+    }
+
     /// A server-made thumbnail and its content type (`GET /assets/{id}/thumbnail?size=...`).
     pub async fn thumbnail(&self, id: &str, size: ThumbnailSize) -> Result<(Bytes, String), ApiError> {
         let builder = self
@@ -204,6 +241,19 @@ mod tests {
         let client = Client::new(&server.url, None, "test").unwrap();
         let error = client.original_range("asset-1", 0, 3).await.unwrap_err();
         assert!(matches!(error, ApiError::Protocol(_)), "{error:?}");
+    }
+
+    #[tokio::test]
+    async fn a_whole_original_is_written_to_the_file() {
+        let server = FakeServer::start(vec![CannedResponse::bytes(200, "image/jpeg", b"\xff\xd8 a whole photo")]).await;
+        let client = Client::new(&server.url, None, "test").unwrap();
+        let directory = tempfile::tempdir().unwrap();
+        let destination = directory.path().join("original");
+        assert_eq!(client.download_original("asset-1", &destination).await.unwrap(), 16);
+        assert_eq!(std::fs::read(&destination).unwrap(), b"\xff\xd8 a whole photo");
+        let request = &server.requests()[0];
+        assert_eq!(request.target, "/api/assets/asset-1/original");
+        assert_eq!(request.header("range"), None, "a whole download asks for no range");
     }
 
     #[tokio::test]

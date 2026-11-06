@@ -419,6 +419,17 @@ impl ContentSource for ImmichSource {
     }
 }
 
+impl ImmichSource {
+    /// An Asset's whole original, written to `destination`, for a platform that asks for whole files (the macOS
+    /// edition). Fails at once while the server was just found unreachable, as reads do.
+    pub async fn download_original(&self, asset_id: &str, destination: &std::path::Path) -> Result<u64, SourceError> {
+        self.check_online()?;
+        let outcome = self.client.download_original(asset_id, destination).await.map_err(source_error);
+        self.note_outcome(&outcome);
+        outcome
+    }
+}
+
 impl ThumbnailSource for ImmichSource {
     async fn thumbnail(&self, asset_id: &str, kind: ThumbnailKind) -> Result<Vec<u8>, SourceError> {
         self.check_online()?;

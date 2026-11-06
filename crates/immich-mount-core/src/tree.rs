@@ -68,6 +68,52 @@ impl NodeKey {
             NodeKey::Asset { parent, asset_id } => format!("asset|{}|{}", escape(&parent.storage_key()), escape(asset_id)),
         }
     }
+
+    /// The key back from its storage form, as the macOS edition's item identifiers carry it (ARCHITECTURE.md, "The
+    /// macOS edition"). `None` for any text `storage_key` does not write, so an identifier has one meaning only.
+    pub fn from_storage_key(text: &str) -> Option<NodeKey> {
+        // Escaped text holds `%` only as `%25` or `%7C`, so the pipe goes back first.
+        fn unescape(text: &str) -> String {
+            text.replace("%7C", "|").replace("%25", "%")
+        }
+        fn year_month(text: &str) -> Option<YearMonth> {
+            let (year, month) = text.rsplit_once('-')?;
+            Some(YearMonth { year: year.parse().ok()?, month: month.parse().ok()? })
+        }
+        let parts: Vec<&str> = text.split('|').collect();
+        let node = match parts.as_slice() {
+            ["root"] => NodeKey::Root,
+            ["upload"] => NodeKey::Upload,
+            ["section", "Photos"] => NodeKey::Section(SectionKey::Photos),
+            ["section", "Albums"] => NodeKey::Section(SectionKey::Albums),
+            ["section", "People"] => NodeKey::Section(SectionKey::People),
+            ["section", "Places"] => NodeKey::Section(SectionKey::Places),
+            ["year", year] => NodeKey::TimelineYear(year.parse().ok()?),
+            ["month", month] => NodeKey::TimelineMonth(year_month(month)?),
+            ["day", date] => {
+                let (month, day) = date.rsplit_once('-')?;
+                NodeKey::TimelineDay(year_month(month)?, day.parse().ok()?)
+            }
+            ["album-year", "unknown"] => NodeKey::AlbumYear(None),
+            ["album-year", year] => NodeKey::AlbumYear(Some(year.parse().ok()?)),
+            ["album", album_id] => NodeKey::Album(unescape(album_id)),
+            ["person", person_id] => NodeKey::Person(unescape(person_id)),
+            ["country", country] => NodeKey::Country(unescape(country)),
+            ["city", country, city] => NodeKey::City { country: unescape(country), city: unescape(city) },
+            ["group-year", base, year] => {
+                NodeKey::GroupYear { base: Box::new(NodeKey::from_storage_key(&unescape(base))?), year: year.parse().ok()? }
+            }
+            ["group-month", base, month] => {
+                NodeKey::GroupMonth { base: Box::new(NodeKey::from_storage_key(&unescape(base))?), month: year_month(month)? }
+            }
+            ["asset", parent, asset_id] => {
+                NodeKey::Asset { parent: Box::new(NodeKey::from_storage_key(&unescape(parent))?), asset_id: unescape(asset_id) }
+            }
+            _ => return None,
+        };
+        // Numbers parse from more than one spelling ("3", "03", "+3"); only the one `storage_key` writes is accepted.
+        (node.storage_key() == text).then_some(node)
+    }
 }
 
 /// `Section` as part of a hashable, ordered key.
@@ -283,6 +329,45 @@ impl<Source: LibrarySource, Names: NameMemory> Tree<Source, Names> {
     pub fn stale_listing(&self, node: &NodeKey) -> Option<Vec<Entry>> {
         let in_memory = self.listings.lock().expect("listing cache lock").get(node).map(|(_, entries)| entries.clone());
         in_memory.or_else(|| self.names.kept_listing(node))
+    }
+
+    /// The folder that lists `node`; `None` for the root. The key says, except for an album under year folders,
+    /// whose year comes from the album list.
+    pub async fn parent_of(&self, node: &NodeKey) -> Result<Option<NodeKey>, SourceError> {
+        let parent = match node {
+            NodeKey::Root => return Ok(None),
+            NodeKey::Section(_) | NodeKey::Upload => NodeKey::Root,
+            NodeKey::TimelineYear(_) => NodeKey::Section(SectionKey::Photos),
+            NodeKey::TimelineMonth(month) => NodeKey::TimelineYear(month.year),
+            NodeKey::TimelineDay(month, _) => NodeKey::TimelineMonth(*month),
+            NodeKey::AlbumYear(_) => NodeKey::Section(SectionKey::Albums),
+            NodeKey::Album(album_id) if self.config.album_layout == AlbumLayout::YearFolders => {
+                let albums = self.source.albums().await?;
+                let album = albums.iter().find(|album| album.id == *album_id).ok_or(SourceError::NotFound)?;
+                NodeKey::AlbumYear(album.year)
+            }
+            NodeKey::Album(_) => NodeKey::Section(SectionKey::Albums),
+            NodeKey::Person(_) => NodeKey::Section(SectionKey::People),
+            NodeKey::Country(_) => NodeKey::Section(SectionKey::Places),
+            NodeKey::City { country, .. } => NodeKey::Country(country.clone()),
+            NodeKey::GroupYear { base, .. } => (**base).clone(),
+            NodeKey::GroupMonth { base, month } => NodeKey::GroupYear { base: base.clone(), year: month.year },
+            NodeKey::Asset { parent, .. } => (**parent).clone(),
+        };
+        Ok(Some(parent))
+    }
+
+    /// The entry that lists `node`, and the folder it is listed in, for a platform that asks about one item by its
+    /// key (the macOS edition). `None` for the root, which no folder lists, and for a node its folder does not hold
+    /// (any more).
+    pub async fn entry_of(&self, node: &NodeKey) -> Result<Option<(NodeKey, Entry)>, SourceError> {
+        let parent = match self.parent_of(node).await {
+            Ok(Some(parent)) => parent,
+            Ok(None) | Err(SourceError::NotFound) => return Ok(None),
+            Err(error) => return Err(error),
+        };
+        let entry = self.list(&parent).await?.into_iter().find(|entry| entry.node == *node);
+        Ok(entry.map(|entry| (parent, entry)))
     }
 
     /// Find one entry of a folder by name.
@@ -728,6 +813,67 @@ mod tests {
         let months = tree.list(&years[0].node).await.unwrap();
         assert_eq!(names(&months), ["03 March"]);
         assert_eq!(names(&tree.list(&months[0].node).await.unwrap()), ["2024-03-15 14.32.01.jpg"]);
+    }
+
+    #[test]
+    fn every_key_comes_back_from_its_storage_form() {
+        let march = YearMonth { year: 2024, month: 3 };
+        let album = NodeKey::Album("a|b%7C".into());
+        let keys = [
+            NodeKey::Root,
+            NodeKey::Upload,
+            NodeKey::Section(SectionKey::Photos),
+            NodeKey::Section(SectionKey::Places),
+            NodeKey::TimelineYear(2024),
+            NodeKey::TimelineMonth(march),
+            NodeKey::TimelineDay(march, 5),
+            NodeKey::AlbumYear(Some(2023)),
+            NodeKey::AlbumYear(None),
+            album.clone(),
+            NodeKey::Person("p-1".into()),
+            NodeKey::Country("Côte d'Ivoire".into()),
+            NodeKey::City { country: "A|B".into(), city: "50%".into() },
+            NodeKey::GroupYear { base: Box::new(album.clone()), year: 2024 },
+            NodeKey::GroupMonth { base: Box::new(NodeKey::City { country: "x|y".into(), city: "%".into() }), month: march },
+            NodeKey::Asset {
+                parent: Box::new(NodeKey::GroupMonth { base: Box::new(album), month: march }),
+                asset_id: "id|%".into(),
+            },
+        ];
+        for key in keys {
+            assert_eq!(NodeKey::from_storage_key(&key.storage_key()), Some(key.clone()), "{}", key.storage_key());
+        }
+    }
+
+    #[test]
+    fn text_no_key_writes_is_no_key() {
+        for text in ["", "root|x", "month|2024-3", "month|2024", "day|2024-03", "year|+2024", "section|Trash", "album", "asset|root"] {
+            assert_eq!(NodeKey::from_storage_key(text), None, "{text}");
+        }
+    }
+
+    #[tokio::test]
+    async fn an_entry_is_found_by_its_key_through_its_parent() {
+        let created = Utc.with_ymd_and_hms(2024, 1, 1, 0, 0, 0).unwrap();
+        let library = FakeLibrary {
+            assets: vec![asset("a", "IMG_1.JPG", 15, 7, 1)],
+            albums: vec![(Album { id: "x".into(), name: "Trip".into(), year: Some(2023), created_at: created }, vec!["a".into()])],
+            ..Default::default()
+        };
+        let mut config = Config::from_toml("").unwrap();
+        config.album_layout = AlbumLayout::YearFolders;
+        let tree = tree(library, config);
+        let album = NodeKey::Album("x".into());
+        assert_eq!(tree.parent_of(&album).await.unwrap(), Some(NodeKey::AlbumYear(Some(2023))));
+        assert_eq!(tree.entry_of(&album).await.unwrap().map(|(_, entry)| entry.name), Some("Trip".into()));
+        let photo = NodeKey::Asset { parent: Box::new(NodeKey::TimelineMonth(YearMonth { year: 2024, month: 3 })), asset_id: "a".into() };
+        let (folder, entry) = tree.entry_of(&photo).await.unwrap().expect("the photo is in its month");
+        assert_eq!(folder, NodeKey::TimelineMonth(YearMonth { year: 2024, month: 3 }));
+        assert!(matches!(entry.kind, EntryKind::File { .. }));
+        assert_eq!(tree.entry_of(&NodeKey::Root).await.unwrap(), None);
+        assert_eq!(tree.entry_of(&NodeKey::Album("gone".into())).await.unwrap(), None);
+        let elsewhere = NodeKey::Asset { parent: Box::new(NodeKey::TimelineMonth(YearMonth { year: 2023, month: 1 })), asset_id: "a".into() };
+        assert_eq!(tree.entry_of(&elsewhere).await.unwrap(), None, "an Asset is found only where it appears");
     }
 
     #[tokio::test]

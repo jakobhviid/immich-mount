@@ -37,3 +37,28 @@ jobs:
         run: |
           cargo clippy -p immich-mount-gnome -p immich-mount-kde --all-targets -- -D warnings
           cargo test -p immich-mount-gnome -p immich-mount-kde
+
+  macos:
+    # The macOS edition (ARCHITECTURE.md, "The macOS edition"): the portable crates' and the bridge's clippy and tests
+    # on a Mac, then the Swift app and File Provider extension built unsigned against the bridge. A Rust change is
+    # checked against the Swift side here, without a Mac at hand.
+    runs-on: macos-latest
+    steps:
+      - uses: actions/checkout@v5
+      - uses: dtolnay/rust-toolchain@stable
+        with:
+          components: clippy
+          targets: aarch64-apple-darwin,x86_64-apple-darwin
+      - name: clippy (warnings are errors) and tests of the portable crates and the bridge
+        run: |
+          cargo clippy -p immich-api -p immich-mount-core -p immich-mount-apple --all-targets -- -D warnings
+          cargo test -p immich-api -p immich-mount-core -p immich-mount-apple
+      - name: The bridge for Xcode
+        run: apple/build-rust.sh debug
+      - name: The app and the extension, unsigned
+        run: |
+          xcodebuild -version
+          brew install xcodegen
+          cd apple && xcodegen
+          xcodebuild -project ImmichMount.xcodeproj -scheme ImmichMount -configuration Debug -destination 'platform=macOS' \
+            CODE_SIGNING_ALLOWED=NO build
