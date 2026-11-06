@@ -20,6 +20,7 @@ use immich_mount_core::sign_in::{self, normalised_address, BrowserSignIn};
 use immich_mount_core::source::{LibrarySource, SourceError, ThumbnailKind, ThumbnailSource};
 use immich_mount_core::store::{Anchor, Change, JournalRead, MetadataStore};
 use immich_mount_core::tree::{is_touched, Entry, EntryKind, NameMemory, NodeKey, Tree};
+use immich_mount_core::uploads::{completeness, Admission, Completeness, UploadError, UploadTarget, Uploaded};
 use sha2::{Digest, Sha256};
 
 uniffi::setup_scaffolding!();
@@ -35,6 +36,11 @@ const SMALL_THUMBNAIL_UP_TO: u32 = 320;
 const JOURNAL_LIMIT: u64 = 20_000;
 /// The name the change poll's memory is kept under in the store.
 const POLL_MEMORY: &str = "change-poll";
+/// The name uploaded files waiting to leave the Upload folder are kept under in the store.
+const LEAVING_UPLOAD: &str = "leaving-upload";
+/// How long an uploaded file stays in the Upload folder, as on Linux: long enough for the system to take the item
+/// before it is told the item went away.
+const UPLOAD_STAY: Duration = Duration::from_secs(10);
 /// How long the server check keeps trying a connection that fails: macOS may refuse sockets while its Local Network
 /// prompt waits for an answer (Apple's TN3179).
 const LOCAL_NETWORK_PATIENCE: Duration = Duration::from_secs(30);
@@ -265,6 +271,7 @@ where
     /// differences in the journal. Returns whether the journal grew.
     async fn poll(&self) -> Result<bool, BridgeError> {
         let before = self.store().journal_anchor().map_err(failed)?;
+        self.record_departures(seconds_since_epoch(SystemTime::now()))?;
         let kept = self.kept_poll.lock().expect("kept poll lock").take();
         if let Some(memory) = kept {
             self.source.recall_poll(&memory).await;
@@ -288,6 +295,71 @@ where
             }
         }
         Ok(self.store().journal_anchor().map_err(failed)? != before)
+    }
+
+    /// Upload a finished file added to the Upload folder (ARCHITECTURE.md, "The macOS edition", "Uploads"), and
+    /// return its item there. It leaves the folder at the first poll after `UPLOAD_STAY`, and shows in its month once
+    /// the poll sees the server's change.
+    async fn upload(&self, folder: &str, name: &str, path: &Path, modified: SystemTime) -> Result<Item, BridgeError>
+    where
+        Source: UploadTarget,
+    {
+        if node_for(folder)? != NodeKey::Upload || !self.tree.config().uploads_enabled {
+            return Err(failed("Only the Upload folder takes new files; every other folder is a view of the library."));
+        }
+        let media = self.source.media_types().await.unwrap_or_default();
+        if media.admission(name) != Admission::Upload {
+            return Err(failed(format!("{name} is not a photo or video Immich takes.")));
+        }
+        let owned = path.to_owned();
+        let judged = tokio::task::spawn_blocking(move || completeness(&owned)).await.map_err(failed)?;
+        if matches!(judged.map_err(failed)?, Completeness::Truncated) {
+            return Err(failed(format!("{name} is not whole: its copy may have been cut short.")));
+        }
+        let asset_id = match self.source.upload(path, name, modified.into()).await {
+            Ok(Uploaded::Created(asset_id) | Uploaded::AlreadyInLibrary(asset_id)) => asset_id,
+            Err(UploadError::Source(error)) => return Err(error.into()),
+            Err(error) => return Err(failed(error)),
+        };
+        let node = NodeKey::Asset { parent: Box::new(NodeKey::Upload), asset_id: asset_id.clone() };
+        let mut leaving = self.leaving_upload();
+        leaving.push((node.storage_key(), seconds_since_epoch(SystemTime::now() + UPLOAD_STAY)));
+        self.keep_leaving_upload(&leaving)?;
+        self.tree.forget_timeline();
+        let size = std::fs::metadata(path).ok().map(|metadata| metadata.len());
+        Ok(Item {
+            identifier: node.storage_key(),
+            parent_identifier: NodeKey::Upload.storage_key(),
+            name: name.to_owned(),
+            is_folder: false,
+            accepts_new_files: false,
+            size,
+            taken: Some(modified),
+            content_version: asset_id,
+            version: String::new(),
+        }
+        .versioned())
+    }
+
+    /// Uploaded files waiting to leave the Upload folder, with when they leave (seconds since the epoch).
+    fn leaving_upload(&self) -> Vec<(String, u64)> {
+        self.store().kept_state(LEAVING_UPLOAD).and_then(|text| serde_json::from_str(&text).ok()).unwrap_or_default()
+    }
+
+    fn keep_leaving_upload(&self, leaving: &[(String, u64)]) -> Result<(), BridgeError> {
+        self.store().keep_state(LEAVING_UPLOAD, &serde_json::to_string(leaving).map_err(failed)?);
+        Ok(())
+    }
+
+    /// Record in the journal the departures that are due at `now`.
+    fn record_departures(&self, now: u64) -> Result<(), BridgeError> {
+        let (due, waiting): (Vec<_>, Vec<_>) = self.leaving_upload().into_iter().partition(|(_, at)| *at <= now);
+        if due.is_empty() {
+            return Ok(());
+        }
+        let changes: Vec<Change> = due.iter().filter_map(|(key, _)| NodeKey::from_storage_key(key)).map(Change::Deleted).collect();
+        self.store().record_changes(&changes).map_err(failed)?;
+        self.keep_leaving_upload(&waiting)
     }
 
     fn current_anchor(&self) -> Result<String, BridgeError> {
@@ -348,10 +420,11 @@ pub struct Library {
 
 /// The settings in `config.toml`, as the macOS edition follows them.
 fn parse_config(text: &str) -> Result<Config, BridgeError> {
-    let mut config = Config::from_toml(text).map_err(failed)?;
-    // Not before the macOS edition uploads (ROADMAP, M7): the folder would refuse every file.
-    config.uploads_enabled = false;
-    Ok(config)
+    Config::from_toml(text).map_err(failed)
+}
+
+fn seconds_since_epoch(time: SystemTime) -> u64 {
+    time.duration_since(SystemTime::UNIX_EPOCH).map_or(0, |since| since.as_secs())
 }
 
 impl Library {
@@ -467,6 +540,13 @@ impl Library {
         self.answers().working_set()
     }
 
+    /// Upload the finished file at `path`, added to `folder` (only the Upload folder takes files) as `name`, and
+    /// return its item there. Refused, with a message, when it is no photo or video Immich takes, or not whole.
+    pub async fn upload(&self, folder: String, name: String, path: String, modified: SystemTime) -> Result<Item, BridgeError> {
+        let answers = self.answers();
+        on_runtime(async move { answers.upload(&folder, &name, Path::new(&path), modified).await }).await
+    }
+
     /// Follow the settings in `config` (the text of `config.toml`) from now on, when they differ from those in use:
     /// folders are listed by the new rules on their next visit. Returns whether they differed.
     pub fn apply_config(&self, config: String) -> Result<bool, BridgeError> {
@@ -482,8 +562,9 @@ impl Library {
 }
 
 /// The settings groups the macOS app shows: those that mean something there. The mount's path, the cache and
-/// thumbnail seeding are Linux's, and uploads come with the macOS edition's uploads (ROADMAP, M7).
-const PREFERENCE_GROUPS: &[(&str, &str)] = &[("sections", "Sections"), ("grouping", "Date Folders"), ("albums", "Albums"), ("files", "Files")];
+/// thumbnail seeding are Linux's.
+const PREFERENCE_GROUPS: &[(&str, &str)] =
+    &[("sections", "Sections"), ("grouping", "Date Folders"), ("albums", "Albums"), ("files", "Files"), ("uploads", "Uploads")];
 
 /// A group of settings, as the app shows it.
 #[derive(Debug, Clone, PartialEq, Eq, uniffi::Record)]
@@ -842,6 +923,15 @@ mod tests {
         }
     }
 
+    impl UploadTarget for FakeLibrary {
+        async fn media_types(&self) -> Result<immich_mount_core::uploads::MediaTypes, SourceError> {
+            Ok(immich_mount_core::uploads::MediaTypes::default())
+        }
+        async fn upload(&self, _path: &Path, _file_name: &str, _modified: chrono::DateTime<Utc>) -> Result<Uploaded, UploadError> {
+            Ok(Uploaded::Created("asset-uploaded".into()))
+        }
+    }
+
     impl MacSource for FakeLibrary {
         async fn poll_memory(&self) -> Option<String> {
             Some("seen".into())
@@ -978,7 +1068,7 @@ mod tests {
     fn the_preferences_are_the_settings_that_mean_something_on_macos() {
         let groups = preferences("[sections]\npeople = false\n".into());
         let titles: Vec<&str> = groups.iter().map(|group| group.title.as_str()).collect();
-        assert_eq!(titles, ["Sections", "Date Folders", "Albums", "Files"]);
+        assert_eq!(titles, ["Sections", "Date Folders", "Albums", "Files", "Uploads"]);
         let people = groups[0].preferences.iter().find(|preference| preference.key == "sections.people").unwrap();
         assert_eq!((&people.kind, people.value.as_str()), (&PreferenceKind::Toggle, "false"));
         let layout = &groups[2].preferences[0];
@@ -999,6 +1089,33 @@ mod tests {
         assert!(!library.answers().tree.config().show_places);
         assert!(library.apply_config("[albums]\nlayout = \"sideways\"\n".into()).is_err(), "and the old ones stay");
         assert!(!library.answers().tree.config().show_places);
+    }
+
+    #[tokio::test]
+    async fn a_photo_added_to_upload_is_uploaded_and_leaves_the_folder_later() {
+        let (directory, answers) = journaled();
+        let photo = directory.path().join("photo.png");
+        std::fs::write(&photo, b"\x89PNG\r\n\x1a\n....\0\0\0\0IEND\xaeB`\x82").unwrap();
+        let taken = SystemTime::UNIX_EPOCH + Duration::from_secs(1_700_000_000);
+        let item = answers.upload("upload", "IMG_1.png", &photo, taken).await.unwrap();
+        assert_eq!((item.identifier.as_str(), item.parent_identifier.as_str()), ("asset|upload|asset-uploaded", "upload"));
+        assert_eq!(item.taken, Some(taken));
+
+        let before = answers.current_anchor().unwrap();
+        answers.record_departures(seconds_since_epoch(SystemTime::now())).unwrap();
+        assert_eq!(answers.current_anchor().unwrap(), before, "it stays a while, so the system takes it first");
+        answers.record_departures(seconds_since_epoch(SystemTime::now() + UPLOAD_STAY)).unwrap();
+        let batch = answers.changes_since(&before, 100).unwrap();
+        assert_eq!(batch.deleted, ["asset|upload|asset-uploaded"]);
+        assert!(answers.leaving_upload().is_empty(), "and leaves once");
+
+        let refused = |result: Result<Item, BridgeError>| matches!(result, Err(BridgeError::Failed { .. }));
+        assert!(refused(answers.upload("section|Photos", "IMG_1.png", &photo, taken).await), "only Upload takes files");
+        assert!(refused(answers.upload("upload", "._IMG_1.png", &photo, taken).await), "AppleDouble companions");
+        assert!(refused(answers.upload("upload", "notes.txt", &photo, taken).await), "not a photo");
+        let cut = directory.path().join("cut.png");
+        std::fs::write(&cut, b"\x89PNG\r\n\x1a\n....").unwrap();
+        assert!(refused(answers.upload("upload", "IMG_2.png", &cut, taken).await), "a copy cut short");
     }
 
     #[test]

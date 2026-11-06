@@ -1746,6 +1746,8 @@ dependencies = [
  "immich-mount-core",
  "log",
  "oslog",
+ "reqwest",
+ "serde_json",
  "sha1",
  "sha2",
  "tempfile",

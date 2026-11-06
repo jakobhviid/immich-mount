@@ -156,6 +156,18 @@ impl MetadataStore {
         read().map_err(|message| StoreError { path: "the metadata store's journal".to_owned(), message })
     }
 
+    /// Record changes no listing shows, such as an uploaded file leaving the Upload folder. Nothing, with the
+    /// journal off.
+    pub fn record_changes(&self, changes: &[Change]) -> Result<(), StoreError> {
+        let Some(limit) = self.journal_limit else { return Ok(()) };
+        let write = || -> Result<(), String> {
+            let transaction = self.database.begin_write().map_err(|error| error.to_string())?;
+            append_changes(&transaction, changes, limit)?;
+            transaction.commit().map_err(|error| error.to_string())
+        };
+        write().map_err(|message| StoreError { path: "the metadata store's journal".to_owned(), message })
+    }
+
     /// Every folder with a kept listing: the folders a platform has been shown.
     pub fn kept_folders(&self) -> Vec<NodeKey> {
         let read = || -> Result<Vec<NodeKey>, String> {

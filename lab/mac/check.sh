@@ -41,7 +41,7 @@ curl -sS -m 10 "$server/api/server/version" >/dev/null || { echo "the lab server
 mac true || { echo "the Mac does not answer at $MAC_HOST" >&2; exit 1; }
 started=$(date +%s)
 
-verdict "the sections" "$(mac "ls $root | sort | tr '\n' ' '")" "Albums People Photos Places "
+verdict "the sections" "$(mac "ls $root | sort | tr '\n' ' '")" "Albums People Photos Places Upload "
 verdict "every timeline photo" "$(mac "find $root/Photos -type f | wc -l | tr -d ' '")" "50"
 verdict "listing downloads no original" "$(mac "ls -lOR $root/Photos | grep -c dataless")" "50"
 

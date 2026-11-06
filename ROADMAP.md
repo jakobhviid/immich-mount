@@ -189,6 +189,7 @@ checked by CI's macOS job; the maintainer's Mac is needed only to run and debug 
    sign-in; on the maintainer's Mac, password sign-in adds the location. The Settings window, which the extension
    follows. Not yet: status from the extension, the icon (an open question below).
 4. **Uploads** into the Upload folder, through the core's upload sequence.
+   **Built, not yet run in Finder:** the bridge's upload (tested against the lab server) and the extension's.
 5. **Distribution.** A notarized DMG built by the release workflow, and the Homebrew cask; it needs the paid Apple
    Developer Program.
    Exit: a Mac that never had it installs from Homebrew, switches the extension on, and browses.

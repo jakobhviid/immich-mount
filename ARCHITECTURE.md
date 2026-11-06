@@ -1221,8 +1221,14 @@ Group, and the app asks the system to list everything again. The extension follo
 folder the system asks for, with a new tree on the same store; the mount's path, the cache and thumbnail seeding
 are Linux's.
 
-**Uploads.** The Upload folder lets items be added. The system hands the extension a finished file, which goes
-through the core's upload sequence; there is no staging, which Linux needs because files arrive there in writes.
+**Uploads.** The Upload folder lets items be added; every other folder stays a read-only view. The system hands the
+extension a finished file, which goes through the core's admission (photos and videos only, AppleDouble `._` files
+refused), its completeness check and its upload sequence, duplicates included; there is no staging, which Linux
+needs because files arrive there in writes. Folders, links and aliases are refused before anything is sent. The
+uploaded file stays in Upload for about 10 seconds, as on Linux, then a journal record takes it away: the system
+must have taken the item before it hears that it went. Pending departures are kept in the store, so a stopped
+extension still records them, and the photo shows in its month once the poll sees it. Until the upload succeeds,
+the system keeps the file in the folder and retries; a refusal is shown with its reason.
 
 **Signing in.** The app reaches the server before the extension ever runs, so macOS's Local Network prompt (macOS 15
 and later, for a server on the LAN) names the app, and the extension shares the app's answer (Apple's TN3179). A
@@ -1264,8 +1270,10 @@ signs in and adds the location. Finder itself waits for the extension to be swit
   a session ended at sign-out is refused afterwards.
 - **The change journal** in the metadata store (off on Linux), the change poll's memory kept in the store, and the
   bridge's poll, changes and working set, tested on Linux through a fake library whose server adds a photo.
-- **The extension** lists, fetches and answers thumbnails through the bridge, and reports changes through the
-  working set from the journal. Changes from Finder are refused.
+- **The extension** lists, fetches and answers thumbnails through the bridge, reports changes through the working
+  set from the journal, and uploads what is added to Upload. Other changes from Finder are refused.
+- **Uploads** through the bridge, against the lab server: the original arrives byte for byte, and the same bytes
+  again are the same Asset.
 - **The app** signs in with single sign-on, a password or an API key (the server check runs in the app, for the
   Local Network prompt), keeps the credential in the Keychain group and the address in the App Group, adds the
   Finder location, wakes the extension for changes, opens at login when asked, shows the settings, and signs out.
