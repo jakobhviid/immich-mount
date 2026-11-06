@@ -169,7 +169,8 @@ checked by CI's macOS job; the maintainer's Mac is needed only to run and debug 
    **Built on Linux, built on the Mac, not yet run there** (ARCHITECTURE, "The macOS edition", "Built so far"):
    the bridge, the item identifiers, the extension, the app's API key sign-in, the CI job, and the `mac-dev` skill.
    On the maintainer's Mac (macOS 27.0.1, Xcode 27.2) the bridge's lab tests pass, the app and the extension build,
-   and the free Personal Team provisions them. Next: running them, which needs the extension switched on.
+   the free Personal Team provisions and signs them, and the app signs in and adds the location. Next: Finder,
+   which needs the extension switched on.
    Exit: on the maintainer's Mac, against the lab server in LAN mode, every section browses in Finder, photos and
    videos open, copied-out files match the server's checksums, and thumbnails show with no original downloaded.
 2. **Live changes.** The change journal in the store, the poll's state kept in the store, and the app as a login

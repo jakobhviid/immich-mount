@@ -1159,7 +1159,8 @@ when opened, eviction under storage pressure, the Finder sidebar and every file 
   it. The app reads status from the extension over the File Provider service channel (`NSFileProviderServiceSource`).
 - **Shared through the App Group container:** `config.toml` (the settings table of Linux), the store and the
   extension's own files. **Shared through a Keychain access group:** the credential. The App Group is
-  team-prefixed (`<team>.dev.hviid.ImmichMount`), which needs no provisioning entry; `group.` names do.
+  team-prefixed (`<team>.dev.hviid.ImmichMount`), which needs no provisioning entry; `group.` names do. A free
+  Personal Team provisions the App IDs, the App Group and the Keychain group (verified, macOS 27.0.1, Xcode 27.2).
 
 **Identity.** An item's identifier is its `NodeKey`'s storage key, the text form the store already keys names by;
 `NodeKey::Root` is the root container. One item per Appearance, as on Linux. A parent is derived from the key itself
@@ -1209,11 +1210,15 @@ browser sign-in (`ASWebAuthenticationSession` with the `app.immich` callback) fo
 
 **Distribution:** a notarized DMG on the GitHub release and the Homebrew cask, once the paid Apple Developer Program
 is in place. Development builds run under a free Personal Team on the maintainer's Mac. Each Mac switches the
-extension on once, in System Settings (General, Login Items & Extensions); no program can do it for the user.
+extension on once, in System Settings (General, Login Items & Extensions); no program can do it for the user. The
+app adds the location switched off (verified: `fileproviderctl dump` shows it `enabled: no` until then), and its
+folder is `~/Library/CloudStorage/ImmichMount-Immich`.
 
 **Flatpak impact:** none. The Linux edition is unchanged, and the core's additions are platform-free.
 
-**Built so far** (ROADMAP, M7), none of it run on a Mac yet:
+**Built so far** (ROADMAP, M7). On the maintainer's Mac (macOS 27.0.1, Xcode 27.2): the bridge's lab tests pass;
+the app and the extension build and are signed by a free Personal Team; the sandboxed app reaches the server,
+signs in and adds the location. Finder itself waits for the extension to be switched on.
 - **The bridge** (`immich-mount-apple`): items by identifier, listings, whole originals and thumbnails, from the
   core's tree over the metadata store, on a tokio runtime of its own, with a request's work stopped when the system
   cancels it. A listing that takes more than 20 seconds is answered from the kept one, or as unreachable. The
