@@ -21,20 +21,7 @@ pub fn settings_in(prefix: &str) -> impl Iterator<Item = &'static Setting> + '_ 
     SETTINGS.iter().filter(move |setting| setting.key.split('.').next() == Some(prefix))
 }
 
-/// How a choice reads in a dialog.
-pub fn choice_label(word: &str) -> &str {
-    match word {
-        "never" => "Never",
-        "atLeast500" => "From 500 Items",
-        "always" => "Always",
-        "year-prefix" => "Year in the Name (2023 - Trip)",
-        "year-folders" => "Year Folders (2023/Trip)",
-        "flat" => "Name Only (Trip)",
-        "date-time" => "Date and Time Taken",
-        "original" => "Original File Names",
-        other => other,
-    }
-}
+pub use immich_mount_core::settings::choice_label;
 
 fn config_text(paths: &Paths) -> String {
     std::fs::read_to_string(paths.config_file()).unwrap_or_default()

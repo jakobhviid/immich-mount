@@ -1190,6 +1190,12 @@ set what changed since a sync anchor (Apple's documentation):
 - **A folder that went away** takes what the store kept below it: its deletion and its contents' are recorded, and
   its kept listing goes, so later polls stop asking for it.
 
+**Settings.** The app's Settings window shows the settings table's entries that mean something on macOS (sections,
+date folders, the album layout, file naming), with Linux's labels. A change is written to `config.toml` in the App
+Group, and the app asks the system to list everything again. The extension follows a changed file at the next
+folder the system asks for, with a new tree on the same store; the mount's path, the cache and thumbnail seeding
+are Linux's.
+
 **Uploads.** The Upload folder lets items be added. The system hands the extension a finished file, which goes
 through the core's upload sequence; there is no staging, which Linux needs because files arrive there in writes.
 
@@ -1236,8 +1242,9 @@ signs in and adds the location. Finder itself waits for the extension to be swit
 - **The extension** lists, fetches and answers thumbnails through the bridge, and reports changes through the
   working set from the journal. Changes from Finder are refused.
 - **The app** signs in with single sign-on, a password or an API key (the server check runs in the app, for the
-  Local Network prompt), keeps the credential in the Keychain group and the address in the App Group, adds the Finder location, wakes the extension for
-  changes, opens at login when asked, and signs out. Its About panel carries the non-affiliation notice.
+  Local Network prompt), keeps the credential in the Keychain group and the address in the App Group, adds the
+  Finder location, wakes the extension for changes, opens at login when asked, shows the settings, and signs out.
+  Its About panel carries the non-affiliation notice.
 - **CI's `macos` job** runs the portable crates' and the bridge's clippy and tests on a Mac, builds the bridge for
   Xcode, and builds the app and the extension unsigned.
 

@@ -65,7 +65,21 @@ final class FileProviderExtension: NSObject, NSFileProviderReplicatedExtension, 
     func enumerator(for containerItemIdentifier: NSFileProviderItemIdentifier,
                     request: NSFileProviderRequest) throws -> NSFileProviderEnumerator {
         guard let library else { throw NSFileProviderError(.notAuthenticated) }
+        followConfig(library)
         return Enumerator(container: containerItemIdentifier, library: library)
+    }
+
+    /// Follow config.toml once the app's Settings window changed it; the app then asks the system to list everything
+    /// again, which comes through here first.
+    private func followConfig(_ library: Library) {
+        let config = (try? String(contentsOf: AppGroup.configFile, encoding: .utf8)) ?? ""
+        do {
+            if try library.applyConfig(config: config) {
+                logger.notice("the settings changed; folders follow them")
+            }
+        } catch {
+            logger.error("the settings were not followed: \(String(describing: error), privacy: .public)")
+        }
     }
 
     // MARK: Content

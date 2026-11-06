@@ -24,6 +24,9 @@ struct ImmichMountApp: App {
                 .environmentObject(model)
         }
         .windowResizability(.contentSize)
+        Settings {
+            PreferencesView()
+        }
     }
 }
 

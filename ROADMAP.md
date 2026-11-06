@@ -183,8 +183,8 @@ checked by CI's macOS job; the maintainer's Mac is needed only to run and debug 
    table, status from the extension, the app's icon. The desktop crate's server check and sign-in move into the
    core, so both editions share them.
    **Built, not yet run on a Mac:** the shared sign-in, and the app's single sign-on, password and API key
-   sign-in; on the maintainer's Mac, password sign-in adds the location. Not yet: the preferences, status from the
-   extension, the icon (an open question below).
+   sign-in; on the maintainer's Mac, password sign-in adds the location. The Settings window, which the extension
+   follows. Not yet: status from the extension, the icon (an open question below).
 4. **Uploads** into the Upload folder, through the core's upload sequence.
 5. **Distribution.** A notarized DMG built by the release workflow, and the Homebrew cask; it needs the paid Apple
    Developer Program.

@@ -164,6 +164,22 @@ pub trait NameMemory: Send + Sync {
     }
 }
 
+/// One store can serve several trees through an `Arc`: the macOS edition builds a new tree when the settings change.
+impl<Shared: NameMemory> NameMemory for Arc<Shared> {
+    fn remembered(&self, folder: &NodeKey) -> HashMap<String, String> {
+        self.as_ref().remembered(folder)
+    }
+    fn remember(&self, folder: &NodeKey, names: &HashMap<String, String>) {
+        self.as_ref().remember(folder, names)
+    }
+    fn keep_listing(&self, folder: &NodeKey, entries: &[Entry]) {
+        self.as_ref().keep_listing(folder, entries)
+    }
+    fn kept_listing(&self, folder: &NodeKey) -> Option<Vec<Entry>> {
+        self.as_ref().kept_listing(folder)
+    }
+}
+
 /// A `NameMemory` that lives only as long as the process; the metadata store replaces it in the daemon.
 #[derive(Default)]
 pub struct InMemoryNames {

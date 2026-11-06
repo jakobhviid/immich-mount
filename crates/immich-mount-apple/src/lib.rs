@@ -9,13 +9,13 @@ use std::collections::HashMap;
 use std::future::Future;
 use std::path::{Path, PathBuf};
 use std::pin::Pin;
-use std::sync::{Arc, Mutex, OnceLock, Weak};
+use std::sync::{Arc, Mutex, OnceLock, RwLock, Weak};
 use std::task::{Context, Poll};
 use std::time::{Duration, Instant, SystemTime};
 
 use immich_api::{ApiError, Client, Credential as ApiCredential};
 use immich_mount_core::immich::ImmichSource;
-use immich_mount_core::settings::Config;
+use immich_mount_core::settings::{self, choice_label, Config, Kind, SETTINGS};
 use immich_mount_core::sign_in::{self, normalised_address, BrowserSignIn};
 use immich_mount_core::source::{LibrarySource, SourceError, ThumbnailKind, ThumbnailSource};
 use immich_mount_core::store::{Anchor, Change, JournalRead, MetadataStore};
@@ -204,8 +204,7 @@ where
     Source: LibrarySource + ThumbnailSource + MacSource + 'static,
     Names: NameMemory + 'static,
 {
-    fn new(source: Source, names: Names, config: Config) -> Self {
-        let source = Arc::new(source);
+    fn new(source: Arc<Source>, names: Names, config: Config) -> Self {
         Answers { tree: Tree::new(source.clone(), names, config), source, deadline: LISTING_DEADLINE, kept_poll: Mutex::new(None) }
     }
 
@@ -254,7 +253,7 @@ where
 
 /// Live changes (ARCHITECTURE.md, "The macOS edition", "Changes"): they need the journal, which only the metadata
 /// store keeps.
-impl<Source> Answers<Source, MetadataStore>
+impl<Source> Answers<Source, Arc<MetadataStore>>
 where
     Source: LibrarySource + ThumbnailSource + MacSource + 'static,
 {
@@ -339,7 +338,26 @@ fn too_slow() -> BridgeError {
 /// The library behind the Finder location: one account on one server.
 #[derive(uniffi::Object)]
 pub struct Library {
-    answers: Arc<Answers<ImmichSource, MetadataStore>>,
+    /// Replaced when the settings change; requests in flight finish with the one they started with.
+    answers: RwLock<Arc<Answers<ImmichSource, Arc<MetadataStore>>>>,
+    source: Arc<ImmichSource>,
+    store: Arc<MetadataStore>,
+    /// The text of `config.toml` the answers follow.
+    config: Mutex<String>,
+}
+
+/// The settings in `config.toml`, as the macOS edition follows them.
+fn parse_config(text: &str) -> Result<Config, BridgeError> {
+    let mut config = Config::from_toml(text).map_err(failed)?;
+    // Not before the macOS edition uploads (ROADMAP, M7): the folder would refuse every file.
+    config.uploads_enabled = false;
+    Ok(config)
+}
+
+impl Library {
+    fn answers(&self) -> Arc<Answers<ImmichSource, Arc<MetadataStore>>> {
+        self.answers.read().expect("answers lock").clone()
+    }
 }
 
 /// What an account signs in with.
@@ -389,66 +407,150 @@ impl Library {
         if let Some(library) = open.get(&key).and_then(Weak::upgrade) {
             return Ok(library);
         }
-        let mut config = Config::from_toml(&config).map_err(failed)?;
-        // Not before the macOS edition uploads (ROADMAP, M7): the folder would refuse every file.
-        config.uploads_enabled = false;
+        let parsed = parse_config(&config)?;
         let client = Client::new(&server, Some(credential.for_client()), USER_AGENT).map_err(failed)?;
         std::fs::create_dir_all(&directory).map_err(|error| failed(format!("{}: {error}", directory.display())))?;
         let store = MetadataStore::open(&directory.join("metadata.redb")).map_err(failed)?.with_journal(JOURNAL_LIMIT).map_err(failed)?;
-        let kept_poll = store.kept_state(POLL_MEMORY);
-        let answers = Answers::new(ImmichSource::new(client), store, config);
-        *answers.kept_poll.lock().expect("kept poll lock") = kept_poll;
-        let library = Arc::new(Library { answers: Arc::new(answers) });
+        let store = Arc::new(store);
+        let source = Arc::new(ImmichSource::new(client));
+        let answers = Answers::new(source.clone(), store.clone(), parsed);
+        *answers.kept_poll.lock().expect("kept poll lock") = store.kept_state(POLL_MEMORY);
+        let library = Arc::new(Library { answers: RwLock::new(Arc::new(answers)), source, store, config: Mutex::new(config) });
         open.insert(key, Arc::downgrade(&library));
         Ok(library)
     }
 
     /// The item behind an identifier.
     pub async fn item(&self, identifier: String) -> Result<Item, BridgeError> {
-        let answers = self.answers.clone();
+        let answers = self.answers();
         on_runtime(async move { answers.item(&identifier).await }).await
     }
 
     /// The items a folder lists.
     pub async fn list(&self, identifier: String) -> Result<Vec<Item>, BridgeError> {
-        let answers = self.answers.clone();
+        let answers = self.answers();
         on_runtime(async move { answers.list(&identifier).await }).await
     }
 
     /// Download a file's original into `destination`, and return the item as it is now. On failure no file is left.
     pub async fn fetch(&self, identifier: String, destination: String) -> Result<Item, BridgeError> {
-        let answers = self.answers.clone();
+        let answers = self.answers();
         on_runtime(async move { answers.fetch(&identifier, Path::new(&destination)).await }).await
     }
 
     /// A file's thumbnail for a size in pixels (its longer side), as image bytes: WebP or JPEG, as Immich made it.
     /// `None` for a folder, which keeps the system's own icon.
     pub async fn thumbnail(&self, identifier: String, pixels: u32) -> Result<Option<Vec<u8>>, BridgeError> {
-        let answers = self.answers.clone();
+        let answers = self.answers();
         on_runtime(async move { answers.thumbnail(&identifier, pixels).await }).await
     }
 
     /// Ask the server what changed, and record in the journal what changed for the folders the system holds.
     /// Returns whether anything did.
     pub async fn poll(&self) -> Result<bool, BridgeError> {
-        let answers = self.answers.clone();
+        let answers = self.answers();
         on_runtime(async move { answers.poll().await }).await
     }
 
     /// The journal's anchor now, as the system's sync anchor.
     pub fn current_anchor(&self) -> Result<String, BridgeError> {
-        self.answers.current_anchor()
+        self.answers().current_anchor()
     }
 
     /// The changes after `anchor`, at most `limit` records of them; `AnchorExpired` when they are no longer kept.
     pub fn changes_since(&self, anchor: String, limit: u32) -> Result<ChangeBatch, BridgeError> {
-        self.answers.changes_since(&anchor, limit)
+        self.answers().changes_since(&anchor, limit)
     }
 
     /// Every item the system holds, for when its anchor expired and it enumerates the working set again.
     pub fn working_set(&self) -> Vec<Item> {
-        self.answers.working_set()
+        self.answers().working_set()
     }
+
+    /// Follow the settings in `config` (the text of `config.toml`) from now on, when they differ from those in use:
+    /// folders are listed by the new rules on their next visit. Returns whether they differed.
+    pub fn apply_config(&self, config: String) -> Result<bool, BridgeError> {
+        let mut current = self.config.lock().expect("config lock");
+        if *current == config {
+            return Ok(false);
+        }
+        let answers = Answers::new(self.source.clone(), self.store.clone(), parse_config(&config)?);
+        *self.answers.write().expect("answers lock") = Arc::new(answers);
+        *current = config;
+        Ok(true)
+    }
+}
+
+/// The settings groups the macOS app shows: those that mean something there. The mount's path, the cache and
+/// thumbnail seeding are Linux's, and uploads come with the macOS edition's uploads (ROADMAP, M7).
+const PREFERENCE_GROUPS: &[(&str, &str)] = &[("sections", "Sections"), ("grouping", "Date Folders"), ("albums", "Albums"), ("files", "Files")];
+
+/// A group of settings, as the app shows it.
+#[derive(Debug, Clone, PartialEq, Eq, uniffi::Record)]
+pub struct PreferenceGroup {
+    pub title: String,
+    pub preferences: Vec<Preference>,
+}
+
+/// One setting of the core's settings table (SPEC.md, "Configuration"), with its value.
+#[derive(Debug, Clone, PartialEq, Eq, uniffi::Record)]
+pub struct Preference {
+    /// Its key in `config.toml`.
+    pub key: String,
+    pub title: String,
+    pub kind: PreferenceKind,
+    /// As stored, or the default.
+    pub value: String,
+}
+
+#[derive(Debug, Clone, PartialEq, Eq, uniffi::Enum)]
+pub enum PreferenceKind {
+    /// `true` or `false`.
+    Toggle,
+    /// One of these words, each with how it reads.
+    Choice { options: Vec<PreferenceOption> },
+}
+
+#[derive(Debug, Clone, PartialEq, Eq, uniffi::Record)]
+pub struct PreferenceOption {
+    pub value: String,
+    pub label: String,
+}
+
+/// The preferences the app shows, with their values in `config`, the text of `config.toml`.
+#[uniffi::export]
+pub fn preferences(config: String) -> Vec<PreferenceGroup> {
+    let stored = settings::stored_values(&config).unwrap_or_default();
+    PREFERENCE_GROUPS
+        .iter()
+        .map(|(prefix, title)| PreferenceGroup {
+            title: (*title).to_owned(),
+            preferences: SETTINGS
+                .iter()
+                .filter(|setting| setting.key.split('.').next() == Some(*prefix))
+                .filter_map(|setting| {
+                    let kind = match setting.kind {
+                        Kind::Bool => PreferenceKind::Toggle,
+                        Kind::Choice(words) => PreferenceKind::Choice {
+                            options: words
+                                .iter()
+                                .map(|word| PreferenceOption { value: (*word).to_owned(), label: choice_label(word).to_owned() })
+                                .collect(),
+                        },
+                        Kind::Text | Kind::Path | Kind::Size => return None,
+                    };
+                    let value = stored.get(setting.key).cloned().unwrap_or_else(|| setting.default.to_owned());
+                    Some(Preference { key: setting.key.to_owned(), title: setting.description.to_owned(), kind, value })
+                })
+                .collect(),
+        })
+        .collect()
+}
+
+/// `config` with one setting changed, its comments kept; refused with a message when the value does not fit.
+#[uniffi::export]
+pub fn set_preference(config: String, key: String, value: String) -> Result<String, BridgeError> {
+    settings::set_value(&config, &key, &value).map_err(failed)
 }
 
 // Signing in, as on Linux: the core's `sign_in` (ARCHITECTURE.md, "Signing in"). Its errors are messages for people.
@@ -757,7 +859,7 @@ mod tests {
     }
 
     fn answers() -> Answers<FakeLibrary, InMemoryNames> {
-        Answers::new(FakeLibrary::default(), InMemoryNames::default(), Config::from_toml("").unwrap())
+        Answers::new(Arc::new(FakeLibrary::default()), InMemoryNames::default(), Config::from_toml("").unwrap())
     }
 
     fn march_photo() -> String {
@@ -829,7 +931,7 @@ mod tests {
     async fn a_silent_server_answers_from_the_kept_listing_or_says_unreachable() {
         let directory = tempfile::tempdir().unwrap();
         let store = MetadataStore::open(&directory.path().join("metadata.redb")).unwrap();
-        let answers = Answers::new(FakeLibrary::default(), store, Config::from_toml("").unwrap());
+        let answers = Answers::new(Arc::new(FakeLibrary::default()), store, Config::from_toml("").unwrap());
         let photos = NodeKey::Section(SectionKey::Photos);
         let years = answers.list(&photos.storage_key()).await.unwrap();
         answers.tree.invalidate(&photos);
@@ -840,10 +942,10 @@ mod tests {
         assert!(matches!(answers.list(&month.storage_key()).await, Err(BridgeError::ServerUnreachable { .. })));
     }
 
-    fn journaled() -> (tempfile::TempDir, Answers<FakeLibrary, MetadataStore>) {
+    fn journaled() -> (tempfile::TempDir, Answers<FakeLibrary, Arc<MetadataStore>>) {
         let directory = tempfile::tempdir().unwrap();
         let store = MetadataStore::open(&directory.path().join("metadata.redb")).unwrap().with_journal(JOURNAL_LIMIT).unwrap();
-        (directory, Answers::new(FakeLibrary::default(), store, Config::from_toml("").unwrap()))
+        (directory, Answers::new(Arc::new(FakeLibrary::default()), Arc::new(store), Config::from_toml("").unwrap()))
     }
 
     #[tokio::test]
@@ -870,6 +972,33 @@ mod tests {
         let held: Vec<String> = answers.working_set().into_iter().map(|item| item.identifier).collect();
         assert!(held.contains(&batch.updated[0].identifier) && held.contains(&"section|Photos".to_owned()));
         assert_eq!(answers.changes_since("not an anchor", 100), Err(BridgeError::AnchorExpired));
+    }
+
+    #[test]
+    fn the_preferences_are_the_settings_that_mean_something_on_macos() {
+        let groups = preferences("[sections]\npeople = false\n".into());
+        let titles: Vec<&str> = groups.iter().map(|group| group.title.as_str()).collect();
+        assert_eq!(titles, ["Sections", "Date Folders", "Albums", "Files"]);
+        let people = groups[0].preferences.iter().find(|preference| preference.key == "sections.people").unwrap();
+        assert_eq!((&people.kind, people.value.as_str()), (&PreferenceKind::Toggle, "false"));
+        let layout = &groups[2].preferences[0];
+        assert_eq!((layout.key.as_str(), layout.value.as_str()), ("albums.layout", "year-prefix"), "the default");
+        assert!(matches!(&layout.kind, PreferenceKind::Choice { options } if options[1].label == "Year Folders (2023/Trip)"));
+        let changed = set_preference("# mine\n".into(), "albums.layout".into(), "flat".into()).unwrap();
+        assert!(changed.contains("# mine") && preferences(changed)[2].preferences[0].value == "flat");
+        assert!(set_preference(String::new(), "albums.layout".into(), "sideways".into()).is_err());
+    }
+
+    #[test]
+    fn new_settings_are_followed_without_opening_the_store_again() {
+        let directory = tempfile::tempdir().unwrap();
+        let path = directory.path().display().to_string();
+        let library = Library::open("lab.example".into(), Credential::ApiKey { key: "key".into() }, path, String::new()).unwrap();
+        assert!(!library.apply_config(String::new()).unwrap(), "the same settings");
+        assert!(library.apply_config("[sections]\nplaces = false\n".into()).unwrap());
+        assert!(!library.answers().tree.config().show_places);
+        assert!(library.apply_config("[albums]\nlayout = \"sideways\"\n".into()).is_err(), "and the old ones stay");
+        assert!(!library.answers().tree.config().show_places);
     }
 
     #[test]
