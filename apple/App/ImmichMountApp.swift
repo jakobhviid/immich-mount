@@ -23,7 +23,8 @@ struct ImmichMountApp: App {
             ContentView()
                 .environmentObject(model)
         }
-        .windowResizability(.contentSize)
+        .defaultSize(width: 520, height: 820)
+        .windowResizability(.contentMinSize)
         .commands {
             CommandGroup(replacing: .appInfo) {
                 Button("About Immich Mount") { showAbout() }

@@ -38,6 +38,9 @@ Traps (verified on macOS 27.0.1 with Xcode 27.2):
   `apple/build-rust.sh` puts rustup's first for itself; other cargo commands need
   `PATH=$(brew --prefix rustup)/bin:$PATH`.
 - **In zsh, `log` is a builtin:** call `/usr/bin/log`.
+- **macOS caches an app's icon by its path.** A build at a path macOS saw without an icon keeps showing the blank
+  placeholder (also in the app's own window, through `applicationIconImage`). `touch` the built `.app` and start it
+  again; a fresh copy elsewhere shows the icon at once (verified on macOS 27).
 
 ## Build
 
