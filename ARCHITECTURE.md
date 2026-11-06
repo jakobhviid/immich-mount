@@ -1227,7 +1227,9 @@ refused), its completeness check and its upload sequence, duplicates included; t
 needs because files arrive there in writes. Folders, links and aliases are refused before anything is sent. The
 uploaded file stays in Upload for about 10 seconds, as on Linux, then a journal record takes it away: the system
 must have taken the item before it hears that it went. Pending departures are kept in the store, so a stopped
-extension still records them, and the photo shows in its month once the poll sees it. Until the upload succeeds,
+extension still records them, and the photo shows in its month once the poll sees it. Until it leaves, the extension
+answers for the item (its name, size and date) from that list, and fetches it; the same bytes added twice under two
+names are one Asset and one item, which the system merges. Until the upload succeeds,
 the system keeps the file in the folder and retries; a refusal is shown with its reason.
 
 **Signing in.** The app reaches the server before the extension ever runs, so macOS's Local Network prompt (macOS 15

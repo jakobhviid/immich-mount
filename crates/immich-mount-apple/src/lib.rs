@@ -211,10 +211,67 @@ struct Answers<Source, Names> {
     kept_poll: Mutex<Option<String>>,
 }
 
+/// An uploaded file waiting to leave the Upload folder, which no listing shows: the system may still ask about it,
+/// and fetch it, until it leaves.
+#[derive(serde::Serialize, serde::Deserialize)]
+struct Leaving {
+    key: String,
+    /// Seconds since the epoch.
+    leaves_at: u64,
+    name: String,
+    size: Option<u64>,
+    /// Seconds since the epoch.
+    taken: u64,
+}
+
+impl Leaving {
+    fn item(&self) -> Item {
+        let asset_id = match NodeKey::from_storage_key(&self.key) {
+            Some(NodeKey::Asset { asset_id, .. }) => asset_id,
+            _ => String::new(),
+        };
+        Item {
+            identifier: self.key.clone(),
+            parent_identifier: NodeKey::Upload.storage_key(),
+            name: self.name.clone(),
+            is_folder: false,
+            accepts_new_files: false,
+            size: self.size,
+            taken: Some(SystemTime::UNIX_EPOCH + Duration::from_secs(self.taken)),
+            content_version: asset_id,
+            version: String::new(),
+        }
+        .versioned()
+    }
+}
+
+/// Where the uploaded files waiting to leave Upload are kept: the metadata store, which keeps them across runs.
+trait Uploads {
+    fn uploaded(&self, key: &str) -> Option<Item>;
+}
+
+impl Uploads for MetadataStore {
+    fn uploaded(&self, key: &str) -> Option<Item> {
+        leaving_upload(self.kept_state(LEAVING_UPLOAD).as_deref()).iter().find(|leaving| leaving.key == key).map(Leaving::item)
+    }
+}
+
+impl<Shared: Uploads> Uploads for Arc<Shared> {
+    fn uploaded(&self, key: &str) -> Option<Item> {
+        self.as_ref().uploaded(key)
+    }
+}
+
+impl Uploads for immich_mount_core::tree::InMemoryNames {
+    fn uploaded(&self, _key: &str) -> Option<Item> {
+        None
+    }
+}
+
 impl<Source, Names> Answers<Source, Names>
 where
     Source: LibrarySource + ThumbnailSource + MacSource + 'static,
-    Names: NameMemory + 'static,
+    Names: NameMemory + Uploads + 'static,
 {
     fn new(source: Arc<Source>, names: Names, config: Config) -> Self {
         Answers { tree: Tree::new(source.clone(), names, config), source, deadline: LISTING_DEADLINE, kept_poll: Mutex::new(None) }
@@ -224,6 +281,9 @@ where
         let node = node_for(identifier)?;
         if node == NodeKey::Root {
             return Ok(root_item());
+        }
+        if matches!(&node, NodeKey::Asset { parent, .. } if **parent == NodeKey::Upload) {
+            return self.tree.names().uploaded(identifier).ok_or(BridgeError::NoSuchItem);
         }
         let found = tokio::time::timeout(self.deadline, self.tree.entry_of(&node)).await.map_err(|_| too_slow())??;
         let (folder, entry) = found.ok_or(BridgeError::NoSuchItem)?;
@@ -337,31 +397,26 @@ where
             Err(UploadError::Source(error)) => return Err(error.into()),
             Err(error) => return Err(failed(error)),
         };
-        let node = NodeKey::Asset { parent: Box::new(NodeKey::Upload), asset_id: asset_id.clone() };
-        let leaves_at = seconds_since_epoch(SystemTime::now() + UPLOAD_STAY);
-        let key = node.storage_key();
+        // The same bytes added twice are one Asset, so one item: the system merges the two.
+        let node = NodeKey::Asset { parent: Box::new(NodeKey::Upload), asset_id };
+        let leaving = Leaving {
+            key: node.storage_key(),
+            leaves_at: seconds_since_epoch(SystemTime::now() + UPLOAD_STAY),
+            name: name.to_owned(),
+            size: std::fs::metadata(path).ok().map(|metadata| metadata.len()),
+            taken: seconds_since_epoch(modified),
+        };
+        let item = leaving.item();
         self.store()
             .update_state(LEAVING_UPLOAD, |kept| {
-                let mut leaving = leaving_upload(kept);
-                leaving.retain(|(waiting, _)| *waiting != key);
-                leaving.push((key.clone(), leaves_at));
-                (Some(serde_json::to_string(&leaving).unwrap_or_default()), Vec::new(), ())
+                let mut waiting = leaving_upload(kept);
+                waiting.retain(|earlier| earlier.key != leaving.key);
+                waiting.push(leaving);
+                (Some(serde_json::to_string(&waiting).unwrap_or_default()), Vec::new(), ())
             })
             .map_err(failed)?;
         self.tree.forget_timeline();
-        let size = std::fs::metadata(path).ok().map(|metadata| metadata.len());
-        Ok(Item {
-            identifier: node.storage_key(),
-            parent_identifier: NodeKey::Upload.storage_key(),
-            name: name.to_owned(),
-            is_folder: false,
-            accepts_new_files: false,
-            size,
-            taken: Some(modified),
-            content_version: asset_id,
-            version: String::new(),
-        }
-        .versioned())
+        Ok(item)
     }
 
     /// Record in the journal the uploaded files due to leave the Upload folder at `now`, in the same transaction that
@@ -369,8 +424,8 @@ where
     fn record_departures(&self, now: u64) -> Result<(), BridgeError> {
         self.store()
             .update_state(LEAVING_UPLOAD, |kept| {
-                let (due, waiting): (Vec<_>, Vec<_>) = leaving_upload(kept).into_iter().partition(|(_, at)| *at <= now);
-                let changes = due.iter().filter_map(|(key, _)| NodeKey::from_storage_key(key)).map(Change::Deleted).collect();
+                let (due, waiting): (Vec<_>, Vec<_>) = leaving_upload(kept).into_iter().partition(|leaving| leaving.leaves_at <= now);
+                let changes = due.iter().filter_map(|leaving| NodeKey::from_storage_key(&leaving.key)).map(Change::Deleted).collect();
                 ((!waiting.is_empty()).then(|| serde_json::to_string(&waiting).unwrap_or_default()), changes, ())
             })
             .map_err(failed)
@@ -417,8 +472,8 @@ where
     }
 }
 
-/// Uploaded files waiting to leave the Upload folder, with when they leave (seconds since the epoch), as kept.
-fn leaving_upload(kept: Option<&str>) -> Vec<(String, u64)> {
+/// Uploaded files waiting to leave the Upload folder, as kept.
+fn leaving_upload(kept: Option<&str>) -> Vec<Leaving> {
     kept.and_then(|text| serde_json::from_str(text).ok()).unwrap_or_default()
 }
 
@@ -1187,6 +1242,9 @@ mod tests {
         let item = answers.upload("upload", "IMG_1.png", &photo, taken).await.unwrap();
         assert_eq!((item.identifier.as_str(), item.parent_identifier.as_str()), ("asset|upload|asset-uploaded", "upload"));
         assert_eq!(item.taken, Some(taken));
+        assert_eq!(answers.item(&item.identifier).await, Ok(item.clone()), "the system may ask about it while it waits");
+        let fetched = directory.path().join("fetched");
+        assert_eq!(answers.fetch(&item.identifier, &fetched).await.map(|item| item.size), Ok(Some(11)), "or fetch it");
 
         let before = answers.current_anchor().unwrap();
         answers.record_departures(seconds_since_epoch(SystemTime::now())).unwrap();
@@ -1195,6 +1253,7 @@ mod tests {
         let batch = answers.changes_since(&before, 100).unwrap();
         assert_eq!(batch.deleted, ["asset|upload|asset-uploaded"]);
         assert!(leaving_upload(answers.store().kept_state(LEAVING_UPLOAD).as_deref()).is_empty(), "and leaves once");
+        assert_eq!(answers.item(&item.identifier).await, Err(BridgeError::NoSuchItem), "and is gone after");
 
         let refused = |result: Result<Item, BridgeError>| matches!(result, Err(BridgeError::Failed { .. }));
         assert!(refused(answers.upload("section|Photos", "IMG_1.png", &photo, taken).await), "only Upload takes files");
