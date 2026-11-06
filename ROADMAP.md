@@ -141,6 +141,10 @@ libadwaita 1.9), built in an `ubuntu:26.04` job and tested by installing in a co
   sign-in, the sidebar bookmark, Unmount and Mount, and the move from the 1.1 formula and cask. Next: COPR and the AUR, and Fedora 45 builds of the
   interfaces once Fedora 45 based systems need them (the Kirigami one is tied to its Fedora's Qt).
 - An independent adversarial review before tagging.
+- **The download page is built** (`site/`, ARCHITECTURE "The download page"): `immichmount.hviid.dev`, with the
+  latest release's files, deployed by the release workflow. It goes live once GitHub Pages is on with GitHub
+  Actions as its source, the custom domain is set and its DNS record exists; then the README and the AppStream
+  homepage link it.
 
 ## M6. KDE edition
 

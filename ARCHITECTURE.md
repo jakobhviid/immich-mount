@@ -1067,6 +1067,30 @@ Each platform gets a native app that looks and reads like a first-party app (pri
   - **AppImage:** no service or autostart integration, the sign-in scheme handler needs extra desktop integration,
     and bundling GTK 4 and libadwaita drifts from the host look.
 
+### The download page
+
+`immichmount.hviid.dev` is one static page: what Immich Mount is, its screenshots, and the files of the latest
+release. GitHub Pages serves it, and the release workflow's `pages` job deploys it after every release.
+- **Its links come from the release itself.** `site/build.py` reads the release's file list (`gh release view
+  --json`) and fills `site/index.html` with direct links to those files, so a link never points at an older version,
+  and a file a release lacks shows as plain text, not a dead link. GitHub's `releases/latest/download/` links lost:
+  they need file names without the version, and the packages carry it (`immich-mount-2.0.2-1.x86_64.rpm`).
+- **The visitor's platform comes first.** A few lines of script read the browser's platform and put Linux or macOS
+  first, marked "for your system". Both stay on the page, and nothing downloads by itself. It goes no further than
+  the operating system: browsers do not reliably tell the CPU architecture, and never the distribution, so the
+  Linux files are listed by distribution, x86_64 and ARM side by side. Without script, Linux comes first.
+- **macOS shows once it ships.** The macOS block offers a download and the cask only when the release carries a
+  disk image (`.dmg`); until then it says the edition is not released yet.
+- **Nothing is loaded from elsewhere:** no analytics, cookies, web fonts or third-party scripts. The icon and the
+  README's screenshots (`docs/screenshots/`) are copied in, and the build fails if a local link has no file.
+- **Python's standard library, one template and one script,** rather than a static site generator: there is one
+  page, and nothing to install in CI. CI builds it against the latest release on every branch, so a template change
+  that breaks it fails before it reaches `main`.
+- **The custom domain** is set in the repository's Pages settings, with a DNS CNAME from `immichmount.hviid.dev` to
+  `jakobhviid.github.io`: a site deployed by a workflow ignores a `CNAME` file.
+- The page carries the non-affiliation notice word for word, the credits and the AI disclosure, as the README does.
+- **Flatpak impact:** none; a Flatpak would add a Flathub link.
+
 ### Flatpak: deferred, but kept possible
 
 A Flatpak can mount FUSE the way Pika Backup (a GNOME Circle app) and Vorta do on Flathub:

@@ -244,6 +244,8 @@ jobs:
   release:
     needs: build
     runs-on: ubuntu-latest
+    outputs:
+      version: ${{ steps.version.outputs.version }}
     steps:
       - uses: actions/checkout@v5
         with:
@@ -253,9 +255,11 @@ jobs:
           path: art
           merge-multiple: true
       - name: Version
+        id: version
         run: |
           VERSION=$(git log --reverse --format='%H%x09%s' | awk -F'\t' 'BEGIN{maj=1;min=0;pat=0}NR==1{next}{s=$2;if(s~/^[A-Za-z]+(\([^)]*\))?!:/){maj++;min=0;pat=0}else if(s~/^feat(\([^)]*\))?:/){min++;pat=0}else{pat++}}END{print maj"."min"."pat}')
           echo "VERSION=$VERSION" >> "$GITHUB_ENV"
+          echo "version=$VERSION" >> "$GITHUB_OUTPUT"
       - name: Homebrew bottle (x86_64 Linux)
         run: |
           # The prebuilt binary as a bottle of the headless formula, so `brew install` pours it. A poured bottle skips
@@ -329,3 +333,29 @@ jobs:
           # To a candidate branch, not main: the tap's gate installs and tests the formula on every platform it
           # claims and lands it only if it passes, opening an issue there if not. Force: the branch holds one candidate.
           git push --force origin "HEAD:refs/heads/auto/formula-immich-mount-headless"
+
+  pages:
+    # The download page (immichmount.hviid.dev), built for the release just published, so its links are never stale
+    # (ARCHITECTURE.md, "The download page"). It needs GitHub Pages on, with GitHub Actions as its source.
+    needs: release
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      pages: write
+      id-token: write
+    environment:
+      name: github-pages
+      url: ${{ steps.deploy.outputs.page_url }}
+    steps:
+      - uses: actions/checkout@v5
+      - name: The page for this release
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          gh release view "v${{ needs.release.outputs.version }}" --json tagName,publishedAt,url,assets > release.json
+          python3 site/build.py release.json _site
+      - uses: actions/upload-pages-artifact@v5
+        with:
+          path: _site
+      - id: deploy
+        uses: actions/deploy-pages@v5

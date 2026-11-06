@@ -1,0 +1,130 @@
+/* The download page's look: Immich's five colours as accents, light and dark with the system. */
+
+:root {
+  --background: #fafafa;
+  --surface: #ffffff;
+  --text: #1d1d1f;
+  --muted: #5f6368;
+  --line: #e2e2e5;
+  --accent: #1e83f7;
+  --accent-text: #ffffff;
+  --code: #f1f1f4;
+  color-scheme: light dark;
+}
+
+@media (prefers-color-scheme: dark) {
+  :root {
+    --background: #161618;
+    --surface: #1f1f22;
+    --text: #ececef;
+    --muted: #a5a5ad;
+    --line: #34343a;
+    --accent: #4a9bff;
+    --code: #2a2a2f;
+  }
+}
+
+* { box-sizing: border-box; }
+
+body {
+  margin: 0;
+  background: var(--background);
+  color: var(--text);
+  font: 17px/1.55 -apple-system, BlinkMacSystemFont, "Segoe UI", Cantarell, "Noto Sans", Ubuntu, sans-serif;
+}
+
+a { color: var(--accent); }
+
+main, .hero, .notice, footer { max-width: 980px; margin: 0 auto; padding: 0 24px; }
+
+.hero { text-align: center; padding-top: 64px; }
+.logo { width: 128px; height: 128px; }
+h1 { font-size: 2.6rem; margin: 12px 0 4px; letter-spacing: -0.02em; }
+.tagline { font-size: 1.3rem; margin: 0 0 16px; }
+.lead { color: var(--muted); max-width: 720px; margin: 0 auto 24px; }
+.version { color: var(--muted); font-size: 0.9rem; }
+
+/* The five colours of the lens, as a thin band under the header. */
+.hero::after {
+  content: "";
+  display: block;
+  height: 4px;
+  max-width: 320px;
+  margin: 32px auto 0;
+  border-radius: 2px;
+  background: linear-gradient(90deg, #fa2921 0 20%, #ed79b5 20% 40%, #ffb400 40% 60%, #1e83f7 60% 80%, #18c249 80%);
+}
+
+.button {
+  display: inline-block;
+  padding: 10px 22px;
+  border-radius: 10px;
+  background: var(--accent);
+  color: var(--accent-text);
+  font-weight: 600;
+  text-decoration: none;
+  margin: 4px;
+}
+.button.secondary { background: var(--surface); color: var(--text); border: 1px solid var(--line); }
+
+.notice {
+  margin-top: 32px;
+  font-size: 0.85rem;
+  color: var(--muted);
+  border-left: 3px solid var(--line);
+  padding-left: 16px;
+}
+
+section { margin: 56px 0; }
+h2 { font-size: 1.7rem; letter-spacing: -0.01em; }
+h3 { font-size: 1.05rem; margin: 0 0 6px; }
+
+.features { display: grid; grid-template-columns: repeat(auto-fit, minmax(260px, 1fr)); gap: 16px; }
+.features > div { background: var(--surface); border: 1px solid var(--line); border-radius: 14px; padding: 18px; }
+.features p { margin: 0; color: var(--muted); }
+
+.shot { margin: 40px 0 0; }
+.shot img { width: 100%; height: auto; border-radius: 12px; border: 1px solid var(--line); }
+.gallery { display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 16px; margin-top: 16px; }
+.gallery .shot { margin: 0; }
+
+.platforms { display: flex; flex-direction: column; gap: 20px; }
+.platform { background: var(--surface); border: 1px solid var(--line); border-radius: 14px; padding: 20px 22px; }
+.platform h3 { font-size: 1.3rem; }
+.yours { display: none; font-size: 0.75rem; font-weight: 600; color: var(--accent); margin-left: 8px; }
+body[data-os="macos"] #macos { order: -1; border-color: var(--accent); }
+body[data-os="macos"] #macos .yours,
+body[data-os="linux"] #linux .yours { display: inline; }
+body[data-os="linux"] #linux { border-color: var(--accent); }
+
+table { width: 100%; border-collapse: collapse; margin: 8px 0 16px; font-size: 0.95rem; }
+th, td { text-align: left; vertical-align: top; padding: 8px 10px 8px 0; border-top: 1px solid var(--line); }
+th { width: 34%; font-weight: 600; }
+.missing { color: var(--muted); }
+
+pre.command {
+  position: relative;
+  background: var(--code);
+  border-radius: 10px;
+  padding: 12px 70px 12px 14px;
+  font-size: 0.92rem;
+}
+/* A long command wraps inside its box rather than running under the Copy button on a phone. */
+pre.command code { white-space: pre-wrap; overflow-wrap: anywhere; }
+pre.command button {
+  position: absolute;
+  top: 8px;
+  right: 8px;
+  border: 1px solid var(--line);
+  background: var(--surface);
+  color: var(--text);
+  border-radius: 6px;
+  padding: 2px 10px;
+  font: inherit;
+  font-size: 0.8rem;
+  cursor: pointer;
+}
+code { font-family: ui-monospace, "SF Mono", Menlo, "Cascadia Mono", "DejaVu Sans Mono", monospace; }
+.small { font-size: 0.9rem; color: var(--muted); }
+
+footer { border-top: 1px solid var(--line); padding-top: 24px; padding-bottom: 48px; margin-top: 64px; font-size: 0.85rem; color: var(--muted); }

@@ -166,6 +166,6 @@ Rules:
 - **Record results in the docs, not in lab notes.** A check's outcome goes where its claim lives: ARCHITECTURE.md
   for a design reason, SPEC.md for behaviour, ROADMAP.md for a milestone, a code comment for a quirk. Logs and
   screenshots of a run stay out of git (`lab/**/evidence/` and `lab/**/screenshots/` are ignored); README pictures
-  live in `docs/screenshots/`.
+  live in `docs/screenshots/`, and the download page (`site/`) shows them too.
 - **New traps:** Incus ones go into the Erebus repository's `docs/traps.md`, lab ones into the skill that covers
   the environment.

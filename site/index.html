@@ -1,0 +1,133 @@
+<!doctype html>
+<!-- The download page, filled in for one release by site/build.py, which replaces each name in double braces. -->
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Immich Mount: your Immich photos and videos as a drive</title>
+  <meta name="description" content="Immich Mount shows a self-hosted Immich library as a drive in the file manager and in every file dialog, with thumbnails from the server and originals downloaded only when opened. Unofficial and independent.">
+  <link rel="icon" href="icon.svg" type="image/svg+xml">
+  <link rel="stylesheet" href="style.css">
+</head>
+<body data-os="other" data-macos="{{macos_ready}}">
+  <header class="hero">
+    <img class="logo" src="icon.svg" alt="" width="128" height="128">
+    <h1>Immich Mount</h1>
+    <p class="tagline">Your <a href="https://immich.app">Immich</a> photos and videos as a drive in your file manager.</p>
+    <p class="lead">Immich Mount puts a self-hosted Immich library in Files, Dolphin and every file open and upload
+      dialog, as a drive called <strong>Immich</strong>. Attach your holiday photos to an email, open a video in your
+      editor, or drop new pictures in to upload them, without downloading the library first.</p>
+    <p class="actions">
+      <a class="button" href="#install">Download</a>
+      <a class="button secondary" href="https://github.com/jakobhviid/immich-mount">Source on GitHub</a>
+    </p>
+    <p class="version">Version {{version}}, released {{published}}. <a href="{{release_url}}">Release notes</a></p>
+  </header>
+
+  <aside class="notice">
+    Immich Mount is an independent, unofficial project. It is not affiliated with, endorsed by, or sponsored by the
+    Immich project or FUTO. "Immich" is used only to describe the server this software works with, and remains the
+    mark of its owner.
+  </aside>
+
+  <main>
+    <figure class="shot wide">
+      <img src="screenshots/files-album.png" alt="An Immich album in GNOME Files, with thumbnails from the server">
+    </figure>
+
+    <section>
+      <h2>What it does</h2>
+      <div class="features">
+        <div><h3>Your library as folders</h3><p>The timeline by year and month, albums, people and places, named the
+          way Immich names them.</p></div>
+        <div><h3>Thumbnails from the server</h3><p>Browsing a folder never downloads the photos in it.</p></div>
+        <div><h3>Originals on demand</h3><p>A file is fetched only when a program opens it, and only the parts it
+          reads: a video seeks without downloading the whole file.</p></div>
+        <div><h3>Uploads by copy and move</h3><p>Drop photos and videos into Upload and they are uploaded unchanged.
+          A move never loses a photo; every other folder is a read-only view.</p></div>
+        <div><h3>Changes within seconds</h3><p>What changes in Immich shows in the drive within seconds.</p></div>
+        <div><h3>Native on your desktop</h3><p>One app, in GTK and libadwaita on GNOME and in Kirigami on KDE Plasma.
+          Sign in with your server's single sign-on, a password or an API key.</p></div>
+      </div>
+    </section>
+
+    <div class="gallery">
+      <figure class="shot"><img src="screenshots/files-root.png" alt="Immich in the Files sidebar, with Albums, People, Photos and Places" loading="lazy"></figure>
+      <figure class="shot"><img src="screenshots/files-places.png" alt="A city under Places, with photos named by when they were taken" loading="lazy"></figure>
+      <figure class="shot"><img src="screenshots/dolphin-album.png" alt="An Immich album in Dolphin, with thumbnails from the server and Immich in Places" loading="lazy"></figure>
+      <figure class="shot"><img src="screenshots/app-sign-in.png" alt="Sign-in methods the server offers: single sign-on, email and password, API key" loading="lazy"></figure>
+      <figure class="shot"><img src="screenshots/app-status.png" alt="The app's status page: the library is in Files" loading="lazy"></figure>
+      <figure class="shot"><img src="screenshots/kde-status.png" alt="The KDE app's status page: the library is in Dolphin" loading="lazy"></figure>
+    </div>
+
+    <section>
+      <h2>What it does not do</h2>
+      <p>Sync or mirror your library: libraries of hundreds of gigabytes stay on the server. Edit, rename or delete
+        what is already in Immich, or replace Immich's own apps: browsing photo by photo, search, faces, sharing and
+        editing stay in Immich's web and mobile apps.</p>
+    </section>
+
+    <section id="install">
+      <h2>Install</h2>
+      <p>You need an Immich server at v3.2 or later.</p>
+      <div class="platforms">
+        <div class="platform" id="linux">
+          <h3>Linux <span class="yours">for your system</span></h3>
+          <p>With <a href="https://brew.sh">Homebrew</a>, on any Linux that has it (Bazzite included, with nothing
+            layered onto the system), one command installs the app, the drive and the command line:</p>
+          <pre class="command"><code>brew install jakobhviid/tap/immich-mount</code></pre>
+          <p>Or the packages of version {{version}}:</p>
+          <table>
+            <tr><th>Fedora 44</th><td>{{fedora}}</td></tr>
+            <tr><th>Ubuntu 26.04, Kubuntu 26.04</th><td>{{ubuntu}}</td></tr>
+            <tr><th>Fedora 43, Ubuntu 24.04, Debian 13</th><td>The drive and the command line, without the app:
+              {{daemon_only}}</td></tr>
+            <tr><th>A server, with Homebrew</th><td><code>brew install jakobhviid/tap/immich-mount-headless</code></td></tr>
+            <tr><th>Any other Linux</th><td>A static binary with its user service: {{static}}</td></tr>
+          </table>
+          <pre class="command"><code>sudo dnf install ./immich-mount*.rpm</code></pre>
+          <pre class="command"><code>sudo apt install ./immich-mount*.deb</code></pre>
+          <p class="small">Then open <strong>Immich Mount</strong> from the app grid, enter your server's address and
+            sign in. More, from settings to troubleshooting:
+            <a href="https://github.com/jakobhviid/immich-mount/blob/main/WORKFLOWS.md">WORKFLOWS.md</a>.</p>
+        </div>
+        <div class="platform" id="macos">
+          <h3>macOS <span class="yours">for your system</span></h3>
+          {{macos}}
+        </div>
+      </div>
+    </section>
+  </main>
+
+  <footer>
+    <p><strong>Credits.</strong> Inspired by
+      <a href="https://github.com/Kartax/immich-desktop-app">Kartax/immich-desktop-app</a>, which shows an Immich
+      library as a drive in Finder. The Immich API layer started from
+      <a href="https://github.com/boul2gom/immich-rs">immich-rs</a>. And <a href="https://github.com/immich-app/immich">Immich</a>,
+      the server all of this talks to. More in
+      <a href="https://github.com/jakobhviid/immich-mount/blob/main/CREDITS.md">CREDITS.md</a>.</p>
+    <p><strong>AI disclosure.</strong> Parts of this project were written with the assistance of AI coding agents. All
+      changes are reviewed by the maintainer.</p>
+    <p>MIT license. By Jakob Hviid.</p>
+  </footer>
+
+  <script>
+    // Put the visitor's platform first: Linux or macOS, from what the browser says.
+    const platform = (navigator.userAgentData && navigator.userAgentData.platform) || navigator.platform || "";
+    if (/mac/i.test(platform)) document.body.dataset.os = "macos";
+    else if (/linux/i.test(platform)) document.body.dataset.os = "linux";
+    // A copy button on every command.
+    for (const block of document.querySelectorAll("pre.command")) {
+      const button = document.createElement("button");
+      button.type = "button";
+      button.textContent = "Copy";
+      button.addEventListener("click", async () => {
+        await navigator.clipboard.writeText(block.querySelector("code").textContent.trim());
+        button.textContent = "Copied";
+        setTimeout(() => (button.textContent = "Copy"), 1500);
+      });
+      block.append(button);
+    }
+  </script>
+</body>
+</html>
