@@ -193,7 +193,7 @@ pub fn freshness_window(node: &NodeKey, now: DateTime<Utc>) -> Duration {
 }
 
 /// Whether a folder's listing depends on something in `changes`.
-fn is_touched(node: &NodeKey, changes: &LibraryChanges) -> bool {
+pub fn is_touched(node: &NodeKey, changes: &LibraryChanges) -> bool {
     if changes.everything {
         return true;
     }
@@ -241,6 +241,11 @@ impl<Source: LibrarySource, Names: NameMemory> Tree<Source, Names> {
 
     pub fn config(&self) -> &Config {
         &self.config
+    }
+
+    /// Where names and listings are kept: the metadata store, which also holds the macOS edition's journal.
+    pub fn names(&self) -> &Names {
+        &self.names
     }
 
     /// Forget a cached listing, so the next call asks the source again.

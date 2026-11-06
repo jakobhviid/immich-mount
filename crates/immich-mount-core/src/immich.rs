@@ -69,6 +69,15 @@ struct PollState {
     albums: HashMap<String, (String, u64, DateTime<Utc>)>,
 }
 
+/// What the change poll saw, in a form kept between runs (`ImmichSource::poll_memory`).
+#[derive(serde::Serialize, serde::Deserialize)]
+struct PollMemory {
+    buckets_etag: Option<String>,
+    month_counts: Vec<(YearMonth, u32)>,
+    albums_etag: Option<String>,
+    albums: Vec<(String, String, u64, DateTime<Utc>)>,
+}
+
 impl ImmichSource {
     pub fn new(client: Client) -> ImmichSource {
         ImmichSource { client, poll: tokio::sync::Mutex::new(PollState::default()), offline_until: std::sync::Mutex::new(None) }
@@ -83,6 +92,35 @@ impl ImmichSource {
             Some(until) if std::time::Instant::now() < until => Err(SourceError::Offline("the server was unreachable moments ago".to_owned())),
             _ => Ok(()),
         }
+    }
+
+    /// What the change poll has seen, as text to keep between runs, so a process started again (the macOS edition's
+    /// extension, which the system stops when idle) sees what changed while it was stopped. `None` before the first
+    /// poll. The sync stream needs nothing kept: the server keeps its acks.
+    pub async fn poll_memory(&self) -> Option<String> {
+        let poll = self.poll.lock().await;
+        if !poll.started {
+            return None;
+        }
+        let memory = PollMemory {
+            buckets_etag: poll.buckets_etag.clone(),
+            month_counts: poll.month_counts.iter().map(|(month, count)| (*month, *count)).collect(),
+            albums_etag: poll.albums_etag.clone(),
+            albums: poll.albums.iter().map(|(id, (name, count, updated_at))| (id.clone(), name.clone(), *count, *updated_at)).collect(),
+        };
+        serde_json::to_string(&memory).ok()
+    }
+
+    /// Start from what an earlier run's poll saw (`poll_memory`): the next poll reports what changed since. Text that
+    /// does not parse is ignored, and the next poll only takes note, as a first one does.
+    pub async fn recall_poll(&self, memory: &str) {
+        let Ok(memory) = serde_json::from_str::<PollMemory>(memory) else { return };
+        let mut poll = self.poll.lock().await;
+        poll.buckets_etag = memory.buckets_etag;
+        poll.month_counts = memory.month_counts.into_iter().collect();
+        poll.albums_etag = memory.albums_etag;
+        poll.albums = memory.albums.into_iter().map(|(id, name, count, updated_at)| (id, (name, count, updated_at))).collect();
+        poll.started = true;
     }
 
     /// What changed since the last poll (ARCHITECTURE.md, "Freshness").
@@ -524,6 +562,19 @@ mod tests {
         assert!(matches!(source.check_online(), Err(SourceError::Offline(_))));
         source.note_outcome(&Ok(()));
         assert!(source.check_online().is_ok(), "any answer from the server ends the grace");
+    }
+
+    #[tokio::test]
+    async fn what_the_poll_saw_comes_back_as_it_was_kept() {
+        let source = ImmichSource::new(Client::new("http://127.0.0.1:9", None, "test").unwrap());
+        assert_eq!(source.poll_memory().await, None, "nothing seen yet");
+        let kept = r#"{"buckets_etag":"W/\"1\"","month_counts":[[{"year":2024,"month":3},5]],"albums_etag":null,"albums":[["a","Trip",2,"2024-03-01T00:00:00Z"]]}"#;
+        source.recall_poll(kept).await;
+        let again: serde_json::Value = serde_json::from_str(&source.poll_memory().await.unwrap()).unwrap();
+        assert_eq!(again, serde_json::from_str::<serde_json::Value>(kept).unwrap());
+        let fresh = ImmichSource::new(Client::new("http://127.0.0.1:9", None, "test").unwrap());
+        fresh.recall_poll("not what a poll keeps").await;
+        assert_eq!(fresh.poll_memory().await, None, "ignored: the next poll only takes note");
     }
 
     #[test]

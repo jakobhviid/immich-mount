@@ -57,6 +57,8 @@ extension Error {
             return NSFileProviderError(.serverUnreachable)
         case .NoSuchItem:
             return NSFileProviderError(.noSuchItem)
+        case .AnchorExpired:
+            return NSFileProviderError(.syncAnchorExpired)
         case .NotPermitted(let message):
             return CocoaError(.fileReadNoPermission, userInfo: [NSLocalizedDescriptionKey: message])
         case .Failed(let message):

@@ -18,8 +18,8 @@ use immich_mount_core::immich::{source_error, ImmichSource};
 use immich_mount_core::settings::Config;
 use immich_mount_core::sign_in::normalised_address;
 use immich_mount_core::source::{LibrarySource, SourceError, ThumbnailKind, ThumbnailSource};
-use immich_mount_core::store::MetadataStore;
-use immich_mount_core::tree::{Entry, EntryKind, NameMemory, NodeKey, Tree};
+use immich_mount_core::store::{Anchor, Change, JournalRead, MetadataStore};
+use immich_mount_core::tree::{is_touched, Entry, EntryKind, NameMemory, NodeKey, Tree};
 use sha2::{Digest, Sha256};
 
 uniffi::setup_scaffolding!();
@@ -31,6 +31,10 @@ const LISTING_DEADLINE: Duration = Duration::from_secs(20);
 /// Immich's small thumbnail is 250 pixels on its short side. Up to this size it is upscaled a little; above it, the
 /// preview (1440 pixels) is sent.
 const SMALL_THUMBNAIL_UP_TO: u32 = 320;
+/// How many journal records the store keeps; an anchor older than that is expired, and the system enumerates again.
+const JOURNAL_LIMIT: u64 = 20_000;
+/// The name the change poll's memory is kept under in the store.
+const POLL_MEMORY: &str = "change-poll";
 /// How long the server check keeps trying a connection that fails: macOS may refuse sockets while its Local Network
 /// prompt waits for an answer (Apple's TN3179).
 const LOCAL_NETWORK_PATIENCE: Duration = Duration::from_secs(30);
@@ -50,6 +54,9 @@ pub enum BridgeError {
     /// No such item, or not any more.
     #[error("no such item")]
     NoSuchItem,
+    /// A sync anchor from before the journal's oldest record, or from another store: the system enumerates again.
+    #[error("the sync anchor expired")]
+    AnchorExpired,
     /// The credential lacks a permission the request needs.
     #[error("{message}")]
     NotPermitted { message: String },
@@ -147,16 +154,40 @@ fn node_for(identifier: &str) -> Result<NodeKey, BridgeError> {
     NodeKey::from_storage_key(identifier).ok_or(BridgeError::NoSuchItem)
 }
 
-/// Whole originals, which the system asks for where Linux reads ranges.
-pub trait Originals: Send + Sync {
+/// What the macOS edition needs of a library beyond the tree's source: whole originals, which the system asks for
+/// where Linux reads ranges, and the change poll's memory, kept between runs of an extension the system stops.
+pub trait MacSource: Send + Sync {
     /// Write an Asset's whole original to `destination`, and return the bytes written.
     fn download(&self, asset_id: &str, destination: &Path) -> impl Future<Output = Result<u64, SourceError>> + Send;
+    /// What the change poll has seen, to keep; `None` before its first poll.
+    fn poll_memory(&self) -> impl Future<Output = Option<String>> + Send;
+    /// Start from a kept memory.
+    fn recall_poll(&self, memory: &str) -> impl Future<Output = ()> + Send;
 }
 
-impl Originals for ImmichSource {
+impl MacSource for ImmichSource {
     async fn download(&self, asset_id: &str, destination: &Path) -> Result<u64, SourceError> {
         self.download_original(asset_id, destination).await
     }
+    async fn poll_memory(&self) -> Option<String> {
+        ImmichSource::poll_memory(self).await
+    }
+    async fn recall_poll(&self, memory: &str) {
+        ImmichSource::recall_poll(self, memory).await
+    }
+}
+
+/// What changed for the system since an anchor.
+#[derive(Debug, Clone, PartialEq, Eq, uniffi::Record)]
+pub struct ChangeBatch {
+    /// Items that appeared, or whose name, size or time changed.
+    pub updated: Vec<Item>,
+    /// Identifiers of items that went away.
+    pub deleted: Vec<String>,
+    /// Where these changes end: the anchor to ask from next.
+    pub anchor: String,
+    /// Whether more changes follow.
+    pub more: bool,
 }
 
 /// The answers to the system's requests, over any source: Immich in the extension, a fake in tests.
@@ -164,16 +195,18 @@ struct Answers<Source, Names> {
     tree: Tree<Arc<Source>, Names>,
     source: Arc<Source>,
     deadline: Duration,
+    /// The change poll's memory from an earlier run, recalled at the first poll.
+    kept_poll: Mutex<Option<String>>,
 }
 
 impl<Source, Names> Answers<Source, Names>
 where
-    Source: LibrarySource + ThumbnailSource + Originals + 'static,
+    Source: LibrarySource + ThumbnailSource + MacSource + 'static,
     Names: NameMemory + 'static,
 {
     fn new(source: Source, names: Names, config: Config) -> Self {
         let source = Arc::new(source);
-        Answers { tree: Tree::new(source.clone(), names, config), source, deadline: LISTING_DEADLINE }
+        Answers { tree: Tree::new(source.clone(), names, config), source, deadline: LISTING_DEADLINE, kept_poll: Mutex::new(None) }
     }
 
     async fn item(&self, identifier: &str) -> Result<Item, BridgeError> {
@@ -219,6 +252,86 @@ where
     }
 }
 
+/// Live changes (ARCHITECTURE.md, "The macOS edition", "Changes"): they need the journal, which only the metadata
+/// store keeps.
+impl<Source> Answers<Source, MetadataStore>
+where
+    Source: LibrarySource + ThumbnailSource + MacSource + 'static,
+{
+    fn store(&self) -> &MetadataStore {
+        self.tree.names()
+    }
+
+    /// Ask the server what changed, and list again the folders it touched that the system holds, which records the
+    /// differences in the journal. Returns whether the journal grew.
+    async fn poll(&self) -> Result<bool, BridgeError> {
+        let before = self.store().journal_anchor().map_err(failed)?;
+        let kept = self.kept_poll.lock().expect("kept poll lock").take();
+        if let Some(memory) = kept {
+            self.source.recall_poll(&memory).await;
+        }
+        let changes = self.source.changes().await?;
+        if let Some(memory) = self.source.poll_memory().await {
+            self.store().keep_state(POLL_MEMORY, &memory);
+        }
+        if !changes.is_empty() {
+            self.tree.apply_changes(&changes);
+            for folder in self.store().kept_folders().into_iter().filter(|folder| is_touched(folder, &changes)) {
+                // A folder that went away with its parent, listed earlier in this loop, is not asked for again.
+                if self.store().kept_listing(&folder).is_none() {
+                    continue;
+                }
+                match tokio::time::timeout(self.deadline, self.tree.list(&folder)).await {
+                    Ok(Ok(_)) => {}
+                    Ok(Err(error)) => log::info!("a changed folder could not be listed again ({error}); the next change or visit lists it"),
+                    Err(_) => log::info!("a changed folder was not listed again in time; the next change or visit lists it"),
+                }
+            }
+        }
+        Ok(self.store().journal_anchor().map_err(failed)? != before)
+    }
+
+    fn current_anchor(&self) -> Result<String, BridgeError> {
+        Ok(self.store().journal_anchor().map_err(failed)?.to_text())
+    }
+
+    fn changes_since(&self, anchor: &str, limit: u32) -> Result<ChangeBatch, BridgeError> {
+        let anchor = Anchor::from_text(anchor).ok_or(BridgeError::AnchorExpired)?;
+        let (changes, anchor, more) = match self.store().journal_since(anchor, limit.max(1) as usize).map_err(failed)? {
+            JournalRead::Changes { changes, anchor, more } => (changes, anchor, more),
+            JournalRead::Expired => return Err(BridgeError::AnchorExpired),
+        };
+        // The latest record of each item wins: one that went away and came back in a batch is simply updated.
+        let mut latest: Vec<(String, Option<Item>)> = Vec::new();
+        for change in changes {
+            let (identifier, item) = match change {
+                Change::Updated { folder, entry } => (entry.node.storage_key(), Some(item_for(&entry, &folder))),
+                Change::Deleted(node) => (node.storage_key(), None),
+            };
+            latest.retain(|(earlier, _)| *earlier != identifier);
+            latest.push((identifier, item));
+        }
+        let (mut updated, mut deleted) = (Vec::new(), Vec::new());
+        for (identifier, item) in latest {
+            match item {
+                Some(item) => updated.push(item),
+                None => deleted.push(identifier),
+            }
+        }
+        Ok(ChangeBatch { updated, deleted, anchor: anchor.to_text(), more })
+    }
+
+    /// Every item the system holds: the entries of every kept listing.
+    fn working_set(&self) -> Vec<Item> {
+        let store = self.store();
+        store
+            .kept_folders()
+            .into_iter()
+            .flat_map(|folder| store.kept_listing(&folder).unwrap_or_default().iter().map(|entry| item_for(entry, &folder)).collect::<Vec<_>>())
+            .collect()
+    }
+}
+
 fn too_slow() -> BridgeError {
     BridgeError::ServerUnreachable { message: "the server did not answer in time".to_owned() }
 }
@@ -256,8 +369,11 @@ impl Library {
         config.uploads_enabled = false;
         let client = Client::new(&server, Some(Credential::ApiKey(api_key)), USER_AGENT).map_err(failed)?;
         std::fs::create_dir_all(&directory).map_err(|error| failed(format!("{}: {error}", directory.display())))?;
-        let store = MetadataStore::open(&directory.join("metadata.redb")).map_err(failed)?;
-        let library = Arc::new(Library { answers: Arc::new(Answers::new(ImmichSource::new(client), store, config)) });
+        let store = MetadataStore::open(&directory.join("metadata.redb")).map_err(failed)?.with_journal(JOURNAL_LIMIT).map_err(failed)?;
+        let kept_poll = store.kept_state(POLL_MEMORY);
+        let answers = Answers::new(ImmichSource::new(client), store, config);
+        *answers.kept_poll.lock().expect("kept poll lock") = kept_poll;
+        let library = Arc::new(Library { answers: Arc::new(answers) });
         open.insert(key, Arc::downgrade(&library));
         Ok(library)
     }
@@ -285,6 +401,28 @@ impl Library {
     pub async fn thumbnail(&self, identifier: String, pixels: u32) -> Result<Option<Vec<u8>>, BridgeError> {
         let answers = self.answers.clone();
         on_runtime(async move { answers.thumbnail(&identifier, pixels).await }).await
+    }
+
+    /// Ask the server what changed, and record in the journal what changed for the folders the system holds.
+    /// Returns whether anything did.
+    pub async fn poll(&self) -> Result<bool, BridgeError> {
+        let answers = self.answers.clone();
+        on_runtime(async move { answers.poll().await }).await
+    }
+
+    /// The journal's anchor now, as the system's sync anchor.
+    pub fn current_anchor(&self) -> Result<String, BridgeError> {
+        self.answers.current_anchor()
+    }
+
+    /// The changes after `anchor`, at most `limit` records of them; `AnchorExpired` when they are no longer kept.
+    pub fn changes_since(&self, anchor: String, limit: u32) -> Result<ChangeBatch, BridgeError> {
+        self.answers.changes_since(&anchor, limit)
+    }
+
+    /// Every item the system holds, for when its anchor expired and it enumerates the working set again.
+    pub fn working_set(&self) -> Vec<Item> {
+        self.answers.working_set()
     }
 }
 
@@ -397,6 +535,9 @@ mod tests {
         silent: AtomicBool,
         /// Downloads break off midway.
         downloads_fail: AtomicBool,
+        /// A second photo arrived in March, and the next poll says so.
+        second_photo: AtomicBool,
+        poll_told: AtomicBool,
         thumbnails_asked: Mutex<Vec<ThumbnailKind>>,
     }
 
@@ -429,7 +570,17 @@ mod tests {
         }
         async fn month_assets(&self, _month: YearMonth) -> Result<Vec<Asset>, SourceError> {
             self.answer().await;
-            Ok(vec![photo()])
+            if !self.second_photo.load(Ordering::SeqCst) {
+                return Ok(vec![photo()]);
+            }
+            let first = photo();
+            let second = Asset {
+                id: "asset-2".into(),
+                original_file_name: "IMG_2.JPG".into(),
+                local_capture_time: first.local_capture_time + chrono::Duration::seconds(1),
+                ..photo()
+            };
+            Ok(vec![first, second])
         }
         async fn albums(&self) -> Result<Vec<Album>, SourceError> {
             Ok(vec![Album { id: "album-1".into(), name: "Trip".into(), year: Some(2024), created_at: Utc::now() }])
@@ -452,6 +603,11 @@ mod tests {
         async fn city_assets(&self, _country: &str, _city: &str) -> Result<Vec<Asset>, SourceError> {
             Ok(vec![])
         }
+        async fn changes(&self) -> Result<immich_mount_core::source::LibraryChanges, SourceError> {
+            let arrived = self.second_photo.load(Ordering::SeqCst) && !self.poll_told.swap(true, Ordering::SeqCst);
+            let months = if arrived { vec![YearMonth { year: 2024, month: 3 }] } else { vec![] };
+            Ok(immich_mount_core::source::LibraryChanges { months, ..Default::default() })
+        }
     }
 
     impl ThumbnailSource for FakeLibrary {
@@ -461,7 +617,12 @@ mod tests {
         }
     }
 
-    impl Originals for FakeLibrary {
+    impl MacSource for FakeLibrary {
+        async fn poll_memory(&self) -> Option<String> {
+            Some("seen".into())
+        }
+        async fn recall_poll(&self, _memory: &str) {}
+
         async fn download(&self, _asset_id: &str, destination: &Path) -> Result<u64, SourceError> {
             if self.downloads_fail.load(Ordering::SeqCst) {
                 std::fs::write(destination, b"the ph").unwrap();
@@ -554,6 +715,38 @@ mod tests {
         assert_eq!(answers.list(&photos.storage_key()).await.unwrap(), years);
         let month = NodeKey::TimelineMonth(YearMonth { year: 2023, month: 1 });
         assert!(matches!(answers.list(&month.storage_key()).await, Err(BridgeError::ServerUnreachable { .. })));
+    }
+
+    fn journaled() -> (tempfile::TempDir, Answers<FakeLibrary, MetadataStore>) {
+        let directory = tempfile::tempdir().unwrap();
+        let store = MetadataStore::open(&directory.path().join("metadata.redb")).unwrap().with_journal(JOURNAL_LIMIT).unwrap();
+        (directory, Answers::new(FakeLibrary::default(), store, Config::from_toml("").unwrap()))
+    }
+
+    #[tokio::test]
+    async fn a_photo_added_on_the_server_reaches_the_system_through_the_journal() {
+        let (_directory, answers) = journaled();
+        let month = NodeKey::TimelineMonth(YearMonth { year: 2024, month: 3 });
+        for folder in ["root", "section|Photos", "year|2024", "month|2024-03"] {
+            answers.list(folder).await.unwrap();
+        }
+        let shown = answers.current_anchor().unwrap();
+        assert!(!answers.poll().await.unwrap(), "nothing changed yet");
+        assert_eq!(answers.store().kept_state(POLL_MEMORY).as_deref(), Some("seen"), "the poll's memory is kept");
+
+        answers.source.second_photo.store(true, Ordering::SeqCst);
+        assert!(answers.poll().await.unwrap(), "the month changed, and the system holds it");
+        let batch = answers.changes_since(&shown, 100).unwrap();
+        assert_eq!(batch.deleted, Vec::<String>::new());
+        assert_eq!(batch.updated.len(), 1);
+        assert_eq!(batch.updated[0].parent_identifier, month.storage_key());
+        assert_eq!(batch.updated[0].content_version, "asset-2");
+        assert_eq!((batch.anchor.clone(), batch.more), (answers.current_anchor().unwrap(), false));
+        assert_eq!(answers.changes_since(&batch.anchor, 100).unwrap().updated, vec![], "caught up");
+
+        let held: Vec<String> = answers.working_set().into_iter().map(|item| item.identifier).collect();
+        assert!(held.contains(&batch.updated[0].identifier) && held.contains(&"section|Photos".to_owned()));
+        assert_eq!(answers.changes_since("not an anchor", 100), Err(BridgeError::AnchorExpired));
     }
 
     #[test]

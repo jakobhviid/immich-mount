@@ -75,6 +75,12 @@ struct StatusView: View {
                     Button("Show in Finder") { Task { await model.showInFinder() } }
                 }
             }
+            Section {
+                Toggle("Open at login", isOn: Binding(get: { model.opensAtLogin }, set: { model.setOpensAtLogin($0) }))
+            } footer: {
+                Text("While Immich Mount runs, changes in Immich reach Finder within seconds.")
+                    .foregroundStyle(.secondary)
+            }
             if let message = model.message {
                 Text(message).foregroundStyle(.red)
             }
