@@ -18,7 +18,7 @@ struct ContentView: View {
                 SignInView()
             }
         }
-        .frame(width: 480)
+        .frame(minWidth: 480, idealWidth: 520, minHeight: 560, idealHeight: 820)
         #if DEBUG
         .task { await model.followLaunchArguments() }
         #endif
@@ -154,6 +154,7 @@ struct StatusView: View {
                 HStack {
                     Button("Open System Settings") { model.openExtensionSettings() }
                     Button("Show in Finder") { Task { await model.showInFinder() } }
+                    SettingsLink { Text("Settings…") }
                 }
             }
             Section {
