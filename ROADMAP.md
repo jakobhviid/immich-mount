@@ -192,8 +192,15 @@ checked by CI's macOS job; the maintainer's Mac is needed only to run and debug 
    **Built and verified in Finder:** a photo copied or moved into Upload reaches the server byte for byte and leaves
    Upload; a moved photo's source is gone; a file Immich does not take stays in Upload, refused with its reason.
    Not yet seen: how Finder shows that refusal.
-5. **Distribution.** A notarized DMG built by the release workflow, and the Homebrew cask; it needs the paid Apple
-   Developer Program.
+5. **Distribution.** A notarized universal DMG built by the release workflow; it needs the paid Apple Developer
+   Program. The Homebrew cask `immich-mount` gains a macOS part beside its Linux one (the DMG, the app into
+   Applications, macOS 14 or later, and a zap of the App Group folder and the sandbox containers), so one command
+   installs on either system; the tap's pipeline bumps it from the releases. Gatekeeper refuses an unsigned app, so
+   the cask waits for notarization.
+   A download page at `immichmount.hviid.dev` (GitHub Pages, the domain by a CNAME record), with what it is, the
+   screenshots and the non-affiliation notice: the release workflow builds it with that release's file links, so it
+   is never stale, and a few lines of script put the visitor's platform first (Homebrew first on Linux, whose
+   distribution a browser cannot tell).
    Exit: a Mac that never had it installs from Homebrew, switches the extension on, and browses.
 
 Open:
