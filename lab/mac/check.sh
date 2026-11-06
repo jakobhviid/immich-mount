@@ -1,8 +1,9 @@
 #!/usr/bin/env bash
 # The macOS edition's check, from this machine: Finder's view of the lab server on the maintainer's Mac, one PASS or
-# FAIL line per claim (the mac-dev skill). It needs, already in place: a signed build of the app, signed in to the lab
-# server through the tunnels, running, and the extension switched on. It reads a few originals, adds one photo on the
-# server and one through Upload, and deletes both from the server again.
+# FAIL line per claim (the mac-dev skill). It needs, already in place: a signed Debug build of the app in the Mac's
+# checkout, pulled to this commit, the tunnels to the lab server, and the extension switched on. It starts fresh: the
+# app signs out (the location, the credential and the store go) and in again with the lab's full key. It reads a few
+# originals, adds one photo on the server and one through Upload, and deletes both from the server again.
 #
 #   lab/mac/check.sh
 #
@@ -16,8 +17,10 @@ server=${LAB_SERVER:-http://127.0.0.1:2283}
 env_file="$here/../immich-server/.env${IMMICH_INSTANCE:+.$IMMICH_INSTANCE}.local"
 # shellcheck source=/dev/null
 . "$env_file"
-# Relative to the home folder, where ssh starts: the location of the File Provider domain "Immich".
+# Relative to the home folder, where ssh starts: the location of the File Provider domain "Immich", and the checkout.
 root='Library/CloudStorage/ImmichMount-Immich'
+checkout='Developer/Private/immich-mount'
+app="$checkout/apple/build/DerivedData/Build/Products/Debug/Immich Mount.app"
 
 # shellcheck disable=SC2086
 mac() { ssh ${MAC_SSH_OPTIONS:-} -o BatchMode=yes -o ConnectTimeout=10 "$MAC_HOST" "$1" </dev/null; }
@@ -41,7 +44,9 @@ curl -sS -m 10 "$server/api/server/version" >/dev/null || { echo "the lab server
 mac true || { echo "the Mac does not answer at $MAC_HOST" >&2; exit 1; }
 started=$(date +%s)
 
-verdict "the sections" "$(mac "ls $root | sort | tr '\n' ' '")" "Albums People Photos Places Upload "
+mac "pkill -x 'Immich Mount'; sleep 1; open -n '$app' --args -signOut YES -signInServer $server \
+  -signInAPIKey $IMMICH_API_KEY_FULL"
+wait_for_mac "the sections, after a fresh sign-in" "ls $root 2>/dev/null | sort | tr '\n' ' '" "Albums People Photos Places Upload "
 verdict "every timeline photo" "$(mac "find $root/Photos -type f | wc -l | tr -d ' '")" "50"
 verdict "listing downloads no original" "$(mac "ls -lOR $root/Photos | grep -c dataless")" "50"
 
@@ -53,10 +58,10 @@ read_back=$(mac "find $root/Photos -type f | sort | head -3 | while IFS= read -r
 matching=$(grep -c -x -F -f <(printf '%s\n' "$checksums") <<<"$read_back" || true)
 verdict "originals read back as the server's" "$matching" "3"
 
-thumbnail=$(mac "file=\$(find $root/Photos -type f | sort | sed -n 10p); rm -rf /tmp/immich-mount-check;
-  mkdir -p /tmp/immich-mount-check; qlmanage -t -s 256 -o /tmp/immich-mount-check \"\$file\" >/dev/null 2>&1;
-  printf '%s %s' \$(find /tmp/immich-mount-check -name '*.png' | wc -l) \$(ls -lO \"\$file\" | grep -c dataless);
-  rm -rf /tmp/immich-mount-check")
+# Finder's way to a thumbnail (QLThumbnailGenerator), on a photo not downloaded; qlmanage reads the file instead.
+thumbnail=$(mac "file=\$(find \$HOME/$root/Photos -type f -exec stat -f '%Sf|%N' {} + | grep '^[^|]*dataless' | head -1 | cut -d'|' -f2-);
+  made=\$(cd $checkout && DEVELOPER_DIR=/Applications/Xcode.app/Contents/Developer xcrun swift lab/mac/thumbnail.swift \"\$file\" | grep -c '^thumbnail ');
+  printf '%s %s' \"\$made\" \$(ls -lO \"\$file\" | grep -c dataless)")
 verdict "a thumbnail, and its original still not downloaded" "$thumbnail" "1 1"
 
 # A photo of January 2001, a year the library has none of, so a year and a month appear with it. Bytes appended to
