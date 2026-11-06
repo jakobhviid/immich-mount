@@ -29,6 +29,11 @@ const JOURNAL_EPOCH: &str = "journal-epoch";
 const JOURNAL_HEAD: &str = "journal-head";
 /// The oldest sequence number still kept; anchors before it are expired.
 const JOURNAL_FLOOR: &str = "journal-floor";
+/// Nodes gone from the folder that listed them, whose deletion waits for `settle_departures`: a node that only moved
+/// (an album whose year folder changed) shows in another folder's listing first, and is not deleted.
+const DEPARTED: &str = "departed";
+/// Folders to list again: touched by a change, or shown while one happened, until a listing of them is kept.
+const RELIST: &str = "relist";
 const STORE_FORMAT_VERSION: u64 = 1;
 
 /// Why the store could not be opened.
@@ -156,16 +161,93 @@ impl MetadataStore {
         read().map_err(|message| StoreError { path: "the metadata store's journal".to_owned(), message })
     }
 
-    /// Record changes no listing shows, such as an uploaded file leaving the Upload folder. Nothing, with the
-    /// journal off.
-    pub fn record_changes(&self, changes: &[Change]) -> Result<(), StoreError> {
-        let Some(limit) = self.journal_limit else { return Ok(()) };
-        let write = || -> Result<(), String> {
+    /// Change one piece of kept state in one write transaction, with the journal records the change brings (none
+    /// with the journal off): nothing else changes the state or the journal between the read and the write. `change`
+    /// gets the value kept, and gives the value to keep (`None` removes it), the records, and an answer.
+    pub fn update_state<Answer>(
+        &self,
+        name: &str,
+        change: impl FnOnce(Option<&str>) -> (Option<String>, Vec<Change>, Answer),
+    ) -> Result<Answer, StoreError> {
+        let write = || -> Result<Answer, String> {
             let transaction = self.database.begin_write().map_err(|error| error.to_string())?;
-            append_changes(&transaction, changes, limit)?;
-            transaction.commit().map_err(|error| error.to_string())
+            let answer = {
+                let mut table = transaction.open_table(STATE).map_err(|error| error.to_string())?;
+                let kept = table.get(name).map_err(|error| error.to_string())?.map(|value| value.value().to_owned());
+                let (value, changes, answer) = change(kept.as_deref());
+                match value {
+                    Some(value) => table.insert(name, value.as_str()).map(|_| ()),
+                    None => table.remove(name).map(|_| ()),
+                }
+                .map_err(|error| error.to_string())?;
+                if let Some(limit) = self.journal_limit {
+                    append_changes(&transaction, &changes, limit)?;
+                }
+                answer
+            };
+            transaction.commit().map_err(|error| error.to_string())?;
+            Ok(answer)
         };
-        write().map_err(|message| StoreError { path: "the metadata store's journal".to_owned(), message })
+        write().map_err(|message| StoreError { path: format!("the metadata store's {name}"), message })
+    }
+
+    /// Add folders to list again: a change touched them, or one happened while they were shown.
+    pub fn mark_for_relisting(&self, folders: &[NodeKey]) -> Result<(), StoreError> {
+        self.update_state(RELIST, |kept| {
+            let mut keys = key_set(kept);
+            keys.extend(folders.iter().map(NodeKey::storage_key));
+            (Some(serde_json::to_string(&keys).unwrap_or_default()), Vec::new(), ())
+        })
+    }
+
+    /// The folders waiting to be listed again.
+    pub fn folders_to_relist(&self) -> Vec<NodeKey> {
+        key_set(self.kept_state(RELIST).as_deref()).iter().filter_map(|key| NodeKey::from_storage_key(key)).collect()
+    }
+
+    /// A folder was listed again, or needs it no more.
+    pub fn relisted(&self, folder: &NodeKey) -> Result<(), StoreError> {
+        self.update_state(RELIST, |kept| {
+            let mut keys = key_set(kept);
+            keys.remove(&folder.storage_key());
+            ((!keys.is_empty()).then(|| serde_json::to_string(&keys).unwrap_or_default()), Vec::new(), ())
+        })
+    }
+
+    /// Record the deletion of every departed node no kept listing holds any more, and of everything kept below it,
+    /// whose kept listings go. A node another folder lists now only moved: it keeps what was kept below it. Returns
+    /// how many deletions were recorded.
+    pub fn settle_departures(&self) -> Result<usize, StoreError> {
+        let Some(limit) = self.journal_limit else { return Ok(0) };
+        let settle = || -> Result<usize, String> {
+            let transaction = self.database.begin_write().map_err(|error| error.to_string())?;
+            let recorded = {
+                let mut state = transaction.open_table(STATE).map_err(|error| error.to_string())?;
+                let departed = key_set(state.get(DEPARTED).map_err(|error| error.to_string())?.as_ref().map(|value| value.value()));
+                if departed.is_empty() {
+                    return Ok(0);
+                }
+                state.remove(DEPARTED).map_err(|error| error.to_string())?;
+                let mut listings = transaction.open_table(LISTINGS).map_err(|error| error.to_string())?;
+                let mut listed = HashSet::new();
+                for record in listings.iter().map_err(|error| error.to_string())? {
+                    let (_, encoded) = record.map_err(|error| error.to_string())?;
+                    let entries: Vec<Entry> = serde_json::from_slice(encoded.value()).unwrap_or_default();
+                    listed.extend(entries.into_iter().map(|entry| entry.node));
+                }
+                let mut changes = Vec::new();
+                for node in departed.iter().filter_map(|key| NodeKey::from_storage_key(key)) {
+                    if !listed.contains(&node) {
+                        forget_subtree(&mut listings, node, &mut changes)?;
+                    }
+                }
+                append_changes(&transaction, &changes, limit)?;
+                changes.len()
+            };
+            transaction.commit().map_err(|error| error.to_string())?;
+            Ok(recorded)
+        };
+        settle().map_err(|message| StoreError { path: "the metadata store's journal".to_owned(), message })
     }
 
     /// Every folder with a kept listing: the folders a platform has been shown.
@@ -198,6 +280,7 @@ impl MetadataStore {
         Some(stored.value().to_owned())
     }
 
+    /// Keep a piece of state, logging a failure: for state that a later run can do without.
     pub fn keep_state(&self, name: &str, value: &str) {
         let write = || -> Result<(), String> {
             let transaction = self.database.begin_write().map_err(|error| error.to_string())?;
@@ -258,7 +341,8 @@ impl MetadataStore {
     }
 
     /// Keep a folder's listing and, with the journal on, record how it differs from the one kept before, in one
-    /// transaction: a crash never keeps a listing whose changes were not recorded.
+    /// transaction: a crash never keeps a listing whose changes were not recorded. What appeared or changed is
+    /// recorded at once; what went away departs, to be settled once the change's folders were all listed again.
     fn write_listing(&self, folder: &NodeKey, entries: &[Entry]) -> Result<(), String> {
         let encoded = serde_json::to_vec(entries).map_err(|error| error.to_string())?;
         let transaction = self.database.begin_write().map_err(|error| error.to_string())?;
@@ -267,20 +351,26 @@ impl MetadataStore {
             let previous = listings
                 .insert(folder.storage_key().as_str(), encoded.as_slice())
                 .map_err(|error| error.to_string())?
-                .map(|value| serde_json::from_slice::<Vec<Entry>>(value.value()));
-            if let (Some(limit), Some(Ok(previous))) = (self.journal_limit, previous) {
-                let mut changes = Vec::new();
+                .filter(|_| self.journal_limit.is_some())
+                .map(|value| value.value().to_vec());
+            if let (Some(limit), Some(previous)) = (self.journal_limit, previous) {
+                let previous: Vec<Entry> = serde_json::from_slice(&previous).unwrap_or_default();
                 let now: HashMap<&NodeKey, &Entry> = entries.iter().map(|entry| (&entry.node, entry)).collect();
-                for gone in previous.iter().filter(|entry| !now.contains_key(&entry.node)) {
-                    forget_subtree(&mut listings, gone, &mut changes)?;
+                let gone: Vec<String> =
+                    previous.iter().filter(|entry| !now.contains_key(&entry.node)).map(|entry| entry.node.storage_key()).collect();
+                if !gone.is_empty() {
+                    let mut state = transaction.open_table(STATE).map_err(|error| error.to_string())?;
+                    let mut departed = key_set(state.get(DEPARTED).map_err(|error| error.to_string())?.as_ref().map(|value| value.value()));
+                    departed.extend(gone);
+                    let encoded = serde_json::to_string(&departed).map_err(|error| error.to_string())?;
+                    state.insert(DEPARTED, encoded.as_str()).map_err(|error| error.to_string())?;
                 }
                 let before: HashMap<&NodeKey, &Entry> = previous.iter().map(|entry| (&entry.node, entry)).collect();
-                changes.extend(
-                    entries
-                        .iter()
-                        .filter(|entry| before.get(&entry.node) != Some(entry))
-                        .map(|entry| Change::Updated { folder: folder.clone(), entry: entry.clone() }),
-                );
+                let changes: Vec<Change> = entries
+                    .iter()
+                    .filter(|entry| before.get(&entry.node) != Some(entry))
+                    .map(|entry| Change::Updated { folder: folder.clone(), entry: entry.clone() })
+                    .collect();
                 append_changes(&transaction, &changes, limit)?;
             }
         }
@@ -288,9 +378,14 @@ impl MetadataStore {
     }
 }
 
+/// A set of storage keys, kept as JSON.
+fn key_set(kept: Option<&str>) -> std::collections::BTreeSet<String> {
+    kept.and_then(|text| serde_json::from_str(text).ok()).unwrap_or_default()
+}
+
 /// A node gone from its folder: its deletion, and the deletion of everything kept below it, whose kept listings go.
-fn forget_subtree(listings: &mut redb::Table<&str, &[u8]>, gone: &Entry, changes: &mut Vec<Change>) -> Result<(), String> {
-    let mut pending = vec![gone.node.clone()];
+fn forget_subtree(listings: &mut redb::Table<&str, &[u8]>, gone: NodeKey, changes: &mut Vec<Change>) -> Result<(), String> {
+    let mut pending = vec![gone];
     let mut seen = HashSet::new();
     while let Some(node) = pending.pop() {
         if !seen.insert(node.clone()) {
@@ -335,6 +430,19 @@ impl NameMemory for MetadataStore {
     fn keep_listing(&self, folder: &NodeKey, entries: &[Entry]) {
         if let Err(error) = self.write_listing(folder, entries) {
             log::warn!("could not keep the listing of {}: {error}", folder.storage_key());
+        }
+    }
+
+    /// With the journal on, a listing shown is what the system holds, so it is kept even when a change came during
+    /// its fetch, and the folder is listed again at the next poll. Without the journal it is not kept: a kept listing
+    /// answers offline, and one a change may have outdated must not.
+    fn shown_during_change(&self, folder: &NodeKey, entries: &[Entry]) {
+        if self.journal_limit.is_none() {
+            return;
+        }
+        self.keep_listing(folder, entries);
+        if let Err(error) = self.mark_for_relisting(std::slice::from_ref(folder)) {
+            log::warn!("could not mark {} to be listed again: {error}", folder.storage_key());
         }
     }
 
@@ -450,10 +558,11 @@ mod tests {
 
         store.keep_listing(&month, &[photo(&month, "a", "a-1.jpg"), photo(&month, "c", "c.jpg")]);
         let changes = changes_since(&store, start);
-        assert_eq!(changes.len(), 3);
-        assert!(changes.contains(&Change::Deleted(photo(&month, "b", "").node)));
+        assert_eq!(changes.len(), 2, "what went away waits until the departures are settled");
         assert!(changes.contains(&Change::Updated { folder: month.clone(), entry: photo(&month, "a", "a-1.jpg") }), "renamed");
         assert!(changes.contains(&Change::Updated { folder: month.clone(), entry: photo(&month, "c", "c.jpg") }), "new");
+        assert_eq!(store.settle_departures().unwrap(), 1);
+        assert_eq!(changes_since(&store, start)[2], Change::Deleted(photo(&month, "b", "").node));
         let now = store.journal_anchor().unwrap();
         assert_eq!(now.sequence, start.sequence + 3);
         assert_eq!(changes_since(&store, now), vec![]);
@@ -472,6 +581,7 @@ mod tests {
         store.keep_listing(&month, &[photo(&month, "a", "a.jpg")]);
         let start = store.journal_anchor().unwrap();
         store.keep_listing(&year, &[]);
+        store.settle_departures().unwrap();
         let changes = changes_since(&store, start);
         assert!(changes.contains(&Change::Deleted(month.clone())));
         assert!(changes.contains(&Change::Deleted(photo(&month, "a", "").node)), "and the photo the system held in it");
@@ -519,6 +629,68 @@ mod tests {
         assert_eq!(Anchor::from_text("not an anchor"), None);
         assert_eq!(store.kept_state("poll").as_deref(), Some("etags"));
         assert_eq!(store.kept_state("other"), None);
+    }
+
+    #[test]
+    fn an_album_that_moves_to_another_year_folder_is_moved_not_deleted() {
+        for new_year_listed_first in [false, true] {
+            let directory = tempfile::tempdir().unwrap();
+            let store = MetadataStore::open(&directory.path().join("metadata.redb")).unwrap().with_journal(100).unwrap();
+            let (old_year, new_year) = (NodeKey::AlbumYear(Some(2023)), NodeKey::AlbumYear(Some(2025)));
+            let album = NodeKey::Album("x".into());
+            store.keep_listing(&old_year, &[folder_entry("Trip", album.clone())]);
+            store.keep_listing(&new_year, &[]);
+            store.keep_listing(&album, &[photo(&album, "a", "a.jpg")]);
+            let start = store.journal_anchor().unwrap();
+            if new_year_listed_first {
+                store.keep_listing(&new_year, &[folder_entry("Trip", album.clone())]);
+                store.keep_listing(&old_year, &[]);
+            } else {
+                store.keep_listing(&old_year, &[]);
+                store.keep_listing(&new_year, &[folder_entry("Trip", album.clone())]);
+            }
+            assert_eq!(store.settle_departures().unwrap(), 0, "nothing went away");
+            let changes = changes_since(&store, start);
+            assert_eq!(changes, [Change::Updated { folder: new_year.clone(), entry: folder_entry("Trip", album.clone()) }]);
+            assert_eq!(store.kept_listing(&album).map(|listing| listing.len()), Some(1), "it keeps what was kept below it");
+        }
+    }
+
+    #[test]
+    fn folders_to_list_again_and_state_change_in_one_step() {
+        let directory = tempfile::tempdir().unwrap();
+        let store = MetadataStore::open(&directory.path().join("metadata.redb")).unwrap().with_journal(100).unwrap();
+        let month = NodeKey::TimelineMonth(YearMonth { year: 2024, month: 3 });
+        store.mark_for_relisting(&[month.clone(), NodeKey::Root]).unwrap();
+        store.mark_for_relisting(std::slice::from_ref(&month)).unwrap();
+        assert_eq!(store.folders_to_relist().len(), 2);
+        store.relisted(&month).unwrap();
+        assert_eq!(store.folders_to_relist(), [NodeKey::Root]);
+
+        let start = store.journal_anchor().unwrap();
+        let answer = store
+            .update_state("queue", |kept| {
+                assert_eq!(kept, None);
+                (Some("one".to_owned()), vec![Change::Deleted(month.clone())], 7)
+            })
+            .unwrap();
+        assert_eq!((answer, store.kept_state("queue").as_deref()), (7, Some("one")));
+        assert_eq!(changes_since(&store, start), [Change::Deleted(month.clone())], "recorded with the state");
+        store.update_state("queue", |_| (None, Vec::new(), ())).unwrap();
+        assert_eq!(store.kept_state("queue"), None);
+    }
+
+    #[test]
+    fn a_listing_shown_during_a_change_is_kept_and_listed_again_only_with_the_journal() {
+        let directory = tempfile::tempdir().unwrap();
+        let month = NodeKey::TimelineMonth(YearMonth { year: 2024, month: 3 });
+        let plain = MetadataStore::open(&directory.path().join("plain.redb")).unwrap();
+        plain.shown_during_change(&month, &[photo(&month, "a", "a.jpg")]);
+        assert_eq!(plain.kept_listing(&month), None, "Linux keeps no listing a change may have outdated");
+        let journaled = MetadataStore::open(&directory.path().join("journaled.redb")).unwrap().with_journal(100).unwrap();
+        journaled.shown_during_change(&month, &[photo(&month, "a", "a.jpg")]);
+        assert_eq!(journaled.kept_listing(&month).map(|listing| listing.len()), Some(1));
+        assert_eq!(journaled.folders_to_relist(), [month]);
     }
 
     #[test]

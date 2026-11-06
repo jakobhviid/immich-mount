@@ -1,16 +1,20 @@
 // Folder listings for the system, from the bridge.
 
 import FileProvider
+import os
 
 final class Enumerator: NSObject, NSFileProviderEnumerator {
     /// How many items go to the system per call when it does not suggest a number.
     private static let batchSize = 200
-    /// The server's version, asked once per run of the extension, for the app's status.
-    private static var version: String?
+    /// The server's version, asked once per run of the extension, for the app's status. Enumerations run at once, so
+    /// it is behind a lock.
+    private static let version = OSAllocatedUnfairLock<String?>(initialState: nil)
 
     private let container: NSFileProviderItemIdentifier
     private let library: Library
     private var task: Task<Void, Never>?
+    /// Stops this enumerator's request in the bridge when the system invalidates it.
+    private let cancel = Cancel()
 
     init(container: NSFileProviderItemIdentifier, library: Library) {
         self.container = container
@@ -18,6 +22,7 @@ final class Enumerator: NSObject, NSFileProviderEnumerator {
     }
 
     func invalidate() {
+        cancel.cancel()
         task?.cancel()
     }
 
@@ -27,14 +32,14 @@ final class Enumerator: NSObject, NSFileProviderEnumerator {
             observer.finishEnumerating(upTo: nil)
             return
         }
-        let (container, library) = (container, library)
+        let (container, library, cancel) = (container, library, cancel)
         task = Task {
             do {
                 let found: [Item]
                 if container == .workingSet {
                     found = library.workingSet()
                 } else {
-                    found = try await library.list(identifier: container.bridged)
+                    found = try await library.list(identifier: container.bridged, cancel: cancel)
                 }
                 let items = found.map(FileProviderItem.init)
                 let batch = max(observer.suggestedPageSize ?? Enumerator.batchSize, 1)
@@ -57,7 +62,7 @@ final class Enumerator: NSObject, NSFileProviderEnumerator {
             observer.finishEnumeratingChanges(upTo: anchor, moreComing: false)
             return
         }
-        let library = library
+        let (library, cancel) = (library, cancel)
         let limit = UInt32(clamping: max(observer.suggestedBatchSize ?? Enumerator.batchSize, 1))
         task = Task {
             do {
@@ -65,14 +70,18 @@ final class Enumerator: NSObject, NSFileProviderEnumerator {
                 // The server is asked once the system has caught up; while changes wait, it comes back for them.
                 if from == (try library.currentAnchor()) {
                     do {
-                        _ = try await library.poll()
-                        if Enumerator.version == nil {
-                            Enumerator.version = try? await library.serverVersion()
+                        _ = try await library.poll(cancel: cancel)
+                        var version = Enumerator.version.withLock { $0 }
+                        if version == nil {
+                            let asked = try? await library.serverVersion()
+                            Enumerator.version.withLock { $0 = asked }
+                            version = asked
                         }
-                        Status(online: true, problem: nil, version: Enumerator.version, checked: Date()).save()
+                        Status(online: true, problem: nil, version: version, checked: Date()).save()
                     } catch {
                         logger.info("asking the server what changed failed: \(String(describing: error), privacy: .public)")
-                        Status(online: false, problem: describe(error), version: Enumerator.version, checked: Date()).save()
+                        let version = Enumerator.version.withLock { $0 }
+                        Status(online: false, problem: describe(error), version: version, checked: Date()).save()
                     }
                 }
                 let batch = try library.changesSince(anchor: from, limit: limit)

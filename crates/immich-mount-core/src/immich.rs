@@ -96,7 +96,8 @@ impl ImmichSource {
 
     /// What the change poll has seen, as text to keep between runs, so a process started again (the macOS edition's
     /// extension, which the system stops when idle) sees what changed while it was stopped. `None` before the first
-    /// poll. The sync stream needs nothing kept: the server keeps its acks.
+    /// poll. The sync stream's place is the server's (its acks); what a recalled poll adds is that the stream's next
+    /// records are changes to report, not a baseline to take note of.
     pub async fn poll_memory(&self) -> Option<String> {
         let poll = self.poll.lock().await;
         if !poll.started {
@@ -121,6 +122,7 @@ impl ImmichSource {
         poll.albums_etag = memory.albums_etag;
         poll.albums = memory.albums.into_iter().map(|(id, name, count, updated_at)| (id, (name, count, updated_at))).collect();
         poll.started = true;
+        poll.sync_baseline_done = true;
     }
 
     /// What changed since the last poll (ARCHITECTURE.md, "Freshness").

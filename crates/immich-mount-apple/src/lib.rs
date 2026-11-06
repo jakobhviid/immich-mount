@@ -41,6 +41,9 @@ const LEAVING_UPLOAD: &str = "leaving-upload";
 /// How long an uploaded file stays in the Upload folder, as on Linux: long enough for the system to take the item
 /// before it is told the item went away.
 const UPLOAD_STAY: Duration = Duration::from_secs(10);
+/// How long one poll lists folders again; what is left waits for the next poll, so a change's report never waits
+/// on a library-wide relisting.
+const RELIST_BUDGET: Duration = Duration::from_secs(20);
 /// How long the server check keeps trying a connection that fails: macOS may refuse sockets while its Local Network
 /// prompt waits for an answer (Apple's TN3179).
 const LOCAL_NETWORK_PATIENCE: Duration = Duration::from_secs(30);
@@ -63,6 +66,9 @@ pub enum BridgeError {
     /// A sync anchor from before the journal's oldest record, or from another store: the system enumerates again.
     #[error("the sync anchor expired")]
     AnchorExpired,
+    /// The system cancelled the request.
+    #[error("cancelled")]
+    Cancelled,
     /// The credential lacks a permission the request needs.
     #[error("{message}")]
     NotPermitted { message: String },
@@ -96,7 +102,7 @@ pub struct Item {
     pub parent_identifier: String,
     pub name: String,
     pub is_folder: bool,
-    /// Whether new files may be added: the Upload folder's, once the macOS edition uploads (ROADMAP, M7).
+    /// Whether new files may be added: the Upload folder's.
     pub accepts_new_files: bool,
     /// The original's size in bytes, when Immich said.
     pub size: Option<u64>,
@@ -269,6 +275,10 @@ where
 
     /// Ask the server what changed, and list again the folders it touched that the system holds, which records the
     /// differences in the journal. Returns whether the journal grew.
+    ///
+    /// The touched folders are marked in the store before the poll's memory is kept, so a folder that cannot be
+    /// listed now (the server busy, or the budget spent) is listed at a later poll; a change is never seen once and
+    /// then lost. Deletions are settled after the listing, so a node that only moved is not deleted.
     async fn poll(&self) -> Result<bool, BridgeError> {
         let before = self.store().journal_anchor().map_err(failed)?;
         self.record_departures(seconds_since_epoch(SystemTime::now()))?;
@@ -277,23 +287,29 @@ where
             self.source.recall_poll(&memory).await;
         }
         let changes = self.source.changes().await?;
+        if !changes.is_empty() {
+            self.tree.apply_changes(&changes);
+            let touched: Vec<NodeKey> = self.store().kept_folders().into_iter().filter(|folder| is_touched(folder, &changes)).collect();
+            self.store().mark_for_relisting(&touched).map_err(failed)?;
+        }
         if let Some(memory) = self.source.poll_memory().await {
             self.store().keep_state(POLL_MEMORY, &memory);
         }
-        if !changes.is_empty() {
-            self.tree.apply_changes(&changes);
-            for folder in self.store().kept_folders().into_iter().filter(|folder| is_touched(folder, &changes)) {
-                // A folder that went away with its parent, listed earlier in this loop, is not asked for again.
-                if self.store().kept_listing(&folder).is_none() {
-                    continue;
-                }
-                match tokio::time::timeout(self.deadline, self.tree.list(&folder)).await {
-                    Ok(Ok(_)) => {}
-                    Ok(Err(error)) => log::info!("a changed folder could not be listed again ({error}); the next change or visit lists it"),
-                    Err(_) => log::info!("a changed folder was not listed again in time; the next change or visit lists it"),
-                }
+        let started = Instant::now();
+        for folder in self.store().folders_to_relist() {
+            let Some(left) = RELIST_BUDGET.checked_sub(started.elapsed()) else { break };
+            // A folder that went away with its parent, listed earlier, is not asked for again.
+            if self.store().kept_listing(&folder).is_none() {
+                self.store().relisted(&folder).map_err(failed)?;
+                continue;
+            }
+            match tokio::time::timeout(left, self.tree.relist(&folder)).await {
+                Ok(Ok(_)) => self.store().relisted(&folder).map_err(failed)?,
+                Ok(Err(error)) => log::info!("a changed folder could not be listed again ({error}); the next poll tries again"),
+                Err(_) => log::info!("a changed folder was not listed again in time; the next poll tries again"),
             }
         }
+        self.store().settle_departures().map_err(failed)?;
         Ok(self.store().journal_anchor().map_err(failed)? != before)
     }
 
@@ -322,9 +338,16 @@ where
             Err(error) => return Err(failed(error)),
         };
         let node = NodeKey::Asset { parent: Box::new(NodeKey::Upload), asset_id: asset_id.clone() };
-        let mut leaving = self.leaving_upload();
-        leaving.push((node.storage_key(), seconds_since_epoch(SystemTime::now() + UPLOAD_STAY)));
-        self.keep_leaving_upload(&leaving)?;
+        let leaves_at = seconds_since_epoch(SystemTime::now() + UPLOAD_STAY);
+        let key = node.storage_key();
+        self.store()
+            .update_state(LEAVING_UPLOAD, |kept| {
+                let mut leaving = leaving_upload(kept);
+                leaving.retain(|(waiting, _)| *waiting != key);
+                leaving.push((key.clone(), leaves_at));
+                (Some(serde_json::to_string(&leaving).unwrap_or_default()), Vec::new(), ())
+            })
+            .map_err(failed)?;
         self.tree.forget_timeline();
         let size = std::fs::metadata(path).ok().map(|metadata| metadata.len());
         Ok(Item {
@@ -341,25 +364,16 @@ where
         .versioned())
     }
 
-    /// Uploaded files waiting to leave the Upload folder, with when they leave (seconds since the epoch).
-    fn leaving_upload(&self) -> Vec<(String, u64)> {
-        self.store().kept_state(LEAVING_UPLOAD).and_then(|text| serde_json::from_str(&text).ok()).unwrap_or_default()
-    }
-
-    fn keep_leaving_upload(&self, leaving: &[(String, u64)]) -> Result<(), BridgeError> {
-        self.store().keep_state(LEAVING_UPLOAD, &serde_json::to_string(leaving).map_err(failed)?);
-        Ok(())
-    }
-
-    /// Record in the journal the departures that are due at `now`.
+    /// Record in the journal the uploaded files due to leave the Upload folder at `now`, in the same transaction that
+    /// takes them off the waiting list: an upload finishing meanwhile is neither lost nor recorded twice.
     fn record_departures(&self, now: u64) -> Result<(), BridgeError> {
-        let (due, waiting): (Vec<_>, Vec<_>) = self.leaving_upload().into_iter().partition(|(_, at)| *at <= now);
-        if due.is_empty() {
-            return Ok(());
-        }
-        let changes: Vec<Change> = due.iter().filter_map(|(key, _)| NodeKey::from_storage_key(key)).map(Change::Deleted).collect();
-        self.store().record_changes(&changes).map_err(failed)?;
-        self.keep_leaving_upload(&waiting)
+        self.store()
+            .update_state(LEAVING_UPLOAD, |kept| {
+                let (due, waiting): (Vec<_>, Vec<_>) = leaving_upload(kept).into_iter().partition(|(_, at)| *at <= now);
+                let changes = due.iter().filter_map(|(key, _)| NodeKey::from_storage_key(key)).map(Change::Deleted).collect();
+                ((!waiting.is_empty()).then(|| serde_json::to_string(&waiting).unwrap_or_default()), changes, ())
+            })
+            .map_err(failed)
     }
 
     fn current_anchor(&self) -> Result<String, BridgeError> {
@@ -401,6 +415,11 @@ where
             .flat_map(|folder| store.kept_listing(&folder).unwrap_or_default().iter().map(|entry| item_for(entry, &folder)).collect::<Vec<_>>())
             .collect()
     }
+}
+
+/// Uploaded files waiting to leave the Upload folder, with when they leave (seconds since the epoch), as kept.
+fn leaving_upload(kept: Option<&str>) -> Vec<(String, u64)> {
+    kept.and_then(|text| serde_json::from_str(text).ok()).unwrap_or_default()
 }
 
 fn too_slow() -> BridgeError {
@@ -493,36 +512,41 @@ impl Library {
         Ok(library)
     }
 
-    /// The item behind an identifier.
-    pub async fn item(&self, identifier: String) -> Result<Item, BridgeError> {
+    /// The item behind an identifier. Each request takes an optional `Cancel`, which stops it.
+    pub async fn item(&self, identifier: String, cancel: Option<Arc<Cancel>>) -> Result<Item, BridgeError> {
         let answers = self.answers();
-        on_runtime(async move { answers.item(&identifier).await }).await
+        cancellable(cancel, async move { answers.item(&identifier).await }).await
     }
 
     /// The items a folder lists.
-    pub async fn list(&self, identifier: String) -> Result<Vec<Item>, BridgeError> {
+    pub async fn list(&self, identifier: String, cancel: Option<Arc<Cancel>>) -> Result<Vec<Item>, BridgeError> {
         let answers = self.answers();
-        on_runtime(async move { answers.list(&identifier).await }).await
+        cancellable(cancel, async move { answers.list(&identifier).await }).await
     }
 
     /// Download a file's original into `destination`, and return the item as it is now. On failure no file is left.
-    pub async fn fetch(&self, identifier: String, destination: String) -> Result<Item, BridgeError> {
+    pub async fn fetch(&self, identifier: String, destination: String, cancel: Option<Arc<Cancel>>) -> Result<Item, BridgeError> {
         let answers = self.answers();
-        on_runtime(async move { answers.fetch(&identifier, Path::new(&destination)).await }).await
+        let (stopped, path) = (destination.clone(), destination);
+        let result = cancellable(cancel, async move { answers.fetch(&identifier, Path::new(&path)).await }).await;
+        if result.is_err() {
+            let _ = std::fs::remove_file(stopped);
+        }
+        result
     }
 
     /// A file's thumbnail for a size in pixels (its longer side), as image bytes: WebP or JPEG, as Immich made it.
     /// `None` for a folder, which keeps the system's own icon.
-    pub async fn thumbnail(&self, identifier: String, pixels: u32) -> Result<Option<Vec<u8>>, BridgeError> {
+    pub async fn thumbnail(&self, identifier: String, pixels: u32, cancel: Option<Arc<Cancel>>) -> Result<Option<Vec<u8>>, BridgeError> {
         let answers = self.answers();
-        on_runtime(async move { answers.thumbnail(&identifier, pixels).await }).await
+        cancellable(cancel, async move { answers.thumbnail(&identifier, pixels).await }).await
     }
 
     /// Ask the server what changed, and record in the journal what changed for the folders the system holds.
     /// Returns whether anything did.
-    pub async fn poll(&self) -> Result<bool, BridgeError> {
+    pub async fn poll(&self, cancel: Option<Arc<Cancel>>) -> Result<bool, BridgeError> {
         let answers = self.answers();
-        on_runtime(async move { answers.poll().await }).await
+        cancellable(cancel, async move { answers.poll().await }).await
     }
 
     /// The journal's anchor now, as the system's sync anchor.
@@ -552,9 +576,16 @@ impl Library {
 
     /// Upload the finished file at `path`, added to `folder` (only the Upload folder takes files) as `name`, and
     /// return its item there. Refused, with a message, when it is no photo or video Immich takes, or not whole.
-    pub async fn upload(&self, folder: String, name: String, path: String, modified: SystemTime) -> Result<Item, BridgeError> {
+    pub async fn upload(
+        &self,
+        folder: String,
+        name: String,
+        path: String,
+        modified: SystemTime,
+        cancel: Option<Arc<Cancel>>,
+    ) -> Result<Item, BridgeError> {
         let answers = self.answers();
-        on_runtime(async move { answers.upload(&folder, &name, Path::new(&path), modified).await }).await
+        cancellable(cancel, async move { answers.upload(&folder, &name, Path::new(&path), modified).await }).await
     }
 
     /// Follow the settings in `config` (the text of `config.toml`) from now on, when they differ from those in use:
@@ -809,13 +840,54 @@ fn runtime() -> &'static tokio::runtime::Runtime {
     })
 }
 
-/// Run `work` on the bridge's runtime, from whatever executor polls the result. When the result is dropped (the
-/// system cancelled the request), the work stops too.
+/// A way to stop a request the system no longer wants. uniffi's Swift does not pass a task's cancellation on to the
+/// Rust future, so the extension hands a long request one of these, and cancels it from the request's progress.
+#[derive(Default, uniffi::Object)]
+pub struct Cancel {
+    state: Mutex<(bool, Option<tokio::task::AbortHandle>)>,
+}
+
+#[uniffi::export]
+impl Cancel {
+    #[uniffi::constructor]
+    pub fn new() -> Arc<Cancel> {
+        Arc::new(Cancel::default())
+    }
+
+    /// Stop the request's work, now or as soon as it starts.
+    pub fn cancel(&self) {
+        let mut state = self.state.lock().expect("cancel lock");
+        state.0 = true;
+        if let Some(work) = state.1.take() {
+            work.abort();
+        }
+    }
+}
+
+/// Run `work` on the bridge's runtime, from whatever executor polls the result.
 async fn on_runtime<Output: Send + 'static>(
     work: impl Future<Output = Result<Output, BridgeError>> + Send + 'static,
 ) -> Result<Output, BridgeError> {
-    match Cancelling(runtime().spawn(work)).await {
+    cancellable(None, work).await
+}
+
+/// `on_runtime`, stopped by `cancel` or when the result is dropped.
+async fn cancellable<Output: Send + 'static>(
+    cancel: Option<Arc<Cancel>>,
+    work: impl Future<Output = Result<Output, BridgeError>> + Send + 'static,
+) -> Result<Output, BridgeError> {
+    let task = runtime().spawn(work);
+    if let Some(cancel) = &cancel {
+        let mut state = cancel.state.lock().expect("cancel lock");
+        if state.0 {
+            task.abort();
+        } else {
+            state.1 = Some(task.abort_handle());
+        }
+    }
+    match Cancelling(task).await {
         Ok(result) => result,
+        Err(error) if error.is_cancelled() => Err(BridgeError::Cancelled),
         Err(error) => Err(failed(format!("internal: {error}"))),
     }
 }
@@ -853,6 +925,8 @@ mod tests {
         downloads_fail: AtomicBool,
         /// A second photo arrived in March, and the next poll says so.
         second_photo: AtomicBool,
+        /// Month listings fail, as on a server answering 503.
+        months_fail: AtomicBool,
         poll_told: AtomicBool,
         thumbnails_asked: Mutex<Vec<ThumbnailKind>>,
     }
@@ -886,6 +960,9 @@ mod tests {
         }
         async fn month_assets(&self, _month: YearMonth) -> Result<Vec<Asset>, SourceError> {
             self.answer().await;
+            if self.months_fail.load(Ordering::SeqCst) {
+                return Err(SourceError::Busy);
+            }
             if !self.second_photo.load(Ordering::SeqCst) {
                 return Ok(vec![photo()]);
             }
@@ -1117,7 +1194,7 @@ mod tests {
         answers.record_departures(seconds_since_epoch(SystemTime::now() + UPLOAD_STAY)).unwrap();
         let batch = answers.changes_since(&before, 100).unwrap();
         assert_eq!(batch.deleted, ["asset|upload|asset-uploaded"]);
-        assert!(answers.leaving_upload().is_empty(), "and leaves once");
+        assert!(leaving_upload(answers.store().kept_state(LEAVING_UPLOAD).as_deref()).is_empty(), "and leaves once");
 
         let refused = |result: Result<Item, BridgeError>| matches!(result, Err(BridgeError::Failed { .. }));
         assert!(refused(answers.upload("section|Photos", "IMG_1.png", &photo, taken).await), "only Upload takes files");
@@ -1126,6 +1203,24 @@ mod tests {
         let cut = directory.path().join("cut.png");
         std::fs::write(&cut, b"\x89PNG\r\n\x1a\n....").unwrap();
         assert!(refused(answers.upload("upload", "IMG_2.png", &cut, taken).await), "a copy cut short");
+    }
+
+    #[tokio::test]
+    async fn a_change_whose_folder_cannot_be_listed_now_reaches_the_system_at_a_later_poll() {
+        let (_directory, answers) = journaled();
+        for folder in ["root", "section|Photos", "year|2024", "month|2024-03"] {
+            answers.list(folder).await.unwrap();
+        }
+        answers.poll().await.unwrap();
+        let shown = answers.current_anchor().unwrap();
+        answers.source.second_photo.store(true, Ordering::SeqCst);
+        answers.source.months_fail.store(true, Ordering::SeqCst);
+        assert!(!answers.poll().await.unwrap(), "the month could not be listed again");
+        assert!(answers.store().folders_to_relist().contains(&NodeKey::TimelineMonth(YearMonth { year: 2024, month: 3 })));
+        answers.source.months_fail.store(false, Ordering::SeqCst);
+        assert!(answers.poll().await.unwrap(), "the server tells of the change only once, and the next poll still lists it");
+        assert_eq!(answers.changes_since(&shown, 100).unwrap().updated[0].content_version, "asset-2");
+        assert!(answers.store().folders_to_relist().is_empty());
     }
 
     #[test]
@@ -1156,6 +1251,28 @@ mod tests {
         drop(tokio::time::timeout(Duration::from_millis(20), request).await);
         tokio::time::sleep(Duration::from_millis(400)).await;
         assert!(!finished.load(Ordering::SeqCst), "the system cancelled it, so it never finished");
+    }
+
+    #[tokio::test]
+    async fn a_cancelled_request_stops_its_work() {
+        let finished = Arc::new(AtomicBool::new(false));
+        let flag = finished.clone();
+        let cancel = Cancel::new();
+        let stopper = cancel.clone();
+        tokio::spawn(async move {
+            tokio::time::sleep(Duration::from_millis(20)).await;
+            stopper.cancel();
+        });
+        let result = cancellable(Some(cancel.clone()), async move {
+            tokio::time::sleep(Duration::from_millis(300)).await;
+            flag.store(true, Ordering::SeqCst);
+            Ok(())
+        })
+        .await;
+        assert_eq!(result, Err(BridgeError::Cancelled));
+        tokio::time::sleep(Duration::from_millis(400)).await;
+        assert!(!finished.load(Ordering::SeqCst), "the work stopped, though the caller never dropped it");
+        assert_eq!(cancellable(Some(cancel), async { Ok(()) }).await, Err(BridgeError::Cancelled), "cancelled before it began");
     }
 
     #[test]

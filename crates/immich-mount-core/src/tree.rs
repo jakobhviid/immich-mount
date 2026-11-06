@@ -162,6 +162,10 @@ pub trait NameMemory: Send + Sync {
     fn kept_listing(&self, _folder: &NodeKey) -> Option<Vec<Entry>> {
         None
     }
+
+    /// A listing that was answered, but fetched while a change came, so it is not cached as fresh. Nothing by
+    /// default; the macOS edition's store keeps it, since the system holds what it was shown (`MetadataStore`).
+    fn shown_during_change(&self, _folder: &NodeKey, _entries: &[Entry]) {}
 }
 
 /// One store can serve several trees through an `Arc`: the macOS edition builds a new tree when the settings change.
@@ -177,6 +181,9 @@ impl<Shared: NameMemory> NameMemory for Arc<Shared> {
     }
     fn kept_listing(&self, folder: &NodeKey) -> Option<Vec<Entry>> {
         self.as_ref().kept_listing(folder)
+    }
+    fn shown_during_change(&self, folder: &NodeKey, entries: &[Entry]) {
+        self.as_ref().shown_during_change(folder, entries)
     }
 }
 
@@ -309,6 +316,16 @@ impl<Source: LibrarySource, Names: NameMemory> Tree<Source, Names> {
 
     /// The entries of a folder, from cache while fresh. Concurrent calls for one folder share a single fetch.
     pub async fn list(&self, node: &NodeKey) -> Result<Vec<Entry>, SourceError> {
+        self.list_or_not(node, true).await
+    }
+
+    /// The entries of a folder as the source has them now, for a platform that must know a change reached it (the
+    /// macOS edition's poll): offline or busy is an error, never an older listing.
+    pub async fn relist(&self, node: &NodeKey) -> Result<Vec<Entry>, SourceError> {
+        self.list_or_not(node, false).await
+    }
+
+    async fn list_or_not(&self, node: &NodeKey, older_will_do: bool) -> Result<Vec<Entry>, SourceError> {
         if let Some(entries) = self.fresh_listing(node) {
             return Ok(entries);
         }
@@ -322,7 +339,7 @@ impl<Source: LibrarySource, Names: NameMemory> Tree<Source, Names> {
             Ok(entries) => entries,
             // Offline or busy, an older listing beats an error: the folder still opens, and the next visit tries
             // again (SPEC.md, "Errors seen by programs using the mount").
-            Err(error @ (SourceError::Offline(_) | SourceError::Busy)) => return self.stale_listing(node).ok_or(error),
+            Err(error @ (SourceError::Offline(_) | SourceError::Busy)) if older_will_do => return self.stale_listing(node).ok_or(error),
             Err(error) => return Err(error),
         };
         // An invalidation during the fetch means the server changed under it: answer, but do not keep it as fresh.
@@ -332,6 +349,8 @@ impl<Source: LibrarySource, Names: NameMemory> Tree<Source, Names> {
             if previous.is_none_or(|(_, previous)| previous != entries) {
                 self.names.keep_listing(node, &entries);
             }
+        } else {
+            self.names.shown_during_change(node, &entries);
         }
         self.in_flight.lock().expect("in-flight lock").remove(node);
         Ok(entries)

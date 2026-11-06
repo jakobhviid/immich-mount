@@ -36,13 +36,13 @@ async fn signing_in_takes_a_key_or_a_password_and_refuses_a_wrong_key() {
     assert_eq!(session.account, Some(env("IMMICH_ADMIN_EMAIL")));
     let directory = tempfile::tempdir().unwrap();
     let library = Library::open(env("IMMICH_URL"), session.credential.clone(), directory.path().display().to_string(), String::new()).unwrap();
-    assert_eq!(library.list("root".into()).await.unwrap().len(), 5, "a session browses as a key does");
-    assert!(!library.poll().await.unwrap(), "a session's first poll, through the sync stream, takes note only");
+    assert_eq!(library.list("root".into(), None).await.unwrap().len(), 5, "a session browses as a key does");
+    assert!(!library.poll(None).await.unwrap(), "a session's first poll, through the sync stream, takes note only");
     drop(library);
     end_session(env("IMMICH_URL"), session.credential.clone()).await;
     let ended = Library::open(env("IMMICH_URL"), session.credential, directory.path().join("again").display().to_string(), String::new()).unwrap();
-    assert!(ended.list("root".into()).await.is_ok(), "the root needs no server");
-    assert!(ended.list("section|Photos".into()).await.is_err(), "a session ended on the server is refused");
+    assert!(ended.list("root".into(), None).await.is_ok(), "the root needs no server");
+    assert!(ended.list("section|Photos".into(), None).await.is_err(), "a session ended on the server is refused");
 }
 
 #[tokio::test]
@@ -58,13 +58,13 @@ async fn a_photo_added_to_upload_reaches_the_library_byte_for_byte() {
     let photo = directory.path().join("MAC_UPLOAD.jpg");
     std::fs::write(&photo, &bytes).unwrap();
 
-    let item = library.upload("upload".into(), "MAC_UPLOAD.jpg".into(), photo.display().to_string(), std::time::SystemTime::now()).await.unwrap();
+    let item = library.upload("upload".into(), "MAC_UPLOAD.jpg".into(), photo.display().to_string(), std::time::SystemTime::now(), None).await.unwrap();
     assert_eq!(item.parent_identifier, "upload");
     let asset_id = item.content_version.clone();
     let client = Client::new(&env("IMMICH_URL"), Some(ApiCredential::ApiKey(key.clone())), "ImmichMount/lab-tests (Linux; lab)").unwrap();
     let expected = base64::engine::general_purpose::STANDARD.encode(Sha1::digest(&bytes));
     assert_eq!(client.asset(&asset_id).await.unwrap().checksum, expected, "the original, byte for byte");
-    let again = library.upload("upload".into(), "MAC_UPLOAD.jpg".into(), photo.display().to_string(), std::time::SystemTime::now()).await.unwrap();
+    let again = library.upload("upload".into(), "MAC_UPLOAD.jpg".into(), photo.display().to_string(), std::time::SystemTime::now(), None).await.unwrap();
     assert_eq!(again.content_version, asset_id, "the same bytes again are the same Asset");
 
     let deleted = reqwest::Client::new()
@@ -90,16 +90,16 @@ async fn every_timeline_original_matches_the_servers_checksum() {
     .unwrap();
     let client = Client::new(&env("IMMICH_URL"), Some(ApiCredential::ApiKey(env("IMMICH_API_KEY_READONLY"))), "ImmichMount/lab-tests (Linux; lab)").unwrap();
 
-    let sections: Vec<String> = library.list("root".into()).await.unwrap().into_iter().map(|item| item.name).collect();
+    let sections: Vec<String> = library.list("root".into(), None).await.unwrap().into_iter().map(|item| item.name).collect();
     assert_eq!(sections, ["Photos", "Albums", "People", "Places", "Upload"]);
 
     // Walk Photos to its files, the way Finder would, folder by folder.
     let mut folders = vec!["section|Photos".to_owned()];
     let mut files: Vec<Item> = Vec::new();
     while let Some(folder) = folders.pop() {
-        for item in library.list(folder.clone()).await.unwrap() {
+        for item in library.list(folder.clone(), None).await.unwrap() {
             assert_eq!(item.parent_identifier, folder);
-            assert_eq!(library.item(item.identifier.clone()).await.unwrap(), item, "asked for, an item is as listed");
+            assert_eq!(library.item(item.identifier.clone(), None).await.unwrap(), item, "asked for, an item is as listed");
             if item.is_folder { folders.push(item.identifier) } else { files.push(item) }
         }
     }
@@ -107,7 +107,7 @@ async fn every_timeline_original_matches_the_servers_checksum() {
 
     for file in &files {
         let destination = directory.path().join("original");
-        let fetched = library.fetch(file.identifier.clone(), destination.display().to_string()).await.unwrap();
+        let fetched = library.fetch(file.identifier.clone(), destination.display().to_string(), None).await.unwrap();
         let bytes = std::fs::read(&destination).unwrap();
         assert_eq!(fetched.size, Some(bytes.len() as u64), "{}", file.name);
         let expected = client.asset(&file.content_version).await.unwrap().checksum;
@@ -115,8 +115,8 @@ async fn every_timeline_original_matches_the_servers_checksum() {
         assert_eq!(actual, expected, "{} is byte for byte the server's original", file.name);
     }
 
-    let thumbnail = library.thumbnail(files[0].identifier.clone(), 256).await.unwrap().expect("a photo has a thumbnail");
+    let thumbnail = library.thumbnail(files[0].identifier.clone(), 256, None).await.unwrap().expect("a photo has a thumbnail");
     assert!(thumbnail.starts_with(b"RIFF"), "the small thumbnail is Immich's WebP");
-    let preview = library.thumbnail(files[0].identifier.clone(), 1024).await.unwrap().expect("and a preview");
+    let preview = library.thumbnail(files[0].identifier.clone(), 1024, None).await.unwrap().expect("and a preview");
     assert!(preview.starts_with(&[0xff, 0xd8]), "the preview is Immich's JPEG");
 }
