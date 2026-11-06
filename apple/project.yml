@@ -35,6 +35,7 @@ targets:
         INFOPLIST_FILE: App/Info.plist
         GENERATE_INFOPLIST_FILE: NO
         CODE_SIGN_ENTITLEMENTS: App/ImmichMount.entitlements
+        ASSETCATALOG_COMPILER_APPICON_NAME: AppIcon
     dependencies:
       - target: FileProvider
         embed: true
@@ -49,6 +50,8 @@ targets:
       - FileProvider
       - Shared
       - build/Generated
+      # The app's icon, for System Settings' list of file providers.
+      - App/Assets.xcassets
     settings:
       base:
         PRODUCT_BUNDLE_IDENTIFIER: dev.hviid.ImmichMount.FileProvider
@@ -56,6 +59,7 @@ targets:
         INFOPLIST_FILE: FileProvider/Info.plist
         GENERATE_INFOPLIST_FILE: NO
         CODE_SIGN_ENTITLEMENTS: FileProvider/FileProvider.entitlements
+        ASSETCATALOG_COMPILER_APPICON_NAME: AppIcon
     dependencies:
       - framework: build/ImmichMountCore.xcframework
         embed: false
