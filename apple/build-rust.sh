@@ -8,9 +8,10 @@ set -euo pipefail
 cd "$(dirname "$0")/.."
 
 profile=${1:-release}
+# Never an empty array: macOS's bash 3.2 calls one unbound under `set -u`.
 case "$profile" in
   release) cargo_profile=(--release) ;;
-  debug) cargo_profile=() ;;
+  debug) cargo_profile=(--profile dev) ;;
   *) echo "usage: apple/build-rust.sh [debug|release]" >&2; exit 2 ;;
 esac
 out=apple/build
