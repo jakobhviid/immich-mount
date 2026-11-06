@@ -19,6 +19,8 @@ The Mac is a personal laptop the maintainer carries and uses every day, not a la
   job builds the Swift side on every branch push. The Mac is for Xcode builds, running the app and the extension,
   Finder and logs.
 - **It may be asleep or away:** start with a short SSH command, and never assume it is there.
+- **Ask before a check when the app is signed in to the maintainer's own server:** `lab/mac/check.sh` signs the app
+  out and in again with the lab's key, which signs the maintainer out of theirs.
 - **Clean up what a check leaves:** sign out with the launch argument below (it removes the Finder location, the
   account and the extension's store), unless the maintainer keeps using it. Close the tunnels.
 
