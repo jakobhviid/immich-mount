@@ -101,6 +101,13 @@ signed in to the lab server through the tunnel, and added the Finder location).
 The extension serves Finder only once the maintainer has switched it on, once per Mac: System Settings, General,
 Login Items & Extensions, File Providers. No command can do it for them.
 
+## Check
+
+`lab/mac/check.sh` (from Linux, with `MAC_HOST` and `MAC_SSH_OPTIONS`) prints one PASS or FAIL line per claim: the
+sections, every timeline photo, listing downloads no original, originals read back as the server's (SHA-1), a
+thumbnail without its original, and a photo added on the server shows and goes again when deleted there. It needs
+the app signed in through the tunnels, running, and the extension switched on.
+
 ## Look
 
 - **Our log** (the app, the extension and the bridge): `/usr/bin/log show --last 10m --predicate 'subsystem ==
