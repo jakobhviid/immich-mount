@@ -105,8 +105,9 @@ Login Items & Extensions, File Providers. No command can do it for them.
 
 `lab/mac/check.sh` (from Linux, with `MAC_HOST` and `MAC_SSH_OPTIONS`) prints one PASS or FAIL line per claim: the
 sections, every timeline photo, listing downloads no original, originals read back as the server's (SHA-1), a
-thumbnail without its original, and a photo added on the server shows and goes again when deleted there. It needs
-the app signed in through the tunnels, running, and the extension switched on.
+thumbnail without its original, a photo added on the server shows and goes again when deleted there, and a photo
+copied into Upload reaches the server byte for byte and leaves Upload. It needs the app signed in through the
+tunnels, running, and the extension switched on; it copies its photo through the checkout's `apple/build/`.
 
 ## Look
 
