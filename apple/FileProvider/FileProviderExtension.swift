@@ -19,6 +19,7 @@ final class FileProviderExtension: NSObject, NSFileProviderReplicatedExtension, 
         startLogging()
         library = FileProviderExtension.openLibrary()
         super.init()
+        logger.notice("started for the domain \(domain.identifier.rawValue, privacy: .public), signed in: \(self.library != nil)")
     }
 
     private static func openLibrary() -> Library? {
@@ -52,6 +53,7 @@ final class FileProviderExtension: NSObject, NSFileProviderReplicatedExtension, 
                 let item = try await library.item(identifier: identifier.bridged)
                 completionHandler(FileProviderItem(item), nil)
             } catch {
+                logger.error("an item failed: \(String(describing: error), privacy: .public)")
                 completionHandler(nil, error.forSystem)
             }
             progress.completedUnitCount = 1
@@ -84,8 +86,10 @@ final class FileProviderExtension: NSObject, NSFileProviderReplicatedExtension, 
                     ?? FileManager.default.temporaryDirectory
                 let destination = directory.appendingPathComponent(UUID().uuidString)
                 let item = try await library.fetch(identifier: itemIdentifier.bridged, destination: destination.path)
+                logger.info("fetched an original of \(item.size ?? 0) bytes")
                 completionHandler(destination, FileProviderItem(item), nil)
             } catch {
+                logger.error("fetching an original failed: \(String(describing: error), privacy: .public)")
                 completionHandler(nil, nil, error.forSystem)
             }
             progress.completedUnitCount = 1

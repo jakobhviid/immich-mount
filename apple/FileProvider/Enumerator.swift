@@ -37,7 +37,9 @@ final class Enumerator: NSObject, NSFileProviderEnumerator {
                     observer.didEnumerate(Array(items[start..<min(start + batch, items.count)]))
                 }
                 observer.finishEnumerating(upTo: nil)
+                logger.info("listed a folder of \(items.count) items")
             } catch {
+                logger.error("listing a folder failed: \(String(describing: error), privacy: .public)")
                 observer.finishEnumeratingWithError(error.forSystem)
             }
         }
