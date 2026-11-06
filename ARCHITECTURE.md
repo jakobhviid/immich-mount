@@ -95,8 +95,11 @@ icon style, and is MIT like the rest.
   the Dock, Login Items, System Settings' list of file providers and the About panel show it, and the app's window
   shows it over its title, as the GNOME app's welcome and status pages do. The About panel has the GNOME About
   dialog's texts: the non-affiliation notice as its copyright line, then the credits and the AI disclosure.
-- **Finder's sidebar** shows the location with the app's icon: the extension names no symbol of its own
-  (`CFBundleSymbolName`), which would replace it with a one-colour one, as OneDrive's cloud is.
+- **Finder's sidebar** shows each location with a one-colour symbol, which the provider names in its extension's
+  `CFBundleSymbolName` and ships in its asset catalog, as Nextcloud and OneDrive do (without one, Finder draws a
+  generic drive or folder). Ours is the app icon's drive and lens in outline: the face and base, the base's light, and
+  the lens as a ring in five segments, as the icon's ring carries five colours. `apple/make-symbol.py` writes it as
+  an SF Symbols template (v6.0) with its three source weights made from one geometry, so they interpolate.
 
 ## Two processes: a daemon and an app
 
