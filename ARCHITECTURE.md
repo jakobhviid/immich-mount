@@ -1217,7 +1217,11 @@ a file the system then keeps, and evicts under storage pressure; the block cache
 evicting, so Finder offers "Remove Download" on a file or a folder, which frees the local copies and leaves the
 library alone (verified on a downloaded folder). The system keeps the details of items it holds (their capabilities
 included), so the bridge's item format is part of every item's version: a release that changes what items carry
-raises it, and the app, seeing a new format at launch, has the system read every item again once. Partial fetching
+raises it, and the app, seeing a new format at launch, has the system read every item again once.
+- **A reimport** (after a new item format, or a settings change) drops the system's database: it then finds what is on
+  disk again and offers each as a new item, marked "may already exist". The extension answers with the item the
+  library has under that name in that folder; refusing it, as a read-only folder refuses new folders, left the
+  system keeping its own copy beside the library's, renamed "People 2" (seen on macOS 27). Partial fetching
 (`NSFileProviderPartialContentFetching`, macOS 12.3 and later) would bring range reads back for long videos
 (ROADMAP, M7).
 
