@@ -19,6 +19,8 @@ enum AppGroup {
 
     /// The server's address, as checked when signing in. Not secret, so a plain file.
     static var serverFile: URL { container.appendingPathComponent("server") }
+    /// The account's email, when the sign-in told it (a password or single sign-on; an API key does not).
+    static var emailFile: URL { container.appendingPathComponent("account") }
     /// The same settings table as on Linux (SPEC.md, "Configuration"); absent means the defaults.
     static var configFile: URL { container.appendingPathComponent("config.toml") }
     /// The extension's own files: the metadata store. Only the extension opens it.
@@ -77,8 +79,23 @@ struct Account {
         try server.write(to: AppGroup.serverFile, atomically: true, encoding: .utf8)
     }
 
-    /// Forget the account: the key and the address. Nothing else is touched.
+    /// The signed-in account's email, when known.
+    static var email: String? {
+        (try? String(contentsOf: AppGroup.emailFile, encoding: .utf8)).flatMap { $0.isEmpty ? nil : $0 }
+    }
+
+    static func keepEmail(_ email: String?) {
+        if let email {
+            try? email.write(to: AppGroup.emailFile, atomically: true, encoding: .utf8)
+        } else {
+            try? FileManager.default.removeItem(at: AppGroup.emailFile)
+        }
+    }
+
+    /// Forget the account: the credential, the address, the email and the last status. Nothing else is touched.
     static func forget() {
+        try? FileManager.default.removeItem(at: AppGroup.emailFile)
+        try? FileManager.default.removeItem(at: Status.file)
         if let server = try? String(contentsOf: AppGroup.serverFile, encoding: .utf8)
             .trimmingCharacters(in: .whitespacesAndNewlines) {
             SecItemDelete(keychainQuery(server: server) as CFDictionary)

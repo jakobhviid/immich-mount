@@ -186,7 +186,7 @@ checked by CI's macOS job; the maintainer's Mac is needed only to run and debug 
    core, so both editions share them.
    **Built, not yet run on a Mac:** the shared sign-in, and the app's single sign-on, password and API key
    sign-in; on the maintainer's Mac, password sign-in adds the location. The Settings window, which the extension
-   follows. Not yet: status from the extension, the icon (an open question below).
+   follows. Status from the extension, through a file. Not yet: the icon (an open question below).
 4. **Uploads** into the Upload folder, through the core's upload sequence.
    **Built and verified in Finder:** a photo copied or moved into Upload reaches the server byte for byte and leaves
    Upload; a moved photo's source is gone; a file Immich does not take stays in Upload, refused with its reason.

@@ -105,7 +105,7 @@ final class AppModel: ObservableObject {
         do {
             offer = try await probe(address: address)
         } catch {
-            message = AppModel.describe(error)
+            message = describe(error)
         }
     }
 
@@ -141,12 +141,13 @@ final class AppModel: ObservableObject {
         do {
             let signedIn = try await signingIn()
             try Account(server: server, credential: signedIn.credential).save()
+            Account.keepEmail(signedIn.account)
             try await FinderLocation.add()
             self.server = server
             offer = nil
             logger.notice("signed in; the Finder location is added")
         } catch {
-            message = AppModel.describe(error)
+            message = describe(error)
             logger.error("signing in failed: \(String(describing: error), privacy: .public)")
         }
     }
@@ -162,7 +163,7 @@ final class AppModel: ObservableObject {
         do {
             try await FinderLocation.remove()
         } catch {
-            message = AppModel.describe(error)
+            message = describe(error)
         }
         Account.forget()
         try? FileManager.default.removeItem(at: AppGroup.libraryDirectory)
@@ -205,20 +206,4 @@ final class AppModel: ObservableObject {
         }
     }
 
-    static func describe(_ error: Error) -> String {
-        switch error as? BridgeError {
-        case .NotAuthenticated?:
-            return "The server did not accept this API key."
-        case .ServerUnreachable(let message)?:
-            return "The server could not be reached: \(message)"
-        case .NoSuchItem?:
-            return "No Immich server answers at this address."
-        case .AnchorExpired?:
-            return "Finder asked for changes the app no longer has; it reads the library again."
-        case .NotPermitted(let message)?, .Failed(let message)?:
-            return message
-        case nil:
-            return error.localizedDescription
-        }
-    }
 }

@@ -56,7 +56,7 @@ struct PreferencesView: View {
                 }
             }
         } catch {
-            message = AppModel.describe(error)
+            message = describe(error)
         }
     }
 
