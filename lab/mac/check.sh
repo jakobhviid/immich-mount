@@ -8,8 +8,9 @@
 #   lab/mac/check.sh
 #
 # Env: MAC_HOST (user@address), MAC_SSH_OPTIONS (for ssh, such as -i <key>), LAB_SERVER (where this machine and the
-#      Mac both reach the lab server; default http://127.0.0.1:2283, the tunnels of the mac-dev skill),
-#      IMMICH_INSTANCE (as lab/immich-server takes it).
+#      Mac both reach the lab server; default http://127.0.0.1:2283, the tunnels of the mac-dev skill, which the
+#      check opens itself when nothing answers there, and closes at its end), IMMICH_INSTANCE (as lab/immich-server
+#      takes it), EREBUS_DIR (for those tunnels; default the erebus checkout beside this one).
 set -euo pipefail
 here=$(cd "$(dirname "$0")" && pwd)
 : "${MAC_HOST:?set MAC_HOST to the Mac user@address}"
@@ -40,8 +41,22 @@ wait_for_mac() {
 }
 api() { curl -sS --fail-with-body -H "x-api-key: $IMMICH_API_KEY_FULL" "$@"; }
 
-curl -sS -m 10 "$server/api/server/version" >/dev/null || { echo "the lab server does not answer at $server" >&2; exit 1; }
 mac true || { echo "the Mac does not answer at $MAC_HOST" >&2; exit 1; }
+# The tunnels of the mac-dev skill, for this run only: the lab server to this machine's loopback, and on to the Mac's.
+if [ -z "${LAB_SERVER:-}" ] && ! curl -s -m 5 "$server/api/server/version" >/dev/null; then
+  erebus=${EREBUS_DIR:-$(cd "$here/../../.." && pwd)/erebus}
+  socat TCP-LISTEN:2283,bind=127.0.0.1,reuseaddr,fork \
+    EXEC:"$erebus/bin/incus exec ${IMMICH_INSTANCE:-ind-immich-srv} -- socat STDIO TCP\:127.0.0.1\:2283" &
+  tunnels=$!
+  # shellcheck disable=SC2086
+  ssh ${MAC_SSH_OPTIONS:-} -o BatchMode=yes -o ExitOnForwardFailure=yes -o ServerAliveInterval=30 -N \
+    -R 127.0.0.1:2283:127.0.0.1:2283 "$MAC_HOST" </dev/null &
+  tunnels="$tunnels $!"
+  # shellcheck disable=SC2064
+  trap "kill $tunnels 2>/dev/null" EXIT
+  for _ in $(seq 1 10); do mac "curl -s -m 5 $server/api/server/version" >/dev/null && break; sleep 1; done
+fi
+curl -sS -m 10 "$server/api/server/version" >/dev/null || { echo "the lab server does not answer at $server" >&2; exit 1; }
 started=$(date +%s)
 
 since=$(mac "date '+%Y-%m-%d %H:%M:%S'")

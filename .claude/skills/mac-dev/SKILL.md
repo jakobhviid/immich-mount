@@ -78,7 +78,8 @@ socat TCP-LISTEN:2283,bind=127.0.0.1,reuseaddr,fork \
 ssh -N -o ExitOnForwardFailure=yes -o ServerAliveInterval=30 -R 127.0.0.1:2283:127.0.0.1:2283 "$MAC_HOST" &
 ```
 
-On the Mac the server is then `http://127.0.0.1:2283` (verified). The tunnel starts an `incus exec` per connection,
+On the Mac the server is then `http://127.0.0.1:2283` (verified). Background jobs end after two hours, the tunnels
+with them; `lab/mac/check.sh` opens its own when nothing answers there, and closes them at its end. The tunnel starts an `incus exec` per connection,
 which is slow when many open at once: a request that times out makes the extension take the server as offline for
 45 seconds ("the server was unreachable moments ago"), as Linux does, so run checks one at a time. Loopback is not the local network, so macOS's
 Local Network prompt never comes up; checking that prompt itself needs a LAN-mode server and the maintainer at the
