@@ -44,6 +44,10 @@ const UPLOAD_STAY: Duration = Duration::from_secs(10);
 /// How long one poll lists folders again; what is left waits for the next poll, so a change's report never waits
 /// on a library-wide relisting.
 const RELIST_BUDGET: Duration = Duration::from_secs(20);
+/// What the extension's items carry (their capabilities and fields). The system keeps an item's details until its
+/// version changes, so the format is part of every version: raising it, with the app's reimport, has the system take
+/// every item again (ARCHITECTURE.md, "The macOS edition", "Content").
+const ITEM_FORMAT: u32 = 2;
 /// How long the server check keeps trying a connection that fails: macOS may refuse sockets while its Local Network
 /// prompt waits for an answer (Apple's TN3179).
 const LOCAL_NETWORK_PATIENCE: Duration = Duration::from_secs(30);
@@ -117,6 +121,7 @@ pub struct Item {
 impl Item {
     fn versioned(mut self) -> Item {
         let mut digest = Sha256::new();
+        digest.update(ITEM_FORMAT.to_le_bytes());
         digest.update(self.name.as_bytes());
         digest.update([0]);
         digest.update(self.size.unwrap_or(u64::MAX).to_le_bytes());
@@ -867,6 +872,13 @@ pub async fn end_session(server: String, credential: Credential) {
     if let Err(error) = ended {
         log::info!("the session was not ended on the server: {error}");
     }
+}
+
+/// The items' format (`ITEM_FORMAT`): when it differs from the one the app last saw, the app has the system read every
+/// item again.
+#[uniffi::export]
+pub fn item_format() -> u32 {
+    ITEM_FORMAT
 }
 
 /// Send this process's log lines to macOS's unified log, under the subsystem `dev.hviid.ImmichMount`. Elsewhere it

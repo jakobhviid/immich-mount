@@ -95,25 +95,24 @@ final class AppModel: ObservableObject {
     /// Whether the app opens at login, so changes keep reaching Finder; the user's choice, off until made.
     @Published private(set) var opensAtLogin = SMAppService.mainApp.status == .enabled
 
-    /// What the extension's items carry (their capabilities, their fields). The system keeps the items it was given and
-    /// never asks again, so a version that changes them raises this, and the app has the system read every item again
-    /// once (`refreshItemsAfterUpdate`).
-    private static let itemFormat = 2
 
     init() {
         Task { await refreshItemsAfterUpdate() }
         Task { await keepChangesFlowing() }
     }
 
-    /// Have the system read every item again when the item format changed since the last run.
+    /// Have the system read every item again when the bridge's item format changed since the last run. The format is
+    /// part of every item's version, so the system takes the new details (capabilities and fields) it would otherwise
+    /// keep.
     private func refreshItemsAfterUpdate() async {
         let file = AppGroup.container.appendingPathComponent("item-format")
-        let kept = (try? String(contentsOf: file, encoding: .utf8)).flatMap { Int($0) }
-        guard server != nil, kept != AppModel.itemFormat, let manager = NSFileProviderManager(for: FinderLocation.domain) else { return }
+        let kept = (try? String(contentsOf: file, encoding: .utf8)).flatMap { UInt32($0) }
+        let format = itemFormat()
+        guard server != nil, kept != format, let manager = NSFileProviderManager(for: FinderLocation.domain) else { return }
         do {
             try await manager.reimportItems(below: .rootContainer)
-            try String(AppModel.itemFormat).write(to: file, atomically: true, encoding: .utf8)
-            logger.notice("the items are read again for item format \(AppModel.itemFormat)")
+            try String(format).write(to: file, atomically: true, encoding: .utf8)
+            logger.notice("the items are read again for item format \(format)")
         } catch {
             logger.error("the items were not read again: \(String(describing: error), privacy: .public)")
         }
