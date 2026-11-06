@@ -12,7 +12,7 @@
 //!
 //! Whole originals: `download_original` streams one into a file, for a platform that asks for whole files (the
 //! macOS edition's File Provider). It has no limit on the whole download, which for a long video takes minutes, only
-//! on a stall.
+//! on the wait for the answer and on a stall.
 //!
 //! Thumbnails: `thumbnail` is a WebP with a 250 px short side, `preview` a JPEG with a 1440 px short side.
 //! `fullsize` redirects to the original for JPEG sources, so it is not offered.
@@ -139,11 +139,15 @@ impl Client {
     }
 
     /// An Asset's whole original, written to `destination` as it arrives (`GET /assets/{id}/original`). Returns the
-    /// number of bytes written. A minute without bytes fails it, however long the whole download takes; on any
-    /// failure the file may hold part of the original, and the caller removes it.
+    /// number of bytes written. A minute without an answer is [`ApiError::Offline`]; a minute without bytes, or fewer
+    /// bytes than announced, is [`ApiError::Transient`], since the server did answer. On any failure the file may hold
+    /// part of the original, and the caller removes it.
     pub async fn download_original(&self, id: &str, destination: &Path) -> Result<u64, ApiError> {
         let builder = self.request(Method::GET, &["assets", id, "original"]);
-        let mut response = check(self.execute(builder).await?, RequestShape::Plain).await?;
+        let answer = tokio::time::timeout(DOWNLOAD_STALL_LIMIT, self.execute(builder))
+            .await
+            .map_err(|_| ApiError::Offline("the server did not answer the download".to_owned()))??;
+        let mut response = check(answer, RequestShape::Plain).await?;
         let expected = header_text(&response, CONTENT_LENGTH).and_then(|text| text.trim().parse::<u64>().ok());
         let local = |error: std::io::Error| ApiError::LocalFile(format!("{}: {error}", destination.display()));
         let mut file = tokio::fs::File::create(destination).await.map_err(local)?;
@@ -151,7 +155,7 @@ impl Client {
         loop {
             let chunk = tokio::time::timeout(DOWNLOAD_STALL_LIMIT, response.chunk())
                 .await
-                .map_err(|_| ApiError::Offline("the download stalled".to_owned()))?
+                .map_err(|_| ApiError::Transient { retry_after: None })?
                 .map_err(|error| from_transport(&error))?;
             let Some(chunk) = chunk else { break };
             file.write_all(&chunk).await.map_err(local)?;
@@ -159,7 +163,7 @@ impl Client {
         }
         file.flush().await.map_err(local)?;
         if expected.is_some_and(|expected| expected != written) {
-            return Err(ApiError::Offline(format!("the download ended after {written} of {} bytes", expected.unwrap_or_default())));
+            return Err(ApiError::Transient { retry_after: None });
         }
         Ok(written)
     }

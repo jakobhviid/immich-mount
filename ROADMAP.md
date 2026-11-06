@@ -181,8 +181,8 @@ checked by CI's macOS job; the maintainer's Mac is needed only to run and debug 
 3. **Sign-in and settings as on Linux.** Password and browser sign-in, the preferences from the core's settings
    table, status from the extension, the app's icon. The desktop crate's server check and sign-in move into the
    core, so both editions share them.
-   **Built, not yet run on a Mac:** the shared sign-in, and the app's single sign-on, password and API key
-   sign-in; on the maintainer's Mac, password sign-in adds the location. The Settings window, which the extension
+   **Built:** the shared sign-in, and the app's single sign-on, password and API key sign-in; on the maintainer's
+   Mac, key and password sign-in add the location (single sign-on not yet tried there). The Settings window, which the extension
    follows. Status from the extension, through a file. The icon, the same drive on macOS's rounded square
    (ARCHITECTURE, "The icon"). Not yet seen: what Finder's sidebar shows for the location.
 4. **Uploads** into the Upload folder, through the core's upload sequence.

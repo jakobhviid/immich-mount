@@ -19,7 +19,7 @@ final class FileProviderItem: NSObject, NSFileProviderItem {
         return UTType(filenameExtension: (item.name as NSString).pathExtension) ?? .data
     }
 
-    /// Read-only, as on Linux; the Upload folder also takes new files, once the macOS edition uploads.
+    /// Read-only, as on Linux; the Upload folder also takes new files.
     var capabilities: NSFileProviderItemCapabilities {
         guard item.isFolder else { return [.allowsReading] }
         return item.acceptsNewFiles
@@ -59,6 +59,8 @@ extension Error {
             return NSFileProviderError(.noSuchItem)
         case .AnchorExpired:
             return NSFileProviderError(.syncAnchorExpired)
+        case .Cancelled:
+            return CocoaError(.userCancelled)
         case .NotPermitted(let message):
             return CocoaError(.fileReadNoPermission, userInfo: [NSLocalizedDescriptionKey: message])
         case .Failed(let message):

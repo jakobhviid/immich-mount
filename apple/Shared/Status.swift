@@ -35,6 +35,8 @@ func describe(_ error: Error) -> String {
         return "No Immich server answers at this address."
     case .AnchorExpired?:
         return "Finder asked for changes the app no longer has; it reads the library again."
+    case .Cancelled?:
+        return "Cancelled."
     case .NotPermitted(let message)?, .Failed(let message)?:
         return message
     case nil:

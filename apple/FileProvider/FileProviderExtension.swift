@@ -49,9 +49,10 @@ final class FileProviderExtension: NSObject, NSFileProviderReplicatedExtension, 
             completionHandler(nil, NSFileProviderError(.notAuthenticated))
             return progress
         }
+        let cancel = Cancel()
         let task = Task {
             do {
-                let item = try await library.item(identifier: identifier.bridged)
+                let item = try await library.item(identifier: identifier.bridged, cancel: cancel)
                 completionHandler(FileProviderItem(item), nil)
             } catch {
                 logger.error("an item failed: \(String(describing: error), privacy: .public)")
@@ -59,7 +60,7 @@ final class FileProviderExtension: NSObject, NSFileProviderReplicatedExtension, 
             }
             progress.completedUnitCount = 1
         }
-        progress.cancellationHandler = { task.cancel() }
+        progress.cancellationHandler = { cancel.cancel(); task.cancel() }
         return progress
     }
 
@@ -94,13 +95,14 @@ final class FileProviderExtension: NSObject, NSFileProviderReplicatedExtension, 
             return progress
         }
         let domain = domain
+        let cancel = Cancel()
         let task = Task {
             do {
                 // The system's own temporary folder for the domain is on the right volume to take the file from.
                 let directory = try NSFileProviderManager(for: domain)?.temporaryDirectoryURL()
                     ?? FileManager.default.temporaryDirectory
                 let destination = directory.appendingPathComponent(UUID().uuidString)
-                let item = try await library.fetch(identifier: itemIdentifier.bridged, destination: destination.path)
+                let item = try await library.fetch(identifier: itemIdentifier.bridged, destination: destination.path, cancel: cancel)
                 logger.info("fetched an original of \(item.size ?? 0) bytes")
                 completionHandler(destination, FileProviderItem(item), nil)
             } catch {
@@ -109,7 +111,7 @@ final class FileProviderExtension: NSObject, NSFileProviderReplicatedExtension, 
             }
             progress.completedUnitCount = 1
         }
-        progress.cancellationHandler = { task.cancel() }
+        progress.cancellationHandler = { cancel.cancel(); task.cancel() }
         return progress
     }
 
@@ -122,26 +124,30 @@ final class FileProviderExtension: NSObject, NSFileProviderReplicatedExtension, 
             return progress
         }
         let pixels = UInt32(max(size.width, size.height).rounded(.up))
+        let cancel = Cancel()
         let task = Task {
+            // Only this task counts, as each thumbnail is done, so no count is lost between tasks.
             await withTaskGroup(of: Void.self) { group in
                 for (index, identifier) in itemIdentifiers.enumerated() {
-                    if index >= FileProviderExtension.thumbnailsAtOnce {
-                        await group.next()
+                    if index >= FileProviderExtension.thumbnailsAtOnce, await group.next() != nil {
+                        progress.completedUnitCount += 1
                     }
                     group.addTask {
                         do {
-                            let data = try await library.thumbnail(identifier: identifier.bridged, pixels: pixels)
+                            let data = try await library.thumbnail(identifier: identifier.bridged, pixels: pixels, cancel: cancel)
                             perThumbnailCompletionHandler(identifier, data, nil)
                         } catch {
                             perThumbnailCompletionHandler(identifier, nil, error.forSystem)
                         }
-                        progress.completedUnitCount += 1
                     }
+                }
+                for await _ in group {
+                    progress.completedUnitCount += 1
                 }
             }
             completionHandler(Task.isCancelled ? CocoaError(.userCancelled) : nil)
         }
-        progress.cancellationHandler = { task.cancel() }
+        progress.cancellationHandler = { cancel.cancel(); task.cancel() }
         return progress
     }
 
@@ -167,9 +173,10 @@ final class FileProviderExtension: NSObject, NSFileProviderReplicatedExtension, 
         }
         let modified = (itemTemplate.contentModificationDate ?? nil) ?? Date()
         let (folder, name) = (itemTemplate.parentItemIdentifier.bridged, itemTemplate.filename)
+        let cancel = Cancel()
         let task = Task {
             do {
-                let item = try await library.upload(folder: folder, name: name, path: url.path, modified: modified)
+                let item = try await library.upload(folder: folder, name: name, path: url.path, modified: modified, cancel: cancel)
                 logger.notice("uploaded a file of \(item.size ?? 0) bytes")
                 completionHandler(FileProviderItem(item), [], false, nil)
             } catch {
@@ -178,7 +185,7 @@ final class FileProviderExtension: NSObject, NSFileProviderReplicatedExtension, 
             }
             progress.completedUnitCount = 1
         }
-        progress.cancellationHandler = { task.cancel() }
+        progress.cancellationHandler = { cancel.cancel(); task.cancel() }
         return progress
     }
 

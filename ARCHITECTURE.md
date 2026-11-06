@@ -1140,7 +1140,7 @@ the Linux edition. **Being built** on the `mac-support` branch (ROADMAP, M7), an
             immich-mount-apple (Rust) ─▶ core: tree, names, metadata store ─▶ immich-api ─▶ Immich
                                   ▲
                                   │ App Group container, Keychain group, signals
-            Immich Mount.app (SwiftUI, menu bar, login item): sign-in, settings, status
+            Immich Mount.app (SwiftUI window and Settings, login item): sign-in, settings, status
 ```
 
 **Why File Provider:** it is how macOS shows remote storage (iCloud Drive, OneDrive, Dropbox): files that download
@@ -1197,14 +1197,21 @@ the original undownloaded (verified). `qlmanage -t` reads the file instead, so i
 **Changes.** The system keeps a replica of every item it was shown, and learns of changes only by asking the working
 set what changed since a sync anchor (Apple's documentation):
 - **The change journal.** When the tree keeps a folder's new listing, the store compares it with the kept one and
-  appends one record per item that appeared, changed or went away, numbered in sequence. The anchor is the store's
+  appends one record per item that appeared or changed, numbered in sequence. What went away departs: its deletion
+  is settled once the poll's folders were all listed again, and recorded only if no kept listing holds it then, so
+  an album whose year folder changed (the `year-folders` layout keys an album without its parent) is moved, not
+  deleted. The anchor is the store's
   identity and a sequence number. Old records are trimmed past a limit, and an anchor older than the oldest record
   is expired, after which the system enumerates again. Linux does not use the journal.
 - **Who polls.** The extension owns the poll (the same ETag and sync-stream poll as Linux) and lists again the
-  touched folders the system holds, which writes the journal. The app signals the working set every 10 seconds, as
+  touched folders the system holds, which writes the journal. The touched folders are marked in the store before the
+  poll's memory is kept, and leave the mark only once listed from the server (an older listing does not count), so a
+  folder the server cannot list now, or one past the poll's 20-second budget, is listed at a later poll; a listing
+  shown while a change came is kept and marked the same way. The app signals the working set every 10 seconds, as
   often as Linux polls, which wakes the extension; it opens at login if the user turns that on. The poll's ETags and
-  counts are kept in the store, so an extension started again still sees what changed while it was stopped. The
-  server is asked only when the system has caught up with the journal.
+  counts are kept in the store, so an extension started again still sees what changed while it was stopped; for a
+  session the sync stream's next records are then changes, not a baseline. The server is asked only when the system
+  has caught up with the journal.
 - **A folder that went away** takes what the store kept below it: its deletion and its contents' are recorded, and
   its kept listing goes, so later polls stop asking for it.
 
@@ -1257,9 +1264,10 @@ a photo added while the extension was stopped shows once the app wakes it, a pho
 photo moved into Upload loses its source, reaches the server byte for byte and leaves Upload, and a file Immich
 does not take stays in Upload, refused with its reason.
 - **The bridge** (`immich-mount-apple`): items by identifier, listings, whole originals and thumbnails, from the
-  core's tree over the metadata store, on a tokio runtime of its own, with a request's work stopped when the system
-  cancels it. A listing that takes more than 20 seconds is answered from the kept one, or as unreachable. The
-  Upload folder stays hidden until the macOS edition uploads. Tested on Linux through a fake library, and against
+  core's tree over the metadata store, on a tokio runtime of its own. uniffi's Swift does not pass a task's
+  cancellation on to Rust, so each request takes a `Cancel`, which the extension calls from the request's progress
+  and an enumerator's invalidation. A listing that takes more than 20 seconds is answered from the kept one, or as
+  unreachable. Tested on Linux through a fake library, and against
   the lab server (Immich v3.3.5, `tests/lab.rs`): every section lists, all 50 timeline originals fetched match the
   server's SHA-1, an item asked for by identifier is the one listed, and the thumbnails are Immich's WebP and JPEG.
 - **The core's part:** `NodeKey::from_storage_key`, the reverse of the storage key, which accepts only the form it
