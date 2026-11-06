@@ -51,6 +51,8 @@ mac "pkill -x 'Immich Mount'; sleep 1; open -n '$app' --args -signOut YES -signI
 wait_for_mac "a fresh sign-in" "/usr/bin/log show --start '$since' --style compact \
   --predicate 'subsystem == \"dev.hviid.ImmichMount\"' | grep -c 'signed in; the Finder location is added'" "1"
 wait_for_mac "the sections" "ls $root 2>/dev/null | sort | tr '\n' ' '" "Albums People Photos Places Upload "
+verdict "the extension's status: reachable, with the server's version" \
+  "$(mac "cat Library/Group\\ Containers/*.dev.hviid.ImmichMount/status.json" | jq -r '"\(.online) \(.version)"')" "true v3.3.5"
 verdict "every timeline photo" "$(mac "find $root/Photos -type f | wc -l | tr -d ' '")" "50"
 verdict "listing downloads no original" "$(mac "ls -lOR $root/Photos | grep -c dataless")" "50"
 
