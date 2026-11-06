@@ -21,7 +21,8 @@ macOS through Apple's File Provider.
 Order of platforms:
 1. **GNOME** (Files, which is Nautilus) first.
 2. **KDE** (Dolphin) next.
-3. **macOS** later, at low priority, because it needs the maintainer for signing and notarization.
+3. **macOS** third, through Apple's File Provider: being built (below, "The macOS edition"; ROADMAP, M7). Signing
+   and notarization need the maintainer's Apple developer account.
 
 There is no Windows edition; a separate project, ImmichDrive, already covers Windows with the Cloud Files API.
 
@@ -129,7 +130,7 @@ put the mount at the mercy of a display session and a toolkit, in the one proces
 | Crate | Portable | Kind | Holds |
 |---|---|---|---|
 | `immich-api` | yes | lib | The Immich REST client and models |
-| `immich-mount-core` | yes | lib | The library model, naming, membership, metadata store, change journal, content cache, upload logic, settings table, config |
+| `immich-mount-core` | yes | lib | The library model, naming, membership, metadata store, content cache, upload logic, settings table, config |
 | `immich-mount-linux` | Linux | lib | FUSE adapter (inode table, kernel invalidation, staging), freedesktop thumbnail seeding, Secret Service, notifications, D-Bus service |
 | `immich-mount` | Linux | bin | Thin CLI plus the `daemon` subcommand: resolve inputs, call one core function, render the result |
 | `immich-mount-desktop` | Linux desktops | lib | What the desktop apps share, without a toolkit: checking a server, sign-in, the credential, first-run setup, status over D-Bus, the preferences' groups and labels |
@@ -151,8 +152,8 @@ core speaks an identifier-based model:
 - byte-range reads
 - thumbnail bytes
 - uploads with duplicate semantics
-- a change journal with sequence numbers: it drives kernel invalidation on Linux, and would serve as sync anchors on
-  macOS
+- changes as the folders they touch (`LibraryChanges`): Linux forgets those listings, and the macOS edition turns
+  them into per-item records with sequence numbers, its sync anchors ("The macOS edition")
 
 OS services (secrets, notifications, directories, the clock) come in through traits.
 
@@ -173,9 +174,8 @@ OS services (secrets, notifications, directories, the clock) come in through tra
 `fuser` calls the `Filesystem` trait synchronously; answers that need the network move the reply object into a
 tokio task. Its async-native alternative, `fuse3`, is less used. Switch only if that reply pattern gets ugly.
 
-**macOS later.** A macOS edition would put a File Provider extension and a SwiftUI app on this core, through `uniffi`
-bindings. The app and the extension run as separate processes there, so multi-process access to the metadata store
-is a design question for that edition; on Linux one daemon owns everything.
+**macOS:** a File Provider extension and a SwiftUI app on this core, through `uniffi` bindings ("The macOS
+edition").
 
 **Error types:** the core uses typed errors (`thiserror`), because the FUSE adapter must map each kind (offline,
 signed out, gone, transient, protocol) to an error code. `anyhow` with context is used at the edges, in the CLI and
@@ -1139,6 +1139,102 @@ These rules keep a future Flatpak cheap:
 
 Every design change states its Flatpak impact against this table.
 
+## The macOS edition
+
+The same library in Finder's sidebar and in every file dialog, through Apple's File Provider, on the same core as
+the Linux edition. **Being built** on the `mac-support` branch (ROADMAP, M7), and not released. Nothing in this
+section is verified on a Mac yet; where a claim comes from Apple's documentation, it says so.
+
+```
+ Finder, file dialogs ──▶ fileproviderd (macOS: the item replica, downloaded originals, eviction)
+                                  │ started on demand
+            File Provider extension (Swift, sandboxed, NSFileProviderReplicatedExtension)
+                                  │ uniffi
+            immich-mount-apple (Rust) ─▶ core: tree, names, metadata store ─▶ immich-api ─▶ Immich
+                                  ▲
+                                  │ App Group container, Keychain group, signals
+            Immich Mount.app (SwiftUI, menu bar, login item): sign-in, settings, status
+```
+
+**Why File Provider:** it is how macOS shows remote storage (iCloud Drive, OneDrive, Dropbox): files that download
+when opened, eviction under storage pressure, the Finder sidebar and every file dialog, with no kernel extension.
+
+**Not chosen:**
+- **macFUSE or FUSE-T.** The Linux adapter would run nearly unchanged, but macFUSE is a kernel extension that Apple
+  silicon Macs load only after lowering their boot security, and FUSE-T serves NFS from user space. Neither gives
+  Finder's download progress or eviction, and both make users install a third-party filesystem first (principle 9).
+- **The extension written in Rust** (through `objc2`'s File Provider bindings). One language, but every call into
+  Apple's frameworks becomes unsafe foreign code, and Apple's documentation, samples and error messages speak Swift.
+  The Swift layer stays a thin pass-through instead, so the logic stays in Rust, where Linux tests reach it.
+- **The Mac App Store, for now.** File Provider extensions are sandboxed anyway, so the store's main rule is met,
+  but an app named after Immich needs the owner's written permission there (guideline 5.2.1), and every release
+  waits for review. A notarized download and Homebrew reach the same users.
+- **A repository of its own.** The core is the product, and both editions consume it. In one repository a core
+  change that breaks the Mac side fails in the same push, and SPEC.md stays one contract for Files, Dolphin and
+  Finder.
+
+**Two processes, as on Linux,** but macOS decides when the extension runs:
+- **The extension** answers the system: listings, item details, originals, thumbnails, changes and uploads. The
+  system starts it on demand and stops it when idle.
+- **The app** signs in, edits settings and shows status, and as a login item keeps changes flowing (below). Closing
+  its window stops nothing.
+- **Only the extension opens the metadata store.** redb allows one process, and the extension is the one that needs
+  it. The app reads status from the extension over the File Provider service channel (`NSFileProviderServiceSource`).
+- **Shared through the App Group container:** `config.toml` (the settings table of Linux), the store and the
+  extension's own files. **Shared through a Keychain access group:** the credential. The App Group is
+  team-prefixed (`<team>.dev.hviid.ImmichMount`), which needs no provisioning entry; `group.` names do.
+
+**Identity.** An item's identifier is its `NodeKey`'s storage key, the text form the store already keys names by;
+`NodeKey::Root` is the root container. One item per Appearance, as on Linux. A parent is derived from the key itself
+(an Asset's parent is part of its key, a month's is its year), except an album under year folders, whose year is
+looked up in the album list.
+
+**Content.** The system asks for an original when something opens the file. The extension downloads it whole into
+a file the system then keeps, and evicts under storage pressure; the block cache is not used. Partial fetching
+(`NSFileProviderPartialContentFetching`, macOS 12.3 and later) would bring range reads back for long videos
+(ROADMAP, M7).
+
+**Thumbnails.** The system asks the extension for each item's thumbnail at a size, and the extension answers with
+Immich's small thumbnail up to 250 pixels and its preview above. Nothing is seeded, and there is no safety net:
+Finder asks the extension rather than reading originals (Apple's documentation).
+
+**Changes.** The system keeps a replica of every item it was shown, and learns of changes only by asking the working
+set what changed since a sync anchor (Apple's documentation):
+- **The change journal.** When the tree keeps a folder's new listing, the store compares it with the kept one and
+  appends one record per item that appeared, changed or went away, numbered in sequence. The anchor is the store's
+  identity and a sequence number. Old records are trimmed past a limit, and an anchor older than the oldest record
+  is expired, after which the system enumerates again. Linux does not use the journal.
+- **Who polls.** The extension owns the poll (the same ETag and sync-stream poll as Linux) and lists again the
+  touched folders the system holds, which writes the journal. The app, as a login item, signals the working set on
+  the poll interval, which wakes the extension. The poll's state is kept in the store, so an extension started again
+  still sees what changed while it was stopped.
+
+**Uploads.** The Upload folder lets items be added. The system hands the extension a finished file, which goes
+through the core's upload sequence; there is no staging, which Linux needs because files arrive there in writes.
+
+**Signing in.** The app reaches the server before the extension ever runs, so macOS's Local Network prompt (macOS 15
+and later, for a server on the LAN) names the app, and the extension shares the app's answer (Apple's TN3179). A
+socket may be refused while that prompt is open, so the first check retries. An API key comes first; password and
+browser sign-in (`ASWebAuthenticationSession` with the `app.immich` callback) follow the Linux flow later.
+
+**Build.** Nothing generated is committed:
+- `apple/build-rust.sh` builds the bridge as a static library for both Mac architectures, joins them with `lipo`,
+  generates the Swift bindings with uniffi from the library, and wraps the result as an xcframework.
+- XcodeGen writes the Xcode project from `apple/project.yml`, so the project is a text file that reviews well.
+- The team ID stays out of the repository: a development build reads it from the git-ignored
+  `apple/Config/Local.xcconfig`.
+- **CI builds all of it on GitHub's macOS runner** on every branch push, unsigned, and runs the core's and the
+  bridge's tests there. A Rust change is checked against the Swift side without a Mac at hand. Signing and
+  notarization happen only in the release workflow, with the Developer ID certificate as a secret.
+
+**Distribution:** a notarized DMG on the GitHub release and the Homebrew cask, once the paid Apple Developer Program
+is in place. Development builds run under a free Personal Team on the maintainer's Mac. Each Mac switches the
+extension on once, in System Settings (General, Login Items & Extensions); no program can do it for the user.
+
+**Flatpak impact:** none. The Linux edition is unchanged, and the core's additions are platform-free.
+
+**Built so far:** nothing; ROADMAP, M7 tracks the steps.
+
 ## Testing
 
 | Layer | What | Where |
@@ -1188,5 +1284,8 @@ run-and-exit command-line tools. These are the deviations, and what they suggest
   - packaging that links system libraries
 
   They are documented here, and could seed a "daemon + desktop app" chapter in the guidelines.
+- **The macOS edition is mostly Swift and Xcode,** outside Cargo: a SwiftUI app, a File Provider extension, an
+  XcodeGen project and a notarized DMG. Its Rust is a library the Swift code calls, so the guidelines' CLI rules apply
+  to it only as far as Rust style goes.
 - **The release pipeline** runs as specified for the CLI. The desktop app adds native packages (RPM, DEB, AUR) and
   a Linux cask beside the Homebrew formula.

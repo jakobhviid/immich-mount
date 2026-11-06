@@ -159,6 +159,37 @@ Exit: a fresh Plasma VM on Erebus goes from install to a working mount in Dolphi
 rpms, the app alone signs in through the browser, keeps the session in a new KWallet, and opens the mount in
 Dolphin, where it is in Places and shows the seeded thumbnails with no original read.
 
+## M7. macOS edition
+
+Finder through Apple's File Provider, on the same core (ARCHITECTURE, "The macOS edition"). It is built on the
+`mac-support` branch, and merged once the first slice runs on a Mac. Work that needs no Mac is done on Linux and
+checked by CI's macOS job; the maintainer's Mac is needed only to run and debug it.
+
+1. **The first slice.** The bridge crate (`immich-mount-apple`) and the item identifiers; the extension lists
+   folders, fetches originals and answers thumbnails; the app signs in with an API key, reaches the server first
+   (the Local Network prompt) and adds the Finder location; CI builds the whole Mac side on every branch push. A
+   skill for driving the Mac over SSH, written in the first session on it.
+   Exit: on the maintainer's Mac, against the lab server in LAN mode, every section browses in Finder, photos and
+   videos open, copied-out files match the server's checksums, and thumbnails show with no original downloaded.
+2. **Live changes.** The change journal in the store, the poll's state kept in the store, and the app as a login
+   item that signals the working set.
+   Exit: an Asset added, deleted, or moved between albums on the server shows in Finder within a poll interval, also
+   after the extension was stopped.
+3. **Sign-in and settings as on Linux.** Password and browser sign-in, the preferences from the core's settings
+   table, status from the extension, the About window with the non-affiliation notice.
+4. **Uploads** into the Upload folder, through the core's upload sequence.
+5. **Distribution.** A notarized DMG built by the release workflow, and the Homebrew cask; it needs the paid Apple
+   Developer Program.
+   Exit: a Mac that never had it installs from Homebrew, switches the extension on, and browses.
+
+Open:
+- **Partial content** (`NSFileProviderPartialContentFetching`): a video that plays before it is fully downloaded,
+  with the block cache back in use. Worth it once whole downloads are measured on a slow link.
+- **What the poll cannot see** (a swap that keeps a month's count): on Linux the freshness windows catch it at the
+  next visit, but the system revisits nothing it holds. Listing held folders again in the background, slowly?
+- **A command line on macOS** (`status`, `doctor`), or none: the sandbox keeps the store and the credential out of
+  reach of a plain program.
+
 ## Watch upstream
 
 - **Blueprint and GTK 5 interface definitions.** The GNOME app's screens are written in Blueprint, which still
@@ -210,7 +241,6 @@ These are the options for when that is not enough on a real server, with what ea
 | Idea | Why it waits |
 |---|---|
 | **Flatpak** | It needs host-command access for FUSE (the Pika Backup pattern), and Flathub acceptance is uncertain. When it comes: our own repository first, then Flathub. The design follows the Flatpak readiness rules in ARCHITECTURE until then |
-| **macOS edition** | A File Provider extension and a SwiftUI app on the core through `uniffi`. It needs the maintainer (a Mac, signing, notarization) |
 | **A sealed headless credential** | Without a keyring the credential is a 0600 file, as SSH keys and most CLIs keep theirs. Encrypting it with a key kept beside it would add nothing; `systemd-creds encrypt --user` could seal it to the machine (and its TPM), so disk copies and backups never carry it readable |
 | **Offline albums** | Pin chosen albums in the cache, showing the size first. Never the whole library |
 | **A loopback sign-in redirect** | The RFC 8252 norm, but the admin must register it at the identity provider. An option for servers without mobile sign-in configured |
