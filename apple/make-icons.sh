@@ -53,6 +53,19 @@ done
 printf '{\n  "images" : [%s\n  ],\n  "info" : { "author" : "xcode", "version" : 1 }\n}\n' "$images" >"$set_dir/Contents.json"
 printf '{\n  "info" : { "author" : "xcode", "version" : 1 }\n}\n' >apple/App/Assets.xcassets/Contents.json
 
+# The drawing itself, as the README and the GNOME app's pages show it, for the app window's header: Xcode keeps an
+# SVG in an image set as a vector.
+drive_dir=apple/App/Assets.xcassets/Drive.imageset
+mkdir -p "$drive_dir"
+cp "$source_svg" "$drive_dir/Drive.svg"
+cat >"$drive_dir/Contents.json" <<'JSON'
+{
+  "images" : [ { "filename" : "Drive.svg", "idiom" : "universal" } ],
+  "info" : { "author" : "xcode", "version" : 1 },
+  "properties" : { "preserves-vector-representation" : true }
+}
+JSON
+
 symbol_dir=apple/App/Assets.xcassets/SidebarSymbol.symbolset
 mkdir -p "$symbol_dir"
 python3 apple/make-symbol.py "$symbol_dir/SidebarSymbol.svg"
@@ -63,4 +76,4 @@ cat >"$symbol_dir/Contents.json" <<'JSON'
   "symbols" : [ { "filename" : "SidebarSymbol.svg", "idiom" : "universal" } ]
 }
 JSON
-echo "wrote $set_dir and $symbol_dir"
+echo "wrote $set_dir, $drive_dir and $symbol_dir"

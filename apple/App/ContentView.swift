@@ -25,16 +25,17 @@ struct ContentView: View {
     }
 }
 
-/// The app's icon over a title and a line, as the GNOME app's welcome and status pages have them.
+/// The drive over a title and a line, as the GNOME app's welcome and status pages and the README have it: the
+/// drawing itself, not the macOS app icon's tile.
 struct Header: View {
     let title: String
     let line: String
 
     var body: some View {
         VStack(spacing: 8) {
-            Image(nsImage: NSApplication.shared.applicationIconImage)
+            Image("Drive")
                 .resizable()
-                .frame(width: 96, height: 96)
+                .frame(width: 112, height: 112)
             Text(title).font(.title2.bold())
             Text(line)
                 .foregroundStyle(.secondary)
