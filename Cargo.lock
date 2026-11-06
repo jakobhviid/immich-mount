@@ -1740,11 +1740,13 @@ dependencies = [
 name = "immich-mount-apple"
 version = "0.0.0"
 dependencies = [
+ "base64 0.22.1",
  "chrono",
  "immich-api",
  "immich-mount-core",
  "log",
  "oslog",
+ "sha1",
  "sha2",
  "tempfile",
  "thiserror 2.0.21",

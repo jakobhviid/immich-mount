@@ -1239,7 +1239,9 @@ extension on once, in System Settings (General, Login Items & Extensions); no pr
 - **The bridge** (`immich-mount-apple`): items by identifier, listings, whole originals and thumbnails, from the
   core's tree over the metadata store, on a tokio runtime of its own, with a request's work stopped when the system
   cancels it. A listing that takes more than 20 seconds is answered from the kept one, or as unreachable. The
-  Upload folder stays hidden until the macOS edition uploads. Tested on Linux through a fake library.
+  Upload folder stays hidden until the macOS edition uploads. Tested on Linux through a fake library, and against
+  the lab server (Immich v3.3.5, `tests/lab.rs`): every section lists, all 50 timeline originals fetched match the
+  server's SHA-1, an item asked for by identifier is the one listed, and the thumbnails are Immich's WebP and JPEG.
 - **The core's part:** `NodeKey::from_storage_key`, the reverse of the storage key, which accepts only the form it
   writes; and the tree's `parent_of` and `entry_of`. `immich-api` streams a whole original into a file.
 - **The extension** lists, fetches and answers thumbnails through the bridge; the working set is empty and its

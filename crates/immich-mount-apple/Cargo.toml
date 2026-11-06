@@ -37,4 +37,6 @@ oslog = "0.2"
 [dev-dependencies]
 tokio = { version = "1", features = ["macros", "rt-multi-thread", "time", "test-util"] }
 tempfile = "3"
+sha1 = "0.10"
+base64 = "0.22"
 chrono = { version = "0.4", default-features = false, features = ["std", "clock"] }
