@@ -1160,7 +1160,8 @@ when opened, eviction under storage pressure, the Finder sidebar and every file 
   it.
 - **Status goes through a file.** The extension writes what it last saw of the server (reachable or not, when, the
   server's version) to `status.json` in the App Group at each change check, and the app's status page reads it
-  every few seconds. A file outlives the extension, which the system stops when idle, and needs no connection.
+  every few seconds (verified: the file is written, reachable and with the server's version). A file outlives the
+  extension, which the system stops when idle, and needs no connection.
   **Not chosen:** the File Provider service channel (`NSFileProviderServiceSource`), an XPC connection the app opens
   through one of the location's items: it works only while the location is switched on and the extension answers,
   and asks more code of both sides for a few lines of status.
