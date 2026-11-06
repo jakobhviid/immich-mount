@@ -92,15 +92,7 @@ async fn daemon_report() -> Option<DaemonReport> {
     Some(DaemonReport { state, cache_used, cache_limit, server_version, uploads, account })
 }
 
-/// The address as typed, with `https://` added when no scheme was given.
-pub fn normalised_address(typed: &str) -> String {
-    let trimmed = typed.trim().trim_end_matches('/');
-    if trimmed.contains("://") {
-        trimmed.to_owned()
-    } else {
-        format!("https://{trimmed}")
-    }
-}
+pub use immich_mount_core::sign_in::normalised_address;
 
 fn client(url: &str, credential: Option<&Credential>) -> Result<Client, String> {
     let credential = credential.map(|credential| match credential {
@@ -468,11 +460,5 @@ mod tests {
         }
         write_attempt_file_at(&path, "failed\nthe sign-in was refused (access_denied)\n").unwrap();
         assert_eq!(attempt_outcome_at(&path), Some(Err("the sign-in was refused (access_denied)".to_owned())));
-    }
-
-    #[test]
-    fn a_bare_host_becomes_an_https_address() {
-        assert_eq!(normalised_address(" photos.example.org/ "), "https://photos.example.org");
-        assert_eq!(normalised_address("http://192.168.1.20:2283"), "http://192.168.1.20:2283");
     }
 }

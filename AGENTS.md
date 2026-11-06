@@ -84,6 +84,9 @@ CI runs the first two lines with `--exclude immich-mount-gnome --exclude immich-
 both desktop apps separately in a `fedora:44` container, because they need GTK 4.18, libadwaita 1.8 and
 `blueprint-compiler` (GNOME) and Qt 6 (KDE). The toolbox has them, so the local gate covers the whole workspace.
 
+The macOS side (`apple/`, and the bridge built for macOS) has no gate on Linux: CI's `macos` job builds it and runs
+the tests on a Mac runner on every branch push, so pushing the branch is how a change is checked without a Mac.
+
 There is deliberately no `cargo fmt` gate. Readability is a review concern; readable names are required (no
 single-letter bindings), per the house style.
 
@@ -121,6 +124,13 @@ Build on Fedora 44, or in a Fedora 44 toolbox (the easy way on an immutable host
   targets. It runs with `--no-default-features`, which leaves out TLS: ring's C code does not cross-compile for
   macOS on Linux.
 - **Anything that needs a desktop session** is tested in a VM (below).
+- **The macOS edition** (`apple/`; ARCHITECTURE.md, "The macOS edition") builds only on a Mac with Xcode. There:
+  `brew install xcodegen`, `rustup target add aarch64-apple-darwin x86_64-apple-darwin`, then `apple/build-rust.sh`
+  and `xcodegen` in `apple/`. A development build is signed with the developer's own team, set in the git-ignored
+  `apple/Config/Local.xcconfig` (`DEVELOPMENT_TEAM = ...`); a free Personal Team is enough. On first run, switch the
+  extension on in System Settings (General, Login Items & Extensions) and allow the Local Network prompt.
+- **No macOS virtual machines on Erebus:** Apple's license allows macOS VMs only on Apple hardware. The
+  maintainer's Mac is a laptop in daily use, so Mac work comes in sessions; between them, CI's macOS job is the Mac.
 
 ## Testing on Erebus
 

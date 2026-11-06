@@ -51,8 +51,8 @@ pub enum ApiError {
     #[error("unexpected answer from the Immich server: {0}")]
     Protocol(String),
 
-    /// Reading a local file failed (the file being uploaded).
-    #[error("cannot read the local file: {0}")]
+    /// Reading or writing a local file failed: a file being uploaded, or an original being downloaded.
+    #[error("cannot use the local file: {0}")]
     LocalFile(String),
 }
 

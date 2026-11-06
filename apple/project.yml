@@ -1,0 +1,72 @@
+# The macOS edition's Xcode project (ARCHITECTURE.md, "The macOS edition"). `xcodegen` writes ImmichMount.xcodeproj
+# from this file after `build-rust.sh` has built the bridge; neither result is committed.
+name: ImmichMount
+options:
+  bundleIdPrefix: dev.hviid
+  deploymentTarget:
+    macOS: "14.0"
+  createIntermediateGroups: true
+
+configFiles:
+  Debug: Config/Base.xcconfig
+  Release: Config/Base.xcconfig
+
+settings:
+  base:
+    SWIFT_VERSION: "5.0"
+    MARKETING_VERSION: "0.0.0"
+    CURRENT_PROJECT_VERSION: "1"
+    CODE_SIGN_STYLE: Automatic
+    ENABLE_HARDENED_RUNTIME: YES
+    DEAD_CODE_STRIPPING: YES
+
+targets:
+  ImmichMount:
+    type: application
+    platform: macOS
+    sources:
+      - App
+      - Shared
+      - build/Generated
+    settings:
+      base:
+        PRODUCT_BUNDLE_IDENTIFIER: dev.hviid.ImmichMount
+        PRODUCT_NAME: Immich Mount
+        INFOPLIST_FILE: App/Info.plist
+        GENERATE_INFOPLIST_FILE: NO
+        CODE_SIGN_ENTITLEMENTS: App/ImmichMount.entitlements
+    dependencies:
+      - target: FileProvider
+        embed: true
+      - framework: build/ImmichMountCore.xcframework
+        embed: false
+      - sdk: Security.framework
+
+  FileProvider:
+    type: app-extension
+    platform: macOS
+    sources:
+      - FileProvider
+      - Shared
+      - build/Generated
+    settings:
+      base:
+        PRODUCT_BUNDLE_IDENTIFIER: dev.hviid.ImmichMount.FileProvider
+        PRODUCT_NAME: ImmichMountFileProvider
+        INFOPLIST_FILE: FileProvider/Info.plist
+        GENERATE_INFOPLIST_FILE: NO
+        CODE_SIGN_ENTITLEMENTS: FileProvider/FileProvider.entitlements
+    dependencies:
+      - framework: build/ImmichMountCore.xcframework
+        embed: false
+      - sdk: Security.framework
+
+schemes:
+  ImmichMount:
+    build:
+      targets:
+        ImmichMount: all
+    run:
+      config: Debug
+    archive:
+      config: Release

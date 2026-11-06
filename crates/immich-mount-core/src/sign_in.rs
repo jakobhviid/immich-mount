@@ -12,6 +12,16 @@ use sha2::{Digest, Sha256};
 /// for Immich already allow.
 pub const REDIRECT_URI: &str = "app.immich:///oauth-callback";
 
+/// A server address as typed, with `https://` added when no scheme was given; every edition's sign-in uses it.
+pub fn normalised_address(typed: &str) -> String {
+    let trimmed = typed.trim().trim_end_matches('/');
+    if trimmed.contains("://") {
+        trimmed.to_owned()
+    } else {
+        format!("https://{trimmed}")
+    }
+}
+
 /// One sign-in attempt's state and PKCE pair. Never logged.
 pub struct BrowserSignIn {
     pub state: String,
@@ -103,6 +113,12 @@ fn decoded(value: &str) -> String {
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    #[test]
+    fn a_bare_host_becomes_an_https_address() {
+        assert_eq!(normalised_address(" photos.example.org/ "), "https://photos.example.org");
+        assert_eq!(normalised_address("http://192.168.1.20:2283"), "http://192.168.1.20:2283");
+    }
 
     #[test]
     fn the_challenge_matches_the_rfc_example() {

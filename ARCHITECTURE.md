@@ -136,6 +136,7 @@ put the mount at the mercy of a display session and a toolkit, in the one proces
 | `immich-mount-desktop` | Linux desktops | lib | What the desktop apps share, without a toolkit: checking a server, sign-in, the credential, first-run setup, status over D-Bus, the preferences' groups and labels |
 | `immich-mount-gnome` | GNOME | bin | The GTK 4 / libadwaita app over `immich-mount-desktop`; talks to the daemon over D-Bus |
 | `immich-mount-kde` | KDE Plasma | bin | The Qt 6 / Kirigami app over `immich-mount-desktop`: QML pages and one Rust object through cxx-qt |
+| `immich-mount-apple` | yes (used on macOS) | lib | The bridge the macOS edition's Swift code calls through uniffi: items by identifier, listings, whole originals, thumbnails, the server check |
 
 **Why a portable core:** each platform has its own native way to show a remote library as files.
 
@@ -170,6 +171,7 @@ OS services (secrets, notifications, directories, the clock) come in through tra
 | Linux adapter | `fuser` (pure Rust, mounts through `fusermount3` with no libfuse), `zbus`, `oo7`, `image` + `png` |
 | CLI | `clap` (with `clap_complete` and `clap_mangen`), `anyhow` |
 | GNOME app | `gtk4`, `libadwaita` |
+| macOS bridge | `uniffi`, `oslog` (macOS only, for the unified log) |
 
 `fuser` calls the `Filesystem` trait synchronously; answers that need the network move the reply object into a
 tokio task. Its async-native alternative, `fuse3`, is less used. Switch only if that reply pattern gets ugly.
@@ -1195,7 +1197,7 @@ a file the system then keeps, and evicts under storage pressure; the block cache
 (ROADMAP, M7).
 
 **Thumbnails.** The system asks the extension for each item's thumbnail at a size, and the extension answers with
-Immich's small thumbnail up to 250 pixels and its preview above. Nothing is seeded, and there is no safety net:
+Immich's small thumbnail (250 pixels on its short side) up to 320 pixels, and its preview (1440) above. Nothing is seeded, and there is no safety net:
 Finder asks the extension rather than reading originals (Apple's documentation).
 
 **Changes.** The system keeps a replica of every item it was shown, and learns of changes only by asking the working
@@ -1233,7 +1235,20 @@ extension on once, in System Settings (General, Login Items & Extensions); no pr
 
 **Flatpak impact:** none. The Linux edition is unchanged, and the core's additions are platform-free.
 
-**Built so far:** nothing; ROADMAP, M7 tracks the steps.
+**Built so far** (ROADMAP, M7), none of it run on a Mac yet:
+- **The bridge** (`immich-mount-apple`): items by identifier, listings, whole originals and thumbnails, from the
+  core's tree over the metadata store, on a tokio runtime of its own, with a request's work stopped when the system
+  cancels it. A listing that takes more than 20 seconds is answered from the kept one, or as unreachable. The
+  Upload folder stays hidden until the macOS edition uploads. Tested on Linux through a fake library.
+- **The core's part:** `NodeKey::from_storage_key`, the reverse of the storage key, which accepts only the form it
+  writes; and the tree's `parent_of` and `entry_of`. `immich-api` streams a whole original into a file.
+- **The extension** lists, fetches and answers thumbnails through the bridge; the working set is empty and its
+  anchor never moves, until the change journal. Changes from Finder are refused.
+- **The app** signs in with an API key (the server check runs in the app, for the Local Network prompt), keeps the
+  key in the Keychain group and the address in the App Group, adds the Finder location, and signs out. Its About
+  panel carries the non-affiliation notice.
+- **CI's `macos` job** runs the portable crates' and the bridge's clippy and tests on a Mac, builds the bridge for
+  Xcode, and builds the app and the extension unsigned.
 
 ## Testing
 
@@ -1245,6 +1260,7 @@ extension on once, in System Settings (General, Login Items & Extensions); no pr
 | Sign-in | The OIDC flow against an identity provider on Erebus: Dex (static users, scriptable) for automated runs, and Pocket ID (passkeys, what the maintainer uses) for a manual check | `lab/immich-server/oidc.sh` (Dex); Pocket ID by hand |
 | Mount | The daemon mounted for real: listing, checksums against the server, ranged reads (`dd` with offsets; bytes sent by the server), copies and moves into Upload with the server stopped midway, hang checks with the server down | The development host (`/dev/fuse` is there) or an Erebus container |
 | Desktop | Files, the sidebar and eject, thumbnails with zero originals read (the bpftrace probe), copies and moves through Files' own operations (scripted via `org.gnome.Nautilus.FileOperations2`, or `gio copy` and `gio move`) and Dolphin's (`kioclient copy` and `move`), a video seeking in a player, both apps' first run, Dolphin, KWallet, screenshots | `lab/gnome-vm` and `lab/plasma-vm` |
+| macOS | The bridge's answers through a fake library on Linux; on GitHub's macOS runner, the portable crates' and the bridge's tests and the app and extension built unsigned; Finder itself on the maintainer's Mac | `cargo test`; CI's `macos` job; the Mac |
 | Packaging | Per channel, an install matrix in containers (`lab/packaging/matrix.sh`, a release's .rpm and .deb on several distributions at once: they install, `--version` matches, `doctor` runs, the apps find their libraries, register the sign-in scheme and start (GTK under headless Weston, Qt off screen), the daemon mounts the lab server as root and serves originals matching Immich's checksums, and they remove cleanly), and a full run in a fresh GNOME VM: sign in, mount, sidebar, zero originals read, checksum, remount after reboot, clean uninstall. VMs: Fedora 44 (Homebrew, RPM), Ubuntu 26.04 (Homebrew, DEB), Arch (AUR) | Erebus `lab/packaging/` |
 
 Tests also hold the docs to the code:
