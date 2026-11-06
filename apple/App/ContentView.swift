@@ -7,10 +7,14 @@ struct ContentView: View {
     @EnvironmentObject private var model: AppModel
 
     var body: some View {
-        Group {
+        VStack(spacing: 0) {
             if let server = model.server {
+                Header(title: "Your Library Is in Finder",
+                       line: "Immich is in Finder's sidebar and in every file dialog.")
                 StatusView(server: server)
             } else {
+                Header(title: "Your Immich Library in Finder",
+                       line: "Browse your photos and videos as a drive. Originals download only when you open them.")
                 SignInView()
             }
         }
@@ -18,6 +22,26 @@ struct ContentView: View {
         #if DEBUG
         .task { await model.followLaunchArguments() }
         #endif
+    }
+}
+
+/// The app's icon over a title and a line, as the GNOME app's welcome and status pages have them.
+struct Header: View {
+    let title: String
+    let line: String
+
+    var body: some View {
+        VStack(spacing: 8) {
+            Image(nsImage: NSApplication.shared.applicationIconImage)
+                .resizable()
+                .frame(width: 96, height: 96)
+            Text(title).font(.title2.bold())
+            Text(line)
+                .foregroundStyle(.secondary)
+                .multilineTextAlignment(.center)
+        }
+        .padding(.top, 24)
+        .padding(.horizontal, 24)
     }
 }
 
@@ -122,9 +146,7 @@ struct StatusView: View {
                         }
                     }
                 }
-                Text("Your library is in Finder's sidebar as Immich, and in every file dialog. Originals download when something opens them.")
-            } header: {
-                Text("Immich is in Finder")
+                Text("Originals download when something opens them; listing and thumbnails download nothing.")
             }
             Section {
                 Text("If Immich is missing from Finder's sidebar, switch Immich Mount on in System Settings, under General, Login Items & Extensions, File Providers.")
