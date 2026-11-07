@@ -204,6 +204,10 @@ checked by CI's macOS job; the maintainer's Mac is needed only to run and debug 
    Exit: a Mac that never had it installs from Homebrew, switches the extension on, and browses.
 
 Open:
+- **A new item format without a reimport** (ARCHITECTURE, "The macOS edition", "Content"): the reimport leaves
+  items unmatched until macOS runs a deferred import. Expiring the change anchor would have the system enumerate
+  again without dropping its database; whether that refreshes the items it holds outside the working set is to be
+  tried before the next format change.
 - **Partial content** (`NSFileProviderPartialContentFetching`): a video that plays before it is fully downloaded,
   with the block cache back in use. Worth it once whole downloads are measured on a slow link.
 - **What the poll cannot see** (a swap that keeps a month's count): on Linux the freshness windows catch it at the
