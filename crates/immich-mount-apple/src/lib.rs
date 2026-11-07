@@ -1088,6 +1088,9 @@ mod tests {
         async fn archive_assets(&self) -> Result<Vec<Asset>, SourceError> {
             Ok(vec![])
         }
+        async fn favorite_assets(&self) -> Result<Vec<Asset>, SourceError> {
+            Ok(vec![])
+        }
         async fn changes(&self, _watched: Watched) -> Result<immich_mount_core::source::LibraryChanges, SourceError> {
             let arrived = self.second_photo.load(Ordering::SeqCst) && !self.poll_told.swap(true, Ordering::SeqCst);
             let months = if arrived { vec![YearMonth { year: 2024, month: 3 }] } else { vec![] };

@@ -96,7 +96,7 @@ msgid "Thumbnails"
 msgstr "Gambar mini"
 
 #: crates/immich-mount-desktop/src/preferences.rs:18
-#: crates/immich-mount-gnome/src/window.blp:310
+#: crates/immich-mount-gnome/src/window.blp:314
 msgid "Cache"
 msgstr "Cache"
 
@@ -143,13 +143,13 @@ msgstr "Alamat itu tidak dapat digunakan: {error}"
 
 #: crates/immich-mount-desktop/src/session.rs:161
 #: crates/immich-mount-desktop/src/session.rs:171
-#: crates/immich-mount-desktop/src/session.rs:368
-#: crates/immich-mount-desktop/src/session.rs:370
+#: crates/immich-mount-desktop/src/session.rs:371
+#: crates/immich-mount-desktop/src/session.rs:373
 msgid "Kept in {file}"
 msgstr "Disimpan di {file}"
 
 #: crates/immich-mount-desktop/src/session.rs:166
-#: crates/immich-mount-desktop/src/session.rs:372
+#: crates/immich-mount-desktop/src/session.rs:375
 msgid "Kept in the keyring"
 msgstr "Disimpan di ring kunci"
 
@@ -157,11 +157,11 @@ msgstr "Disimpan di ring kunci"
 msgid "The keyring stayed locked, so nothing was saved."
 msgstr "Ring kunci tetap terkunci, jadi tidak ada yang disimpan."
 
-#: crates/immich-mount-desktop/src/session.rs:250
+#: crates/immich-mount-desktop/src/session.rs:253
 msgid "Signed in, but the mount cannot start: {error}."
 msgstr "Sudah masuk, tetapi pengaitan tidak dapat dimulai: {error}."
 
-#: crates/immich-mount-desktop/src/session.rs:254
+#: crates/immich-mount-desktop/src/session.rs:257
 msgid "Signed in, but the mount did not start: {error}"
 msgstr "Sudah masuk, tetapi pengaitan tidak dimulai: {error}"
 
@@ -205,66 +205,66 @@ msgstr "Pintasan papan ketik"
 msgid "Quit"
 msgstr "Keluar"
 
-#: crates/immich-mount-gnome/src/window.rs:265
+#: crates/immich-mount-gnome/src/window.rs:267
 #: crates/immich-mount-kde/qml/Main.qml:321
 msgid "Continue in your browser"
 msgstr "Lanjutkan di peramban Anda"
 
-#: crates/immich-mount-gnome/src/window.rs:276
+#: crates/immich-mount-gnome/src/window.rs:278
 msgid "This sign-in belongs to an earlier attempt. Finish the latest one, or sign in again."
 msgstr "Proses masuk ini milik percobaan sebelumnya. Selesaikan yang terbaru, atau masuk lagi."
 
-#: crates/immich-mount-gnome/src/window.rs:288
+#: crates/immich-mount-gnome/src/window.rs:290
 msgid "Enter your email and password"
 msgstr "Masukkan email dan kata sandi Anda"
 
-#: crates/immich-mount-gnome/src/window.rs:299
+#: crates/immich-mount-gnome/src/window.rs:301
 msgid "Enter an API key"
 msgstr "Masukkan kunci API"
 
-#: crates/immich-mount-gnome/src/window.rs:326
+#: crates/immich-mount-gnome/src/window.rs:328
 msgid "Signed in as {account}"
 msgstr "Masuk sebagai {account}"
 
-#: crates/immich-mount-gnome/src/window.rs:394
+#: crates/immich-mount-gnome/src/window.rs:398
 msgid "Signed in, but the status could not be read"
 msgstr "Sudah masuk, tetapi status tidak dapat dibaca"
 
-#: crates/immich-mount-gnome/src/window.rs:421
-#: crates/immich-mount-kde/qml/Main.qml:397
+#: crates/immich-mount-gnome/src/window.rs:425
+#: crates/immich-mount-kde/qml/Main.qml:398
 msgid "Signed Out of Immich"
 msgstr "Telah keluar dari Immich"
 
-#: crates/immich-mount-gnome/src/window.rs:421
-#: crates/immich-mount-kde/qml/Main.qml:398
+#: crates/immich-mount-gnome/src/window.rs:425
+#: crates/immich-mount-kde/qml/Main.qml:399
 msgid "Sign in again to keep browsing. Your caches are kept."
 msgstr "Masuk lagi untuk terus menjelajah. Cache Anda tetap disimpan."
 
-#: crates/immich-mount-gnome/src/window.rs:422
-#: crates/immich-mount-gnome/src/window.blp:213
+#: crates/immich-mount-gnome/src/window.rs:426
+#: crates/immich-mount-gnome/src/window.blp:217
 msgid "Your Library Is in Files"
 msgstr "Pustaka Anda ada di Berkas"
 
-#: crates/immich-mount-gnome/src/window.rs:422
-#: crates/immich-mount-kde/qml/Main.qml:399
+#: crates/immich-mount-gnome/src/window.rs:426
+#: crates/immich-mount-kde/qml/Main.qml:400
 msgid "Browse it like any folder. Originals download only when you open them."
 msgstr "Jelajahi seperti folder lainnya. Berkas asli hanya diunduh saat Anda membukanya."
 
-#: crates/immich-mount-gnome/src/window.rs:423
-#: crates/immich-mount-kde/qml/Main.qml:397
+#: crates/immich-mount-gnome/src/window.rs:427
+#: crates/immich-mount-kde/qml/Main.qml:398
 msgid "Not Mounted"
 msgstr "Tidak dikaitkan"
 
-#: crates/immich-mount-gnome/src/window.rs:423
+#: crates/immich-mount-gnome/src/window.rs:427
 msgid "Mount it to browse your library in Files."
 msgstr "Kaitkan kandar untuk menjelajahi pustaka Anda di Berkas."
 
-#: crates/immich-mount-gnome/src/window.rs:466
+#: crates/immich-mount-gnome/src/window.rs:470
 msgid "Disconnected"
 msgstr "Sambungan diputus"
 
 #: crates/immich-mount-gnome/src/window.blp:26
-#: crates/immich-mount-gnome/src/window.blp:206
+#: crates/immich-mount-gnome/src/window.blp:210
 msgid "Main Menu"
 msgstr "Menu utama"
 
@@ -348,71 +348,71 @@ msgstr "Folder yang ditampilkan kandar. Anda dapat mengubahnya nanti di Preferen
 msgid "The timeline, by year and month"
 msgstr "Lini masa, per tahun dan bulan"
 
-#: crates/immich-mount-gnome/src/window.blp:170
-#: crates/immich-mount-gnome/src/window.blp:318
-#: crates/immich-mount-kde/qml/Main.qml:370
+#: crates/immich-mount-gnome/src/window.blp:174
+#: crates/immich-mount-gnome/src/window.blp:322
+#: crates/immich-mount-kde/qml/Main.qml:371
 msgid "Location"
 msgstr "Lokasi"
 
-#: crates/immich-mount-gnome/src/window.blp:173
-#: crates/immich-mount-kde/qml/Main.qml:373
+#: crates/immich-mount-gnome/src/window.blp:177
+#: crates/immich-mount-kde/qml/Main.qml:374
 msgid "Folder"
 msgstr "Folder"
 
-#: crates/immich-mount-gnome/src/window.blp:179
-#: crates/immich-mount-gnome/src/window.blp:227
+#: crates/immich-mount-gnome/src/window.blp:183
+#: crates/immich-mount-gnome/src/window.blp:231
 msgid "_Open in Files"
 msgstr "_Buka di Berkas"
 
-#: crates/immich-mount-gnome/src/window.blp:238
+#: crates/immich-mount-gnome/src/window.blp:242
 msgid "_Unmount"
 msgstr "_Lepas kait"
 
-#: crates/immich-mount-gnome/src/window.blp:240
+#: crates/immich-mount-gnome/src/window.blp:244
 msgid "Take it out of Files until you mount it again or log in"
 msgstr "Lepaskan dari Berkas sampai Anda mengaitkannya lagi atau masuk ke sesi"
 
-#: crates/immich-mount-gnome/src/window.blp:249
+#: crates/immich-mount-gnome/src/window.blp:253
 msgid "_Mount"
 msgstr "_Kaitkan"
 
-#: crates/immich-mount-gnome/src/window.blp:265
+#: crates/immich-mount-gnome/src/window.blp:269
 msgid "Sign In _Again"
 msgstr "_Masuk lagi"
 
-#: crates/immich-mount-gnome/src/window.blp:277
+#: crates/immich-mount-gnome/src/window.blp:281
 msgid "Server"
 msgstr "Server"
 
-#: crates/immich-mount-gnome/src/window.blp:285
+#: crates/immich-mount-gnome/src/window.blp:289
 msgid "Account"
 msgstr "Akun"
 
-#: crates/immich-mount-gnome/src/window.blp:294
+#: crates/immich-mount-gnome/src/window.blp:298
 msgid "Credential"
 msgstr "Kredensial"
 
-#: crates/immich-mount-gnome/src/window.blp:302
+#: crates/immich-mount-gnome/src/window.blp:306
 msgid "Connection"
 msgstr "Koneksi"
 
-#: crates/immich-mount-gnome/src/window.blp:326
+#: crates/immich-mount-gnome/src/window.blp:330
 msgid "Uploading"
 msgstr "Mengunggah"
 
-#: crates/immich-mount-gnome/src/window.blp:337
+#: crates/immich-mount-gnome/src/window.blp:341
 msgid "_Disconnect"
 msgstr "_Putuskan sambungan"
 
-#: crates/immich-mount-gnome/src/window.blp:358
+#: crates/immich-mount-gnome/src/window.blp:362
 msgid "_Preferences"
 msgstr "_Preferensi"
 
-#: crates/immich-mount-gnome/src/window.blp:363
+#: crates/immich-mount-gnome/src/window.blp:367
 msgid "_Keyboard Shortcuts"
 msgstr "Pintasan papan _ketik"
 
-#: crates/immich-mount-gnome/src/window.blp:368
+#: crates/immich-mount-gnome/src/window.blp:372
 msgid "_About Immich Mount"
 msgstr "_Tentang Immich Mount"
 
@@ -540,77 +540,77 @@ msgstr "Tidak ada peramban yang dapat dibuka. Buka alamat ini di peramban:"
 msgid "Sign-in address"
 msgstr "Alamat masuk"
 
-#: crates/immich-mount-kde/qml/Main.qml:372
+#: crates/immich-mount-kde/qml/Main.qml:373
 msgid "Folder:"
 msgstr "Folder:"
 
-#: crates/immich-mount-kde/qml/Main.qml:377
+#: crates/immich-mount-kde/qml/Main.qml:378
 msgid "Dolphin"
 msgstr "Dolphin"
 
-#: crates/immich-mount-kde/qml/Main.qml:382
-#: crates/immich-mount-kde/qml/Main.qml:403
+#: crates/immich-mount-kde/qml/Main.qml:383
+#: crates/immich-mount-kde/qml/Main.qml:404
 msgid "Open in Dolphin"
 msgstr "Buka di Dolphin"
 
-#: crates/immich-mount-kde/qml/Main.qml:397
+#: crates/immich-mount-kde/qml/Main.qml:398
 msgid "Your Library Is in Dolphin"
 msgstr "Pustaka Anda ada di Dolphin"
 
-#: crates/immich-mount-kde/qml/Main.qml:400
+#: crates/immich-mount-kde/qml/Main.qml:401
 msgid "Mount it to browse your library in Dolphin."
 msgstr "Kaitkan kandar untuk menjelajahi pustaka Anda di Dolphin."
 
-#: crates/immich-mount-kde/qml/Main.qml:403
+#: crates/immich-mount-kde/qml/Main.qml:404
 msgid "Sign In Again"
 msgstr "Masuk lagi"
 
-#: crates/immich-mount-kde/qml/Main.qml:403
+#: crates/immich-mount-kde/qml/Main.qml:404
 msgid "Mount"
 msgstr "Kaitkan"
 
-#: crates/immich-mount-kde/qml/Main.qml:411
+#: crates/immich-mount-kde/qml/Main.qml:412
 #: apple/App/ContentView.swift:105
 msgid "Server:"
 msgstr "Server:"
 
-#: crates/immich-mount-kde/qml/Main.qml:412
+#: crates/immich-mount-kde/qml/Main.qml:413
 msgid "Account:"
 msgstr "Akun:"
 
-#: crates/immich-mount-kde/qml/Main.qml:413
+#: crates/immich-mount-kde/qml/Main.qml:414
 msgid "Credential:"
 msgstr "Kredensial:"
 
-#: crates/immich-mount-kde/qml/Main.qml:414
+#: crates/immich-mount-kde/qml/Main.qml:415
 msgid "Connection:"
 msgstr "Koneksi:"
 
-#: crates/immich-mount-kde/qml/Main.qml:415
+#: crates/immich-mount-kde/qml/Main.qml:416
 msgid "Cache:"
 msgstr "Cache:"
 
-#: crates/immich-mount-kde/qml/Main.qml:416
+#: crates/immich-mount-kde/qml/Main.qml:417
 msgid "Location:"
 msgstr "Lokasi:"
 
-#: crates/immich-mount-kde/qml/Main.qml:417
+#: crates/immich-mount-kde/qml/Main.qml:418
 msgid "Uploading:"
 msgstr "Mengunggah:"
 
-#: crates/immich-mount-kde/qml/Main.qml:418
+#: crates/immich-mount-kde/qml/Main.qml:419
 msgid "Dolphin:"
 msgstr "Dolphin:"
 
-#: crates/immich-mount-kde/qml/Main.qml:423
+#: crates/immich-mount-kde/qml/Main.qml:424
 msgid "Unmount"
 msgstr "Lepas kait"
 
-#: crates/immich-mount-kde/qml/Main.qml:430
+#: crates/immich-mount-kde/qml/Main.qml:431
 msgid "Disconnect"
 msgstr "Putuskan sambungan"
 
-#: crates/immich-mount-kde/qml/Main.qml:442
+#: crates/immich-mount-kde/qml/Main.qml:443
 msgid "Immich Mount is an independent, unofficial project. It is not affiliated with, endorsed by, or sponsored by the Immich project or FUTO."
 msgstr "Immich Mount adalah proyek independen dan tidak resmi. Proyek ini tidak berafiliasi dengan, tidak didukung oleh, dan tidak disponsori oleh proyek Immich atau FUTO."
 
@@ -647,86 +647,94 @@ msgid "Show the Places section"
 msgstr "Tampilkan bagian Places"
 
 #: crates/immich-mount-core/src/settings.rs:58
+msgid "Show the Favorites section"
+msgstr "Tampilkan bagian Favorites"
+
+#: crates/immich-mount-core/src/settings.rs:59
 msgid "Show the Archive section"
 msgstr "Tampilkan bagian Archive"
 
-#: crates/immich-mount-core/src/settings.rs:59
+#: crates/immich-mount-core/src/settings.rs:60
 msgid "Day folders inside months"
 msgstr "Folder hari di dalam bulan"
 
-#: crates/immich-mount-core/src/settings.rs:60
+#: crates/immich-mount-core/src/settings.rs:61
 msgid "Year and month folders inside albums"
 msgstr "Folder tahun dan bulan di dalam album"
 
-#: crates/immich-mount-core/src/settings.rs:61
+#: crates/immich-mount-core/src/settings.rs:62
 msgid "Year and month folders inside people"
 msgstr "Folder tahun dan bulan di dalam folder orang"
 
-#: crates/immich-mount-core/src/settings.rs:62
+#: crates/immich-mount-core/src/settings.rs:63
 msgid "Year and month folders inside cities"
 msgstr "Folder tahun dan bulan di dalam kota"
 
-#: crates/immich-mount-core/src/settings.rs:63
+#: crates/immich-mount-core/src/settings.rs:64
+msgid "Year and month folders inside favorites"
+msgstr "Folder tahun dan bulan di dalam favorit"
+
+#: crates/immich-mount-core/src/settings.rs:65
 msgid "Year and month folders inside the archive"
 msgstr "Folder tahun dan bulan di dalam arsip"
 
-#: crates/immich-mount-core/src/settings.rs:64
+#: crates/immich-mount-core/src/settings.rs:66
 msgid "How album folders are named and grouped"
 msgstr "Cara folder album diberi nama dan dikelompokkan"
 
-#: crates/immich-mount-core/src/settings.rs:65
+#: crates/immich-mount-core/src/settings.rs:67
 msgid "How files are named"
 msgstr "Cara berkas diberi nama"
 
-#: crates/immich-mount-core/src/settings.rs:66
+#: crates/immich-mount-core/src/settings.rs:68
 msgid "The content cache's size limit"
 msgstr "Batas ukuran cache konten"
 
-#: crates/immich-mount-core/src/settings.rs:67
+#: crates/immich-mount-core/src/settings.rs:69
 msgid "Show the Upload folder, and upload what is copied into it"
 msgstr "Tampilkan folder Upload, dan unggah apa yang disalin ke dalamnya"
 
-#: crates/immich-mount-core/src/settings.rs:68
+#: crates/immich-mount-core/src/settings.rs:70
 msgid "Also seed 1024 px thumbnails from the preview"
 msgstr "Juga buat gambar mini 1024 px dari pratinjau"
 
-#: crates/immich-mount-core/src/settings.rs:69
+#: crates/immich-mount-core/src/settings.rs:71
 msgid "Refuse thumbnailer reads of originals"
 msgstr "Tolak pembacaan berkas asli oleh pembuat gambar mini"
 
-#: crates/immich-mount-core/src/settings.rs:70
+#: crates/immich-mount-core/src/settings.rs:72
 msgid "Headless only: a 0600 file holding the credential"
 msgstr "Hanya tanpa desktop: berkas 0600 yang menyimpan kredensial"
 
-#: crates/immich-mount-core/src/settings.rs:76
+#: crates/immich-mount-core/src/settings.rs:78
 msgid "Never"
 msgstr "Tidak pernah"
 
-#: crates/immich-mount-core/src/settings.rs:77
+#: crates/immich-mount-core/src/settings.rs:79
 msgid "From 500 Items"
 msgstr "Mulai 500 item"
 
-#: crates/immich-mount-core/src/settings.rs:78
+#: crates/immich-mount-core/src/settings.rs:80
 msgid "Always"
 msgstr "Selalu"
 
-#: crates/immich-mount-core/src/settings.rs:79
+#: crates/immich-mount-core/src/settings.rs:81
 msgid "Year in the Name (2023 - Trip)"
 msgstr "Tahun di nama (2023 - Perjalanan)"
 
-#: crates/immich-mount-core/src/settings.rs:80
+#: crates/immich-mount-core/src/settings.rs:82
 msgid "Year Folders (2023/Trip)"
 msgstr "Folder tahun (2023/Perjalanan)"
 
-#: crates/immich-mount-core/src/settings.rs:81
+#: crates/immich-mount-core/src/settings.rs:83
 msgid "Name Only (Trip)"
 msgstr "Nama saja (Perjalanan)"
 
-#: crates/immich-mount-core/src/settings.rs:82
+#: crates/immich-mount-core/src/settings.rs:84
 msgid "Date and Time Taken"
 msgstr "Tanggal dan waktu pengambilan"
 
-#: crates/immich-mount-core/src/settings.rs:83
+#: crates/immich-mount-core/src/settings.rs:85
 msgid "Original File Names"
 msgstr "Nama berkas asli"
 

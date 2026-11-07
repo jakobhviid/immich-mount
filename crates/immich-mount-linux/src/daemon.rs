@@ -288,9 +288,10 @@ async fn follow_changes<Source, Names>(
                     log::info!("Immich changed in a way that touches everything; {forgotten} folder(s) will be read again");
                 } else {
                     log::info!(
-                        "Immich changed: {} month(s), {} album(s){}; {forgotten} folder(s) will be read again",
+                        "Immich changed: {} month(s), {} album(s){}{}; {forgotten} folder(s) will be read again",
                         changes.months.len(),
                         changes.albums.len(),
+                        if changes.favorites_changed { ", the favorites" } else { "" },
                         if changes.archive_changed { ", the archive" } else { "" }
                     );
                 }

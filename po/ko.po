@@ -96,7 +96,7 @@ msgid "Thumbnails"
 msgstr "썸네일"
 
 #: crates/immich-mount-desktop/src/preferences.rs:18
-#: crates/immich-mount-gnome/src/window.blp:310
+#: crates/immich-mount-gnome/src/window.blp:314
 msgid "Cache"
 msgstr "캐시"
 
@@ -143,13 +143,13 @@ msgstr "해당 주소를 사용할 수 없음: {error}"
 
 #: crates/immich-mount-desktop/src/session.rs:161
 #: crates/immich-mount-desktop/src/session.rs:171
-#: crates/immich-mount-desktop/src/session.rs:368
-#: crates/immich-mount-desktop/src/session.rs:370
+#: crates/immich-mount-desktop/src/session.rs:371
+#: crates/immich-mount-desktop/src/session.rs:373
 msgid "Kept in {file}"
 msgstr "{file}에 보관됨"
 
 #: crates/immich-mount-desktop/src/session.rs:166
-#: crates/immich-mount-desktop/src/session.rs:372
+#: crates/immich-mount-desktop/src/session.rs:375
 msgid "Kept in the keyring"
 msgstr "키링에 보관됨"
 
@@ -157,11 +157,11 @@ msgstr "키링에 보관됨"
 msgid "The keyring stayed locked, so nothing was saved."
 msgstr "키링이 잠긴 상태로 남아 있어 아무것도 저장되지 않았습니다."
 
-#: crates/immich-mount-desktop/src/session.rs:250
+#: crates/immich-mount-desktop/src/session.rs:253
 msgid "Signed in, but the mount cannot start: {error}."
 msgstr "로그인했지만 마운트를 시작할 수 없습니다: {error}."
 
-#: crates/immich-mount-desktop/src/session.rs:254
+#: crates/immich-mount-desktop/src/session.rs:257
 msgid "Signed in, but the mount did not start: {error}"
 msgstr "로그인했지만 마운트가 시작되지 않았습니다: {error}"
 
@@ -205,66 +205,66 @@ msgstr "키보드 바로 가기"
 msgid "Quit"
 msgstr "종료"
 
-#: crates/immich-mount-gnome/src/window.rs:265
+#: crates/immich-mount-gnome/src/window.rs:267
 #: crates/immich-mount-kde/qml/Main.qml:321
 msgid "Continue in your browser"
 msgstr "브라우저에서 계속하십시오"
 
-#: crates/immich-mount-gnome/src/window.rs:276
+#: crates/immich-mount-gnome/src/window.rs:278
 msgid "This sign-in belongs to an earlier attempt. Finish the latest one, or sign in again."
 msgstr "이 로그인은 이전 시도의 것입니다. 가장 최근 시도를 완료하거나 다시 로그인하십시오."
 
-#: crates/immich-mount-gnome/src/window.rs:288
+#: crates/immich-mount-gnome/src/window.rs:290
 msgid "Enter your email and password"
 msgstr "이메일과 암호를 입력하십시오"
 
-#: crates/immich-mount-gnome/src/window.rs:299
+#: crates/immich-mount-gnome/src/window.rs:301
 msgid "Enter an API key"
 msgstr "API 키를 입력하십시오"
 
-#: crates/immich-mount-gnome/src/window.rs:326
+#: crates/immich-mount-gnome/src/window.rs:328
 msgid "Signed in as {account}"
 msgstr "{account}(으)로 로그인됨"
 
-#: crates/immich-mount-gnome/src/window.rs:394
+#: crates/immich-mount-gnome/src/window.rs:398
 msgid "Signed in, but the status could not be read"
 msgstr "로그인했지만 상태를 읽을 수 없음"
 
-#: crates/immich-mount-gnome/src/window.rs:421
-#: crates/immich-mount-kde/qml/Main.qml:397
+#: crates/immich-mount-gnome/src/window.rs:425
+#: crates/immich-mount-kde/qml/Main.qml:398
 msgid "Signed Out of Immich"
 msgstr "Immich에서 로그아웃됨"
 
-#: crates/immich-mount-gnome/src/window.rs:421
-#: crates/immich-mount-kde/qml/Main.qml:398
+#: crates/immich-mount-gnome/src/window.rs:425
+#: crates/immich-mount-kde/qml/Main.qml:399
 msgid "Sign in again to keep browsing. Your caches are kept."
 msgstr "계속 탐색하려면 다시 로그인하십시오. 캐시는 유지됩니다."
 
-#: crates/immich-mount-gnome/src/window.rs:422
-#: crates/immich-mount-gnome/src/window.blp:213
+#: crates/immich-mount-gnome/src/window.rs:426
+#: crates/immich-mount-gnome/src/window.blp:217
 msgid "Your Library Is in Files"
 msgstr "라이브러리가 ‘파일’에 있습니다"
 
-#: crates/immich-mount-gnome/src/window.rs:422
-#: crates/immich-mount-kde/qml/Main.qml:399
+#: crates/immich-mount-gnome/src/window.rs:426
+#: crates/immich-mount-kde/qml/Main.qml:400
 msgid "Browse it like any folder. Originals download only when you open them."
 msgstr "다른 폴더처럼 탐색하십시오. 원본은 열 때만 다운로드됩니다."
 
-#: crates/immich-mount-gnome/src/window.rs:423
-#: crates/immich-mount-kde/qml/Main.qml:397
+#: crates/immich-mount-gnome/src/window.rs:427
+#: crates/immich-mount-kde/qml/Main.qml:398
 msgid "Not Mounted"
 msgstr "마운트되지 않음"
 
-#: crates/immich-mount-gnome/src/window.rs:423
+#: crates/immich-mount-gnome/src/window.rs:427
 msgid "Mount it to browse your library in Files."
 msgstr "마운트하면 ‘파일’에서 라이브러리를 탐색할 수 있습니다."
 
-#: crates/immich-mount-gnome/src/window.rs:466
+#: crates/immich-mount-gnome/src/window.rs:470
 msgid "Disconnected"
 msgstr "연결 해제됨"
 
 #: crates/immich-mount-gnome/src/window.blp:26
-#: crates/immich-mount-gnome/src/window.blp:206
+#: crates/immich-mount-gnome/src/window.blp:210
 msgid "Main Menu"
 msgstr "주 메뉴"
 
@@ -348,71 +348,71 @@ msgstr "드라이브에 표시할 폴더입니다. 나중에 기본 설정에서
 msgid "The timeline, by year and month"
 msgstr "연도와 월별 타임라인"
 
-#: crates/immich-mount-gnome/src/window.blp:170
-#: crates/immich-mount-gnome/src/window.blp:318
-#: crates/immich-mount-kde/qml/Main.qml:370
+#: crates/immich-mount-gnome/src/window.blp:174
+#: crates/immich-mount-gnome/src/window.blp:322
+#: crates/immich-mount-kde/qml/Main.qml:371
 msgid "Location"
 msgstr "위치"
 
-#: crates/immich-mount-gnome/src/window.blp:173
-#: crates/immich-mount-kde/qml/Main.qml:373
+#: crates/immich-mount-gnome/src/window.blp:177
+#: crates/immich-mount-kde/qml/Main.qml:374
 msgid "Folder"
 msgstr "폴더"
 
-#: crates/immich-mount-gnome/src/window.blp:179
-#: crates/immich-mount-gnome/src/window.blp:227
+#: crates/immich-mount-gnome/src/window.blp:183
+#: crates/immich-mount-gnome/src/window.blp:231
 msgid "_Open in Files"
 msgstr "‘파일’에서 열기(_O)"
 
-#: crates/immich-mount-gnome/src/window.blp:238
+#: crates/immich-mount-gnome/src/window.blp:242
 msgid "_Unmount"
 msgstr "마운트 해제(_U)"
 
-#: crates/immich-mount-gnome/src/window.blp:240
+#: crates/immich-mount-gnome/src/window.blp:244
 msgid "Take it out of Files until you mount it again or log in"
 msgstr "다시 마운트하거나 로그인할 때까지 ‘파일’에서 제거합니다"
 
-#: crates/immich-mount-gnome/src/window.blp:249
+#: crates/immich-mount-gnome/src/window.blp:253
 msgid "_Mount"
 msgstr "마운트(_M)"
 
-#: crates/immich-mount-gnome/src/window.blp:265
+#: crates/immich-mount-gnome/src/window.blp:269
 msgid "Sign In _Again"
 msgstr "다시 로그인(_A)"
 
-#: crates/immich-mount-gnome/src/window.blp:277
+#: crates/immich-mount-gnome/src/window.blp:281
 msgid "Server"
 msgstr "서버"
 
-#: crates/immich-mount-gnome/src/window.blp:285
+#: crates/immich-mount-gnome/src/window.blp:289
 msgid "Account"
 msgstr "계정"
 
-#: crates/immich-mount-gnome/src/window.blp:294
+#: crates/immich-mount-gnome/src/window.blp:298
 msgid "Credential"
 msgstr "자격 증명"
 
-#: crates/immich-mount-gnome/src/window.blp:302
+#: crates/immich-mount-gnome/src/window.blp:306
 msgid "Connection"
 msgstr "연결"
 
-#: crates/immich-mount-gnome/src/window.blp:326
+#: crates/immich-mount-gnome/src/window.blp:330
 msgid "Uploading"
 msgstr "업로드 중"
 
-#: crates/immich-mount-gnome/src/window.blp:337
+#: crates/immich-mount-gnome/src/window.blp:341
 msgid "_Disconnect"
 msgstr "연결 해제(_D)"
 
-#: crates/immich-mount-gnome/src/window.blp:358
+#: crates/immich-mount-gnome/src/window.blp:362
 msgid "_Preferences"
 msgstr "기본 설정(_P)"
 
-#: crates/immich-mount-gnome/src/window.blp:363
+#: crates/immich-mount-gnome/src/window.blp:367
 msgid "_Keyboard Shortcuts"
 msgstr "키보드 바로 가기(_K)"
 
-#: crates/immich-mount-gnome/src/window.blp:368
+#: crates/immich-mount-gnome/src/window.blp:372
 msgid "_About Immich Mount"
 msgstr "Immich Mount 정보(_A)"
 
@@ -540,77 +540,77 @@ msgstr "브라우저를 열 수 없습니다. 이 주소를 브라우저에서 �
 msgid "Sign-in address"
 msgstr "로그인 주소"
 
-#: crates/immich-mount-kde/qml/Main.qml:372
+#: crates/immich-mount-kde/qml/Main.qml:373
 msgid "Folder:"
 msgstr "폴더:"
 
-#: crates/immich-mount-kde/qml/Main.qml:377
+#: crates/immich-mount-kde/qml/Main.qml:378
 msgid "Dolphin"
 msgstr "Dolphin"
 
-#: crates/immich-mount-kde/qml/Main.qml:382
-#: crates/immich-mount-kde/qml/Main.qml:403
+#: crates/immich-mount-kde/qml/Main.qml:383
+#: crates/immich-mount-kde/qml/Main.qml:404
 msgid "Open in Dolphin"
 msgstr "Dolphin에서 열기"
 
-#: crates/immich-mount-kde/qml/Main.qml:397
+#: crates/immich-mount-kde/qml/Main.qml:398
 msgid "Your Library Is in Dolphin"
 msgstr "라이브러리가 Dolphin에 있습니다"
 
-#: crates/immich-mount-kde/qml/Main.qml:400
+#: crates/immich-mount-kde/qml/Main.qml:401
 msgid "Mount it to browse your library in Dolphin."
 msgstr "마운트하면 Dolphin에서 라이브러리를 탐색할 수 있습니다."
 
-#: crates/immich-mount-kde/qml/Main.qml:403
+#: crates/immich-mount-kde/qml/Main.qml:404
 msgid "Sign In Again"
 msgstr "다시 로그인"
 
-#: crates/immich-mount-kde/qml/Main.qml:403
+#: crates/immich-mount-kde/qml/Main.qml:404
 msgid "Mount"
 msgstr "마운트"
 
-#: crates/immich-mount-kde/qml/Main.qml:411
+#: crates/immich-mount-kde/qml/Main.qml:412
 #: apple/App/ContentView.swift:105
 msgid "Server:"
 msgstr "서버:"
 
-#: crates/immich-mount-kde/qml/Main.qml:412
+#: crates/immich-mount-kde/qml/Main.qml:413
 msgid "Account:"
 msgstr "계정:"
 
-#: crates/immich-mount-kde/qml/Main.qml:413
+#: crates/immich-mount-kde/qml/Main.qml:414
 msgid "Credential:"
 msgstr "자격 증명:"
 
-#: crates/immich-mount-kde/qml/Main.qml:414
+#: crates/immich-mount-kde/qml/Main.qml:415
 msgid "Connection:"
 msgstr "연결:"
 
-#: crates/immich-mount-kde/qml/Main.qml:415
+#: crates/immich-mount-kde/qml/Main.qml:416
 msgid "Cache:"
 msgstr "캐시:"
 
-#: crates/immich-mount-kde/qml/Main.qml:416
+#: crates/immich-mount-kde/qml/Main.qml:417
 msgid "Location:"
 msgstr "위치:"
 
-#: crates/immich-mount-kde/qml/Main.qml:417
+#: crates/immich-mount-kde/qml/Main.qml:418
 msgid "Uploading:"
 msgstr "업로드 중:"
 
-#: crates/immich-mount-kde/qml/Main.qml:418
+#: crates/immich-mount-kde/qml/Main.qml:419
 msgid "Dolphin:"
 msgstr "Dolphin:"
 
-#: crates/immich-mount-kde/qml/Main.qml:423
+#: crates/immich-mount-kde/qml/Main.qml:424
 msgid "Unmount"
 msgstr "마운트 해제"
 
-#: crates/immich-mount-kde/qml/Main.qml:430
+#: crates/immich-mount-kde/qml/Main.qml:431
 msgid "Disconnect"
 msgstr "연결 해제"
 
-#: crates/immich-mount-kde/qml/Main.qml:442
+#: crates/immich-mount-kde/qml/Main.qml:443
 msgid "Immich Mount is an independent, unofficial project. It is not affiliated with, endorsed by, or sponsored by the Immich project or FUTO."
 msgstr "Immich Mount는 독립적인 비공식 프로젝트입니다. Immich 프로젝트나 FUTO와 제휴 관계가 없으며, 이들의 보증이나 후원을 받지 않습니다."
 
@@ -647,86 +647,94 @@ msgid "Show the Places section"
 msgstr "Places 섹션 표시"
 
 #: crates/immich-mount-core/src/settings.rs:58
+msgid "Show the Favorites section"
+msgstr "Favorites 섹션 표시"
+
+#: crates/immich-mount-core/src/settings.rs:59
 msgid "Show the Archive section"
 msgstr "Archive 섹션 표시"
 
-#: crates/immich-mount-core/src/settings.rs:59
+#: crates/immich-mount-core/src/settings.rs:60
 msgid "Day folders inside months"
 msgstr "월 안의 일별 폴더"
 
-#: crates/immich-mount-core/src/settings.rs:60
+#: crates/immich-mount-core/src/settings.rs:61
 msgid "Year and month folders inside albums"
 msgstr "앨범 안의 연도 및 월 폴더"
 
-#: crates/immich-mount-core/src/settings.rs:61
+#: crates/immich-mount-core/src/settings.rs:62
 msgid "Year and month folders inside people"
 msgstr "인물 안의 연도 및 월 폴더"
 
-#: crates/immich-mount-core/src/settings.rs:62
+#: crates/immich-mount-core/src/settings.rs:63
 msgid "Year and month folders inside cities"
 msgstr "도시 안의 연도 및 월 폴더"
 
-#: crates/immich-mount-core/src/settings.rs:63
+#: crates/immich-mount-core/src/settings.rs:64
+msgid "Year and month folders inside favorites"
+msgstr "즐겨찾기 안의 연도 및 월 폴더"
+
+#: crates/immich-mount-core/src/settings.rs:65
 msgid "Year and month folders inside the archive"
 msgstr "보관함 안의 연도 및 월 폴더"
 
-#: crates/immich-mount-core/src/settings.rs:64
+#: crates/immich-mount-core/src/settings.rs:66
 msgid "How album folders are named and grouped"
 msgstr "앨범 폴더의 이름 지정 및 그룹화 방식"
 
-#: crates/immich-mount-core/src/settings.rs:65
+#: crates/immich-mount-core/src/settings.rs:67
 msgid "How files are named"
 msgstr "파일 이름 지정 방식"
 
-#: crates/immich-mount-core/src/settings.rs:66
+#: crates/immich-mount-core/src/settings.rs:68
 msgid "The content cache's size limit"
 msgstr "콘텐츠 캐시 크기 제한"
 
-#: crates/immich-mount-core/src/settings.rs:67
+#: crates/immich-mount-core/src/settings.rs:69
 msgid "Show the Upload folder, and upload what is copied into it"
 msgstr "Upload 폴더를 표시하고 그 안에 복사한 항목 업로드"
 
-#: crates/immich-mount-core/src/settings.rs:68
+#: crates/immich-mount-core/src/settings.rs:70
 msgid "Also seed 1024 px thumbnails from the preview"
 msgstr "미리 보기에서 1024px 썸네일도 생성"
 
-#: crates/immich-mount-core/src/settings.rs:69
+#: crates/immich-mount-core/src/settings.rs:71
 msgid "Refuse thumbnailer reads of originals"
 msgstr "썸네일 생성기의 원본 읽기 거부"
 
-#: crates/immich-mount-core/src/settings.rs:70
+#: crates/immich-mount-core/src/settings.rs:72
 msgid "Headless only: a 0600 file holding the credential"
 msgstr "헤드리스 전용: 자격 증명을 담은 0600 파일"
 
-#: crates/immich-mount-core/src/settings.rs:76
+#: crates/immich-mount-core/src/settings.rs:78
 msgid "Never"
 msgstr "안 함"
 
-#: crates/immich-mount-core/src/settings.rs:77
+#: crates/immich-mount-core/src/settings.rs:79
 msgid "From 500 Items"
 msgstr "500개 항목부터"
 
-#: crates/immich-mount-core/src/settings.rs:78
+#: crates/immich-mount-core/src/settings.rs:80
 msgid "Always"
 msgstr "항상"
 
-#: crates/immich-mount-core/src/settings.rs:79
+#: crates/immich-mount-core/src/settings.rs:81
 msgid "Year in the Name (2023 - Trip)"
 msgstr "이름에 연도 포함 (2023 - 여행)"
 
-#: crates/immich-mount-core/src/settings.rs:80
+#: crates/immich-mount-core/src/settings.rs:82
 msgid "Year Folders (2023/Trip)"
 msgstr "연도 폴더 (2023/여행)"
 
-#: crates/immich-mount-core/src/settings.rs:81
+#: crates/immich-mount-core/src/settings.rs:83
 msgid "Name Only (Trip)"
 msgstr "이름만 (여행)"
 
-#: crates/immich-mount-core/src/settings.rs:82
+#: crates/immich-mount-core/src/settings.rs:84
 msgid "Date and Time Taken"
 msgstr "촬영 날짜 및 시간"
 
-#: crates/immich-mount-core/src/settings.rs:83
+#: crates/immich-mount-core/src/settings.rs:85
 msgid "Original File Names"
 msgstr "원본 파일 이름"
 

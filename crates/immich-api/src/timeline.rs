@@ -7,7 +7,8 @@
 //!
 //! Visibility: the bucket endpoints include archived Assets by default. The library and person timelines send
 //! `visibility=timeline`; an album sends nothing, because an album shows its archived members too; the archive sends
-//! `visibility=archive`, as Immich's own Archive page does.
+//! `visibility=archive`, as Immich's own Archive page does; favorites send `isFavorite=true` and no visibility, as
+//! Immich's Favorites page does, so archived favorites are among them.
 //!
 //! `GET /timeline/bucket` answers in **columns** (`{"id":[...],"fileCreatedAt":[...],...}`), with
 //! `fileCreatedAt` in UTC without a `Z`. A column the server leaves out reads as its default; a column of the
@@ -35,6 +36,8 @@ pub enum TimelineScope {
     Person(String),
     /// The archive: archived visibility only.
     Archive,
+    /// The favorites, archived ones included.
+    Favorites,
 }
 
 impl TimelineScope {
@@ -44,6 +47,7 @@ impl TimelineScope {
             TimelineScope::Album(album_id) => vec![("albumId", album_id.as_str())],
             TimelineScope::Person(person_id) => vec![("personId", person_id.as_str()), ("visibility", "timeline")],
             TimelineScope::Archive => vec![("visibility", "archive")],
+            TimelineScope::Favorites => vec![("isFavorite", "true")],
         }
     }
 }
@@ -406,6 +410,7 @@ mod tests {
             CannedResponse::json(200, "[]"),
             CannedResponse::json(200, "{}"),
             CannedResponse::json(200, "[]"),
+            CannedResponse::json(200, "[]"),
         ])
         .await;
         let client = Client::new(&server.url, None, "test").unwrap();
@@ -417,6 +422,7 @@ mod tests {
             .await
             .unwrap();
         client.time_buckets(&TimelineScope::Archive).await.unwrap();
+        client.time_buckets(&TimelineScope::Favorites).await.unwrap();
         let targets: Vec<String> = server.requests().into_iter().map(|request| request.target).collect();
         assert_eq!(
             targets,
@@ -425,6 +431,7 @@ mod tests {
                 "/api/timeline/buckets?albumId=album-1",
                 "/api/timeline/bucket?personId=person-1&visibility=timeline&timeBucket=2018-11-01",
                 "/api/timeline/buckets?visibility=archive",
+                "/api/timeline/buckets?isFavorite=true",
             ]
         );
     }

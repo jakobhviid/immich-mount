@@ -168,9 +168,10 @@ Browse it like any folder: Photos by year and month (busy months by day), Albums
 People and Places. Files are named by when they were taken (`2024-03-15 14.32.07.jpg`). Thumbnails come from the
 server, and an original is downloaded only when something opens it.
 
-What you archived in Immich is in **Archive**, by year and month, once you switch it on: in the app's settings under
-Sections, or `immich-mount configure set sections.archive true`. It follows Immich within seconds: a photo you
-archive there appears in Archive, and leaves it when you unarchive it.
+Your favorites are in **Favorites**, and what you archived in **Archive**, by year and month, once you switch them
+on: in the app's settings under Sections, or `immich-mount configure set sections.favorites true` (and
+`sections.archive`). They follow Immich within seconds: a photo you mark or archive there appears, and leaves when
+you unmark or unarchive it. Favorites holds archived favorites too, as Immich's Favorites page does.
 
 ## 4. Status
 

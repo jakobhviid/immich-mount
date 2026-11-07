@@ -96,7 +96,7 @@ msgid "Thumbnails"
 msgstr "Miniaturas"
 
 #: crates/immich-mount-desktop/src/preferences.rs:18
-#: crates/immich-mount-gnome/src/window.blp:310
+#: crates/immich-mount-gnome/src/window.blp:314
 msgid "Cache"
 msgstr "Caché"
 
@@ -143,13 +143,13 @@ msgstr "No se puede usar esa dirección: {error}"
 
 #: crates/immich-mount-desktop/src/session.rs:161
 #: crates/immich-mount-desktop/src/session.rs:171
-#: crates/immich-mount-desktop/src/session.rs:368
-#: crates/immich-mount-desktop/src/session.rs:370
+#: crates/immich-mount-desktop/src/session.rs:371
+#: crates/immich-mount-desktop/src/session.rs:373
 msgid "Kept in {file}"
 msgstr "Guardada en {file}"
 
 #: crates/immich-mount-desktop/src/session.rs:166
-#: crates/immich-mount-desktop/src/session.rs:372
+#: crates/immich-mount-desktop/src/session.rs:375
 msgid "Kept in the keyring"
 msgstr "Guardada en el depósito de claves"
 
@@ -157,11 +157,11 @@ msgstr "Guardada en el depósito de claves"
 msgid "The keyring stayed locked, so nothing was saved."
 msgstr "El depósito de claves siguió bloqueado, así que no se ha guardado nada."
 
-#: crates/immich-mount-desktop/src/session.rs:250
+#: crates/immich-mount-desktop/src/session.rs:253
 msgid "Signed in, but the mount cannot start: {error}."
 msgstr "Sesión iniciada, pero el montaje no puede empezar: {error}."
 
-#: crates/immich-mount-desktop/src/session.rs:254
+#: crates/immich-mount-desktop/src/session.rs:257
 msgid "Signed in, but the mount did not start: {error}"
 msgstr "Sesión iniciada, pero el montaje no se inició: {error}"
 
@@ -205,66 +205,66 @@ msgstr "Atajos de teclado"
 msgid "Quit"
 msgstr "Salir"
 
-#: crates/immich-mount-gnome/src/window.rs:265
+#: crates/immich-mount-gnome/src/window.rs:267
 #: crates/immich-mount-kde/qml/Main.qml:321
 msgid "Continue in your browser"
 msgstr "Continúa en tu navegador"
 
-#: crates/immich-mount-gnome/src/window.rs:276
+#: crates/immich-mount-gnome/src/window.rs:278
 msgid "This sign-in belongs to an earlier attempt. Finish the latest one, or sign in again."
 msgstr "Este inicio de sesión pertenece a un intento anterior. Completa el más reciente o vuelve a iniciar sesión."
 
-#: crates/immich-mount-gnome/src/window.rs:288
+#: crates/immich-mount-gnome/src/window.rs:290
 msgid "Enter your email and password"
 msgstr "Introduce tu correo electrónico y tu contraseña"
 
-#: crates/immich-mount-gnome/src/window.rs:299
+#: crates/immich-mount-gnome/src/window.rs:301
 msgid "Enter an API key"
 msgstr "Introduce una clave de API"
 
-#: crates/immich-mount-gnome/src/window.rs:326
+#: crates/immich-mount-gnome/src/window.rs:328
 msgid "Signed in as {account}"
 msgstr "Sesión iniciada como {account}"
 
-#: crates/immich-mount-gnome/src/window.rs:394
+#: crates/immich-mount-gnome/src/window.rs:398
 msgid "Signed in, but the status could not be read"
 msgstr "Sesión iniciada, pero no se pudo leer el estado"
 
-#: crates/immich-mount-gnome/src/window.rs:421
-#: crates/immich-mount-kde/qml/Main.qml:397
+#: crates/immich-mount-gnome/src/window.rs:425
+#: crates/immich-mount-kde/qml/Main.qml:398
 msgid "Signed Out of Immich"
 msgstr "Sesión de Immich cerrada"
 
-#: crates/immich-mount-gnome/src/window.rs:421
-#: crates/immich-mount-kde/qml/Main.qml:398
+#: crates/immich-mount-gnome/src/window.rs:425
+#: crates/immich-mount-kde/qml/Main.qml:399
 msgid "Sign in again to keep browsing. Your caches are kept."
 msgstr "Vuelve a iniciar sesión para seguir explorando. Tus cachés se conservan."
 
-#: crates/immich-mount-gnome/src/window.rs:422
-#: crates/immich-mount-gnome/src/window.blp:213
+#: crates/immich-mount-gnome/src/window.rs:426
+#: crates/immich-mount-gnome/src/window.blp:217
 msgid "Your Library Is in Files"
 msgstr "Tu biblioteca está en Archivos"
 
-#: crates/immich-mount-gnome/src/window.rs:422
-#: crates/immich-mount-kde/qml/Main.qml:399
+#: crates/immich-mount-gnome/src/window.rs:426
+#: crates/immich-mount-kde/qml/Main.qml:400
 msgid "Browse it like any folder. Originals download only when you open them."
 msgstr "Explórala como cualquier carpeta. Los originales solo se descargan cuando los abres."
 
-#: crates/immich-mount-gnome/src/window.rs:423
-#: crates/immich-mount-kde/qml/Main.qml:397
+#: crates/immich-mount-gnome/src/window.rs:427
+#: crates/immich-mount-kde/qml/Main.qml:398
 msgid "Not Mounted"
 msgstr "No montado"
 
-#: crates/immich-mount-gnome/src/window.rs:423
+#: crates/immich-mount-gnome/src/window.rs:427
 msgid "Mount it to browse your library in Files."
 msgstr "Monta la unidad para explorar tu biblioteca en Archivos."
 
-#: crates/immich-mount-gnome/src/window.rs:466
+#: crates/immich-mount-gnome/src/window.rs:470
 msgid "Disconnected"
 msgstr "Desconectado"
 
 #: crates/immich-mount-gnome/src/window.blp:26
-#: crates/immich-mount-gnome/src/window.blp:206
+#: crates/immich-mount-gnome/src/window.blp:210
 msgid "Main Menu"
 msgstr "Menú principal"
 
@@ -348,71 +348,71 @@ msgstr "Las carpetas que muestra la unidad. Puedes cambiarlo más tarde en Prefe
 msgid "The timeline, by year and month"
 msgstr "La cronología, por año y mes"
 
-#: crates/immich-mount-gnome/src/window.blp:170
-#: crates/immich-mount-gnome/src/window.blp:318
-#: crates/immich-mount-kde/qml/Main.qml:370
+#: crates/immich-mount-gnome/src/window.blp:174
+#: crates/immich-mount-gnome/src/window.blp:322
+#: crates/immich-mount-kde/qml/Main.qml:371
 msgid "Location"
 msgstr "Ubicación"
 
-#: crates/immich-mount-gnome/src/window.blp:173
-#: crates/immich-mount-kde/qml/Main.qml:373
+#: crates/immich-mount-gnome/src/window.blp:177
+#: crates/immich-mount-kde/qml/Main.qml:374
 msgid "Folder"
 msgstr "Carpeta"
 
-#: crates/immich-mount-gnome/src/window.blp:179
-#: crates/immich-mount-gnome/src/window.blp:227
+#: crates/immich-mount-gnome/src/window.blp:183
+#: crates/immich-mount-gnome/src/window.blp:231
 msgid "_Open in Files"
 msgstr "_Abrir en Archivos"
 
-#: crates/immich-mount-gnome/src/window.blp:238
+#: crates/immich-mount-gnome/src/window.blp:242
 msgid "_Unmount"
 msgstr "_Desmontar"
 
-#: crates/immich-mount-gnome/src/window.blp:240
+#: crates/immich-mount-gnome/src/window.blp:244
 msgid "Take it out of Files until you mount it again or log in"
 msgstr "Quitarla de Archivos hasta que la vuelvas a montar o inicies sesión"
 
-#: crates/immich-mount-gnome/src/window.blp:249
+#: crates/immich-mount-gnome/src/window.blp:253
 msgid "_Mount"
 msgstr "_Montar"
 
-#: crates/immich-mount-gnome/src/window.blp:265
+#: crates/immich-mount-gnome/src/window.blp:269
 msgid "Sign In _Again"
 msgstr "Iniciar sesión de _nuevo"
 
-#: crates/immich-mount-gnome/src/window.blp:277
+#: crates/immich-mount-gnome/src/window.blp:281
 msgid "Server"
 msgstr "Servidor"
 
-#: crates/immich-mount-gnome/src/window.blp:285
+#: crates/immich-mount-gnome/src/window.blp:289
 msgid "Account"
 msgstr "Cuenta"
 
-#: crates/immich-mount-gnome/src/window.blp:294
+#: crates/immich-mount-gnome/src/window.blp:298
 msgid "Credential"
 msgstr "Credencial"
 
-#: crates/immich-mount-gnome/src/window.blp:302
+#: crates/immich-mount-gnome/src/window.blp:306
 msgid "Connection"
 msgstr "Conexión"
 
-#: crates/immich-mount-gnome/src/window.blp:326
+#: crates/immich-mount-gnome/src/window.blp:330
 msgid "Uploading"
 msgstr "Subiendo"
 
-#: crates/immich-mount-gnome/src/window.blp:337
+#: crates/immich-mount-gnome/src/window.blp:341
 msgid "_Disconnect"
 msgstr "Des_conectar"
 
-#: crates/immich-mount-gnome/src/window.blp:358
+#: crates/immich-mount-gnome/src/window.blp:362
 msgid "_Preferences"
 msgstr "_Preferencias"
 
-#: crates/immich-mount-gnome/src/window.blp:363
+#: crates/immich-mount-gnome/src/window.blp:367
 msgid "_Keyboard Shortcuts"
 msgstr "Atajos de _teclado"
 
-#: crates/immich-mount-gnome/src/window.blp:368
+#: crates/immich-mount-gnome/src/window.blp:372
 msgid "_About Immich Mount"
 msgstr "_Acerca de Immich Mount"
 
@@ -540,77 +540,77 @@ msgstr "No se pudo abrir ningún navegador. Abre esta dirección en uno:"
 msgid "Sign-in address"
 msgstr "Dirección de inicio de sesión"
 
-#: crates/immich-mount-kde/qml/Main.qml:372
+#: crates/immich-mount-kde/qml/Main.qml:373
 msgid "Folder:"
 msgstr "Carpeta:"
 
-#: crates/immich-mount-kde/qml/Main.qml:377
+#: crates/immich-mount-kde/qml/Main.qml:378
 msgid "Dolphin"
 msgstr "Dolphin"
 
-#: crates/immich-mount-kde/qml/Main.qml:382
-#: crates/immich-mount-kde/qml/Main.qml:403
+#: crates/immich-mount-kde/qml/Main.qml:383
+#: crates/immich-mount-kde/qml/Main.qml:404
 msgid "Open in Dolphin"
 msgstr "Abrir en Dolphin"
 
-#: crates/immich-mount-kde/qml/Main.qml:397
+#: crates/immich-mount-kde/qml/Main.qml:398
 msgid "Your Library Is in Dolphin"
 msgstr "Tu biblioteca está en Dolphin"
 
-#: crates/immich-mount-kde/qml/Main.qml:400
+#: crates/immich-mount-kde/qml/Main.qml:401
 msgid "Mount it to browse your library in Dolphin."
 msgstr "Monta la unidad para explorar tu biblioteca en Dolphin."
 
-#: crates/immich-mount-kde/qml/Main.qml:403
+#: crates/immich-mount-kde/qml/Main.qml:404
 msgid "Sign In Again"
 msgstr "Volver a iniciar sesión"
 
-#: crates/immich-mount-kde/qml/Main.qml:403
+#: crates/immich-mount-kde/qml/Main.qml:404
 msgid "Mount"
 msgstr "Montar"
 
-#: crates/immich-mount-kde/qml/Main.qml:411
+#: crates/immich-mount-kde/qml/Main.qml:412
 #: apple/App/ContentView.swift:105
 msgid "Server:"
 msgstr "Servidor:"
 
-#: crates/immich-mount-kde/qml/Main.qml:412
+#: crates/immich-mount-kde/qml/Main.qml:413
 msgid "Account:"
 msgstr "Cuenta:"
 
-#: crates/immich-mount-kde/qml/Main.qml:413
+#: crates/immich-mount-kde/qml/Main.qml:414
 msgid "Credential:"
 msgstr "Credencial:"
 
-#: crates/immich-mount-kde/qml/Main.qml:414
+#: crates/immich-mount-kde/qml/Main.qml:415
 msgid "Connection:"
 msgstr "Conexión:"
 
-#: crates/immich-mount-kde/qml/Main.qml:415
+#: crates/immich-mount-kde/qml/Main.qml:416
 msgid "Cache:"
 msgstr "Caché:"
 
-#: crates/immich-mount-kde/qml/Main.qml:416
+#: crates/immich-mount-kde/qml/Main.qml:417
 msgid "Location:"
 msgstr "Ubicación:"
 
-#: crates/immich-mount-kde/qml/Main.qml:417
+#: crates/immich-mount-kde/qml/Main.qml:418
 msgid "Uploading:"
 msgstr "Subiendo:"
 
-#: crates/immich-mount-kde/qml/Main.qml:418
+#: crates/immich-mount-kde/qml/Main.qml:419
 msgid "Dolphin:"
 msgstr "Dolphin:"
 
-#: crates/immich-mount-kde/qml/Main.qml:423
+#: crates/immich-mount-kde/qml/Main.qml:424
 msgid "Unmount"
 msgstr "Desmontar"
 
-#: crates/immich-mount-kde/qml/Main.qml:430
+#: crates/immich-mount-kde/qml/Main.qml:431
 msgid "Disconnect"
 msgstr "Desconectar"
 
-#: crates/immich-mount-kde/qml/Main.qml:442
+#: crates/immich-mount-kde/qml/Main.qml:443
 msgid "Immich Mount is an independent, unofficial project. It is not affiliated with, endorsed by, or sponsored by the Immich project or FUTO."
 msgstr "Immich Mount es un proyecto independiente y no oficial. No está afiliado al proyecto Immich ni a FUTO, ni cuenta con su respaldo o patrocinio."
 
@@ -647,86 +647,94 @@ msgid "Show the Places section"
 msgstr "Mostrar la sección Places"
 
 #: crates/immich-mount-core/src/settings.rs:58
+msgid "Show the Favorites section"
+msgstr "Mostrar la sección Favorites"
+
+#: crates/immich-mount-core/src/settings.rs:59
 msgid "Show the Archive section"
 msgstr "Mostrar la sección Archive"
 
-#: crates/immich-mount-core/src/settings.rs:59
+#: crates/immich-mount-core/src/settings.rs:60
 msgid "Day folders inside months"
 msgstr "Carpetas de días dentro de los meses"
 
-#: crates/immich-mount-core/src/settings.rs:60
+#: crates/immich-mount-core/src/settings.rs:61
 msgid "Year and month folders inside albums"
 msgstr "Carpetas de año y mes dentro de los álbumes"
 
-#: crates/immich-mount-core/src/settings.rs:61
+#: crates/immich-mount-core/src/settings.rs:62
 msgid "Year and month folders inside people"
 msgstr "Carpetas de año y mes dentro de las personas"
 
-#: crates/immich-mount-core/src/settings.rs:62
+#: crates/immich-mount-core/src/settings.rs:63
 msgid "Year and month folders inside cities"
 msgstr "Carpetas de año y mes dentro de las ciudades"
 
-#: crates/immich-mount-core/src/settings.rs:63
+#: crates/immich-mount-core/src/settings.rs:64
+msgid "Year and month folders inside favorites"
+msgstr "Carpetas de año y mes dentro de los favoritos"
+
+#: crates/immich-mount-core/src/settings.rs:65
 msgid "Year and month folders inside the archive"
 msgstr "Carpetas de año y mes dentro del archivo"
 
-#: crates/immich-mount-core/src/settings.rs:64
+#: crates/immich-mount-core/src/settings.rs:66
 msgid "How album folders are named and grouped"
 msgstr "Cómo se nombran y agrupan las carpetas de álbumes"
 
-#: crates/immich-mount-core/src/settings.rs:65
+#: crates/immich-mount-core/src/settings.rs:67
 msgid "How files are named"
 msgstr "Cómo se nombran los archivos"
 
-#: crates/immich-mount-core/src/settings.rs:66
+#: crates/immich-mount-core/src/settings.rs:68
 msgid "The content cache's size limit"
 msgstr "El límite de tamaño de la caché de contenido"
 
-#: crates/immich-mount-core/src/settings.rs:67
+#: crates/immich-mount-core/src/settings.rs:69
 msgid "Show the Upload folder, and upload what is copied into it"
 msgstr "Mostrar la carpeta Upload y subir lo que se copie en ella"
 
-#: crates/immich-mount-core/src/settings.rs:68
+#: crates/immich-mount-core/src/settings.rs:70
 msgid "Also seed 1024 px thumbnails from the preview"
 msgstr "Generar también miniaturas de 1024 px a partir de la vista previa"
 
-#: crates/immich-mount-core/src/settings.rs:69
+#: crates/immich-mount-core/src/settings.rs:71
 msgid "Refuse thumbnailer reads of originals"
 msgstr "Impedir que los generadores de miniaturas lean los originales"
 
-#: crates/immich-mount-core/src/settings.rs:70
+#: crates/immich-mount-core/src/settings.rs:72
 msgid "Headless only: a 0600 file holding the credential"
 msgstr "Solo sin escritorio: un archivo 0600 que guarda la credencial"
 
-#: crates/immich-mount-core/src/settings.rs:76
+#: crates/immich-mount-core/src/settings.rs:78
 msgid "Never"
 msgstr "Nunca"
 
-#: crates/immich-mount-core/src/settings.rs:77
+#: crates/immich-mount-core/src/settings.rs:79
 msgid "From 500 Items"
 msgstr "A partir de 500 elementos"
 
-#: crates/immich-mount-core/src/settings.rs:78
+#: crates/immich-mount-core/src/settings.rs:80
 msgid "Always"
 msgstr "Siempre"
 
-#: crates/immich-mount-core/src/settings.rs:79
+#: crates/immich-mount-core/src/settings.rs:81
 msgid "Year in the Name (2023 - Trip)"
 msgstr "Año en el nombre (2023 - Viaje)"
 
-#: crates/immich-mount-core/src/settings.rs:80
+#: crates/immich-mount-core/src/settings.rs:82
 msgid "Year Folders (2023/Trip)"
 msgstr "Carpetas por año (2023/Viaje)"
 
-#: crates/immich-mount-core/src/settings.rs:81
+#: crates/immich-mount-core/src/settings.rs:83
 msgid "Name Only (Trip)"
 msgstr "Solo el nombre (Viaje)"
 
-#: crates/immich-mount-core/src/settings.rs:82
+#: crates/immich-mount-core/src/settings.rs:84
 msgid "Date and Time Taken"
 msgstr "Fecha y hora de captura"
 
-#: crates/immich-mount-core/src/settings.rs:83
+#: crates/immich-mount-core/src/settings.rs:85
 msgid "Original File Names"
 msgstr "Nombres de archivo originales"
 

@@ -3,10 +3,10 @@
 //! Membership comes from Immich (ARCHITECTURE.md, "Membership comes from Immich"):
 //! - a timeline month is the ids in its timeline bucket, which groups by local time. Search filters in UTC, so it
 //!   only supplies the details (names, sizes, places), over the month widened by 14 hours on each side
-//! - albums, people, places and the archive are searches on the server's own filters
+//! - albums, people, places, favorites and the archive are searches on the server's own filters
 //!
 //! Hidden Assets (the video half of a Live Photo) and the locked folder never appear; archived Assets appear only in
-//! albums and the archive, as in Immich.
+//! albums, favorites and the archive, as in Immich.
 
 use std::collections::{HashMap, HashSet};
 
@@ -69,6 +69,8 @@ struct PollState {
     albums: HashMap<String, (String, u64, DateTime<Utc>)>,
     /// The archive's buckets, while it is watched.
     archive: Option<WatchedBuckets>,
+    /// The favorites' buckets, while they are watched.
+    favorites: Option<WatchedBuckets>,
 }
 
 /// What the poll saw of a watched section's buckets: their ETag, and the months that hold Assets, with counts, in
@@ -88,6 +90,8 @@ struct PollMemory {
     albums: Vec<(String, String, u64, DateTime<Utc>)>,
     #[serde(default, skip_serializing_if = "Option::is_none")]
     archive: Option<WatchedBuckets>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    favorites: Option<WatchedBuckets>,
 }
 
 impl ImmichSource {
@@ -121,6 +125,7 @@ impl ImmichSource {
             albums_etag: poll.albums_etag.clone(),
             albums: poll.albums.iter().map(|(id, (name, count, updated_at))| (id.clone(), name.clone(), *count, *updated_at)).collect(),
             archive: poll.archive.clone(),
+            favorites: poll.favorites.clone(),
         };
         serde_json::to_string(&memory).ok()
     }
@@ -135,6 +140,7 @@ impl ImmichSource {
         poll.albums_etag = memory.albums_etag;
         poll.albums = memory.albums.into_iter().map(|(id, name, count, updated_at)| (id, (name, count, updated_at))).collect();
         poll.archive = memory.archive;
+        poll.favorites = memory.favorites;
         poll.started = true;
         poll.sync_baseline_done = true;
     }
@@ -167,6 +173,11 @@ impl ImmichSource {
             false => None,
         };
         changes.archive_changed = section_changed(poll.archive.as_ref(), archive.as_ref());
+        let favorites = match watched.favorites {
+            true => Some(self.watched_buckets(&TimelineScope::Favorites, poll.favorites.as_ref()).await?),
+            false => None,
+        };
+        changes.favorites_changed = section_changed(poll.favorites.as_ref(), favorites.as_ref());
 
         // A credential that may not read albums still gets the timeline's changes.
         let albums_answer = match self.client.albums_if_changed(poll.albums_etag.as_deref()).await {
@@ -196,6 +207,7 @@ impl ImmichSource {
             poll.buckets_etag = etag;
         }
         poll.archive = archive;
+        poll.favorites = favorites;
 
         if self.client.credential().is_some_and(|credential| matches!(credential, immich_api::Credential::Session(_))) {
             // Sessions also follow the sync stream, which is exact: deletions and album membership included. Running
@@ -491,6 +503,16 @@ impl LibrarySource for ImmichSource {
         self.check_online()?;
         let outcome: Result<Vec<Asset>, SourceError> = async {
             self.search(AssetQuery { visibility: Some(Visibility::Archive), ..AssetQuery::default() }).await
+        }
+        .await;
+        self.note_outcome(&outcome);
+        outcome
+    }
+
+    async fn favorite_assets(&self) -> Result<Vec<Asset>, SourceError> {
+        self.check_online()?;
+        let outcome: Result<Vec<Asset>, SourceError> = async {
+            self.search(AssetQuery { favorites_only: true, ..AssetQuery::default() }).await
         }
         .await;
         self.note_outcome(&outcome);

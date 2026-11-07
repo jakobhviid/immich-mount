@@ -67,6 +67,9 @@ impl LibrarySource for Library {
     async fn archive_assets(&self) -> Result<Vec<Asset>, SourceError> {
         Ok(vec![])
     }
+    async fn favorite_assets(&self) -> Result<Vec<Asset>, SourceError> {
+        Ok(vec![])
+    }
 }
 
 impl ContentSource for Library {

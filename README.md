@@ -19,8 +19,8 @@ without downloading the library first.
 
 ## What it does
 
-- **Your library as folders:** the timeline by year and month, albums, people and places, and your archive if you
-  switch it on, named the way Immich names them.
+- **Your library as folders:** the timeline by year and month, albums, people and places, and your favorites and
+  archive if you switch them on, named the way Immich names them.
 - **Thumbnails from the server,** so browsing a folder never downloads the photos in it.
 - **Originals on demand:** a file is fetched only when a program opens it, and only the parts it reads. A video
   seeks without downloading the whole file. Folders you have visited stay browsable offline.

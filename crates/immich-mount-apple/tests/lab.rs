@@ -135,6 +135,41 @@ async fn the_archive_holds_what_immich_archived_and_follows_it() {
 
 #[tokio::test]
 #[ignore = "needs the lab server"]
+async fn favorites_hold_what_immich_marked_archived_ones_too() {
+    let directory = tempfile::tempdir().unwrap();
+    let key = env("IMMICH_API_KEY_READONLY");
+    let config = "[sections]\nfavorites = true\n".to_owned();
+    let library = Library::open(env("IMMICH_URL"), Credential::ApiKey { key: key.clone() }, directory.path().display().to_string(), config).unwrap();
+    let client = Client::new(&env("IMMICH_URL"), Some(ApiCredential::ApiKey(key)), "ImmichMount/lab-tests (Linux; lab)").unwrap();
+
+    let sections: Vec<String> = library.list("root".into(), None).await.unwrap().into_iter().map(|item| item.name).collect();
+    assert_eq!(sections, ["Photos", "Albums", "People", "Places", "Favorites", "Upload"]);
+    assert!(files_under(&library, "section|Favorites").await.is_empty(), "the seed marks no favorites");
+    assert!(!library.poll(None).await.unwrap(), "the first poll takes note only");
+
+    // One photo from the timeline and the archived one, marked in Immich: both arrive at the next poll, as both show
+    // on Immich's Favorites page.
+    let photo = files_under(&library, "section|Photos").await[0].content_version.clone();
+    let archived = client
+        .search_all_assets(&immich_api::AssetQuery { visibility: Some(immich_api::Visibility::Archive), ..Default::default() }, 10)
+        .await
+        .unwrap()[0]
+        .id
+        .clone();
+    update_assets(&[&photo, &archived], serde_json::json!({ "isFavorite": true })).await;
+    assert!(library.poll(None).await.unwrap(), "the poll sees the favorites change");
+    let mut favorites: Vec<String> = files_under(&library, "section|Favorites").await.into_iter().map(|item| item.content_version).collect();
+    favorites.sort();
+    let mut expected = vec![photo.clone(), archived.clone()];
+    expected.sort();
+    assert_eq!(favorites, expected);
+    update_assets(&[&photo, &archived], serde_json::json!({ "isFavorite": false })).await;
+    assert!(library.poll(None).await.unwrap(), "and sees them unmarked");
+    assert!(files_under(&library, "section|Favorites").await.is_empty());
+}
+
+#[tokio::test]
+#[ignore = "needs the lab server"]
 async fn every_timeline_original_matches_the_servers_checksum() {
     let directory = tempfile::tempdir().unwrap();
     let library = Library::open(

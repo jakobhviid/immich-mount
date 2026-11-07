@@ -43,6 +43,8 @@ pub struct AssetQuery {
     /// Only Assets of this visibility: `Timeline` for the main timeline (no archived, hidden or locked ones),
     /// `Archive` for the archive. Without it, a search finds timeline and archived Assets.
     pub visibility: Option<Visibility>,
+    /// Only the Assets marked as favorites.
+    pub favorites_only: bool,
 }
 
 impl AssetQuery {
@@ -73,6 +75,9 @@ impl AssetQuery {
         }
         if let Some(visibility) = &self.visibility {
             filter.insert("visibility".to_owned(), json!({ "eq": visibility.as_str() }));
+        }
+        if self.favorites_only {
+            filter.insert("isFavorite".to_owned(), json!({ "eq": true }));
         }
 
         let mut body = json!({
@@ -193,6 +198,7 @@ mod tests {
             taken: Some(parse_utc("2018-11-01T00:00:00Z").unwrap()..parse_utc("2018-12-01T00:00:00Z").unwrap()),
             updated_after: Some(parse_utc("2026-01-01T00:00:00Z").unwrap()),
             visibility: Some(Visibility::Archive),
+            favorites_only: true,
         };
         let body = query.to_body(5000, Some("eyJvZmZzZXQiOjJ9"));
         assert_eq!(
@@ -206,6 +212,7 @@ mod tests {
                 "takenAt": { "gte": "2018-11-01T00:00:00.000Z", "lt": "2018-12-01T00:00:00.000Z" },
                 "updatedAt": { "gt": "2026-01-01T00:00:00.000Z" },
                 "visibility": { "eq": "archive" },
+                "isFavorite": { "eq": true },
             })
         );
         assert_eq!(body["size"], json!(1000), "clamped to the server's maximum");

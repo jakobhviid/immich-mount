@@ -41,6 +41,8 @@ pub struct LibraryChanges {
     pub albums: Vec<String>,
     /// The archive's months, or their counts, changed: something was archived, unarchived, or trashed from it.
     pub archive_changed: bool,
+    /// The favorites' months, or their counts, changed: something was marked or unmarked as a favorite, or trashed.
+    pub favorites_changed: bool,
     /// Something changed whose place is unknown (an Asset deleted for good, or the server asking for a full resync):
     /// every listing is read again.
     pub everything: bool,
@@ -57,6 +59,7 @@ impl LibraryChanges {
 #[derive(Debug, Clone, Copy, Default, PartialEq, Eq)]
 pub struct Watched {
     pub archive: bool,
+    pub favorites: bool,
 }
 
 /// The library, as Immich presents it.
@@ -74,6 +77,8 @@ pub trait LibrarySource: Send + Sync {
     fn city_assets(&self, country: &str, city: &str) -> impl Future<Output = Result<Vec<Asset>, SourceError>> + Send;
     /// The archived Assets.
     fn archive_assets(&self) -> impl Future<Output = Result<Vec<Asset>, SourceError>> + Send;
+    /// The Assets marked as favorites, archived ones included.
+    fn favorite_assets(&self) -> impl Future<Output = Result<Vec<Asset>, SourceError>> + Send;
     /// What changed since the last call, in the library and in the sections `watched` names. The first call only takes
     /// note of the current state, as does the first call that watches a section.
     fn changes(&self, _watched: Watched) -> impl Future<Output = Result<LibraryChanges, SourceError>> + Send {
@@ -112,6 +117,9 @@ impl<Shared: LibrarySource> LibrarySource for std::sync::Arc<Shared> {
     }
     async fn archive_assets(&self) -> Result<Vec<Asset>, SourceError> {
         self.as_ref().archive_assets().await
+    }
+    async fn favorite_assets(&self) -> Result<Vec<Asset>, SourceError> {
+        self.as_ref().favorite_assets().await
     }
     async fn changes(&self, watched: Watched) -> Result<LibraryChanges, SourceError> {
         self.as_ref().changes(watched).await

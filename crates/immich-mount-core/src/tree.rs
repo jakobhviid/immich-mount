@@ -88,6 +88,7 @@ impl NodeKey {
             ["section", "Albums"] => NodeKey::Section(SectionKey::Albums),
             ["section", "People"] => NodeKey::Section(SectionKey::People),
             ["section", "Places"] => NodeKey::Section(SectionKey::Places),
+            ["section", "Favorites"] => NodeKey::Section(SectionKey::Favorites),
             ["section", "Archive"] => NodeKey::Section(SectionKey::Archive),
             ["year", year] => NodeKey::TimelineYear(year.parse().ok()?),
             ["month", month] => NodeKey::TimelineMonth(year_month(month)?),
@@ -124,6 +125,7 @@ pub enum SectionKey {
     Albums,
     People,
     Places,
+    Favorites,
     Archive,
 }
 
@@ -134,6 +136,7 @@ impl From<Section> for SectionKey {
             Section::Albums => SectionKey::Albums,
             Section::People => SectionKey::People,
             Section::Places => SectionKey::Places,
+            Section::Favorites => SectionKey::Favorites,
             Section::Archive => SectionKey::Archive,
         }
     }
@@ -231,6 +234,7 @@ pub fn is_touched(node: &NodeKey, changes: &LibraryChanges) -> bool {
         NodeKey::Section(SectionKey::Albums) | NodeKey::AlbumYear(_) => changes.album_list_changed || !changes.albums.is_empty(),
         NodeKey::Album(album_id) => changes.albums.contains(album_id),
         NodeKey::Section(SectionKey::Archive) => changes.archive_changed,
+        NodeKey::Section(SectionKey::Favorites) => changes.favorites_changed,
         NodeKey::GroupYear { base, .. } | NodeKey::GroupMonth { base, .. } => is_touched(base, changes),
         _ => false,
     }
@@ -245,7 +249,7 @@ pub struct Tree<Source, Names> {
     names: Names,
     config: Config,
     listings: Mutex<HashMap<NodeKey, (Instant, Vec<Entry>)>>,
-    /// The Asset lists of albums, people, cities and the archive, which their date-group folders reuse.
+    /// The Asset lists of albums, people, cities, favorites and the archive, which their date-group folders reuse.
     base_assets: Mutex<HashMap<NodeKey, FetchedAssets>>,
     /// One gate per folder being fetched, so concurrent visits wait for a single fetch.
     in_flight: Mutex<HashMap<NodeKey, Arc<tokio::sync::Mutex<()>>>>,
@@ -272,7 +276,7 @@ impl<Source: LibrarySource, Names: NameMemory> Tree<Source, Names> {
 
     /// The sections the change poll must watch, because this tree shows them.
     pub fn watched(&self) -> Watched {
-        Watched { archive: self.config.show_archive }
+        Watched { archive: self.config.show_archive, favorites: self.config.show_favorites }
     }
 
     /// Where names and listings are kept: the metadata store, which also holds the macOS edition's journal.
@@ -486,7 +490,10 @@ impl<Source: LibrarySource, Names: NameMemory> Tree<Source, Names> {
                 let requests: Vec<NameRequest> = cities.iter().map(|city| folder_request(city, city, DateTime::<Utc>::UNIX_EPOCH)).collect();
                 Ok(self.named_folders(node, &requests, |city| NodeKey::City { country: country.clone(), city: city.to_string() }))
             }
-            NodeKey::Album(_) | NodeKey::Person(_) | NodeKey::City { .. } | NodeKey::Section(SectionKey::Archive) => {
+            NodeKey::Album(_)
+            | NodeKey::Person(_)
+            | NodeKey::City { .. }
+            | NodeKey::Section(SectionKey::Favorites | SectionKey::Archive) => {
                 let assets = self.assets_of(node).await?;
                 if self.grouping_for(node).splits(assets.len()) {
                     let years: BTreeSet<i32> = assets.iter().map(Asset::year).collect();
@@ -528,6 +535,7 @@ impl<Source: LibrarySource, Names: NameMemory> Tree<Source, Names> {
             (Section::Albums, self.config.show_albums),
             (Section::People, self.config.show_people),
             (Section::Places, self.config.show_places),
+            (Section::Favorites, self.config.show_favorites),
             (Section::Archive, self.config.show_archive),
         ];
         let sections = shown
@@ -542,13 +550,14 @@ impl<Source: LibrarySource, Names: NameMemory> Tree<Source, Names> {
         match node {
             NodeKey::Album(_) => self.config.grouping_albums,
             NodeKey::Person(_) => self.config.grouping_people,
+            NodeKey::Section(SectionKey::Favorites) => self.config.grouping_favorites,
             NodeKey::Section(SectionKey::Archive) => self.config.grouping_archive,
             _ => self.config.grouping_places,
         }
     }
 
-    /// The Assets of an album, person, city or the archive. Kept while fresh, so its year and month folders do not
-    /// fetch the whole list again.
+    /// The Assets of an album, person, city, the favorites or the archive. Kept while fresh, so its year and month
+    /// folders do not fetch the whole list again.
     async fn assets_of(&self, base: &NodeKey) -> Result<Arc<Vec<Asset>>, SourceError> {
         if let Some((fetched_at, assets)) = self.base_assets.lock().expect("base asset lock").get(base) {
             if fetched_at.elapsed() < freshness_window(base, Utc::now()) {
@@ -559,6 +568,7 @@ impl<Source: LibrarySource, Names: NameMemory> Tree<Source, Names> {
             NodeKey::Album(album_id) => self.source.album_assets(album_id).await?,
             NodeKey::Person(person_id) => self.source.person_assets(person_id).await?,
             NodeKey::City { country, city } => self.source.city_assets(country, city).await?,
+            NodeKey::Section(SectionKey::Favorites) => self.source.favorite_assets().await?,
             NodeKey::Section(SectionKey::Archive) => self.source.archive_assets().await?,
             _ => return Err(SourceError::NotFound),
         });
@@ -640,6 +650,7 @@ mod tests {
         albums: Vec<(Album, Vec<String>)>,
         people: Vec<(Person, Vec<String>)>,
         archived: Vec<String>,
+        favorites: Vec<String>,
         album_fetches: std::sync::atomic::AtomicUsize,
     }
 
@@ -687,6 +698,9 @@ mod tests {
         async fn archive_assets(&self) -> Result<Vec<Asset>, SourceError> {
             Ok(self.find(&self.archived))
         }
+        async fn favorite_assets(&self) -> Result<Vec<Asset>, SourceError> {
+            Ok(self.find(&self.favorites))
+        }
     }
 
     fn asset(id: &str, original: &str, day: u32, second: u32, uploaded_minute: u32) -> Asset {
@@ -731,6 +745,8 @@ mod tests {
         let archive_month = NodeKey::GroupMonth { base: Box::new(NodeKey::Section(SectionKey::Archive)), month: march };
         let archived = LibraryChanges { archive_changed: true, ..Default::default() };
         assert!(is_touched(&archive_month, &archived) && !is_touched(&NodeKey::TimelineMonth(march), &archived));
+        let favorited = LibraryChanges { favorites_changed: true, ..Default::default() };
+        assert!(is_touched(&NodeKey::Section(SectionKey::Favorites), &favorited) && !is_touched(&archive_month, &favorited));
     }
 
     #[tokio::test]
@@ -775,7 +791,11 @@ mod tests {
         config.show_archive = true;
         let entries = tree(FakeLibrary::default(), config.clone()).list(&NodeKey::Root).await.unwrap();
         assert_eq!(names(&entries), ["Albums", "Archive", "People", "Photos"], "the archive when asked for");
-        assert!(tree(FakeLibrary::default(), config).watched().archive, "a shown archive is watched");
+        assert!(tree(FakeLibrary::default(), config.clone()).watched().archive, "a shown archive is watched");
+        config.show_favorites = true;
+        let entries = tree(FakeLibrary::default(), config.clone()).list(&NodeKey::Root).await.unwrap();
+        assert_eq!(names(&entries), ["Albums", "Archive", "Favorites", "People", "Photos"]);
+        assert_eq!(tree(FakeLibrary::default(), config).watched(), Watched { archive: true, favorites: true });
     }
 
     #[tokio::test]
@@ -792,6 +812,20 @@ mod tests {
         assert_eq!(names(&months), ["03 March"]);
         assert_eq!(names(&tree.list(&months[0].node).await.unwrap()), ["2024-03-16 14.32.01.jpg"], "only what is archived");
         assert_eq!(tree.parent_of(&years[0].node).await.unwrap(), Some(NodeKey::Section(SectionKey::Archive)));
+    }
+
+    #[tokio::test]
+    async fn favorites_go_year_month_files_by_default() {
+        let library = FakeLibrary {
+            assets: vec![asset("a", "a.jpg", 15, 1, 1), asset("b", "b.jpg", 16, 1, 2)],
+            favorites: vec!["a".into()],
+            ..Default::default()
+        };
+        let tree = tree(library, Config::from_toml("[sections]\nfavorites = true\n").unwrap());
+        let years = tree.list(&NodeKey::Section(SectionKey::Favorites)).await.unwrap();
+        assert_eq!(names(&years), ["2024"]);
+        let months = tree.list(&years[0].node).await.unwrap();
+        assert_eq!(names(&tree.list(&months[0].node).await.unwrap()), ["2024-03-15 14.32.01.jpg"], "only the favorites");
     }
 
     #[tokio::test]
@@ -905,6 +939,7 @@ mod tests {
             NodeKey::Section(SectionKey::Photos),
             NodeKey::Section(SectionKey::Places),
             NodeKey::Section(SectionKey::Archive),
+            NodeKey::Section(SectionKey::Favorites),
             NodeKey::GroupMonth { base: Box::new(NodeKey::Section(SectionKey::Archive)), month: march },
             NodeKey::TimelineYear(2024),
             NodeKey::TimelineMonth(march),
