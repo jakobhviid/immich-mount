@@ -192,7 +192,8 @@ checked by CI's macOS job; the maintainer's Mac is needed only to run and debug 
 4. **Uploads** into the Upload folder, through the core's upload sequence.
    **Built and verified in Finder:** a photo copied or moved into Upload reaches the server byte for byte and leaves
    Upload; a moved photo's source is gone; a file Immich does not take stays in Upload, refused with its reason.
-   Not yet seen: how Finder shows that refusal.
+   Not yet seen: how Finder shows that refusal, and signing out with files waiting in Upload (removed with
+   `preserveDirtyUserData`: where macOS keeps them, and that Finder opens that folder).
 5. **Distribution.** A notarized universal DMG built by the release workflow; it needs the paid Apple Developer
    Program. The Homebrew cask `immich-mount` gains a macOS part beside its Linux one (the DMG, the app into
    Applications, macOS 14 or later, and a zap of the App Group folder and the sandbox containers), so one command
