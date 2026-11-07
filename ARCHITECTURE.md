@@ -1105,7 +1105,8 @@ Each platform gets a native app that looks and reads like a first-party app (pri
 ### The download page
 
 `jakob.hviid.phd/immich-mount` is one static page: what Immich Mount is, its screenshots, and the files of the latest
-release. GitHub Pages serves it, and the release workflow's `pages` job deploys it after every release.
+release. GitHub Pages serves it, and the `pages` workflow deploys it: called by the release workflow after every
+release, and run by hand after a Mac disk image is attached to a release.
 - **Its links come from the release itself.** `site/build.py` reads the release's file list (`gh release view
   --json`) and fills `site/index.html` with direct links to those files, so a link never points at an older version,
   and a file a release lacks shows as plain text, not a dead link. GitHub's `releases/latest/download/` links lost:

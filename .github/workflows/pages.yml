@@ -1,0 +1,44 @@
+name: pages
+
+# The download page (jakob.hviid.phd/immich-mount; ARCHITECTURE.md, "The download page"), built for the latest release,
+# with the Mac download from the newest release that has one. The release workflow runs it after every release; run it
+# by hand after attaching a Mac disk image to a release, so the page offers it at once. It needs GitHub Pages on, with
+# GitHub Actions as its source.
+on:
+  workflow_call:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+
+concurrency:
+  group: pages
+  cancel-in-progress: false
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    environment:
+      name: github-pages
+      url: ${{ steps.deploy.outputs.page_url }}
+    steps:
+      - uses: actions/checkout@v5
+      - name: The page for the latest release
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          gh release view --json tagName,publishedAt,url,assets > release.json
+          mac=$(ci/latest-mac-release.sh)
+          if [ -n "$mac" ]; then
+            gh release view "$mac" --json tagName,publishedAt,url,assets > macos.json
+            python3 site/build.py release.json _site --macos macos.json
+          else
+            python3 site/build.py release.json _site
+          fi
+      - uses: actions/upload-pages-artifact@v5
+        with:
+          path: _site
+      - id: deploy
+        uses: actions/deploy-pages@v5

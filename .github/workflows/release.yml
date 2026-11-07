@@ -303,8 +303,6 @@ jobs:
     # The Linux packages go out whether the Mac job ran or was skipped, never when it failed.
     if: ${{ !cancelled() && needs.build.result == 'success' && contains(fromJSON('["success", "skipped"]'), needs.macos.result) }}
     runs-on: ubuntu-latest
-    outputs:
-      version: ${{ steps.version.outputs.version }}
     steps:
       - uses: actions/checkout@v5
         with:
@@ -314,11 +312,9 @@ jobs:
           path: art
           merge-multiple: true
       - name: Version
-        id: version
         run: |
           VERSION=$(ci/version.sh)
           echo "VERSION=$VERSION" >> "$GITHUB_ENV"
-          echo "version=$VERSION" >> "$GITHUB_OUTPUT"
       - name: Homebrew bottle (x86_64 Linux)
         run: |
           # The prebuilt binary as a bottle of the headless formula, so `brew install` pours it. A poured bottle skips
@@ -399,34 +395,12 @@ jobs:
           git push --force origin "HEAD:refs/heads/auto/formula-immich-mount-headless"
 
   pages:
-    # The download page (jakob.hviid.phd/immich-mount), built for the release just published, so its links are never stale
-    # (ARCHITECTURE.md, "The download page"). It needs GitHub Pages on, with GitHub Actions as its source.
+    # The download page, for the release just published (pages.yml). Without its own condition, the Mac job skipped
+    # before it (until the Mac's secrets are set) would skip it too.
     needs: release
-    runs-on: ubuntu-latest
+    if: ${{ !cancelled() && needs.release.result == 'success' }}
     permissions:
       contents: read
       pages: write
       id-token: write
-    environment:
-      name: github-pages
-      url: ${{ steps.deploy.outputs.page_url }}
-    steps:
-      - uses: actions/checkout@v5
-      - name: The page for this release
-        env:
-          GH_TOKEN: ${{ github.token }}
-        run: |
-          gh release view "v${{ needs.release.outputs.version }}" --json tagName,publishedAt,url,assets > release.json
-          # The Mac download, from the newest release that has one.
-          mac=$(ci/latest-mac-release.sh)
-          if [ -n "$mac" ]; then
-            gh release view "$mac" --json tagName,publishedAt,url,assets > macos.json
-            python3 site/build.py release.json _site --macos macos.json
-          else
-            python3 site/build.py release.json _site
-          fi
-      - uses: actions/upload-pages-artifact@v5
-        with:
-          path: _site
-      - id: deploy
-        uses: actions/deploy-pages@v5
+    uses: ./.github/workflows/pages.yml
