@@ -4,10 +4,11 @@ site/style.css, the icon and the screenshots, written into an output folder for 
 "The download page"). Standard library only.
 
     gh release view [TAG] --json tagName,publishedAt,url,assets > release.json
-    site/build.py release.json OUTPUT
+    site/build.py release.json OUTPUT [--macos MAC_RELEASE_JSON]
 
-A release without a macOS disk image shows the macOS edition as not released yet, so the page never offers a file
-that is not there.
+The Mac download comes from MAC_RELEASE_JSON, the newest release with a disk image (ci/latest-mac-release.sh), while
+the Mac is released by hand and the releases after it carry none; without one, the page shows the macOS edition as
+not released yet, so it never offers a file that is not there.
 """
 
 import html
@@ -34,10 +35,11 @@ def link(url, text):
     return f'<a href="{html.escape(url)}">{html.escape(text)}</a>'
 
 
-def main(release_file, output):
+def main(release_file, output, mac_release_file=None):
     release = json.loads(Path(release_file).read_text())
     assets = release["assets"]
     version = release["tagName"].lstrip("v")
+    mac_release = json.loads(Path(mac_release_file).read_text()) if mac_release_file else release
     files = {
         "rpm": find(assets, r"immich-mount-[\d.]+-\d+\.x86_64\.rpm"),
         "rpm_arm": find(assets, r"immich-mount-[\d.]+-\d+\.aarch64\.rpm"),
@@ -49,16 +51,16 @@ def main(release_file, output):
         "deb_kde": find(assets, r"immich-mount-kde_.*_amd64\.deb"),
         "tar": find(assets, r"immich-mount-x86_64-unknown-linux-musl\.tar\.gz"),
         "tar_arm": find(assets, r"immich-mount-aarch64-unknown-linux-musl\.tar\.gz"),
-        "dmg": find(assets, r"(?i)immich[-_ ]mount.*\.dmg"),
+        "dmg": find(mac_release["assets"], r"(?i)immich[-_ ]mount.*\.dmg"),
     }
     if files["dmg"]:
         macos = (
-            f'<p>One app for Apple silicon and Intel Macs, on macOS 14 or later.</p>'
+            '<p>One app for Apple silicon and Intel Macs, on macOS 14 or later, signed and notarized by Apple. It '
+            'lives in the menu bar, and your library in Finder\'s sidebar.</p>'
             f'<p><a class="button" href="{html.escape(files["dmg"])}">Download for macOS</a></p>'
-            '<p>Or with <a href="https://brew.sh">Homebrew</a>:</p>'
-            '<pre class="command"><code>brew install --cask jakobhviid/tap/immich-mount</code></pre>'
-            '<p class="small">On first start, switch Immich Mount on in System Settings, under General, Login Items '
-            '&amp; Extensions, File Providers. Immich then shows in Finder\'s sidebar.</p>'
+            f'<p class="small">Version {html.escape(mac_release["tagName"].lstrip("v"))}. Open the disk image, drag '
+            'Immich Mount into Applications and open it from there. Sign in, then switch Immich Mount on in System '
+            'Settings, under General, Login Items &amp; Extensions, File Providers: the app shows the way.</p>'
         )
     else:
         macos = (
@@ -104,6 +106,10 @@ def main(release_file, output):
 
 
 if __name__ == "__main__":
-    if len(sys.argv) != 3:
+    arguments = sys.argv[1:]
+    if len(arguments) == 4 and arguments[2] == "--macos":
+        main(arguments[0], arguments[1], arguments[3])
+    elif len(arguments) == 2:
+        main(arguments[0], arguments[1])
+    else:
         sys.exit(__doc__)
-    main(sys.argv[1], sys.argv[2])

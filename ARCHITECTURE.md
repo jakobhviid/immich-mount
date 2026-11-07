@@ -1114,8 +1114,11 @@ release. GitHub Pages serves it, and the release workflow's `pages` job deploys 
   first, marked "for your system". Both stay on the page, and nothing downloads by itself. It goes no further than
   the operating system: browsers do not reliably tell the CPU architecture, and never the distribution, so the
   Linux files are listed by distribution, x86_64 and ARM side by side. Without script, Linux comes first.
-- **macOS shows once it ships.** The macOS block offers a download and the cask only when the release carries a
-  disk image (`.dmg`); until then it says the edition is not released yet.
+- **The supported platforms come first,** under the tagline: Linux on GNOME and KDE Plasma, and macOS 14 or later.
+- **The Mac download comes from the newest release that has one** (`ci/latest-mac-release.sh`), since the Mac is
+  released by hand for now and the releases after it carry no disk image; pruning keeps that release among the last
+  ten. Without one, the macOS block says the edition is not released yet, so the page never offers a file that is
+  not there.
 - **Nothing is loaded from elsewhere:** no analytics, cookies, web fonts or third-party scripts. The icon and the
   README's screenshots (`docs/screenshots/`) are copied in, and the build fails if a local link has no file.
 - **Python's standard library, one template and one script,** rather than a static site generator: there is one
