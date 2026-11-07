@@ -285,13 +285,25 @@ jobs:
           TEAM_ID: ${{ secrets.APPLE_TEAM_ID }}
           NOTARY_KEY_ID: ${{ secrets.NOTARY_KEY_ID }}
           NOTARY_ISSUER: ${{ secrets.NOTARY_ISSUER }}
+          # The Developer ID profiles made in the developer portal, which the step above installed.
+          APP_PROFILE: dev.hviid.ImmichMount
+          EXTENSION_PROFILE: dev.hviid.ImmichMount.FileProvider
         run: |
           brew install xcodegen
           NOTARY_KEY="$RUNNER_TEMP/notary.p8" apple/release.sh
+      - name: The update file, for Sparkle's feed
+        env:
+          SPARKLE_KEY: ${{ secrets.SPARKLE_KEY }}
+        run: |
+          printf '%s\n' "$SPARKLE_KEY" > "$RUNNER_TEMP/sparkle.pem"
+          ci/sign-mac-update.sh apple/build/release/immich-mount-$VERSION.dmg "$RUNNER_TEMP/sparkle.pem"
+          rm -f "$RUNNER_TEMP/sparkle.pem"
       - uses: actions/upload-artifact@v4
         with:
           name: macos
-          path: apple/build/release/*.dmg
+          path: |
+            apple/build/release/*.dmg
+            apple/build/release/*.dmg.update
       - name: Remove the signing keychain and the notary key
         if: always()
         run: |
@@ -350,9 +362,9 @@ jobs:
         env:
           GH_TOKEN: ${{ github.token }}
         run: |
-          # The disk image only when the Mac job ran.
+          # The disk image and its update file only when the Mac job ran.
           shopt -s nullglob
-          files=(art/*.tar.gz art/*.deb art/*.rpm art/*.dmg)
+          files=(art/*.tar.gz art/*.deb art/*.rpm art/*.dmg art/*.dmg.update)
           gh release create "v$VERSION" "${files[@]}" \
             --title "v$VERSION" --notes "Automated build from ${GITHUB_SHA:0:7}" \
             || gh release upload "v$VERSION" "${files[@]}" --clobber

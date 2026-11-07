@@ -201,13 +201,14 @@ checked by CI's macOS job; the maintainer's Mac is needed only to run and debug 
    **Built:** `apple/release.sh` and the release workflow's `macos` job (ARCHITECTURE, "The macOS edition",
    "Distribution"); CI builds the unsigned disk image on every branch. **Verified on the maintainer's Mac
    (2026-11-07):** a disk image signed with Developer ID and notarized, which Gatekeeper accepts as "Notarized
-   Developer ID", installed by dragging and run from Applications. The first Mac release is built there and attached
-   to its GitHub release by hand; the workflow's `macos` job waits for its secrets (the certificate as a .p12, the
-   two Developer ID profiles made in the developer portal, the notary key) and the variable `MACOS_RELEASES`.
-   **Released: 2.14.2 (2026-11-07),** the first Mac release, attached to its release by hand; the download page
-   offers it. **2.15.1** is the first that updates itself (Sparkle), its update file beside it; the feed is on the
-   download page. The cask's macOS part waits for the `macos` job: a cask has one version, so every release must carry
-   the disk image before Homebrew can point at it.
+   Developer ID", installed by dragging and run from Applications. With its secrets set and `MACOS_RELEASES` on
+   (2026-11-07), the release workflow's `macos` job builds, signs and notarizes the disk image and attaches it, with
+   its update file, to every release.
+   **Released: 2.14.2 (2026-11-07),** the first Mac release, built on the maintainer's Mac and attached by hand.
+   **2.15.1** is the first that updates itself (Sparkle); the feed is on the download page. **Verified on the
+   maintainer's Mac:** 2.15.1 found 2.15.2 in the feed, checked its signature, replaced itself in Applications and
+   started again. Next: the cask's macOS part, which needs the disk image in every release, since a cask has one
+   version.
    Exit: a Mac that never had it installs from Homebrew, switches the extension on, and browses.
 
 Open:

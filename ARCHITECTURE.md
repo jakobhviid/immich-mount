@@ -1356,7 +1356,8 @@ Mac and in the release workflow's `macos` job:
   password: it is scoped to the team, and can be revoked on its own.
 - **The release workflow's secrets:** `APPLE_TEAM_ID`; `MACOS_CERTIFICATE` (the Developer ID certificate with its
   key, a .p12 in base64) and `MACOS_CERTIFICATE_PASSWORD`; `MACOS_APP_PROFILE` and `MACOS_EXTENSION_PROFILE` (in
-  base64); `NOTARY_KEY` (the .p8), `NOTARY_KEY_ID` and `NOTARY_ISSUER`. The job signs from a keychain of its own,
+  base64, made in the developer portal and named after their App IDs); `NOTARY_KEY` (the .p8), `NOTARY_KEY_ID` and
+  `NOTARY_ISSUER`; `SPARKLE_KEY`, which signs each disk image's update file. The job signs from a keychain of its own,
   deleted at the end. It runs only when the repository variable `MACOS_RELEASES` is `on` (a job's condition cannot
   read secrets), and the release goes out with whatever was built: without the job, the Linux packages alone.
 - **Updates by Sparkle** (MIT), as most Mac apps outside the App Store have them: "Check for Updates…" in the menu
