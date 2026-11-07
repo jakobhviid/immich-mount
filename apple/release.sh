@@ -134,6 +134,14 @@ else
   app="$archive/Products/Applications/$app_name"
 fi
 
+# Every language build-rust.sh made from po/ is in the app (ARCHITECTURE.md, "Translations").
+for table in build/Localization/*.lproj; do
+  language=$(basename "$table")
+  for file in Localizable.strings InfoPlist.strings; do
+    [ -f "$app/Contents/Resources/$language/$file" ] || { echo "the app lacks $language/$file" >&2; exit 1; }
+  done
+done
+
 # The disk image: the app beside a link to Applications, to drag it onto.
 stage="$out/disk"
 mkdir -p "$stage"
