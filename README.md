@@ -30,8 +30,9 @@ without downloading the library first.
   in a folder of its own.
 - **Changes in Immich show within seconds,** in an open folder after a refresh.
 - **One app, native on each desktop:** it opens in GTK and libadwaita on GNOME and in Kirigami on KDE Plasma, to sign
-  in, choose what to show, and see the status. On the Mac it is a menu bar app, with the library in Finder's sidebar
-  through Apple's File Provider, as iCloud Drive's is. Sign in with your server's single sign-on in your own browser (passkeys
+  in, choose what to show, and see the status. A tray icon shows how it is connected, in KDE Plasma's system tray and in
+  GNOME's top bar where the AppIndicator extension is on. On the Mac it is a menu bar app, with the library in
+  Finder's sidebar through Apple's File Provider, as iCloud Drive's is. Sign in with your server's single sign-on in your own browser (passkeys
   and password managers work as usual), with email and password, or with an API key. The credential stays in your
   keyring (GNOME Keyring or KWallet).
 - **In your language:** the apps speak English and 20 more of the world's most spoken languages, Danish among
