@@ -1324,7 +1324,8 @@ Mac and in the release workflow's `macos` job:
 - **The release workflow's secrets:** `APPLE_TEAM_ID`; `MACOS_CERTIFICATE` (the Developer ID certificate with its
   key, a .p12 in base64) and `MACOS_CERTIFICATE_PASSWORD`; `MACOS_APP_PROFILE` and `MACOS_EXTENSION_PROFILE` (in
   base64); `NOTARY_KEY` (the .p8), `NOTARY_KEY_ID` and `NOTARY_ISSUER`. The job signs from a keychain of its own,
-  deleted at the end.
+  deleted at the end. It runs only when the repository variable `MACOS_RELEASES` is `on` (a job's condition cannot
+  read secrets), and the release goes out with whatever was built: without the job, the Linux packages alone.
 - **One version with Linux:** `apple/build-rust.sh` hands Xcode the release line's version (`ci/version.sh`) and the
   commit count as the build number, which grows with every release; development builds show the same.
 

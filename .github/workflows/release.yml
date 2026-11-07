@@ -235,8 +235,10 @@ jobs:
 
   macos:
     # The macOS edition (ARCHITECTURE.md, "The macOS edition"): a universal disk image, signed with Developer ID and
-    # notarized by apple/release.sh. The certificate, the two provisioning profiles and the notary key are secrets.
+    # notarized by apple/release.sh. The certificate, the two provisioning profiles and the notary key are secrets;
+    # until they are set, the repository variable MACOS_RELEASES is not `on`, and releases go out without the Mac.
     needs: test
+    if: vars.MACOS_RELEASES == 'on'
     runs-on: macos-latest
     steps:
       - uses: actions/checkout@v5
@@ -298,6 +300,8 @@ jobs:
 
   release:
     needs: [build, macos]
+    # The Linux packages go out whether the Mac job ran or was skipped, never when it failed.
+    if: ${{ !cancelled() && needs.build.result == 'success' && contains(fromJSON('["success", "skipped"]'), needs.macos.result) }}
     runs-on: ubuntu-latest
     outputs:
       version: ${{ steps.version.outputs.version }}
@@ -350,9 +354,12 @@ jobs:
         env:
           GH_TOKEN: ${{ github.token }}
         run: |
-          gh release create "v$VERSION" art/*.tar.gz art/*.deb art/*.rpm art/*.dmg \
+          # The disk image only when the Mac job ran.
+          shopt -s nullglob
+          files=(art/*.tar.gz art/*.deb art/*.rpm art/*.dmg)
+          gh release create "v$VERSION" "${files[@]}" \
             --title "v$VERSION" --notes "Automated build from ${GITHUB_SHA:0:7}" \
-            || gh release upload "v$VERSION" art/*.tar.gz art/*.deb art/*.rpm art/*.dmg --clobber
+            || gh release upload "v$VERSION" "${files[@]}" --clobber
       - name: Prune old releases (keep the latest 10)
         env:
           GH_TOKEN: ${{ github.token }}

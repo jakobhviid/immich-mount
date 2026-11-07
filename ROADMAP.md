@@ -199,8 +199,11 @@ checked by CI's macOS job; the maintainer's Mac is needed only to run and debug 
    the cask waits for notarization. The download page (`jakob.hviid.phd/immich-mount`, built on `main`) offers the
    disk image and the cask once a release carries a `.dmg`.
    **Built:** `apple/release.sh` and the release workflow's `macos` job (ARCHITECTURE, "The macOS edition",
-   "Distribution"); CI builds the unsigned disk image on every branch. Waiting on the Developer Program: the
-   Developer ID certificate, the two profiles, the notary key and the workflow's secrets.
+   "Distribution"); CI builds the unsigned disk image on every branch. **Verified on the maintainer's Mac
+   (2026-11-07):** a disk image signed with Developer ID and notarized, which Gatekeeper accepts as "Notarized
+   Developer ID", installed by dragging and run from Applications. The first Mac release is built there and attached
+   to its GitHub release by hand; the workflow's `macos` job waits for its secrets (the certificate as a .p12, the
+   two Developer ID profiles made in the developer portal, the notary key) and the variable `MACOS_RELEASES`.
    Exit: a Mac that never had it installs from Homebrew, switches the extension on, and browses.
 
 Open:
