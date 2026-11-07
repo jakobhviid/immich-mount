@@ -23,7 +23,13 @@ targets:
     type: application
     platform: macOS
     sources:
-      - App
+      - path: App
+        excludes: [AppIcon.icon]
+      # The Icon Composer icon is one document, not a folder of resources; macOS 26 and later show it, and the asset
+      # catalog's AppIcon set stays for macOS 14 and 15 (ARCHITECTURE.md, "The icon").
+      - path: App/AppIcon.icon
+        type: file
+        buildPhase: resources
       - Shared
       - build/Generated
     settings:
