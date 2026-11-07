@@ -18,8 +18,9 @@ server=${LAB_SERVER:-http://127.0.0.1:2283}
 env_file="$here/../immich-server/.env${IMMICH_INSTANCE:+.$IMMICH_INSTANCE}.local"
 # shellcheck source=/dev/null
 . "$env_file"
-# Relative to the home folder, where ssh starts: the location of the File Provider domain "Immich", and the checkout.
-root='Library/CloudStorage/ImmichMount-Immich'
+# Relative to the home folder, where ssh starts: the File Provider location, whose folder carries the drive's name
+# (mount.name) and which the Mac's shell finds by the pattern, and the checkout.
+root='Library/CloudStorage/ImmichMount-*'
 checkout='Developer/Private/immich-mount'
 app="$checkout/apple/build/DerivedData/Build/Products/Debug/Immich Mount.app"
 

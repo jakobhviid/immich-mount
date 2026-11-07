@@ -1194,8 +1194,9 @@ looked up in the album list.
 **Content.** The system asks for an original when something opens the file. The extension downloads it whole into
 a file the system then keeps, and evicts under storage pressure; the block cache is not used. Every item's content
 policy is to download lazily, which allows evicting it (the policy replaces macOS 11's eviction capability), so
-Finder offers "Remove Download" on a file or a folder, which frees the local copies and leaves the library alone.
-The system keeps the details of items it holds (their capabilities and policy included), so the bridge's item
+Finder offers "Remove Download" on a file or a folder, which frees the local copies and leaves the library alone
+(verified on macOS 27.0.1: the system derives the eviction capability from the policy, and evicts a downloaded photo
+as Remove Download does). The system keeps the details of items it holds (their capabilities and policy included), so the bridge's item
 format is part of every item's version: a release that changes what items carry raises it, and the app, seeing a
 new format at launch, has the system read every item again once.
 - **A reimport** (after a new item format, or a settings change) drops the system's database: it then finds what is on
@@ -1296,7 +1297,8 @@ Mac and in the release workflow's `macos` job:
 Development builds run under a free Personal Team on the maintainer's Mac. Each Mac switches the
 extension on once, in System Settings (General, Login Items & Extensions); no program can do it for the user. The
 app adds the location switched off (verified: `fileproviderctl dump` shows it `enabled: no` until then), and its
-folder is `~/Library/CloudStorage/ImmichMount-Immich`.
+folder is `~/Library/CloudStorage/ImmichMount-<the drive's name without spaces>`, `ImmichMount-ImmichMount` by
+default. Renaming the location moves the folder there, and keeps its items and downloads (verified, macOS 27.0.1).
 
 **Flatpak impact:** none. The Linux edition is unchanged, and the core's additions are platform-free.
 

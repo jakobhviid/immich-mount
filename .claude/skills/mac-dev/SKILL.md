@@ -148,7 +148,8 @@ the extension switched on; it works through the checkout's `apple/build/check/`,
 - **The system's state:** `fileproviderctl dump` (domains, whether ours is enabled, its items); whether the
   extension is switched on: `fileproviderctl dump | grep -A4 '^domain: dev.hviid' | grep enabled`. macOS 27's
   `fileproviderctl` also has `diagnose`, `evaluate` and `check`.
-- **The location on disk:** `~/Library/CloudStorage/ImmichMount-Immich`, which SSH can list and read (verified).
+- **The location on disk:** `~/Library/CloudStorage/ImmichMount-ImmichMount` (the drive's name, `mount.name`,
+  without spaces), which SSH can list and read (verified).
 - **Thumbnails as Finder asks for them:** `xcrun swift lab/mac/thumbnail.swift <file>` (QLThumbnailGenerator).
   `qlmanage -t` reads the file itself, which downloads the original: no test of the extension's thumbnails.
 - **Info-level lines** (downloads, listings) show only with `/usr/bin/log show --info`.
