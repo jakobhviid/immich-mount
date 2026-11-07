@@ -1,0 +1,930 @@
+# Immich Mount in ru.
+# This file is part of Immich Mount, under the MIT license. Made by po/i18n.py.
+#
+msgid ""
+msgstr ""
+"Project-Id-Version: immich-mount\n"
+"Report-Msgid-Bugs-To: https://github.com/jakobhviid/immich-mount/issues\n"
+"Language: ru\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+
+#: crates/immich-mount/src/online.rs:392
+msgid "Immich is not mounted"
+msgstr "Immich не подключён"
+
+#: crates/immich-mount/src/online.rs:393
+msgid "The keyring stayed locked. Open Immich Mount, or run “immich-mount mount”, to try again."
+msgstr "Связка ключей осталась заблокированной. Откройте Immich Mount или выполните «immich-mount mount», чтобы повторить попытку."
+
+#: crates/immich-mount-linux/src/daemon.rs:279
+msgid "Immich is unreachable"
+msgstr "Immich недоступен"
+
+#: crates/immich-mount-linux/src/daemon.rs:280
+msgid "Signed out of Immich"
+msgstr "Выполнен выход из Immich"
+
+#: crates/immich-mount-linux/src/fuse.rs:621
+#: crates/immich-mount-linux/src/fuse.rs:662
+#: crates/immich-mount-linux/src/fuse.rs:668
+#: crates/immich-mount-linux/src/fuse.rs:678
+#: crates/immich-mount-linux/src/fuse.rs:1129
+msgid "Not uploaded: {name}"
+msgstr "Не загружено: {name}"
+
+#: crates/immich-mount-linux/src/fuse.rs:621
+msgid "The file is incomplete, as if its copy was cancelled."
+msgstr "Файл неполный, как будто его копирование было отменено."
+
+#: crates/immich-mount-linux/src/fuse.rs:636
+msgid "Uploading {name} to Immich"
+msgstr "Загрузка {name} в Immich"
+
+#: crates/immich-mount-linux/src/fuse.rs:637
+msgid "The copy finishes once Immich has the file."
+msgstr "Копирование завершится, когда файл окажется в Immich."
+
+#: crates/immich-mount-linux/src/fuse.rs:649
+msgid "Immich has this photo already, so nothing was added."
+msgstr "Это фото уже есть в Immich, поэтому ничего не добавлено."
+
+#: crates/immich-mount-linux/src/fuse.rs:650
+msgid "Already in Immich: {name}"
+msgstr "Уже в Immich: {name}"
+
+#: crates/immich-mount-linux/src/fuse.rs:659
+msgid "{error}. The file is kept in {folder}."
+msgstr "{error}. Файл остаётся в {folder}."
+
+#: crates/immich-mount-linux/src/fuse.rs:669
+msgid "This computer lets a file operation take at most {seconds} seconds (fs.fuse.default_request_timeout). Set it to 0 for longer uploads. The file is kept in {folder}."
+msgstr "Этот компьютер позволяет файловой операции длиться не более {seconds} с (fs.fuse.default_request_timeout). Установите 0, чтобы загрузка могла длиться дольше. Файл остаётся в {folder}."
+
+#: crates/immich-mount-linux/src/fuse.rs:679
+msgid "The upload took too long. The file is kept in {folder}."
+msgstr "Загрузка заняла слишком много времени. Файл остаётся в {folder}."
+
+#: crates/immich-mount-linux/src/fuse.rs:1129
+msgid "Immich takes photos and videos only."
+msgstr "Immich принимает только фото и видео."
+
+#: crates/immich-mount-desktop/src/preferences.rs:12
+msgid "Drive"
+msgstr "Диск"
+
+#: crates/immich-mount-desktop/src/preferences.rs:13
+#: crates/immich-mount-gnome/src/window.blp:144
+#: crates/immich-mount-kde/qml/Main.qml:364
+#: crates/immich-mount-apple/src/lib.rs:676
+msgid "Sections"
+msgstr "Разделы"
+
+#: crates/immich-mount-desktop/src/preferences.rs:14
+#: crates/immich-mount-apple/src/lib.rs:677
+msgid "Date Folders"
+msgstr "Папки по датам"
+
+#: crates/immich-mount-desktop/src/preferences.rs:16
+#: crates/immich-mount-apple/src/lib.rs:679
+msgid "Files"
+msgstr "Файлы"
+
+#: crates/immich-mount-desktop/src/preferences.rs:17
+msgid "Thumbnails"
+msgstr "Миниатюры"
+
+#: crates/immich-mount-desktop/src/preferences.rs:18
+#: crates/immich-mount-gnome/src/window.blp:306
+msgid "Cache"
+msgstr "Кэш"
+
+#: crates/immich-mount-desktop/src/session.rs:62
+msgid "Online"
+msgstr "В сети"
+
+#: crates/immich-mount-desktop/src/session.rs:63
+msgid "Server unreachable; files you opened before stay available"
+msgstr "Сервер недоступен; ранее открытые файлы остаются доступными"
+
+#: crates/immich-mount-desktop/src/session.rs:64
+msgid "Signed out; sign in again"
+msgstr "Выполнен выход; войдите снова"
+
+#: crates/immich-mount-desktop/src/session.rs:66
+#: crates/immich-mount-desktop/src/session.rs:76
+msgid "Not running"
+msgstr "Не запущено"
+
+#: crates/immich-mount-desktop/src/session.rs:73
+msgid "{used} of {limit}"
+msgstr "{used} из {limit}"
+
+#: crates/immich-mount-desktop/src/session.rs:90
+msgid "writing"
+msgstr "записывается"
+
+#: crates/immich-mount-desktop/src/session.rs:90
+msgid "uploading"
+msgstr "загружается"
+
+#: crates/immich-mount-desktop/src/session.rs:91
+msgid "{name}, {phase}"
+msgstr "{name}, {phase}"
+
+#: crates/immich-mount-desktop/src/session.rs:94
+msgid "{name} and {count} more"
+msgstr "{name} и ещё {count}"
+
+#: crates/immich-mount-desktop/src/session.rs:121
+msgid "That address cannot be used: {error}"
+msgstr "Этот адрес нельзя использовать: {error}"
+
+#: crates/immich-mount-desktop/src/session.rs:161
+#: crates/immich-mount-desktop/src/session.rs:171
+#: crates/immich-mount-desktop/src/session.rs:365
+#: crates/immich-mount-desktop/src/session.rs:367
+msgid "Kept in {file}"
+msgstr "Хранятся в {file}"
+
+#: crates/immich-mount-desktop/src/session.rs:166
+#: crates/immich-mount-desktop/src/session.rs:369
+msgid "Kept in the keyring"
+msgstr "Хранятся в связке ключей"
+
+#: crates/immich-mount-desktop/src/session.rs:173
+msgid "The keyring stayed locked, so nothing was saved."
+msgstr "Связка ключей осталась заблокированной, поэтому ничего не сохранено."
+
+#: crates/immich-mount-desktop/src/session.rs:247
+msgid "Signed in, but the mount cannot start: {error}."
+msgstr "Вход выполнен, но подключить диск не удаётся: {error}."
+
+#: crates/immich-mount-desktop/src/session.rs:251
+msgid "Signed in, but the mount did not start: {error}"
+msgstr "Вход выполнен, но диск не подключился: {error}"
+
+#: crates/immich-mount-gnome/src/main.rs:106
+msgid "Your Immich photos and videos as a drive in Files."
+msgstr "Ваши фото и видео из Immich как диск в «Файлах»."
+
+#: crates/immich-mount-gnome/src/main.rs:110
+msgid "Source Code"
+msgstr "Исходный код"
+
+#: crates/immich-mount-gnome/src/main.rs:111
+msgid "Inspired By"
+msgstr "Вдохновлено"
+
+#: crates/immich-mount-gnome/src/main.rs:112
+msgid "The Immich API Layer"
+msgstr "Слой API Immich"
+
+#: crates/immich-mount-gnome/src/main.rs:114
+msgid "AI Disclosure"
+msgstr "Использование ИИ"
+
+#: crates/immich-mount-gnome/src/main.rs:117
+#: crates/immich-mount-kde/qml/Main.qml:175
+#: apple/App/ImmichMountApp.swift:307
+msgid "Parts of this project were written with the assistance of AI coding agents. All changes are reviewed by the maintainer."
+msgstr "Части этого проекта написаны с помощью ИИ-агентов для программирования. Все изменения проверяет сопровождающий."
+
+#: crates/immich-mount-gnome/src/main.rs:81
+#: crates/immich-mount-kde/qml/Main.qml:71
+#: crates/immich-mount-kde/qml/Main.qml:198
+msgid "Preferences"
+msgstr "Параметры"
+
+#: crates/immich-mount-gnome/src/main.rs:82
+msgid "Keyboard Shortcuts"
+msgstr "Комбинации клавиш"
+
+#: crates/immich-mount-gnome/src/main.rs:83
+msgid "Quit"
+msgstr "Завершить"
+
+#: crates/immich-mount-gnome/src/window.rs:263
+#: crates/immich-mount-kde/qml/Main.qml:321
+msgid "Continue in your browser"
+msgstr "Продолжите в браузере"
+
+#: crates/immich-mount-gnome/src/window.rs:274
+msgid "This sign-in belongs to an earlier attempt. Finish the latest one, or sign in again."
+msgstr "Этот вход относится к более ранней попытке. Завершите последнюю или войдите снова."
+
+#: crates/immich-mount-gnome/src/window.rs:286
+msgid "Enter your email and password"
+msgstr "Введите электронную почту и пароль"
+
+#: crates/immich-mount-gnome/src/window.rs:297
+msgid "Enter an API key"
+msgstr "Введите ключ API"
+
+#: crates/immich-mount-gnome/src/window.rs:324
+msgid "Signed in as {account}"
+msgstr "Вы вошли как {account}"
+
+#: crates/immich-mount-gnome/src/window.rs:390
+msgid "Signed in, but the status could not be read"
+msgstr "Вход выполнен, но не удалось прочитать состояние"
+
+#: crates/immich-mount-gnome/src/window.rs:417
+#: crates/immich-mount-kde/qml/Main.qml:396
+msgid "Signed Out of Immich"
+msgstr "Выполнен выход из Immich"
+
+#: crates/immich-mount-gnome/src/window.rs:417
+#: crates/immich-mount-kde/qml/Main.qml:397
+msgid "Sign in again to keep browsing. Your caches are kept."
+msgstr "Войдите снова, чтобы продолжить просмотр. Кэши сохранены."
+
+#: crates/immich-mount-gnome/src/window.rs:418
+#: crates/immich-mount-gnome/src/window.blp:209
+msgid "Your Library Is in Files"
+msgstr "Ваша библиотека в «Файлах»"
+
+#: crates/immich-mount-gnome/src/window.rs:418
+#: crates/immich-mount-kde/qml/Main.qml:398
+msgid "Browse it like any folder. Originals download only when you open them."
+msgstr "Просматривайте её как любую папку. Оригиналы скачиваются, только когда вы их открываете."
+
+#: crates/immich-mount-gnome/src/window.rs:419
+#: crates/immich-mount-kde/qml/Main.qml:396
+msgid "Not Mounted"
+msgstr "Не подключено"
+
+#: crates/immich-mount-gnome/src/window.rs:419
+msgid "Mount it to browse your library in Files."
+msgstr "Подключите диск, чтобы просматривать библиотеку в «Файлах»."
+
+#: crates/immich-mount-gnome/src/window.rs:462
+msgid "Disconnected"
+msgstr "Отсоединено"
+
+#: crates/immich-mount-gnome/src/window.blp:26
+#: crates/immich-mount-gnome/src/window.blp:202
+msgid "Main Menu"
+msgstr "Главное меню"
+
+#: crates/immich-mount-gnome/src/window.blp:33
+msgid "Your Immich Library in Files"
+msgstr "Ваша библиотека Immich в «Файлах»"
+
+#: crates/immich-mount-gnome/src/window.blp:34
+#: crates/immich-mount-kde/qml/Main.qml:237
+msgid "Browse your photos and videos as a drive. Originals download only when you open them."
+msgstr "Просматривайте фото и видео как диск. Оригиналы скачиваются, только когда вы их открываете."
+
+#: crates/immich-mount-gnome/src/window.blp:45
+msgid "Server Address"
+msgstr "Адрес сервера"
+
+#: crates/immich-mount-gnome/src/window.blp:52
+msgid "_Continue"
+msgstr "_Продолжить"
+
+#: crates/immich-mount-gnome/src/window.blp:70
+#: crates/immich-mount-kde/qml/Main.qml:212
+#: crates/immich-mount-kde/qml/Main.qml:295
+#: apple/App/ContentView.swift:141
+#: apple/App/ContentView.swift:145
+msgid "Sign In"
+msgstr "Войти"
+
+#: crates/immich-mount-gnome/src/window.blp:78
+#: crates/immich-mount-kde/qml/Main.qml:276
+msgid "Opens your browser, where you sign in as usual, with a passkey or a password manager."
+msgstr "Открывает браузер, где вы входите как обычно, с ключом доступа или менеджером паролей."
+
+#: crates/immich-mount-gnome/src/window.blp:92
+msgid "Email and Password"
+msgstr "Электронная почта и пароль"
+
+#: crates/immich-mount-gnome/src/window.blp:93
+msgid "For two-factor sign-in, use your server's single sign-on instead."
+msgstr "Для двухфакторного входа используйте вместо этого единый вход вашего сервера."
+
+#: crates/immich-mount-gnome/src/window.blp:96
+#: crates/immich-mount-kde/qml/Main.qml:285
+msgid "Email"
+msgstr "Электронная почта"
+
+#: crates/immich-mount-gnome/src/window.blp:101
+#: crates/immich-mount-kde/qml/Main.qml:289
+msgid "Password"
+msgstr "Пароль"
+
+#: crates/immich-mount-gnome/src/window.blp:106
+msgid "Sign _In"
+msgstr "_Войти"
+
+#: crates/immich-mount-gnome/src/window.blp:114
+msgid "Use an API Key Instead"
+msgstr "Использовать вместо этого ключ API"
+
+#: crates/immich-mount-gnome/src/window.blp:115
+msgid "For read-only access, or machines without a browser"
+msgstr "Для доступа только на чтение или компьютеров без браузера"
+
+#: crates/immich-mount-gnome/src/window.blp:118
+msgid "API Key"
+msgstr "Ключ API"
+
+#: crates/immich-mount-gnome/src/window.blp:123
+msgid "Sign In With _Key"
+msgstr "Войти с _ключом"
+
+#: crates/immich-mount-gnome/src/window.blp:135
+msgid "Your Library in Files"
+msgstr "Библиотека в «Файлах»"
+
+#: crates/immich-mount-gnome/src/window.blp:145
+msgid "The folders the drive shows. You can change this later in Preferences."
+msgstr "Папки, которые показывает диск. Это можно изменить позже в параметрах."
+
+#: crates/immich-mount-gnome/src/window.blp:149
+msgid "The timeline, by year and month"
+msgstr "Хронология по годам и месяцам"
+
+#: crates/immich-mount-gnome/src/window.blp:166
+#: crates/immich-mount-gnome/src/window.blp:314
+#: crates/immich-mount-kde/qml/Main.qml:369
+msgid "Location"
+msgstr "Расположение"
+
+#: crates/immich-mount-gnome/src/window.blp:169
+#: crates/immich-mount-kde/qml/Main.qml:372
+msgid "Folder"
+msgstr "Папка"
+
+#: crates/immich-mount-gnome/src/window.blp:175
+#: crates/immich-mount-gnome/src/window.blp:223
+msgid "_Open in Files"
+msgstr "Открыть в «_Файлах»"
+
+#: crates/immich-mount-gnome/src/window.blp:234
+msgid "_Unmount"
+msgstr "_Отключить"
+
+#: crates/immich-mount-gnome/src/window.blp:236
+msgid "Take it out of Files until you mount it again or log in"
+msgstr "Убрать из «Файлов», пока вы снова не подключите диск или не войдёте в систему"
+
+#: crates/immich-mount-gnome/src/window.blp:245
+msgid "_Mount"
+msgstr "_Подключить"
+
+#: crates/immich-mount-gnome/src/window.blp:261
+msgid "Sign In _Again"
+msgstr "Войти _снова"
+
+#: crates/immich-mount-gnome/src/window.blp:273
+msgid "Server"
+msgstr "Сервер"
+
+#: crates/immich-mount-gnome/src/window.blp:281
+msgid "Account"
+msgstr "Учётная запись"
+
+#: crates/immich-mount-gnome/src/window.blp:290
+msgid "Credential"
+msgstr "Учётные данные"
+
+#: crates/immich-mount-gnome/src/window.blp:298
+msgid "Connection"
+msgstr "Соединение"
+
+#: crates/immich-mount-gnome/src/window.blp:322
+msgid "Uploading"
+msgstr "Загрузка на сервер"
+
+#: crates/immich-mount-gnome/src/window.blp:333
+msgid "_Disconnect"
+msgstr "Отсое_диниться"
+
+#: crates/immich-mount-gnome/src/window.blp:354
+msgid "_Preferences"
+msgstr "_Параметры"
+
+#: crates/immich-mount-gnome/src/window.blp:359
+msgid "_Keyboard Shortcuts"
+msgstr "_Комбинации клавиш"
+
+#: crates/immich-mount-gnome/src/window.blp:364
+msgid "_About Immich Mount"
+msgstr "_О приложении Immich Mount"
+
+#: crates/immich-mount-kde/qml/Main.qml:53
+msgid "Show thumbnails"
+msgstr "Показывать миниатюры"
+
+#: crates/immich-mount-kde/qml/Main.qml:62
+msgid "Lets Dolphin preview files up to 100 MB on remote locations, this drive included. Thumbnails come from the server; no original is downloaded."
+msgstr "Позволяет Dolphin показывать миниатюры файлов размером до 100 МБ в удалённых расположениях, включая этот диск. Миниатюры приходят с сервера; оригиналы не скачиваются."
+
+#: crates/immich-mount-kde/qml/Main.qml:143
+#: crates/immich-mount-kde/qml/Main.qml:204
+msgid "About"
+msgstr "О приложении"
+
+#: crates/immich-mount-kde/qml/Main.qml:155
+msgid "Your Immich photos and videos as a drive in Dolphin. By Jakob Hviid, under the MIT license."
+msgstr "Ваши фото и видео из Immich как диск в Dolphin. Автор: Jakob Hviid, лицензия MIT."
+
+#: crates/immich-mount-kde/qml/Main.qml:160
+#: apple/App/Info.plist (NSHumanReadableCopyright)
+msgid "Immich Mount is an independent, unofficial project. It is not affiliated with, endorsed by, or sponsored by the Immich project or FUTO. “Immich” is used only to describe the server this software works with, and remains the mark of its owner."
+msgstr "Immich Mount является независимым неофициальным проектом. Он не связан с проектом Immich или FUTO, не одобрен и не спонсируется ими. Название «Immich» используется только для обозначения сервера, с которым работает эта программа, и остаётся товарным знаком своего владельца."
+
+#: crates/immich-mount-kde/qml/Main.qml:162
+msgid "Credits"
+msgstr "Благодарности"
+
+#: crates/immich-mount-kde/qml/Main.qml:168
+msgid "Inspired by {project}"
+msgstr "Вдохновлено проектом {project}"
+
+#: crates/immich-mount-kde/qml/Main.qml:169
+msgid "The Immich API layer: {project}"
+msgstr "Слой API Immich: {project}"
+
+#: crates/immich-mount-kde/qml/Main.qml:171
+#: apple/App/ImmichMountApp.swift:306
+msgid "AI disclosure"
+msgstr "Использование ИИ"
+
+#: crates/immich-mount-kde/qml/Main.qml:180
+msgid "Website: {link}"
+msgstr "Сайт: {link}"
+
+#: crates/immich-mount-kde/qml/Main.qml:181
+msgid "Source code: {link}"
+msgstr "Исходный код: {link}"
+
+#: crates/immich-mount-kde/qml/Main.qml:191
+#: apple/App/ContentView.swift:123
+msgid "Back"
+msgstr "Назад"
+
+#: crates/immich-mount-kde/qml/Main.qml:211
+msgid "Connect"
+msgstr "Соединение с сервером"
+
+#: crates/immich-mount-kde/qml/Main.qml:213
+msgid "Continue in Your Browser"
+msgstr "Продолжите в браузере"
+
+#: crates/immich-mount-kde/qml/Main.qml:214
+msgid "Your Library in Dolphin"
+msgstr "Библиотека в Dolphin"
+
+#: crates/immich-mount-kde/qml/Main.qml:236
+msgid "Your Immich Library in Dolphin"
+msgstr "Ваша библиотека Immich в Dolphin"
+
+#: crates/immich-mount-kde/qml/Main.qml:243
+msgid "Server address:"
+msgstr "Адрес сервера:"
+
+#: crates/immich-mount-kde/qml/Main.qml:244
+msgid "Server address"
+msgstr "Адрес сервера"
+
+#: crates/immich-mount-kde/qml/Main.qml:252
+#: apple/App/ContentView.swift:137
+msgid "Continue"
+msgstr "Продолжить"
+
+#: crates/immich-mount-kde/qml/Main.qml:282
+msgid "Email and password"
+msgstr "Электронная почта и пароль"
+
+#: crates/immich-mount-kde/qml/Main.qml:285
+#: apple/App/ContentView.swift:99
+msgid "Email:"
+msgstr "Электронная почта:"
+
+#: crates/immich-mount-kde/qml/Main.qml:288
+#: apple/App/ContentView.swift:100
+msgid "Password:"
+msgstr "Пароль:"
+
+#: crates/immich-mount-kde/qml/Main.qml:300
+#: crates/immich-mount-kde/qml/Main.qml:304
+msgid "API key"
+msgstr "Ключ API"
+
+#: crates/immich-mount-kde/qml/Main.qml:303
+msgid "Key:"
+msgstr "Ключ:"
+
+#: crates/immich-mount-kde/qml/Main.qml:309
+msgid "Sign In With Key"
+msgstr "Войти с ключом"
+
+#: crates/immich-mount-kde/qml/Main.qml:322
+msgid "Sign in there. When your browser asks to open Immich Mount, allow it."
+msgstr "Войдите там. Когда браузер спросит, можно ли открыть Immich Mount, разрешите."
+
+#: crates/immich-mount-kde/qml/Main.qml:325
+msgid "Open the Sign-In Page Again"
+msgstr "Снова открыть страницу входа"
+
+#: crates/immich-mount-kde/qml/Main.qml:336
+msgid "No browser could be opened. Open this address in one:"
+msgstr "Не удалось открыть браузер. Откройте этот адрес в браузере:"
+
+#: crates/immich-mount-kde/qml/Main.qml:343
+msgid "Sign-in address"
+msgstr "Адрес для входа"
+
+#: crates/immich-mount-kde/qml/Main.qml:371
+msgid "Folder:"
+msgstr "Папка:"
+
+#: crates/immich-mount-kde/qml/Main.qml:376
+msgid "Dolphin"
+msgstr "Dolphin"
+
+#: crates/immich-mount-kde/qml/Main.qml:381
+#: crates/immich-mount-kde/qml/Main.qml:402
+msgid "Open in Dolphin"
+msgstr "Открыть в Dolphin"
+
+#: crates/immich-mount-kde/qml/Main.qml:396
+msgid "Your Library Is in Dolphin"
+msgstr "Ваша библиотека в Dolphin"
+
+#: crates/immich-mount-kde/qml/Main.qml:399
+msgid "Mount it to browse your library in Dolphin."
+msgstr "Подключите диск, чтобы просматривать библиотеку в Dolphin."
+
+#: crates/immich-mount-kde/qml/Main.qml:402
+msgid "Sign In Again"
+msgstr "Войти снова"
+
+#: crates/immich-mount-kde/qml/Main.qml:402
+msgid "Mount"
+msgstr "Подключить"
+
+#: crates/immich-mount-kde/qml/Main.qml:410
+#: apple/App/ContentView.swift:105
+msgid "Server:"
+msgstr "Сервер:"
+
+#: crates/immich-mount-kde/qml/Main.qml:411
+msgid "Account:"
+msgstr "Учётная запись:"
+
+#: crates/immich-mount-kde/qml/Main.qml:412
+msgid "Credential:"
+msgstr "Учётные данные:"
+
+#: crates/immich-mount-kde/qml/Main.qml:413
+msgid "Connection:"
+msgstr "Соединение:"
+
+#: crates/immich-mount-kde/qml/Main.qml:414
+msgid "Cache:"
+msgstr "Кэш:"
+
+#: crates/immich-mount-kde/qml/Main.qml:415
+msgid "Location:"
+msgstr "Расположение:"
+
+#: crates/immich-mount-kde/qml/Main.qml:416
+msgid "Uploading:"
+msgstr "Загрузка на сервер:"
+
+#: crates/immich-mount-kde/qml/Main.qml:417
+msgid "Dolphin:"
+msgstr "Dolphin:"
+
+#: crates/immich-mount-kde/qml/Main.qml:422
+msgid "Unmount"
+msgstr "Отключить"
+
+#: crates/immich-mount-kde/qml/Main.qml:429
+msgid "Disconnect"
+msgstr "Отсоединиться"
+
+#: crates/immich-mount-kde/qml/Main.qml:441
+msgid "Immich Mount is an independent, unofficial project. It is not affiliated with, endorsed by, or sponsored by the Immich project or FUTO."
+msgstr "Immich Mount является независимым неофициальным проектом. Он не связан с проектом Immich или FUTO, не одобрен и не спонсируется ими."
+
+#: crates/immich-mount-core/src/settings.rs:50
+msgid "The Immich server; /api is added"
+msgstr "Сервер Immich; /api добавляется"
+
+#: crates/immich-mount-core/src/settings.rs:51
+msgid "Where the mount appears"
+msgstr "Где появляется диск"
+
+#: crates/immich-mount-core/src/settings.rs:52
+msgid "The drive's name in the sidebar"
+msgstr "Имя диска на боковой панели"
+
+#: crates/immich-mount-core/src/settings.rs:53
+msgid "Mount when the session starts"
+msgstr "Подключать при запуске сеанса"
+
+#: crates/immich-mount-core/src/settings.rs:54
+msgid "Show the Photos section"
+msgstr "Показывать раздел Photos"
+
+#: crates/immich-mount-core/src/settings.rs:55
+msgid "Show the Albums section"
+msgstr "Показывать раздел Albums"
+
+#: crates/immich-mount-core/src/settings.rs:56
+msgid "Show the People section"
+msgstr "Показывать раздел People"
+
+#: crates/immich-mount-core/src/settings.rs:57
+msgid "Show the Places section"
+msgstr "Показывать раздел Places"
+
+#: crates/immich-mount-core/src/settings.rs:58
+msgid "Day folders inside months"
+msgstr "Папки дней внутри месяцев"
+
+#: crates/immich-mount-core/src/settings.rs:59
+msgid "Year and month folders inside albums"
+msgstr "Папки лет и месяцев внутри альбомов"
+
+#: crates/immich-mount-core/src/settings.rs:60
+msgid "Year and month folders inside people"
+msgstr "Папки лет и месяцев внутри папок людей"
+
+#: crates/immich-mount-core/src/settings.rs:61
+msgid "Year and month folders inside cities"
+msgstr "Папки лет и месяцев внутри городов"
+
+#: crates/immich-mount-core/src/settings.rs:62
+msgid "How album folders are named and grouped"
+msgstr "Как называются и группируются папки альбомов"
+
+#: crates/immich-mount-core/src/settings.rs:63
+msgid "How files are named"
+msgstr "Как называются файлы"
+
+#: crates/immich-mount-core/src/settings.rs:64
+msgid "The content cache's size limit"
+msgstr "Предельный размер кэша содержимого"
+
+#: crates/immich-mount-core/src/settings.rs:65
+msgid "Show the Upload folder, and upload what is copied into it"
+msgstr "Показывать папку Upload и загружать то, что в неё копируется"
+
+#: crates/immich-mount-core/src/settings.rs:66
+msgid "Also seed 1024 px thumbnails from the preview"
+msgstr "Также создавать миниатюры 1024 пикс. из превью"
+
+#: crates/immich-mount-core/src/settings.rs:67
+msgid "Refuse thumbnailer reads of originals"
+msgstr "Запрещать генераторам миниатюр читать оригиналы"
+
+#: crates/immich-mount-core/src/settings.rs:68
+msgid "Headless only: a 0600 file holding the credential"
+msgstr "Только без графического окружения: файл 0600 с учётными данными"
+
+#: crates/immich-mount-core/src/settings.rs:74
+msgid "Never"
+msgstr "Никогда"
+
+#: crates/immich-mount-core/src/settings.rs:75
+msgid "From 500 Items"
+msgstr "От 500 элементов"
+
+#: crates/immich-mount-core/src/settings.rs:76
+msgid "Always"
+msgstr "Всегда"
+
+#: crates/immich-mount-core/src/settings.rs:77
+msgid "Year in the Name (2023 - Trip)"
+msgstr "Год в названии (2023 - Поездка)"
+
+#: crates/immich-mount-core/src/settings.rs:78
+msgid "Year Folders (2023/Trip)"
+msgstr "Папки по годам (2023/Поездка)"
+
+#: crates/immich-mount-core/src/settings.rs:79
+msgid "Name Only (Trip)"
+msgstr "Только название (Поездка)"
+
+#: crates/immich-mount-core/src/settings.rs:80
+msgid "Date and Time Taken"
+msgstr "Дата и время съёмки"
+
+#: crates/immich-mount-core/src/settings.rs:81
+msgid "Original File Names"
+msgstr "Исходные имена файлов"
+
+#: crates/immich-mount-apple/src/lib.rs:680
+msgid "Uploads"
+msgstr "Загрузка в Immich"
+
+#: apple/App/ContentView.swift:19
+msgid "Move Immich Mount to Applications"
+msgstr "Переместите Immich Mount в папку «Программы»"
+
+#: apple/App/ContentView.swift:20
+msgid "Finder's location runs from the Applications folder. Quit Immich Mount, drag it into Applications, then open it from there."
+msgstr "Расположение в Finder работает только из папки «Программы». Завершите Immich Mount, перетащите его в «Программы» и откройте оттуда."
+
+#: apple/App/ContentView.swift:22
+msgid "Sign In to Immich"
+msgstr "Вход в Immich"
+
+#: apple/App/ContentView.swift:22
+msgid "Your photos and videos in Finder, as a drive."
+msgstr "Ваши фото и видео в Finder как диск."
+
+#: apple/App/ContentView.swift:128
+msgid "Use Email and Password"
+msgstr "Использовать электронную почту и пароль"
+
+#: apple/App/ContentView.swift:128
+msgid "Use an API Key"
+msgstr "Использовать ключ API"
+
+#: apple/App/ContentView.swift:159
+msgid "Switch On Immich Mount"
+msgstr "Включите Immich Mount"
+
+#: apple/App/ContentView.swift:160
+msgid "macOS asks once before a new location shows in Finder: switch Immich Mount on in System Settings, under General, Login Items & Extensions, File Providers."
+msgstr "macOS один раз спрашивает разрешение, прежде чем новое расположение появится в Finder: включите Immich Mount в Системных настройках, в разделе «Основные», «Объекты входа и расширения», «Поставщики файлов»."
+
+#: apple/App/ContentView.swift:91
+msgid "API Key:"
+msgstr "Ключ API:"
+
+#: apple/App/ContentView.swift:93
+msgid "Make one in Immich under Account Settings, API Keys; one that may only read is enough to browse."
+msgstr "Создайте его в Immich в разделе «Настройки аккаунта», «Ключи API»; для просмотра достаточно ключа только для чтения."
+
+#: apple/App/ContentView.swift:163
+msgid "Open System Settings"
+msgstr "Открыть Системные настройки"
+
+#: apple/App/ImmichMountApp.swift:123
+msgid "Sign out of Immich Mount?"
+msgstr "Выйти из Immich Mount?"
+
+#: apple/App/ImmichMountApp.swift:124
+msgid "Immich Mount leaves Finder, together with the photos and videos downloaded to this Mac. Your library on the server stays as it is."
+msgstr "Immich Mount исчезнет из Finder вместе с фото и видео, скачанными на этот Mac. Ваша библиотека на сервере останется без изменений."
+
+#: apple/App/ImmichMountApp.swift:126
+msgid "Files in Upload that have not reached Immich: {count}. They stay on this Mac, and Finder shows where once you have signed out."
+msgstr "Файлы в Upload, ещё не попавшие в Immich: {count}. Они останутся на этом Mac, и после выхода Finder покажет, где они."
+
+#: apple/App/ImmichMountApp.swift:130
+msgid "Sign Out"
+msgstr "Выйти"
+
+#: apple/App/ImmichMountApp.swift:131
+msgid "Cancel"
+msgstr "Отменить"
+
+#: apple/App/ImmichMountApp.swift:138
+msgid "Still signed in"
+msgstr "Вход по-прежнему выполнен"
+
+#: apple/App/ImmichMountApp.swift:139
+msgid "Finder's location could not be removed, so Immich Mount stays signed in: {error}"
+msgstr "Не удалось убрать расположение из Finder, поэтому выход из Immich Mount не выполнен: {error}"
+
+#: apple/App/ImmichMountApp.swift:196
+msgid "Immich Mount Settings"
+msgstr "Настройки Immich Mount"
+
+#: apple/App/ImmichMountApp.swift:296
+msgid "Your Immich photos and videos as a drive in Finder. By Jakob Hviid, under the MIT license."
+msgstr "Ваши фото и видео из Immich как диск в Finder. Автор: Jakob Hviid, лицензия MIT."
+
+#: apple/App/ImmichMountApp.swift:297
+msgid "Website"
+msgstr "Сайт"
+
+#: apple/App/ImmichMountApp.swift:299
+msgid "Source code"
+msgstr "Исходный код"
+
+#: apple/App/ImmichMountApp.swift:302
+msgid "Inspired by"
+msgstr "Вдохновлено"
+
+#: apple/App/ImmichMountApp.swift:304
+msgid "The Immich API layer"
+msgstr "Слой API Immich"
+
+#: apple/App/ImmichMountApp.swift:406
+msgid "Signed in to {server}"
+msgstr "Выполнен вход на {server}"
+
+#: apple/App/ImmichMountApp.swift:407
+msgid "Connected to {server}"
+msgstr "Подключено к {server}"
+
+#: apple/App/ImmichMountApp.swift:407
+msgid "{server} is not reachable"
+msgstr "{server} недоступен"
+
+#: apple/App/ImmichMountApp.swift:415
+msgid "Server version: Immich {version}"
+msgstr "Версия сервера: Immich {version}"
+
+#: apple/App/ImmichMountApp.swift:418
+msgid "Signed in as: {account}"
+msgstr "Вход выполнен как: {account}"
+
+#: apple/App/ImmichMountApp.swift:423
+msgid "Last checked: {time}"
+msgstr "Последняя проверка: {time}"
+
+#: apple/App/ImmichMountApp.swift:425
+msgid "Reason: {reason}"
+msgstr "Причина: {reason}"
+
+#: apple/App/ImmichMountApp.swift:425
+msgid "none given"
+msgstr "не указана"
+
+#: apple/App/ImmichMountApp.swift:511
+msgid "The login item could not be changed: {error}"
+msgstr "Не удалось изменить объект входа: {error}"
+
+#: apple/App/ImmichMountApp.swift:545
+msgid "The server sent an address that cannot be opened."
+msgstr "Сервер прислал адрес, который нельзя открыть."
+
+#: apple/App/ImmichMountApp.swift:630
+msgid "Finder does not show Immich yet. Is the extension switched on in System Settings? ({error})"
+msgstr "Finder пока не показывает Immich. Включено ли расширение в Системных настройках? ({error})"
+
+#: apple/App/ImmichMountApp.swift:36
+#: apple/App/ImmichMountApp.swift:276
+msgid "About Immich Mount"
+msgstr "О программе Immich Mount"
+
+#: apple/App/ImmichMountApp.swift:37
+#: apple/App/ImmichMountApp.swift:269
+msgid "Check for Updates…"
+msgstr "Проверить обновления…"
+
+#: apple/App/ImmichMountApp.swift:40
+#: apple/App/ImmichMountApp.swift:267
+msgid "Settings…"
+msgstr "Настройки…"
+
+#: apple/App/ImmichMountApp.swift:253
+msgid "Sign In…"
+msgstr "Войти…"
+
+#: apple/App/ImmichMountApp.swift:255
+msgid "Switch On in System Settings…"
+msgstr "Включить в Системных настройках…"
+
+#: apple/App/ImmichMountApp.swift:264
+msgid "Open in Finder"
+msgstr "Открыть в Finder"
+
+#: apple/App/ImmichMountApp.swift:272
+msgid "Sign Out…"
+msgstr "Выйти…"
+
+#: apple/App/ImmichMountApp.swift:277
+msgid "Quit Immich Mount"
+msgstr "Завершить Immich Mount"
+
+#: apple/App/PreferencesView.swift:16
+msgid "Open at login"
+msgstr "Открывать при входе"
+
+#: apple/App/PreferencesView.swift:17
+msgid "Check for updates automatically"
+msgstr "Автоматически проверять обновления"
+
+#: apple/App/PreferencesView.swift:22
+msgid "General"
+msgstr "Основные"
+
+#: apple/App/PreferencesView.swift:24
+msgid "While Immich Mount runs, in the menu bar, changes in Immich reach Finder within seconds. Updates come from jakob.hviid.phd, signed by the project and notarized by Apple."
+msgstr "Пока Immich Mount работает в строке меню, изменения в Immich появляются в Finder за несколько секунд. Обновления приходят с jakob.hviid.phd, подписаны проектом и нотаризованы Apple."
+
+#: packaging/desktop/dev.hviid.ImmichMount.desktop.in (Comment)
+msgid "Your Immich photos and videos as a drive in your file manager"
+msgstr "Ваши фото и видео из Immich как диск в файловом менеджере"
+
+#: packaging/desktop/dev.hviid.ImmichMount.desktop.in (Keywords)
+msgid "Immich;photos;videos;drive;mount;"
+msgstr "Immich;фото;фотографии;видео;диск;подключить;монтировать;"
+
+#: apple/App/Info.plist (NSLocalNetworkUsageDescription)
+msgid "Immich Mount connects to your Immich server, which may be on your local network."
+msgstr "Immich Mount подключается к вашему серверу Immich, который может находиться в локальной сети."

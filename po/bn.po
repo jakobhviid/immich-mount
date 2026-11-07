@@ -1,0 +1,930 @@
+# Immich Mount in bn.
+# This file is part of Immich Mount, under the MIT license. Made by po/i18n.py.
+#
+msgid ""
+msgstr ""
+"Project-Id-Version: immich-mount\n"
+"Report-Msgid-Bugs-To: https://github.com/jakobhviid/immich-mount/issues\n"
+"Language: bn\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+
+#: crates/immich-mount/src/online.rs:392
+msgid "Immich is not mounted"
+msgstr "Immich মাউন্ট করা নেই"
+
+#: crates/immich-mount/src/online.rs:393
+msgid "The keyring stayed locked. Open Immich Mount, or run “immich-mount mount”, to try again."
+msgstr "কিরিং লক অবস্থায় রয়ে গেছে। আবার চেষ্টা করতে Immich Mount খুলুন, অথবা “immich-mount mount” চালান।"
+
+#: crates/immich-mount-linux/src/daemon.rs:279
+msgid "Immich is unreachable"
+msgstr "Immich-এ পৌঁছানো যাচ্ছে না"
+
+#: crates/immich-mount-linux/src/daemon.rs:280
+msgid "Signed out of Immich"
+msgstr "Immich থেকে সাইন-আউট হয়েছে"
+
+#: crates/immich-mount-linux/src/fuse.rs:621
+#: crates/immich-mount-linux/src/fuse.rs:662
+#: crates/immich-mount-linux/src/fuse.rs:668
+#: crates/immich-mount-linux/src/fuse.rs:678
+#: crates/immich-mount-linux/src/fuse.rs:1129
+msgid "Not uploaded: {name}"
+msgstr "আপলোড হয়নি: {name}"
+
+#: crates/immich-mount-linux/src/fuse.rs:621
+msgid "The file is incomplete, as if its copy was cancelled."
+msgstr "ফাইলটি অসম্পূর্ণ, যেন এর কপি বাতিল করা হয়েছিল।"
+
+#: crates/immich-mount-linux/src/fuse.rs:636
+msgid "Uploading {name} to Immich"
+msgstr "{name} Immich-এ আপলোড করা হচ্ছে"
+
+#: crates/immich-mount-linux/src/fuse.rs:637
+msgid "The copy finishes once Immich has the file."
+msgstr "Immich ফাইলটি পেলেই কপি শেষ হবে।"
+
+#: crates/immich-mount-linux/src/fuse.rs:649
+msgid "Immich has this photo already, so nothing was added."
+msgstr "এই ফটোটি Immich-এ আগে থেকেই আছে, তাই কিছু যোগ করা হয়নি।"
+
+#: crates/immich-mount-linux/src/fuse.rs:650
+msgid "Already in Immich: {name}"
+msgstr "Immich-এ আগে থেকেই আছে: {name}"
+
+#: crates/immich-mount-linux/src/fuse.rs:659
+msgid "{error}. The file is kept in {folder}."
+msgstr "{error}। ফাইলটি {folder}-এ রাখা হয়েছে।"
+
+#: crates/immich-mount-linux/src/fuse.rs:669
+msgid "This computer lets a file operation take at most {seconds} seconds (fs.fuse.default_request_timeout). Set it to 0 for longer uploads. The file is kept in {folder}."
+msgstr "এই কম্পিউটার কোনো ফাইল অপারেশনকে সর্বোচ্চ {seconds} সেকেন্ড সময় দেয় (fs.fuse.default_request_timeout)। দীর্ঘ আপলোডের জন্য এটি 0 করে দিন। ফাইলটি {folder}-এ রাখা হয়েছে।"
+
+#: crates/immich-mount-linux/src/fuse.rs:679
+msgid "The upload took too long. The file is kept in {folder}."
+msgstr "আপলোডে অনেক বেশি সময় লেগেছে। ফাইলটি {folder}-এ রাখা হয়েছে।"
+
+#: crates/immich-mount-linux/src/fuse.rs:1129
+msgid "Immich takes photos and videos only."
+msgstr "Immich শুধু ফটো ও ভিডিও নেয়।"
+
+#: crates/immich-mount-desktop/src/preferences.rs:12
+msgid "Drive"
+msgstr "ড্রাইভ"
+
+#: crates/immich-mount-desktop/src/preferences.rs:13
+#: crates/immich-mount-gnome/src/window.blp:144
+#: crates/immich-mount-kde/qml/Main.qml:364
+#: crates/immich-mount-apple/src/lib.rs:676
+msgid "Sections"
+msgstr "বিভাগ"
+
+#: crates/immich-mount-desktop/src/preferences.rs:14
+#: crates/immich-mount-apple/src/lib.rs:677
+msgid "Date Folders"
+msgstr "তারিখের ফোল্ডার"
+
+#: crates/immich-mount-desktop/src/preferences.rs:16
+#: crates/immich-mount-apple/src/lib.rs:679
+msgid "Files"
+msgstr "ফাইল"
+
+#: crates/immich-mount-desktop/src/preferences.rs:17
+msgid "Thumbnails"
+msgstr "থাম্বনেল"
+
+#: crates/immich-mount-desktop/src/preferences.rs:18
+#: crates/immich-mount-gnome/src/window.blp:306
+msgid "Cache"
+msgstr "ক্যাশে"
+
+#: crates/immich-mount-desktop/src/session.rs:62
+msgid "Online"
+msgstr "অনলাইন"
+
+#: crates/immich-mount-desktop/src/session.rs:63
+msgid "Server unreachable; files you opened before stay available"
+msgstr "সার্ভারে পৌঁছানো যাচ্ছে না; আগে খোলা ফাইলগুলো পাওয়া যাবে"
+
+#: crates/immich-mount-desktop/src/session.rs:64
+msgid "Signed out; sign in again"
+msgstr "সাইন-আউট হয়েছে; আবার সাইন-ইন করুন"
+
+#: crates/immich-mount-desktop/src/session.rs:66
+#: crates/immich-mount-desktop/src/session.rs:76
+msgid "Not running"
+msgstr "চলছে না"
+
+#: crates/immich-mount-desktop/src/session.rs:73
+msgid "{used} of {limit}"
+msgstr "{limit}-এর মধ্যে {used}"
+
+#: crates/immich-mount-desktop/src/session.rs:90
+msgid "writing"
+msgstr "লেখা হচ্ছে"
+
+#: crates/immich-mount-desktop/src/session.rs:90
+msgid "uploading"
+msgstr "আপলোড হচ্ছে"
+
+#: crates/immich-mount-desktop/src/session.rs:91
+msgid "{name}, {phase}"
+msgstr "{name}, {phase}"
+
+#: crates/immich-mount-desktop/src/session.rs:94
+msgid "{name} and {count} more"
+msgstr "{name} ও আরও {count}টি"
+
+#: crates/immich-mount-desktop/src/session.rs:121
+msgid "That address cannot be used: {error}"
+msgstr "এই ঠিকানা ব্যবহার করা যাবে না: {error}"
+
+#: crates/immich-mount-desktop/src/session.rs:161
+#: crates/immich-mount-desktop/src/session.rs:171
+#: crates/immich-mount-desktop/src/session.rs:365
+#: crates/immich-mount-desktop/src/session.rs:367
+msgid "Kept in {file}"
+msgstr "{file}-এ রাখা আছে"
+
+#: crates/immich-mount-desktop/src/session.rs:166
+#: crates/immich-mount-desktop/src/session.rs:369
+msgid "Kept in the keyring"
+msgstr "কিরিং-এ রাখা আছে"
+
+#: crates/immich-mount-desktop/src/session.rs:173
+msgid "The keyring stayed locked, so nothing was saved."
+msgstr "কিরিং লক অবস্থায় রয়ে গেছে, তাই কিছু সংরক্ষণ করা হয়নি।"
+
+#: crates/immich-mount-desktop/src/session.rs:247
+msgid "Signed in, but the mount cannot start: {error}."
+msgstr "সাইন-ইন হয়েছে, কিন্তু মাউন্ট শুরু করা যাচ্ছে না: {error}।"
+
+#: crates/immich-mount-desktop/src/session.rs:251
+msgid "Signed in, but the mount did not start: {error}"
+msgstr "সাইন-ইন হয়েছে, কিন্তু মাউন্ট শুরু হয়নি: {error}"
+
+#: crates/immich-mount-gnome/src/main.rs:106
+msgid "Your Immich photos and videos as a drive in Files."
+msgstr "আপনার Immich-এর ফটো ও ভিডিও, ফাইল অ্যাপে একটি ড্রাইভ হিসেবে।"
+
+#: crates/immich-mount-gnome/src/main.rs:110
+msgid "Source Code"
+msgstr "সোর্স কোড"
+
+#: crates/immich-mount-gnome/src/main.rs:111
+msgid "Inspired By"
+msgstr "অনুপ্রেরণা"
+
+#: crates/immich-mount-gnome/src/main.rs:112
+msgid "The Immich API Layer"
+msgstr "Immich API স্তর"
+
+#: crates/immich-mount-gnome/src/main.rs:114
+msgid "AI Disclosure"
+msgstr "AI ব্যবহারের ঘোষণা"
+
+#: crates/immich-mount-gnome/src/main.rs:117
+#: crates/immich-mount-kde/qml/Main.qml:175
+#: apple/App/ImmichMountApp.swift:307
+msgid "Parts of this project were written with the assistance of AI coding agents. All changes are reviewed by the maintainer."
+msgstr "এই প্রকল্পের কিছু অংশ AI কোডিং এজেন্টের সহায়তায় লেখা হয়েছে। সব পরিবর্তন রক্ষণাবেক্ষণকারী পর্যালোচনা করেন।"
+
+#: crates/immich-mount-gnome/src/main.rs:81
+#: crates/immich-mount-kde/qml/Main.qml:71
+#: crates/immich-mount-kde/qml/Main.qml:198
+msgid "Preferences"
+msgstr "পছন্দসমূহ"
+
+#: crates/immich-mount-gnome/src/main.rs:82
+msgid "Keyboard Shortcuts"
+msgstr "কীবোর্ড শর্টকাট"
+
+#: crates/immich-mount-gnome/src/main.rs:83
+msgid "Quit"
+msgstr "প্রস্থান"
+
+#: crates/immich-mount-gnome/src/window.rs:263
+#: crates/immich-mount-kde/qml/Main.qml:321
+msgid "Continue in your browser"
+msgstr "আপনার ব্রাউজারে চালিয়ে যান"
+
+#: crates/immich-mount-gnome/src/window.rs:274
+msgid "This sign-in belongs to an earlier attempt. Finish the latest one, or sign in again."
+msgstr "এই সাইন-ইনটি আগের একটি প্রচেষ্টার। সর্বশেষটি সম্পূর্ণ করুন, অথবা আবার সাইন-ইন করুন।"
+
+#: crates/immich-mount-gnome/src/window.rs:286
+msgid "Enter your email and password"
+msgstr "আপনার ইমেল ও পাসওয়ার্ড লিখুন"
+
+#: crates/immich-mount-gnome/src/window.rs:297
+msgid "Enter an API key"
+msgstr "একটি API কী লিখুন"
+
+#: crates/immich-mount-gnome/src/window.rs:324
+msgid "Signed in as {account}"
+msgstr "{account} হিসেবে সাইন-ইন করা হয়েছে"
+
+#: crates/immich-mount-gnome/src/window.rs:390
+msgid "Signed in, but the status could not be read"
+msgstr "সাইন-ইন হয়েছে, কিন্তু স্ট্যাটাস পড়া যায়নি"
+
+#: crates/immich-mount-gnome/src/window.rs:417
+#: crates/immich-mount-kde/qml/Main.qml:396
+msgid "Signed Out of Immich"
+msgstr "Immich থেকে সাইন-আউট হয়েছে"
+
+#: crates/immich-mount-gnome/src/window.rs:417
+#: crates/immich-mount-kde/qml/Main.qml:397
+msgid "Sign in again to keep browsing. Your caches are kept."
+msgstr "ব্রাউজ করা চালিয়ে যেতে আবার সাইন-ইন করুন। আপনার ক্যাশে রাখা আছে।"
+
+#: crates/immich-mount-gnome/src/window.rs:418
+#: crates/immich-mount-gnome/src/window.blp:209
+msgid "Your Library Is in Files"
+msgstr "আপনার লাইব্রেরি ফাইল অ্যাপে আছে"
+
+#: crates/immich-mount-gnome/src/window.rs:418
+#: crates/immich-mount-kde/qml/Main.qml:398
+msgid "Browse it like any folder. Originals download only when you open them."
+msgstr "এটি যেকোনো ফোল্ডারের মতো ব্রাউজ করুন। আসল ফাইল শুধু খুললে তবেই ডাউনলোড হয়।"
+
+#: crates/immich-mount-gnome/src/window.rs:419
+#: crates/immich-mount-kde/qml/Main.qml:396
+msgid "Not Mounted"
+msgstr "মাউন্ট করা নেই"
+
+#: crates/immich-mount-gnome/src/window.rs:419
+msgid "Mount it to browse your library in Files."
+msgstr "ফাইল অ্যাপে আপনার লাইব্রেরি ব্রাউজ করতে এটি মাউন্ট করুন।"
+
+#: crates/immich-mount-gnome/src/window.rs:462
+msgid "Disconnected"
+msgstr "সংযোগ বিচ্ছিন্ন হয়েছে"
+
+#: crates/immich-mount-gnome/src/window.blp:26
+#: crates/immich-mount-gnome/src/window.blp:202
+msgid "Main Menu"
+msgstr "প্রধান মেনু"
+
+#: crates/immich-mount-gnome/src/window.blp:33
+msgid "Your Immich Library in Files"
+msgstr "ফাইল অ্যাপে আপনার Immich লাইব্রেরি"
+
+#: crates/immich-mount-gnome/src/window.blp:34
+#: crates/immich-mount-kde/qml/Main.qml:237
+msgid "Browse your photos and videos as a drive. Originals download only when you open them."
+msgstr "আপনার ফটো ও ভিডিও একটি ড্রাইভ হিসেবে ব্রাউজ করুন। আসল ফাইল শুধু খুললে তবেই ডাউনলোড হয়।"
+
+#: crates/immich-mount-gnome/src/window.blp:45
+msgid "Server Address"
+msgstr "সার্ভারের ঠিকানা"
+
+#: crates/immich-mount-gnome/src/window.blp:52
+msgid "_Continue"
+msgstr "চালিয়ে যান (_C)"
+
+#: crates/immich-mount-gnome/src/window.blp:70
+#: crates/immich-mount-kde/qml/Main.qml:212
+#: crates/immich-mount-kde/qml/Main.qml:295
+#: apple/App/ContentView.swift:141
+#: apple/App/ContentView.swift:145
+msgid "Sign In"
+msgstr "সাইন-ইন করুন"
+
+#: crates/immich-mount-gnome/src/window.blp:78
+#: crates/immich-mount-kde/qml/Main.qml:276
+msgid "Opens your browser, where you sign in as usual, with a passkey or a password manager."
+msgstr "আপনার ব্রাউজার খোলে, যেখানে আপনি সবসময়ের মতো পাসকি বা পাসওয়ার্ড ম্যানেজার দিয়ে সাইন-ইন করেন।"
+
+#: crates/immich-mount-gnome/src/window.blp:92
+msgid "Email and Password"
+msgstr "ইমেল ও পাসওয়ার্ড"
+
+#: crates/immich-mount-gnome/src/window.blp:93
+msgid "For two-factor sign-in, use your server's single sign-on instead."
+msgstr "টু-ফ্যাক্টর সাইন-ইনের জন্য, এর বদলে আপনার সার্ভারের সিঙ্গল সাইন-অন ব্যবহার করুন।"
+
+#: crates/immich-mount-gnome/src/window.blp:96
+#: crates/immich-mount-kde/qml/Main.qml:285
+msgid "Email"
+msgstr "ইমেল"
+
+#: crates/immich-mount-gnome/src/window.blp:101
+#: crates/immich-mount-kde/qml/Main.qml:289
+msgid "Password"
+msgstr "পাসওয়ার্ড"
+
+#: crates/immich-mount-gnome/src/window.blp:106
+msgid "Sign _In"
+msgstr "সাইন-ইন করুন (_I)"
+
+#: crates/immich-mount-gnome/src/window.blp:114
+msgid "Use an API Key Instead"
+msgstr "এর বদলে একটি API কী ব্যবহার করুন"
+
+#: crates/immich-mount-gnome/src/window.blp:115
+msgid "For read-only access, or machines without a browser"
+msgstr "শুধু পড়ার অ্যাক্সেসের জন্য, বা ব্রাউজার নেই এমন মেশিনের জন্য"
+
+#: crates/immich-mount-gnome/src/window.blp:118
+msgid "API Key"
+msgstr "API কী"
+
+#: crates/immich-mount-gnome/src/window.blp:123
+msgid "Sign In With _Key"
+msgstr "কী দিয়ে সাইন-ইন করুন (_K)"
+
+#: crates/immich-mount-gnome/src/window.blp:135
+msgid "Your Library in Files"
+msgstr "ফাইল অ্যাপে আপনার লাইব্রেরি"
+
+#: crates/immich-mount-gnome/src/window.blp:145
+msgid "The folders the drive shows. You can change this later in Preferences."
+msgstr "ড্রাইভে যে ফোল্ডারগুলো দেখা যায়। আপনি পরে পছন্দসমূহে এটি বদলাতে পারবেন।"
+
+#: crates/immich-mount-gnome/src/window.blp:149
+msgid "The timeline, by year and month"
+msgstr "টাইমলাইন, বছর ও মাস অনুযায়ী"
+
+#: crates/immich-mount-gnome/src/window.blp:166
+#: crates/immich-mount-gnome/src/window.blp:314
+#: crates/immich-mount-kde/qml/Main.qml:369
+msgid "Location"
+msgstr "অবস্থান"
+
+#: crates/immich-mount-gnome/src/window.blp:169
+#: crates/immich-mount-kde/qml/Main.qml:372
+msgid "Folder"
+msgstr "ফোল্ডার"
+
+#: crates/immich-mount-gnome/src/window.blp:175
+#: crates/immich-mount-gnome/src/window.blp:223
+msgid "_Open in Files"
+msgstr "ফাইল অ্যাপে খুলুন (_O)"
+
+#: crates/immich-mount-gnome/src/window.blp:234
+msgid "_Unmount"
+msgstr "আনমাউন্ট করুন (_U)"
+
+#: crates/immich-mount-gnome/src/window.blp:236
+msgid "Take it out of Files until you mount it again or log in"
+msgstr "আবার মাউন্ট না করা বা পরের বার লগ-ইন না করা পর্যন্ত এটি ফাইল অ্যাপ থেকে সরিয়ে দিন"
+
+#: crates/immich-mount-gnome/src/window.blp:245
+msgid "_Mount"
+msgstr "মাউন্ট করুন (_M)"
+
+#: crates/immich-mount-gnome/src/window.blp:261
+msgid "Sign In _Again"
+msgstr "আবার সাইন-ইন করুন (_A)"
+
+#: crates/immich-mount-gnome/src/window.blp:273
+msgid "Server"
+msgstr "সার্ভার"
+
+#: crates/immich-mount-gnome/src/window.blp:281
+msgid "Account"
+msgstr "অ্যাকাউন্ট"
+
+#: crates/immich-mount-gnome/src/window.blp:290
+msgid "Credential"
+msgstr "ক্রেডেনশিয়াল"
+
+#: crates/immich-mount-gnome/src/window.blp:298
+msgid "Connection"
+msgstr "সংযোগ"
+
+#: crates/immich-mount-gnome/src/window.blp:322
+msgid "Uploading"
+msgstr "আপলোড হচ্ছে"
+
+#: crates/immich-mount-gnome/src/window.blp:333
+msgid "_Disconnect"
+msgstr "সংযোগ বিচ্ছিন্ন করুন (_D)"
+
+#: crates/immich-mount-gnome/src/window.blp:354
+msgid "_Preferences"
+msgstr "পছন্দসমূহ (_P)"
+
+#: crates/immich-mount-gnome/src/window.blp:359
+msgid "_Keyboard Shortcuts"
+msgstr "কীবোর্ড শর্টকাট (_K)"
+
+#: crates/immich-mount-gnome/src/window.blp:364
+msgid "_About Immich Mount"
+msgstr "Immich Mount সম্পর্কে (_A)"
+
+#: crates/immich-mount-kde/qml/Main.qml:53
+msgid "Show thumbnails"
+msgstr "থাম্বনেল দেখান"
+
+#: crates/immich-mount-kde/qml/Main.qml:62
+msgid "Lets Dolphin preview files up to 100 MB on remote locations, this drive included. Thumbnails come from the server; no original is downloaded."
+msgstr "এই ড্রাইভসহ দূরবর্তী অবস্থানে থাকা 100 MB পর্যন্ত ফাইলের প্রিভিউ দেখাতে Dolphin-কে অনুমতি দেয়। থাম্বনেল সার্ভার থেকে আসে; কোনো আসল ফাইল ডাউনলোড হয় না।"
+
+#: crates/immich-mount-kde/qml/Main.qml:143
+#: crates/immich-mount-kde/qml/Main.qml:204
+msgid "About"
+msgstr "সম্পর্কে"
+
+#: crates/immich-mount-kde/qml/Main.qml:155
+msgid "Your Immich photos and videos as a drive in Dolphin. By Jakob Hviid, under the MIT license."
+msgstr "Dolphin-এ একটি ড্রাইভ হিসেবে আপনার Immich-এর ফটো ও ভিডিও। Jakob Hviid-এর তৈরি, MIT লাইসেন্সের অধীনে।"
+
+#: crates/immich-mount-kde/qml/Main.qml:160
+#: apple/App/Info.plist (NSHumanReadableCopyright)
+msgid "Immich Mount is an independent, unofficial project. It is not affiliated with, endorsed by, or sponsored by the Immich project or FUTO. “Immich” is used only to describe the server this software works with, and remains the mark of its owner."
+msgstr "Immich Mount একটি স্বাধীন প্রকল্প, কোনো অফিসিয়াল প্রকল্প নয়। এটি Immich প্রকল্প বা FUTO-এর সঙ্গে যুক্ত নয়, এবং তাদের দ্বারা অনুমোদিত বা পৃষ্ঠপোষকতাপ্রাপ্তও নয়। “Immich” নামটি শুধু সেই সার্ভারকে বোঝাতে ব্যবহার করা হয়েছে যার সঙ্গে এই সফটওয়্যার কাজ করে, এবং এটি এর মালিকেরই চিহ্ন হিসেবে থাকে।"
+
+#: crates/immich-mount-kde/qml/Main.qml:162
+msgid "Credits"
+msgstr "কৃতজ্ঞতা"
+
+#: crates/immich-mount-kde/qml/Main.qml:168
+msgid "Inspired by {project}"
+msgstr "{project} থেকে অনুপ্রাণিত"
+
+#: crates/immich-mount-kde/qml/Main.qml:169
+msgid "The Immich API layer: {project}"
+msgstr "Immich API স্তর: {project}"
+
+#: crates/immich-mount-kde/qml/Main.qml:171
+#: apple/App/ImmichMountApp.swift:306
+msgid "AI disclosure"
+msgstr "AI ব্যবহারের ঘোষণা"
+
+#: crates/immich-mount-kde/qml/Main.qml:180
+msgid "Website: {link}"
+msgstr "ওয়েবসাইট: {link}"
+
+#: crates/immich-mount-kde/qml/Main.qml:181
+msgid "Source code: {link}"
+msgstr "সোর্স কোড: {link}"
+
+#: crates/immich-mount-kde/qml/Main.qml:191
+#: apple/App/ContentView.swift:123
+msgid "Back"
+msgstr "ফিরে যান"
+
+#: crates/immich-mount-kde/qml/Main.qml:211
+msgid "Connect"
+msgstr "সংযোগ করুন"
+
+#: crates/immich-mount-kde/qml/Main.qml:213
+msgid "Continue in Your Browser"
+msgstr "আপনার ব্রাউজারে চালিয়ে যান"
+
+#: crates/immich-mount-kde/qml/Main.qml:214
+msgid "Your Library in Dolphin"
+msgstr "Dolphin-এ আপনার লাইব্রেরি"
+
+#: crates/immich-mount-kde/qml/Main.qml:236
+msgid "Your Immich Library in Dolphin"
+msgstr "Dolphin-এ আপনার Immich লাইব্রেরি"
+
+#: crates/immich-mount-kde/qml/Main.qml:243
+msgid "Server address:"
+msgstr "সার্ভারের ঠিকানা:"
+
+#: crates/immich-mount-kde/qml/Main.qml:244
+msgid "Server address"
+msgstr "সার্ভারের ঠিকানা"
+
+#: crates/immich-mount-kde/qml/Main.qml:252
+#: apple/App/ContentView.swift:137
+msgid "Continue"
+msgstr "চালিয়ে যান"
+
+#: crates/immich-mount-kde/qml/Main.qml:282
+msgid "Email and password"
+msgstr "ইমেল ও পাসওয়ার্ড"
+
+#: crates/immich-mount-kde/qml/Main.qml:285
+#: apple/App/ContentView.swift:99
+msgid "Email:"
+msgstr "ইমেল:"
+
+#: crates/immich-mount-kde/qml/Main.qml:288
+#: apple/App/ContentView.swift:100
+msgid "Password:"
+msgstr "পাসওয়ার্ড:"
+
+#: crates/immich-mount-kde/qml/Main.qml:300
+#: crates/immich-mount-kde/qml/Main.qml:304
+msgid "API key"
+msgstr "API কী"
+
+#: crates/immich-mount-kde/qml/Main.qml:303
+msgid "Key:"
+msgstr "কী:"
+
+#: crates/immich-mount-kde/qml/Main.qml:309
+msgid "Sign In With Key"
+msgstr "কী দিয়ে সাইন-ইন করুন"
+
+#: crates/immich-mount-kde/qml/Main.qml:322
+msgid "Sign in there. When your browser asks to open Immich Mount, allow it."
+msgstr "সেখানে সাইন-ইন করুন। আপনার ব্রাউজার Immich Mount খোলার অনুমতি চাইলে, অনুমতি দিন।"
+
+#: crates/immich-mount-kde/qml/Main.qml:325
+msgid "Open the Sign-In Page Again"
+msgstr "সাইন-ইন পেজটি আবার খুলুন"
+
+#: crates/immich-mount-kde/qml/Main.qml:336
+msgid "No browser could be opened. Open this address in one:"
+msgstr "কোনো ব্রাউজার খোলা যায়নি। এই ঠিকানাটি একটি ব্রাউজারে খুলুন:"
+
+#: crates/immich-mount-kde/qml/Main.qml:343
+msgid "Sign-in address"
+msgstr "সাইন-ইন ঠিকানা"
+
+#: crates/immich-mount-kde/qml/Main.qml:371
+msgid "Folder:"
+msgstr "ফোল্ডার:"
+
+#: crates/immich-mount-kde/qml/Main.qml:376
+msgid "Dolphin"
+msgstr "Dolphin"
+
+#: crates/immich-mount-kde/qml/Main.qml:381
+#: crates/immich-mount-kde/qml/Main.qml:402
+msgid "Open in Dolphin"
+msgstr "Dolphin-এ খুলুন"
+
+#: crates/immich-mount-kde/qml/Main.qml:396
+msgid "Your Library Is in Dolphin"
+msgstr "আপনার লাইব্রেরি Dolphin-এ আছে"
+
+#: crates/immich-mount-kde/qml/Main.qml:399
+msgid "Mount it to browse your library in Dolphin."
+msgstr "Dolphin-এ আপনার লাইব্রেরি ব্রাউজ করতে এটি মাউন্ট করুন।"
+
+#: crates/immich-mount-kde/qml/Main.qml:402
+msgid "Sign In Again"
+msgstr "আবার সাইন-ইন করুন"
+
+#: crates/immich-mount-kde/qml/Main.qml:402
+msgid "Mount"
+msgstr "মাউন্ট করুন"
+
+#: crates/immich-mount-kde/qml/Main.qml:410
+#: apple/App/ContentView.swift:105
+msgid "Server:"
+msgstr "সার্ভার:"
+
+#: crates/immich-mount-kde/qml/Main.qml:411
+msgid "Account:"
+msgstr "অ্যাকাউন্ট:"
+
+#: crates/immich-mount-kde/qml/Main.qml:412
+msgid "Credential:"
+msgstr "ক্রেডেনশিয়াল:"
+
+#: crates/immich-mount-kde/qml/Main.qml:413
+msgid "Connection:"
+msgstr "সংযোগ:"
+
+#: crates/immich-mount-kde/qml/Main.qml:414
+msgid "Cache:"
+msgstr "ক্যাশে:"
+
+#: crates/immich-mount-kde/qml/Main.qml:415
+msgid "Location:"
+msgstr "অবস্থান:"
+
+#: crates/immich-mount-kde/qml/Main.qml:416
+msgid "Uploading:"
+msgstr "আপলোড হচ্ছে:"
+
+#: crates/immich-mount-kde/qml/Main.qml:417
+msgid "Dolphin:"
+msgstr "Dolphin:"
+
+#: crates/immich-mount-kde/qml/Main.qml:422
+msgid "Unmount"
+msgstr "আনমাউন্ট করুন"
+
+#: crates/immich-mount-kde/qml/Main.qml:429
+msgid "Disconnect"
+msgstr "সংযোগ বিচ্ছিন্ন করুন"
+
+#: crates/immich-mount-kde/qml/Main.qml:441
+msgid "Immich Mount is an independent, unofficial project. It is not affiliated with, endorsed by, or sponsored by the Immich project or FUTO."
+msgstr "Immich Mount একটি স্বাধীন প্রকল্প, কোনো অফিসিয়াল প্রকল্প নয়। এটি Immich প্রকল্প বা FUTO-এর সঙ্গে যুক্ত নয়, এবং তাদের দ্বারা অনুমোদিত বা পৃষ্ঠপোষকতাপ্রাপ্তও নয়।"
+
+#: crates/immich-mount-core/src/settings.rs:50
+msgid "The Immich server; /api is added"
+msgstr "Immich সার্ভার; /api যোগ করা হয়"
+
+#: crates/immich-mount-core/src/settings.rs:51
+msgid "Where the mount appears"
+msgstr "মাউন্ট কোথায় দেখা যায়"
+
+#: crates/immich-mount-core/src/settings.rs:52
+msgid "The drive's name in the sidebar"
+msgstr "সাইডবারে ড্রাইভের নাম"
+
+#: crates/immich-mount-core/src/settings.rs:53
+msgid "Mount when the session starts"
+msgstr "সেশন শুরু হলে মাউন্ট করুন"
+
+#: crates/immich-mount-core/src/settings.rs:54
+msgid "Show the Photos section"
+msgstr "Photos বিভাগ দেখান"
+
+#: crates/immich-mount-core/src/settings.rs:55
+msgid "Show the Albums section"
+msgstr "Albums বিভাগ দেখান"
+
+#: crates/immich-mount-core/src/settings.rs:56
+msgid "Show the People section"
+msgstr "People বিভাগ দেখান"
+
+#: crates/immich-mount-core/src/settings.rs:57
+msgid "Show the Places section"
+msgstr "Places বিভাগ দেখান"
+
+#: crates/immich-mount-core/src/settings.rs:58
+msgid "Day folders inside months"
+msgstr "মাসের ভিতরে দিনের ফোল্ডার"
+
+#: crates/immich-mount-core/src/settings.rs:59
+msgid "Year and month folders inside albums"
+msgstr "অ্যালবামের ভিতরে বছর ও মাসের ফোল্ডার"
+
+#: crates/immich-mount-core/src/settings.rs:60
+msgid "Year and month folders inside people"
+msgstr "ব্যক্তিদের ভিতরে বছর ও মাসের ফোল্ডার"
+
+#: crates/immich-mount-core/src/settings.rs:61
+msgid "Year and month folders inside cities"
+msgstr "শহরের ভিতরে বছর ও মাসের ফোল্ডার"
+
+#: crates/immich-mount-core/src/settings.rs:62
+msgid "How album folders are named and grouped"
+msgstr "অ্যালবাম ফোল্ডারের নামকরণ ও গ্রুপিং কীভাবে হবে"
+
+#: crates/immich-mount-core/src/settings.rs:63
+msgid "How files are named"
+msgstr "ফাইলের নামকরণ কীভাবে হবে"
+
+#: crates/immich-mount-core/src/settings.rs:64
+msgid "The content cache's size limit"
+msgstr "কনটেন্ট ক্যাশের আকারের সীমা"
+
+#: crates/immich-mount-core/src/settings.rs:65
+msgid "Show the Upload folder, and upload what is copied into it"
+msgstr "Upload ফোল্ডার দেখান, এবং এতে কপি করা সবকিছু আপলোড করুন"
+
+#: crates/immich-mount-core/src/settings.rs:66
+msgid "Also seed 1024 px thumbnails from the preview"
+msgstr "প্রিভিউ থেকে 1024 px থাম্বনেলও তৈরি করুন"
+
+#: crates/immich-mount-core/src/settings.rs:67
+msgid "Refuse thumbnailer reads of originals"
+msgstr "থাম্বনেলারকে আসল ফাইল পড়তে দেবেন না"
+
+#: crates/immich-mount-core/src/settings.rs:68
+msgid "Headless only: a 0600 file holding the credential"
+msgstr "শুধু হেডলেস: ক্রেডেনশিয়াল রাখা একটি 0600 ফাইল"
+
+#: crates/immich-mount-core/src/settings.rs:74
+msgid "Never"
+msgstr "কখনো না"
+
+#: crates/immich-mount-core/src/settings.rs:75
+msgid "From 500 Items"
+msgstr "500টি আইটেম থেকে"
+
+#: crates/immich-mount-core/src/settings.rs:76
+msgid "Always"
+msgstr "সবসময়"
+
+#: crates/immich-mount-core/src/settings.rs:77
+msgid "Year in the Name (2023 - Trip)"
+msgstr "নামে বছর (2023 - ভ্রমণ)"
+
+#: crates/immich-mount-core/src/settings.rs:78
+msgid "Year Folders (2023/Trip)"
+msgstr "বছরের ফোল্ডার (2023/ভ্রমণ)"
+
+#: crates/immich-mount-core/src/settings.rs:79
+msgid "Name Only (Trip)"
+msgstr "শুধু নাম (ভ্রমণ)"
+
+#: crates/immich-mount-core/src/settings.rs:80
+msgid "Date and Time Taken"
+msgstr "তোলার তারিখ ও সময়"
+
+#: crates/immich-mount-core/src/settings.rs:81
+msgid "Original File Names"
+msgstr "আসল ফাইলের নাম"
+
+#: crates/immich-mount-apple/src/lib.rs:680
+msgid "Uploads"
+msgstr "আপলোড"
+
+#: apple/App/ContentView.swift:19
+msgid "Move Immich Mount to Applications"
+msgstr "Immich Mount-কে Applications-এ সরান"
+
+#: apple/App/ContentView.swift:20
+msgid "Finder's location runs from the Applications folder. Quit Immich Mount, drag it into Applications, then open it from there."
+msgstr "Finder-এর অবস্থানটি শুধু Applications ফোল্ডার থেকে চলে। Immich Mount থেকে প্রস্থান করুন, এটিকে Applications-এ টেনে আনুন, তারপর সেখান থেকে খুলুন।"
+
+#: apple/App/ContentView.swift:22
+msgid "Sign In to Immich"
+msgstr "Immich-এ সাইন-ইন করুন"
+
+#: apple/App/ContentView.swift:22
+msgid "Your photos and videos in Finder, as a drive."
+msgstr "Finder-এ আপনার ফটো ও ভিডিও, একটি ড্রাইভ হিসেবে।"
+
+#: apple/App/ContentView.swift:128
+msgid "Use Email and Password"
+msgstr "ইমেল ও পাসওয়ার্ড ব্যবহার করুন"
+
+#: apple/App/ContentView.swift:128
+msgid "Use an API Key"
+msgstr "একটি API কী ব্যবহার করুন"
+
+#: apple/App/ContentView.swift:159
+msgid "Switch On Immich Mount"
+msgstr "Immich Mount চালু করুন"
+
+#: apple/App/ContentView.swift:160
+msgid "macOS asks once before a new location shows in Finder: switch Immich Mount on in System Settings, under General, Login Items & Extensions, File Providers."
+msgstr "Finder-এ নতুন কোনো অবস্থান দেখানোর আগে macOS একবার জিজ্ঞেস করে: System Settings-এ General, Login Items & Extensions, File Providers-এর অধীনে Immich Mount চালু করুন।"
+
+#: apple/App/ContentView.swift:91
+msgid "API Key:"
+msgstr "API কী:"
+
+#: apple/App/ContentView.swift:93
+msgid "Make one in Immich under Account Settings, API Keys; one that may only read is enough to browse."
+msgstr "Immich-এ “অ্যাকাউন্ট সেটিংস”, “API কী”-এর অধীনে একটি কী তৈরি করুন; ব্রাউজ করার জন্য শুধু পড়ার অনুমতিযুক্ত একটি কী-ই যথেষ্ট।"
+
+#: apple/App/ContentView.swift:163
+msgid "Open System Settings"
+msgstr "System Settings খুলুন"
+
+#: apple/App/ImmichMountApp.swift:123
+msgid "Sign out of Immich Mount?"
+msgstr "Immich Mount থেকে সাইন-আউট করবেন?"
+
+#: apple/App/ImmichMountApp.swift:124
+msgid "Immich Mount leaves Finder, together with the photos and videos downloaded to this Mac. Your library on the server stays as it is."
+msgstr "এই Mac-এ ডাউনলোড করা ফটো ও ভিডিওসহ Immich Mount, Finder থেকে সরে যায়। সার্ভারে আপনার লাইব্রেরি যেমন আছে তেমনই থাকে।"
+
+#: apple/App/ImmichMountApp.swift:126
+msgid "Files in Upload that have not reached Immich: {count}. They stay on this Mac, and Finder shows where once you have signed out."
+msgstr "Upload-এর যে ফাইলগুলো Immich-এ পৌঁছায়নি: {count}। সেগুলো এই Mac-এ থাকে, এবং সাইন-আউট করার পর Finder দেখায় সেগুলো কোথায় আছে।"
+
+#: apple/App/ImmichMountApp.swift:130
+msgid "Sign Out"
+msgstr "সাইন-আউট করুন"
+
+#: apple/App/ImmichMountApp.swift:131
+msgid "Cancel"
+msgstr "বাতিল করুন"
+
+#: apple/App/ImmichMountApp.swift:138
+msgid "Still signed in"
+msgstr "এখনো সাইন-ইন করা আছে"
+
+#: apple/App/ImmichMountApp.swift:139
+msgid "Finder's location could not be removed, so Immich Mount stays signed in: {error}"
+msgstr "Finder-এর অবস্থানটি সরানো যায়নি, তাই Immich Mount সাইন-ইন অবস্থায় থাকছে: {error}"
+
+#: apple/App/ImmichMountApp.swift:196
+msgid "Immich Mount Settings"
+msgstr "Immich Mount সেটিংস"
+
+#: apple/App/ImmichMountApp.swift:296
+msgid "Your Immich photos and videos as a drive in Finder. By Jakob Hviid, under the MIT license."
+msgstr "Finder-এ একটি ড্রাইভ হিসেবে আপনার Immich-এর ফটো ও ভিডিও। Jakob Hviid-এর তৈরি, MIT লাইসেন্সের অধীনে।"
+
+#: apple/App/ImmichMountApp.swift:297
+msgid "Website"
+msgstr "ওয়েবসাইট"
+
+#: apple/App/ImmichMountApp.swift:299
+msgid "Source code"
+msgstr "সোর্স কোড"
+
+#: apple/App/ImmichMountApp.swift:302
+msgid "Inspired by"
+msgstr "অনুপ্রেরণা"
+
+#: apple/App/ImmichMountApp.swift:304
+msgid "The Immich API layer"
+msgstr "Immich API স্তর"
+
+#: apple/App/ImmichMountApp.swift:406
+msgid "Signed in to {server}"
+msgstr "{server}-এ সাইন-ইন করা হয়েছে"
+
+#: apple/App/ImmichMountApp.swift:407
+msgid "Connected to {server}"
+msgstr "{server}-এর সঙ্গে সংযুক্ত"
+
+#: apple/App/ImmichMountApp.swift:407
+msgid "{server} is not reachable"
+msgstr "{server}-এ পৌঁছানো যাচ্ছে না"
+
+#: apple/App/ImmichMountApp.swift:415
+msgid "Server version: Immich {version}"
+msgstr "সার্ভারের সংস্করণ: Immich {version}"
+
+#: apple/App/ImmichMountApp.swift:418
+msgid "Signed in as: {account}"
+msgstr "সাইন-ইন করা অ্যাকাউন্ট: {account}"
+
+#: apple/App/ImmichMountApp.swift:423
+msgid "Last checked: {time}"
+msgstr "শেষ পরীক্ষা: {time}"
+
+#: apple/App/ImmichMountApp.swift:425
+msgid "Reason: {reason}"
+msgstr "কারণ: {reason}"
+
+#: apple/App/ImmichMountApp.swift:425
+msgid "none given"
+msgstr "কিছু জানানো হয়নি"
+
+#: apple/App/ImmichMountApp.swift:511
+msgid "The login item could not be changed: {error}"
+msgstr "লগইন আইটেম পরিবর্তন করা যায়নি: {error}"
+
+#: apple/App/ImmichMountApp.swift:545
+msgid "The server sent an address that cannot be opened."
+msgstr "সার্ভার এমন একটি ঠিকানা পাঠিয়েছে যা খোলা যায় না।"
+
+#: apple/App/ImmichMountApp.swift:630
+msgid "Finder does not show Immich yet. Is the extension switched on in System Settings? ({error})"
+msgstr "Finder এখনো Immich দেখাচ্ছে না। System Settings-এ এক্সটেনশনটি কি চালু আছে? ({error})"
+
+#: apple/App/ImmichMountApp.swift:36
+#: apple/App/ImmichMountApp.swift:276
+msgid "About Immich Mount"
+msgstr "Immich Mount সম্পর্কে"
+
+#: apple/App/ImmichMountApp.swift:37
+#: apple/App/ImmichMountApp.swift:269
+msgid "Check for Updates…"
+msgstr "আপডেট আছে কিনা দেখুন…"
+
+#: apple/App/ImmichMountApp.swift:40
+#: apple/App/ImmichMountApp.swift:267
+msgid "Settings…"
+msgstr "সেটিংস…"
+
+#: apple/App/ImmichMountApp.swift:253
+msgid "Sign In…"
+msgstr "সাইন-ইন করুন…"
+
+#: apple/App/ImmichMountApp.swift:255
+msgid "Switch On in System Settings…"
+msgstr "System Settings-এ চালু করুন…"
+
+#: apple/App/ImmichMountApp.swift:264
+msgid "Open in Finder"
+msgstr "Finder-এ খুলুন"
+
+#: apple/App/ImmichMountApp.swift:272
+msgid "Sign Out…"
+msgstr "সাইন-আউট করুন…"
+
+#: apple/App/ImmichMountApp.swift:277
+msgid "Quit Immich Mount"
+msgstr "Immich Mount থেকে প্রস্থান করুন"
+
+#: apple/App/PreferencesView.swift:16
+msgid "Open at login"
+msgstr "লগইনের সময় খুলুন"
+
+#: apple/App/PreferencesView.swift:17
+msgid "Check for updates automatically"
+msgstr "স্বয়ংক্রিয়ভাবে আপডেট দেখুন"
+
+#: apple/App/PreferencesView.swift:22
+msgid "General"
+msgstr "সাধারণ"
+
+#: apple/App/PreferencesView.swift:24
+msgid "While Immich Mount runs, in the menu bar, changes in Immich reach Finder within seconds. Updates come from jakob.hviid.phd, signed by the project and notarized by Apple."
+msgstr "Immich Mount মেনু বারে চলার সময়, Immich-এর পরিবর্তনগুলো কয়েক সেকেন্ডের মধ্যে Finder-এ পৌঁছায়। আপডেট আসে jakob.hviid.phd থেকে, প্রকল্পের স্বাক্ষরযুক্ত এবং Apple-এর নোটারাইজ করা।"
+
+#: packaging/desktop/dev.hviid.ImmichMount.desktop.in (Comment)
+msgid "Your Immich photos and videos as a drive in your file manager"
+msgstr "আপনার Immich-এর ফটো ও ভিডিও, আপনার ফাইল ম্যানেজারে একটি ড্রাইভ হিসেবে"
+
+#: packaging/desktop/dev.hviid.ImmichMount.desktop.in (Keywords)
+msgid "Immich;photos;videos;drive;mount;"
+msgstr "Immich;ফটো;ছবি;ভিডিও;ড্রাইভ;মাউন্ট;photos;videos;drive;mount;"
+
+#: apple/App/Info.plist (NSLocalNetworkUsageDescription)
+msgid "Immich Mount connects to your Immich server, which may be on your local network."
+msgstr "Immich Mount আপনার Immich সার্ভারের সঙ্গে সংযোগ করে, যা আপনার লোকাল নেটওয়ার্কে থাকতে পারে।"

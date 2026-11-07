@@ -226,6 +226,12 @@ immich-mount configure unset thumbnails.sharp      # back to the default
 
 The apps' preferences (GNOME's dialog, KDE's page) edit the same settings. The keys are listed in SPEC.md.
 
+**Language.** The apps and the notifications follow the desktop's language (`LANGUAGE`, then `LC_ALL`,
+`LC_MESSAGES` and `LANG`, as every gettext program does), in English or one of 20 other languages; the command line
+stays English. To see the app in another language once: `LANGUAGE=da immich-mount app`. On the Mac it follows the
+system's language, or the one chosen for Immich Mount in System Settings, under General, Language & Region. The
+folders in the drive keep their English names.
+
 ## 7. Uploading
 
 - Copy or move photos and videos into **Upload**, at the top of the mount, in Files or Dolphin. Each file uploads

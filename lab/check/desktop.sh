@@ -155,6 +155,27 @@ check_icons() {
   if [ ${#missing[@]} -eq 0 ]; then pass icons "${found[*]}"; else fail icons "missing or not SVG: ${missing[*]}"; fi
 }
 
+# The translations are where the programs look for them, beside the program (share/locale) or in ../share/locale, and
+# the launcher has its comment in Danish (ARCHITECTURE.md, "Translations").
+check_translations() {
+  local program folder catalog="" entry comment
+  program=$(readlink -f "$(command -v immich-mount)") || { fail translations "no immich-mount on the PATH"; return; }
+  folder=$(dirname "$program")
+  for candidate in "$folder/share/locale" "$folder/../share/locale"; do
+    [ -f "$candidate/da/LC_MESSAGES/immich-mount.mo" ] && { catalog=$(readlink -f "$candidate/da/LC_MESSAGES/immich-mount.mo"); break; }
+  done
+  entry=$(find_data_file applications/dev.hviid.ImmichMount.desktop) || entry=
+  comment=$(grep -m1 '^Comment\[da\]=' "${entry:-/dev/null}" | cut -d= -f2-)
+  if [ -n "$catalog" ] && [ -n "$comment" ]; then
+    local base count
+    base=$(dirname "$(dirname "$(dirname "$catalog")")")
+    count=$(ls "$base"/*/LC_MESSAGES/immich-mount.mo | wc -l)
+    pass translations "$catalog, $count languages; Comment[da]=$comment"
+  else
+    fail translations "Danish catalog beside $program: ${catalog:-none}; Comment[da] in the launcher: ${comment:-none}"
+  fi
+}
+
 # Signed in and online (WORKFLOWS.md, "Status").
 check_status() {
   local state detail mounted path stale email credential version feed
@@ -576,6 +597,7 @@ check_version
 check_launcher
 check_scheme
 check_icons
+check_translations
 check_status
 check_service
 check_mounted

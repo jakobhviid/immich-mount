@@ -51,6 +51,7 @@ Show thumbnails switch does), which also checks that doctor's advice works.
 | `launcher` | `dev.hviid.ImmichMount.desktop` is found in the XDG data dirs, and its `Exec` program runs that version | ARCHITECTURE "Packaging" |
 | `scheme` | the launcher is registered for `x-scheme-handler/app.immich` | WORKFLOWS "Install" |
 | `icons` | the icon and its symbolic variant, as SVG | ARCHITECTURE "Packaging" |
+| `translations` | the Danish catalog where the programs look (`share/locale` beside them, or `../share/locale`), and `Comment[da]` in the launcher; it counts the languages | ARCHITECTURE "Translations" |
 | `status` | `status --json`: online, mounted, not stale, an account | WORKFLOWS "Status" |
 | `service` | `immich-mount.service` enabled and active | WORKFLOWS "The mount" |
 | `mounted` | a FUSE mount at `~/Immich` (resolved), named Immich by `.xdg-volume-info` | SPEC "Files the mount answers" |
