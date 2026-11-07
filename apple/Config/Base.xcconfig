@@ -1,4 +1,9 @@
 // Settings for both targets. A development build is signed with the developer's own team, set in the git-ignored
 // Local.xcconfig beside this file as `DEVELOPMENT_TEAM = <team ID>` (AGENTS.md, "Development environment"). CI
 // builds without signing.
+
+// The version, until build-rust.sh has written the release line's.
+MARKETING_VERSION = 0.0.0
+CURRENT_PROJECT_VERSION = 1
+#include? "../build/Version.xcconfig"
 #include? "Local.xcconfig"

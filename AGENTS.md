@@ -58,7 +58,8 @@ Before committing, grep your own doc diff for: "now", "no longer", "used to", "p
 
 ## Versioning
 
-CI derives the version from commit subjects on every push to `main`. Nobody edits `version` by hand.
+CI derives the version from commit subjects on every push to `main` (`ci/version.sh`), one version for every platform:
+the Linux packages and the macOS app carry the same number. Nobody edits `version` by hand.
 
 The first commit is 1.0.0, and every later one bumps from there:
 

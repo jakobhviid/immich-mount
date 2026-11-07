@@ -4,11 +4,11 @@
 # is signed, notarized and stapled in turn. The release workflow runs it on GitHub's macOS runner; on the maintainer's
 # Mac it runs in a Terminal window, where the login keychain is open (the mac-dev skill).
 #
-#   apple/release.sh VERSION BUILD [--unsigned | --not-notarized]
+#   apple/release.sh [--unsigned | --not-notarized]
 #
-# VERSION is the release's (2.1.0), BUILD a number that grows with every release (the commit count). --unsigned
-# builds the same disk image without signing or notarizing it, as CI does on every branch. --not-notarized signs it
-# but skips the notary service, to check the signing on the Mac that built it.
+# The version is the release line's (ci/version.sh, which build-rust.sh hands to Xcode), the same as the Linux
+# packages'. --unsigned builds the same disk image without signing or notarizing it, as CI does on every branch.
+# --not-notarized signs it but skips the notary service, to check the signing on the Mac that built it.
 #
 # Signed, it reads from the environment:
 #   TEAM_ID                         the Apple Developer Program team
@@ -22,13 +22,12 @@
 set -euo pipefail
 cd "$(dirname "$0")"
 
-usage() { echo "usage: apple/release.sh VERSION BUILD [--unsigned | --not-notarized]" >&2; exit 2; }
-[ $# -eq 2 ] || [ $# -eq 3 ] || usage
-version=$1
-build=$2
+usage() { echo "usage: apple/release.sh [--unsigned | --not-notarized]" >&2; exit 2; }
+[ $# -le 1 ] || usage
+version=$(../ci/version.sh)
 signed=yes
 notarized=yes
-case "${3:-}" in
+case "${1:-}" in
   "") ;;
   --unsigned) signed=no; notarized=no ;;
   --not-notarized) notarized=no ;;
@@ -84,7 +83,7 @@ notarize() {
 xcodegen --quiet
 
 # The archive is universal: the Release configuration builds both architectures, and the bridge has both.
-settings=(MARKETING_VERSION="$version" CURRENT_PROJECT_VERSION="$build")
+settings=()
 if [ "$signed" = no ]; then
   settings+=(CODE_SIGNING_ALLOWED=NO)
 elif [ "$style" = manual ]; then
