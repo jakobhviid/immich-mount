@@ -2,10 +2,12 @@
 
 # Immich Mount
 
-**Your [Immich](https://immich.app) photos and videos as a drive in Files (Nautilus) and Dolphin.**
+**Your [Immich](https://immich.app) photos and videos as a drive in Files (Nautilus), Dolphin and Finder.**
 
-Immich Mount puts a self-hosted Immich library in the Linux file manager and in every file open and upload dialog,
-as a drive called **Immich Mount** (or Immich Drive, or Immich, as you choose in Settings), much like a network
+For **Linux**, on GNOME and KDE Plasma, and **macOS** 14 or later, on Apple silicon and Intel.
+
+Immich Mount puts a self-hosted Immich library in your file manager and in every file open and upload dialog, as a
+drive called **Immich Mount** (on Linux also Immich Drive or Immich, as you choose in Settings), much like a network
 drive. Attach your holiday photos to an email, open a video in your editor, or drag new pictures in to upload them,
 without downloading the library first.
 
@@ -28,7 +30,8 @@ without downloading the library first.
   in a folder of its own.
 - **Changes in Immich show within seconds,** in an open folder after a refresh.
 - **One app, native on each desktop:** it opens in GTK and libadwaita on GNOME and in Kirigami on KDE Plasma, to sign
-  in, choose what to show, and see the status. Sign in with your server's single sign-on in your own browser (passkeys
+  in, choose what to show, and see the status. On the Mac it is a menu bar app, with the library in Finder's sidebar
+  through Apple's File Provider, as iCloud Drive's is. Sign in with your server's single sign-on in your own browser (passkeys
   and password managers work as usual), with email and password, or with an API key. The credential stays in your
   keyring (GNOME Keyring or KWallet).
 - **A command line and a background service** (`immich-mount`, a FUSE filesystem written in Rust), which also run
@@ -52,6 +55,8 @@ rename or delete what is already in Immich, or replace Immich's own apps. Browsi
 sharing and editing stay in Immich's web and mobile apps.
 
 ## Install
+
+### Linux
 
 One app, which opens in the interface native to your desktop: Kirigami on KDE Plasma, GTK and libadwaita everywhere
 else. With Homebrew (any Linux that has it, Bazzite included, with nothing layered onto the system), one command
@@ -79,6 +84,14 @@ sudo apt install ./immich-mount*.deb      # Ubuntu, Debian
 You need an Immich server at v3.2 or later (the current and previous minor release are supported), FUSE 3
 (`fuse3`, which the packages pull in), and a keyring for the desktop. Other ways to install, and building the
 apps from source: [WORKFLOWS.md](WORKFLOWS.md#1-install).
+
+### macOS
+
+Download `immich-mount-<version>.dmg` from the [download page](https://jakob.hviid.phd/immich-mount/) or the
+[releases](https://github.com/jakobhviid/immich-mount/releases), signed and notarized by Apple, for macOS 14 or
+later on Apple silicon and Intel. Open it, drag **Immich Mount** into Applications, and open it from there. Sign in,
+then switch Immich Mount on in System Settings, under General, Login Items & Extensions, File Providers, once: the
+app shows the way. It lives in the menu bar, and your library in Finder's sidebar.
 
 ## Getting started
 
@@ -122,8 +135,9 @@ Immich server, and the packages install and remove cleanly on Fedora 43 and 44, 
 Debian 13. Releases follow semantic versioning: a change that breaks settings or behaviour bumps the major
 version.
 
-Not there yet: packages in COPR and the AUR, a Flatpak, and a macOS edition. [ROADMAP.md](ROADMAP.md) has
-the plans and the open questions.
+The macOS edition is new: signed and notarized, and tested on macOS 27 against a real Immich server. Not there
+yet: Homebrew and in-app updates for the Mac, packages in COPR and the AUR, and a Flatpak.
+[ROADMAP.md](ROADMAP.md) has the plans and the open questions.
 
 ## Documentation
 

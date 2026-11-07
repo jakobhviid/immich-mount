@@ -6,7 +6,8 @@ it works this way. Where a step is not built yet, it says so.
 ## 1. Install
 
 Immich Mount is one app, GUI first: open **Immich Mount** and it shows the interface native to your desktop, Kirigami
-on KDE Plasma and GTK with libadwaita everywhere else. Without a display, `immich-mount` is a command line.
+on KDE Plasma and GTK with libadwaita everywhere else. Without a display, `immich-mount` is a command line. On macOS
+it is a menu bar app (below, "On macOS").
 
 **With Homebrew** (any Linux that has it, such as Bazzite; nothing is layered onto an atomic system): the whole app,
 x86_64, in one command. It is a cask holding the interfaces, the daemon and the command line, and `brew install`
@@ -32,6 +33,13 @@ one cask (`brew update` moves the cask over; the old formula's `immich-mount` wo
 brew update && brew uninstall --formula immich-mount && brew upgrade --cask immich-mount
 ``` The interfaces are built on Fedora 44, so the system needs to be at least as new (GTK 4.18 and
 libadwaita 1.8 for the GTK one); on a Plasma whose Qt is not Fedora 44's, the GTK interface stands in for Kirigami.
+
+**On macOS** (14 or later, Apple silicon or Intel): download `immich-mount-<version>.dmg` from the
+[download page](https://jakob.hviid.phd/immich-mount/), open it, drag Immich Mount into Applications and open it from
+there (an app opened from the disk image asks to be moved first). Sign in; the app then asks you to switch Immich
+Mount on once, in System Settings, under General, Login Items & Extensions, File Providers, and closes its window
+when you have. It lives in the menu bar: its menu has the connection, Open in Finder, Settings (with Open at login),
+Sign Out, and Quit. To upgrade, replace the app in Applications with the new one; your sign-in and settings stay.
 
 **Without a desktop, with Homebrew** (x86_64 or ARM): the daemon and CLI alone, as the formula
 `immich-mount-headless`. It and the app hold the same `immich-mount`, so a machine has one or the other. FUSE comes

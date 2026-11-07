@@ -40,7 +40,8 @@ main, .hero, .notice, footer { max-width: 980px; margin: 0 auto; padding: 0 24px
 .hero { text-align: center; padding-top: 64px; }
 .logo { width: 128px; height: 128px; }
 h1 { font-size: 2.6rem; margin: 12px 0 4px; letter-spacing: -0.02em; }
-.tagline { font-size: 1.3rem; margin: 0 0 16px; }
+.tagline { font-size: 1.3rem; margin: 0 0 8px; }
+.supported { margin: 0 0 16px; }
 .lead { color: var(--muted); max-width: 720px; margin: 0 auto 24px; }
 .version { color: var(--muted); font-size: 0.9rem; }
 
