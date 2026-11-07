@@ -8,6 +8,8 @@
 use std::path::{Path, PathBuf};
 use std::process::Command;
 
+use immich_mount_core::settings::mount_names;
+
 use crate::paths::Paths;
 
 /// What turning previews on allows: files up to 100 MB, enough for photos and short videos.
@@ -114,6 +116,18 @@ pub fn remove_place(paths: &Paths, mount_point: &Path) -> Result<bool, String> {
     write_places(&file, &updated).map(|()| true)
 }
 
+/// Give the setup's place of the mount the drive's name, `title`, after it changed. A place renamed in Dolphin to
+/// anything but one of the drive's names is the user's, and keeps its name. Called by the daemon as it starts.
+/// `Ok(true)` when it changed something.
+pub fn retitle_place(paths: &Paths, mount_point: &Path, title: &str) -> Result<bool, String> {
+    let file = user_places(paths);
+    let Ok(text) = std::fs::read_to_string(&file) else { return Ok(false) };
+    let Some(updated) = retitled_place(&text, &crate::thumbnails::file_uri(mount_point), title) else {
+        return Ok(false);
+    };
+    write_places(&file, &updated).map(|()| true)
+}
+
 /// Replace the file whole (KIO watches it and reloads), so a reader never sees half of it.
 fn write_places(file: &Path, text: &str) -> Result<(), String> {
     let describe = |error: std::io::Error| format!("{}: {error}", file.display());
@@ -150,6 +164,21 @@ fn with_place(places: &str, uri: &str, title: &str) -> Option<String> {
         xml_escaped(title)
     );
     Some(format!("{}{place}{}", &places[..end], &places[end..]))
+}
+
+/// `places` with the place for `uri` titled `title`, when its title is one of the drive's names; `None` when nothing
+/// changes.
+fn retitled_place(places: &str, uri: &str, title: &str) -> Option<String> {
+    let start = places.find(&place_tag(uri))?;
+    let end = start + places[start..].find("</bookmark>")?;
+    let open = start + places[start..end].find("<title>")? + "<title>".len();
+    let close = open + places[open..end].find("</title>")?;
+    let current = &places[open..close];
+    let wanted = xml_escaped(title);
+    if *current == *wanted || !mount_names().any(|name| *xml_escaped(name) == *current) {
+        return None;
+    }
+    Some(format!("{}{wanted}{}", &places[..open], &places[close..]))
 }
 
 /// `places` without the place for `uri`, or `None` when it has none.
@@ -201,6 +230,17 @@ mod tests {
         assert_eq!(without_place(&added, "file:///home/me/Immich").as_deref(), Some(original));
         assert_eq!(without_place(original, "file:///home/me/Immich"), None);
         assert_eq!(with_place("not places", "file:///x", "x"), None);
+    }
+
+    #[test]
+    fn a_place_takes_the_drives_new_name_unless_the_user_renamed_it() {
+        let ours = with_place("<xbel>\n</xbel>\n", "file:///home/me/Immich", "Immich").expect("added");
+        let renamed = retitled_place(&ours, "file:///home/me/Immich", "Immich Mount").expect("renamed");
+        assert!(renamed.contains("<title>Immich Mount</title>") && !renamed.contains("<title>Immich</title>"));
+        assert_eq!(retitled_place(&renamed, "file:///home/me/Immich", "Immich Mount"), None);
+        let theirs = ours.replace("<title>Immich</title>", "<title>Photos</title>");
+        assert_eq!(retitled_place(&theirs, "file:///home/me/Immich", "Immich Mount"), None);
+        assert_eq!(retitled_place(&ours, "file:///home/me/Other", "Immich Mount"), None);
     }
 
     #[test]

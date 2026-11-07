@@ -372,7 +372,7 @@ impl Window {
                     // sidebar a bookmark instead, once.
                     let paths = immich_mount_linux::paths::Paths::from_environment();
                     if !immich_mount_linux::gnome::listed_in_sidebar(&paths, &status.mount_point) {
-                        if let Err(error) = immich_mount_linux::gnome::add_bookmark(&paths, &status.mount_point, "Immich") {
+                        if let Err(error) = immich_mount_linux::gnome::add_bookmark(&paths, &status.mount_point, immich_mount_desktop::preferences::drive_name()) {
                             eprintln!("could not bookmark the mount in Files' sidebar: {error}");
                         }
                     }

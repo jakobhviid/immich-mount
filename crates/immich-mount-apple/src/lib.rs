@@ -664,8 +664,16 @@ impl Library {
 
 /// The settings groups the macOS app shows: those that mean something there. The mount's path, the cache and
 /// thumbnail seeding are Linux's.
-const PREFERENCE_GROUPS: &[(&str, &str)] =
-    &[("sections", "Sections"), ("grouping", "Date Folders"), ("albums", "Albums"), ("files", "Files"), ("uploads", "Uploads")];
+const PREFERENCE_GROUPS: &[(&str, &str)] = &[
+    ("mount", "Location"),
+    ("sections", "Sections"),
+    ("grouping", "Date Folders"),
+    ("albums", "Albums"),
+    ("files", "Files"),
+    ("uploads", "Uploads"),
+];
+/// Settings of those groups that mean nothing on macOS: the app's own "Open at login" stands for mounting at login.
+const NOT_ON_MACOS: &[&str] = &["mount.at_login"];
 
 /// A group of settings, as the app shows it.
 #[derive(Debug, Clone, PartialEq, Eq, uniffi::Record)]
@@ -709,7 +717,7 @@ pub fn preferences(config: String) -> Vec<PreferenceGroup> {
             title: (*title).to_owned(),
             preferences: SETTINGS
                 .iter()
-                .filter(|setting| setting.key.split('.').next() == Some(*prefix))
+                .filter(|setting| setting.key.split('.').next() == Some(*prefix) && !NOT_ON_MACOS.contains(&setting.key))
                 .filter_map(|setting| {
                     let kind = match setting.kind {
                         Kind::Bool => PreferenceKind::Toggle,
@@ -727,6 +735,12 @@ pub fn preferences(config: String) -> Vec<PreferenceGroup> {
                 .collect(),
         })
         .collect()
+}
+
+/// The Finder location's name in the sidebar (`mount.name`), the default when `config` does not say or cannot be read.
+#[uniffi::export]
+pub fn drive_name(config: String) -> String {
+    settings::Config::from_toml(&config).map_or(settings::DEFAULT_MOUNT_NAME, |config| config.mount_name).to_owned()
 }
 
 /// `config` with one setting changed, its comments kept; refused with a message when the value does not fit.
@@ -1222,15 +1236,24 @@ mod tests {
     fn the_preferences_are_the_settings_that_mean_something_on_macos() {
         let groups = preferences("[sections]\npeople = false\n".into());
         let titles: Vec<&str> = groups.iter().map(|group| group.title.as_str()).collect();
-        assert_eq!(titles, ["Sections", "Date Folders", "Albums", "Files", "Uploads"]);
-        let people = groups[0].preferences.iter().find(|preference| preference.key == "sections.people").unwrap();
+        assert_eq!(titles, ["Location", "Sections", "Date Folders", "Albums", "Files", "Uploads"]);
+        let location: Vec<&str> = groups[0].preferences.iter().map(|preference| preference.key.as_str()).collect();
+        assert_eq!(location, ["mount.name"], "the mount point and mounting at login mean nothing on macOS");
+        let people = groups[1].preferences.iter().find(|preference| preference.key == "sections.people").unwrap();
         assert_eq!((&people.kind, people.value.as_str()), (&PreferenceKind::Toggle, "false"));
-        let layout = &groups[2].preferences[0];
+        let layout = &groups[3].preferences[0];
         assert_eq!((layout.key.as_str(), layout.value.as_str()), ("albums.layout", "year-prefix"), "the default");
         assert!(matches!(&layout.kind, PreferenceKind::Choice { options } if options[1].label == "Year Folders (2023/Trip)"));
         let changed = set_preference("# mine\n".into(), "albums.layout".into(), "flat".into()).unwrap();
-        assert!(changed.contains("# mine") && preferences(changed)[2].preferences[0].value == "flat");
+        assert!(changed.contains("# mine") && preferences(changed)[3].preferences[0].value == "flat");
         assert!(set_preference(String::new(), "albums.layout".into(), "sideways".into()).is_err());
+    }
+
+    #[test]
+    fn the_location_is_named_by_the_setting() {
+        assert_eq!(drive_name(String::new()), "Immich Mount");
+        assert_eq!(drive_name("[mount]\nname = \"immich\"\n".into()), "Immich");
+        assert_eq!(drive_name("not toml [".into()), "Immich Mount");
     }
 
     #[test]

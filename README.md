@@ -5,8 +5,9 @@
 **Your [Immich](https://immich.app) photos and videos as a drive in Files (Nautilus) and Dolphin.**
 
 Immich Mount puts a self-hosted Immich library in the Linux file manager and in every file open and upload dialog,
-as a drive called **Immich**, much like a network drive. Attach your holiday photos to an email, open a video in
-your editor, or drag new pictures in to upload them, without downloading the library first.
+as a drive called **Immich Mount** (or Immich Drive, or Immich, as you choose in Settings), much like a network
+drive. Attach your holiday photos to an email, open a video in your editor, or drag new pictures in to upload them,
+without downloading the library first.
 
 > Immich Mount is an independent, unofficial project. It is not affiliated with, endorsed by, or sponsored by the
 > Immich project or FUTO. "Immich" is used only to describe the server this software works with, and remains the

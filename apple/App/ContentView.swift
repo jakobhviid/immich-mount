@@ -1,5 +1,6 @@
 // The app's one window: sign in, or the status of the Finder location.
 
+import AppKit
 import AuthenticationServices
 import SwiftUI
 
@@ -8,9 +9,17 @@ struct ContentView: View {
 
     var body: some View {
         VStack(spacing: 0) {
-            if let server = model.server {
+            if !Installation.isInApplications {
+                Spacer()
+                Header(title: "Move Immich Mount to Applications",
+                       line: "Finder's location runs from the Applications folder. Drag Immich Mount into Applications, then open it from there.")
+                Button("Quit") { NSApplication.shared.terminate(nil) }
+                    .keyboardShortcut(.defaultAction)
+                    .padding(24)
+                Spacer()
+            } else if let server = model.server {
                 Header(title: "Your Library Is in Finder",
-                       line: "Immich is in Finder's sidebar and in every file dialog.")
+                       line: "\(FinderLocation.name) is in Finder's sidebar and in every file dialog.")
                 StatusView(server: server)
             } else {
                 Header(title: "Your Immich Library in Finder",
@@ -150,7 +159,7 @@ struct StatusView: View {
                 Text("Originals download when something opens them; listing and thumbnails download nothing.")
             }
             Section {
-                Text("If Immich is missing from Finder's sidebar, switch Immich Mount on in System Settings, under General, Login Items & Extensions, File Providers.")
+                Text("If \(FinderLocation.name) is missing from Finder's sidebar, switch Immich Mount on in System Settings, under General, Login Items & Extensions, File Providers.")
                     .foregroundStyle(.secondary)
                 HStack {
                     Button("Open System Settings") { model.openExtensionSettings() }

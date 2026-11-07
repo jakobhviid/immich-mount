@@ -5,7 +5,7 @@ import FileProvider
 import SwiftUI
 
 struct PreferencesView: View {
-    @State private var groups: [PreferenceGroup] = preferences(config: PreferencesView.configText())
+    @State private var groups: [PreferenceGroup] = preferences(config: AppGroup.configText)
     @State private var message: String?
 
     var body: some View {
@@ -22,6 +22,8 @@ struct PreferencesView: View {
             }
         }
         .formStyle(.grouped)
+        // A change reimports the location's items, which only the copy in Applications may do.
+        .disabled(!Installation.isInApplications)
         .frame(width: 480)
     }
 
@@ -40,15 +42,19 @@ struct PreferencesView: View {
         }
     }
 
-    /// Keep one value, then have the system list every folder again, by the new rules.
+    /// Keep one value, then have the system list every folder again, by the new rules; a new name renames the location.
     private func change(_ key: String, to value: String) {
         do {
-            let updated = try setPreference(config: PreferencesView.configText(), key: key, value: value)
+            let updated = try setPreference(config: AppGroup.configText, key: key, value: value)
             try FileManager.default.createDirectory(at: AppGroup.container, withIntermediateDirectories: true)
             try updated.write(to: AppGroup.configFile, atomically: true, encoding: .utf8)
             groups = preferences(config: updated)
             message = nil
             Task {
+                if key == "mount.name" {
+                    await FinderLocation.applyName()
+                    return
+                }
                 do {
                     try await NSFileProviderManager(for: FinderLocation.domain)?.reimportItems(below: .rootContainer)
                 } catch {
@@ -58,9 +64,5 @@ struct PreferencesView: View {
         } catch {
             message = describe(error)
         }
-    }
-
-    private static func configText() -> String {
-        (try? String(contentsOf: AppGroup.configFile, encoding: .utf8)) ?? ""
     }
 }

@@ -61,13 +61,49 @@ private func showAbout() {
     NSApplication.shared.activate(ignoringOtherApps: true)
 }
 
-/// The Finder location: one File Provider domain, shown as "Immich" in the sidebar, as the volume is on Linux.
+/// Where the app runs from. The system starts the extension from the path it first ran it at, for as long as its File
+/// Provider service runs (verified on macOS 27): an app opened from its disk image, or moved out of Downloads by
+/// Gatekeeper's translocation, would leave Finder a location whose extension is gone once the image is ejected. So a
+/// release build serves Finder only from an Applications folder; a development build runs where Xcode put it.
+enum Installation {
+    static var isInApplications: Bool {
+        #if DEBUG
+        return true
+        #else
+        let path = Bundle.main.bundleURL.resolvingSymlinksInPath().path
+        return path.hasPrefix("/Applications/")
+            || path.range(of: "^/Users/[^/]+/Applications/", options: .regularExpression) != nil
+        #endif
+    }
+}
+
+/// The Finder location: one File Provider domain, shown in the sidebar under the drive's name (`mount.name`), as the
+/// volume is in Files and Dolphin.
 enum FinderLocation {
     /// Never changes: the system keys its copy of the library by it.
-    static let domain = NSFileProviderDomain(identifier: NSFileProviderDomainIdentifier("library"), displayName: "Immich")
+    static let identifier = NSFileProviderDomainIdentifier("library")
+
+    static var domain: NSFileProviderDomain {
+        NSFileProviderDomain(identifier: identifier, displayName: name)
+    }
+
+    static var name: String { driveName(config: AppGroup.configText) }
 
     static func add() async throws {
         try await NSFileProviderManager.add(domain)
+    }
+
+    /// Give the location the name the settings give it, where the system has another. Adding a domain again updates
+    /// it in place: the items, downloads and the switch in System Settings stay.
+    static func applyName() async {
+        guard let current = try? await NSFileProviderManager.domains().first(where: { $0.identifier == identifier }),
+              current.displayName != name else { return }
+        do {
+            try await NSFileProviderManager.add(domain)
+            logger.notice("the Finder location is named \(name, privacy: .public)")
+        } catch {
+            logger.error("the Finder location was not renamed: \(String(describing: error), privacy: .public)")
+        }
     }
 
     /// Remove the location and everything the system kept of it.
@@ -97,7 +133,12 @@ final class AppModel: ObservableObject {
 
 
     init() {
+        guard Installation.isInApplications else {
+            logger.notice("opened outside Applications, from \(Bundle.main.bundlePath, privacy: .public): waiting to be moved")
+            return
+        }
         Task { await refreshItemsAfterUpdate() }
+        Task { await FinderLocation.applyName() }
         Task { await keepChangesFlowing() }
     }
 

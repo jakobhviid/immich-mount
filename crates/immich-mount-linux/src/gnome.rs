@@ -9,6 +9,8 @@
 
 use std::path::{Path, PathBuf};
 
+use immich_mount_core::settings::mount_names;
+
 use crate::mounts::canonical_mount_point;
 use crate::paths::Paths;
 use crate::thumbnails::file_uri;
@@ -57,8 +59,8 @@ fn gvfs_home(paths: &Paths) -> PathBuf {
 }
 
 /// Where home is reached through a symlink, give the volume monitor the resolved home and restart it, so it lists the
-/// mount as a drive with an eject button; the setup's bookmark of the mount (titled "Immich") then goes, as the drive
-/// takes its place. Called by the daemon before it mounts. `Ok(true)` when it changed something.
+/// mount as a drive with an eject button; the setup's bookmark of the mount (titled with the drive's name) then goes,
+/// as the drive takes its place. Called by the daemon before it mounts. `Ok(true)` when it changed something.
 pub fn show_mounts_in_sidebar(paths: &Paths, mount_point: &Path) -> Result<bool, String> {
     let Ok(resolved) = std::fs::canonicalize(&paths.home) else { return Ok(false) };
     if resolved == paths.home || !crate::service::is_installed(VOLUME_MONITOR) {
@@ -77,7 +79,9 @@ pub fn show_mounts_in_sidebar(paths: &Paths, mount_point: &Path) -> Result<bool,
     for arguments in [["--user", "daemon-reload", ""], ["--user", "try-restart", VOLUME_MONITOR]] {
         let _ = std::process::Command::new("systemctl").args(arguments.iter().filter(|argument| !argument.is_empty())).output();
     }
-    remove_bookmark_titled(paths, mount_point, Some("Immich"))?;
+    for name in mount_names() {
+        remove_bookmark_titled(paths, mount_point, Some(name))?;
+    }
     Ok(true)
 }
 
@@ -136,6 +140,19 @@ pub fn add_bookmark(paths: &Paths, mount_point: &Path, title: &str) -> Result<bo
     write_bookmarks(&file, &with_bookmark(&text, &file_uri(mount_point), title)).map(|()| true)
 }
 
+/// Give the setup's bookmark of the mount the drive's name, `title`, after it changed. A bookmark titled anything but
+/// one of the drive's names is the user's, and keeps its title. Called by the daemon as it starts. `Ok(true)` when it
+/// changed something.
+pub fn retitle_bookmark(paths: &Paths, mount_point: &Path, title: &str) -> Result<bool, String> {
+    let file = bookmarks(paths);
+    let Ok(text) = std::fs::read_to_string(&file) else { return Ok(false) };
+    let updated = retitled(&text, &uris(mount_point), title);
+    if updated == text {
+        return Ok(false);
+    }
+    write_bookmarks(&file, &updated).map(|()| true)
+}
+
 /// Take the mount's bookmark out of the sidebar (at logout). Nothing to remove is not an error.
 pub fn remove_bookmark(paths: &Paths, mount_point: &Path) -> Result<bool, String> {
     remove_bookmark_titled(paths, mount_point, None)
@@ -188,6 +205,24 @@ fn with_bookmark(bookmarks: &str, uri: &str, title: &str) -> String {
     format!("{bookmarks}{separator}{uri} {title}\n")
 }
 
+/// `bookmarks` with each bookmark of `uris` titled by one of the drive's names titled `title` instead.
+fn retitled(bookmarks: &str, uris: &[String], title: &str) -> String {
+    bookmarks
+        .split_inclusive('\n')
+        .map(|line| {
+            let entry = line.trim_end_matches('\n');
+            let ours = uris.iter().find_map(|uri| {
+                let old = entry.strip_prefix(uri.as_str())?.strip_prefix(' ')?;
+                (old != title && mount_names().any(|name| name == old)).then_some(uri)
+            });
+            match ours {
+                Some(uri) => format!("{uri} {title}{}", &line[entry.len()..]),
+                None => line.to_owned(),
+            }
+        })
+        .collect()
+}
+
 /// `bookmarks` without the one for `uri`, or `None` when it has none.
 fn without_bookmark(bookmarks: &str, uri: &str) -> Option<String> {
     let index = bookmark_line(bookmarks, uri)?;
@@ -209,6 +244,16 @@ mod tests {
         assert!(gvfs_lists(Path::new("/run/media/me/Immich"), Path::new("/home/me"), "me"));
         assert!(gvfs_lists(Path::new("/media/Immich"), Path::new("/home/me"), "me"));
         assert!(!gvfs_lists(Path::new("/run/user/1000/Immich"), Path::new("/home/me"), "me"));
+    }
+
+    #[test]
+    fn a_bookmark_takes_the_drives_new_name_unless_the_user_titled_it() {
+        let uris = ["file:///home/me/Immich".to_owned()];
+        let ours = "file:///home/me/Documents\nfile:///home/me/Immich Immich\n";
+        assert_eq!(retitled(ours, &uris, "Immich Drive"), "file:///home/me/Documents\nfile:///home/me/Immich Immich Drive\n");
+        assert_eq!(retitled("file:///home/me/Immich Immich Drive", &uris, "Immich Mount"), "file:///home/me/Immich Immich Mount");
+        let theirs = "file:///home/me/Immich Photos\nfile:///home/me/Immich\n";
+        assert_eq!(retitled(theirs, &uris, "Immich Mount"), theirs);
     }
 
     #[test]

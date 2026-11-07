@@ -136,7 +136,7 @@ fn the_mount_lists_and_reads_like_a_normal_folder() {
 
     let root = mountpoint.path();
     assert_eq!(sorted_names(root), [".nomedia", ".trackerignore", ".xdg-volume-info", "Albums", "People", "Photos", "Places", "Upload"]);
-    assert_eq!(std::fs::read_to_string(root.join(".xdg-volume-info")).unwrap(), "[Volume Info]\nName=Immich\n");
+    assert_eq!(std::fs::read_to_string(root.join(".xdg-volume-info")).unwrap(), "[Volume Info]\nName=Immich Mount\n");
 
     let month = root.join("Photos").join("2024").join("03 March");
     assert_eq!(sorted_names(&month), ["2024-03-15 14.32.07.jpg", "2024-03-15 14.32.09.jpg"]);

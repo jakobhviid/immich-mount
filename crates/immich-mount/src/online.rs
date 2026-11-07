@@ -418,6 +418,18 @@ pub fn daemon(paths: &Paths) -> Result<Option<StopReason>> {
         Ok(false) => {}
         Err(error) => log::warn!("could not set GVfs up for this home, so Files may not list the mount: {error}"),
     }
+    // The drive's name, in the sidebar entries the apps' setup made, after it changed (`mount.name`).
+    let retitled = [
+        immich_mount_linux::gnome::retitle_bookmark(paths, &mount_point, config.mount_name),
+        immich_mount_linux::kde::retitle_place(paths, &mount_point, config.mount_name),
+    ];
+    for result in retitled {
+        match result {
+            Ok(true) => log::info!("named the mount's sidebar entry \"{}\"", config.mount_name),
+            Ok(false) => {}
+            Err(error) => log::warn!("could not name the mount's sidebar entry \"{}\": {error}", config.mount_name),
+        }
+    }
     let account_cache = paths.account_cache(&account_name(&client));
     // Shown by the apps; an API key without `user.read` is simply not named.
     let account = version.is_some().then(|| runtime.block_on(client.my_email()).ok()).flatten();
