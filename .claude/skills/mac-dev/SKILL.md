@@ -171,6 +171,10 @@ the extension switched on; it works through the checkout's `apple/build/check/`,
 - **Thumbnails as Finder asks for them:** `xcrun swift lab/mac/thumbnail.swift <file>` (QLThumbnailGenerator).
   `qlmanage -t` reads the file itself, which downloads the original: no test of the extension's thumbnails.
 - **Info-level lines** (downloads, listings) show only with `/usr/bin/log show --info`.
+- **The app's windows,** when one "does not appear": `xcrun swift lab/mac/windows.swift` lists each window's layer,
+  bounds and whether it is on screen, without Screen Recording permission (it reads no names or images). A window
+  on screen that the maintainer cannot see is behind another app's; `sample <pid> 1` then shows whether the main
+  thread waits in a modal alert (verified on macOS 27).
 - **A known system error:** the same photo copied into Upload twice under two names makes `fileproviderd` log
   `itemChangedDuringPropagation` for `asset|upload|...` while it merges the two into one item. It passes; the photo
   reaches the server once and leaves Upload.
