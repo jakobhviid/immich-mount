@@ -1098,6 +1098,9 @@ A package downloaded from the page is never updated: no repository stands behind
   the page, for as long as the daemon runs.
 - **Who looks:** not Homebrew's installs (in its Cellar or a cask's folder, which `brew upgrade` keeps current), not a
   Flatpak (its remote updates it), not a development build (version 0.0.0), and not with `updates.check` off.
+- **Verified** (a Fedora 44 GNOME VM, 2026-11-07): 2.21.0 from its rpms, five minutes after its daemon started, saw
+  2.21.2 on the page, told of it in a notification, kept the version told of, and offered it on the tray's menu;
+  started again, it offered it on the menu and sent no second notification.
 - **Never replaced in place,** as Sparkle replaces the Mac app: the packages own `/usr`, and files changed under dpkg
   or rpm break their package database. The user updates the way they installed.
 - **Flatpak impact:** none; a Flatpak does not look.
