@@ -116,6 +116,15 @@ JPEGs: `fixtures`, then `open <name> <dir>` (cold cache, settle, screenshot, who
   an app in another language: `dnf install glibc-langpack-da` as root, then start it with `LANG=da_DK.UTF-8`; for the
   daemon, `systemctl --user set-environment LANG=da_DK.UTF-8` and restart its service. Without the langpack GTK
   falls back to C and shows its Blueprint texts in English while the rest is translated.
+- **The tray** (ARCHITECTURE.md, "The tray"): on GNOME it needs the AppIndicator extension, as Ubuntu and Bazzite
+  ship it: `dnf install -y gnome-shell-extension-appindicator` as root, then in the session `gsettings set
+  org.gnome.shell enabled-extensions "['appindicatorsupport@rgcjonas.gmail.com']"` and `session.sh` again; the
+  daemon registers once the watcher appears. `exp/input.sh click` on the top bar's icon opens its menu. Plasma's
+  system tray shows the icon at once, but nothing here opens its menu: the accessibility bus offers the item only
+  "Press", which does not, and the headless KWin reads no input device, so a uinput touchscreen's taps never arrive.
+  Read the menu from D-Bus instead (`gdbus call --session --dest dev.hviid.ImmichMount.Daemon --object-path
+  /MenuBar --method com.canonical.dbusmenu.GetLayout -- 0 -1 "[]"`), and click its lines with `Event` (`-- 4
+  clicked "<int32 0>" 0`).
 - **Harmless noise:** "Error registering session with GDM", and `xdg-desktop-portal` failing because
   `graphical-session.target` is inactive.
 
