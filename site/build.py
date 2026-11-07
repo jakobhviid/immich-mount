@@ -90,6 +90,8 @@ def main(release_file, output, mac_release_file=None, update_file=None):
             '<p>One app for Apple silicon and Intel Macs, on macOS 14 or later, signed and notarized by Apple. It '
             'lives in the menu bar, and your library in Finder\'s sidebar.</p>'
             f'<p><a class="button" href="{html.escape(files["dmg"])}">Download for macOS</a></p>'
+            '<p>Or with <a href="https://brew.sh">Homebrew</a>:</p>'
+            '<pre class="command"><code>brew install --cask jakobhviid/tap/immich-mount</code></pre>'
             f'<p class="small">Version {html.escape(mac_release["tagName"].lstrip("v"))}. Open the disk image, drag '
             'Immich Mount into Applications and open it from there. Sign in, then switch Immich Mount on in System '
             'Settings, under General, Login Items &amp; Extensions, File Providers: the app shows the way.</p>'

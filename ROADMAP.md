@@ -207,8 +207,11 @@ checked by CI's macOS job; the maintainer's Mac is needed only to run and debug 
    **Released: 2.14.2 (2026-11-07),** the first Mac release, built on the maintainer's Mac and attached by hand.
    **2.15.1** is the first that updates itself (Sparkle); the feed is on the download page. **Verified on the
    maintainer's Mac:** 2.15.1 found 2.15.2 in the feed, checked its signature, replaced itself in Applications and
-   started again. Next: the cask's macOS part, which needs the disk image in every release, since a cask has one
-   version.
+   started again. **Homebrew on the Mac:** the cask `immich-mount` has a macOS part beside its Linux one (the disk
+   image, the app into Applications, `auto_updates`, a zap of its sandbox data), which the tap tests on a macOS
+   runner, and its daily bump moves both systems' hashes (verified: 2.15.2 to 2.15.3). Verified on the maintainer's
+   Mac: `brew install --cask` installed 2.15.2, and 2.15.3, the first signed
+   and notarized in CI, updated it through Sparkle.
    Exit: a Mac that never had it installs from Homebrew, switches the extension on, and browses.
 
 Open:

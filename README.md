@@ -87,11 +87,17 @@ apps from source: [WORKFLOWS.md](WORKFLOWS.md#1-install).
 
 ### macOS
 
-Download `immich-mount-<version>.dmg` from the [download page](https://jakob.hviid.phd/immich-mount/) or the
-[releases](https://github.com/jakobhviid/immich-mount/releases), signed and notarized by Apple, for macOS 14 or
-later on Apple silicon and Intel. Open it, drag **Immich Mount** into Applications, and open it from there. Sign in,
+For macOS 14 or later, on Apple silicon and Intel, signed and notarized by Apple. With Homebrew:
+
+```sh
+brew install --cask jakobhviid/tap/immich-mount
+```
+
+Or download `immich-mount-<version>.dmg` from the [download page](https://jakob.hviid.phd/immich-mount/) or the
+[releases](https://github.com/jakobhviid/immich-mount/releases), open it, drag **Immich Mount** into Applications,
+and open it from there. Sign in,
 then switch Immich Mount on in System Settings, under General, Login Items & Extensions, File Providers, once: the
-app shows the way. It lives in the menu bar, and your library in Finder's sidebar.
+app shows the way. It lives in the menu bar, and your library in Finder's sidebar. It updates itself.
 
 ## Getting started
 
@@ -136,7 +142,7 @@ Debian 13. Releases follow semantic versioning: a change that breaks settings or
 version.
 
 The macOS edition is new: signed and notarized, and tested on macOS 27 against a real Immich server. Not there
-yet: Homebrew for the Mac, packages in COPR and the AUR, and a Flatpak.
+yet: packages in COPR and the AUR, and a Flatpak.
 [ROADMAP.md](ROADMAP.md) has the plans and the open questions.
 
 ## Documentation

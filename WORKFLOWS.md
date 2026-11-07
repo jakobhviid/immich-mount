@@ -34,9 +34,11 @@ brew update && brew uninstall --formula immich-mount && brew upgrade --cask immi
 ``` The interfaces are built on Fedora 44, so the system needs to be at least as new (GTK 4.18 and
 libadwaita 1.8 for the GTK one); on a Plasma whose Qt is not Fedora 44's, the GTK interface stands in for Kirigami.
 
-**On macOS** (14 or later, Apple silicon or Intel): download `immich-mount-<version>.dmg` from the
-[download page](https://jakob.hviid.phd/immich-mount/), open it, drag Immich Mount into Applications and open it from
-there (an app opened from the disk image asks to be moved first). Sign in; the app then asks you to switch Immich
+**On macOS** (14 or later, Apple silicon or Intel): `brew install --cask jakobhviid/tap/immich-mount`, the same cask
+as on Linux; or download `immich-mount-<version>.dmg` from the [download page](https://jakob.hviid.phd/immich-mount/),
+open it, drag Immich Mount into Applications and open it from there (an app opened from the disk image asks to be
+moved first). The cask leaves updates to the app (`auto_updates`), and `--zap` on uninstalling also removes its
+sandbox data. Sign in; the app then asks you to switch Immich
 Mount on once, in System Settings, under General, Login Items & Extensions, File Providers, and closes its window
 when you have. It lives in the menu bar: its menu has the connection, Open in Finder, Settings (with Open at login),
 Sign Out, and Quit. It updates itself: "Check for Updates…" in its menu, or a daily check once you allow it (it asks,
