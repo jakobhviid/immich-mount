@@ -78,6 +78,12 @@ final class AppDelegate: NSObject, NSApplicationDelegate, @preconcurrency SPUSta
         followWindows()
         // Back from System Settings, the menu and the window know at once whether the location was switched on.
         NotificationCenter.default.addObserver(forName: NSApplication.didBecomeActiveNotification, object: nil, queue: .main) { _ in
+            MainActor.assumeIsolated {
+                // In front by right now, the windows need not float (`floatUntilUsed`).
+                for window in NSApp.windows where window.level == .floating {
+                    window.level = .normal
+                }
+            }
             Task { @MainActor in await AppDelegate.shared?.model.refreshState() }
         }
         // The sign-in window is done once there is an account and its location is on.
@@ -117,6 +123,8 @@ final class AppDelegate: NSObject, NSApplicationDelegate, @preconcurrency SPUSta
     /// Signing out removes the location and what was downloaded, so it is asked first, saying which files in Upload
     /// have not reached Immich: those are kept (`FinderLocation.remove`).
     func confirmSignOut() {
+        // Asked for at the click, while macOS still grants it: after the wait below it may refuse.
+        bringForward()
         Task {
             let waiting = await FinderLocation.waitingUploads()
             // A modal alert run inside a task holds the main queue, where the second activation `bringForward` asks
@@ -138,6 +146,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate, @preconcurrency SPUSta
         alert.addButton(withTitle: tr("Sign Out")).hasDestructiveAction = true
         alert.addButton(withTitle: tr("Cancel"))
         bringForward()
+        floatUntilUsed(alert.window)
         guard alert.runModal() == .alertFirstButtonReturn else { return }
         Task {
             do {
@@ -154,6 +163,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate, @preconcurrency SPUSta
         failure.informativeText = tr("Finder's location could not be removed, so Immich Mount stays signed in: {error}",
                                      ["error": describe(error)])
         bringForward()
+        floatUntilUsed(failure.window)
         failure.runModal()
     }
 
@@ -224,6 +234,19 @@ final class AppDelegate: NSObject, NSApplicationDelegate, @preconcurrency SPUSta
         bringForward()
         window.orderFrontRegardless()
         window.makeKey()
+        floatUntilUsed(window)
+    }
+
+    /// Keep a window above other apps' until the app is active. macOS may refuse a menu bar app's activation
+    /// (cooperative activation, macOS 14 and later): the sign-out question then waited behind another app's
+    /// full-screen window, and the menu, held by it, stopped answering (seen on macOS 27). Set once the window is up,
+    /// as a modal alert sets its own level as it starts; back to normal when the app becomes active.
+    func floatUntilUsed(_ window: NSWindow) {
+        DispatchQueue.main.async {
+            guard !NSApp.isActive else { return }
+            window.level = .floating
+            window.orderFrontRegardless()
+        }
     }
 
     /// Make the app the active one, with its Dock icon and menus. The policy change takes effect on the next turn of
