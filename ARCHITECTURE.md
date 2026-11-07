@@ -1202,8 +1202,11 @@ release, and run by hand to build the page again without releasing.
   Mac job was switched off (`MACOS_RELEASES`). The appcast is made from the same release, so the page never offers a
   Mac version the installed apps cannot update to; pruning keeps that release among the last ten. Without one, the
   macOS block says the edition is not released yet, so the page never offers a file that is not there.
-- **Nothing is loaded from elsewhere:** no analytics, cookies, web fonts or third-party scripts. The icon and the
-  README's screenshots (`docs/screenshots/`) are copied in, and the build fails if a local link has no file.
+- **Nothing is loaded from elsewhere:** no analytics, cookies, web fonts or third-party scripts. The mark, both
+  platforms' icons and the README's screenshots (`docs/screenshots/`) are copied in, and the build fails if a local
+  link has no file.
+- **Its look follows DESIGN.md:** the icon's palette, the lens as the hero, and each platform's own icon where that
+  platform is meant, the visitor's in the hero.
 - **Python's standard library, one template and one script,** rather than a static site generator: there is one
   page, and nothing to install in CI. CI builds it against the latest release on every branch, so a template change
   that breaks it fails before it reaches `main`.

@@ -1,27 +1,43 @@
 <!doctype html>
-<!-- The download page, filled in for one release by site/build.py, which replaces each name in double braces. -->
+<!-- The download page, filled in for one release by site/build.py, which replaces each name in double braces. Its
+     look follows DESIGN.md: the lens is the brand, each platform's own icon stands for that platform. -->
 <html lang="en">
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <title>Immich Mount: your Immich photos and videos as a drive</title>
   <meta name="description" content="Immich Mount shows a self-hosted Immich library as a drive in Files, Dolphin and Finder and in every file dialog, with thumbnails from the server and originals downloaded only when opened. For Linux and macOS. Unofficial and independent.">
-  <link rel="icon" href="icon.svg" type="image/svg+xml">
+  <meta name="theme-color" content="#18294a">
+  <link rel="icon" href="mark.svg" type="image/svg+xml">
   <link rel="stylesheet" href="style.css">
 </head>
 <body data-os="other" data-macos="{{macos_ready}}">
   <header class="hero">
-    <img class="logo" src="icon.svg" alt="" width="128" height="128">
+    <nav class="bar">
+      <a class="brand" href="#"><img src="mark.svg" alt="" width="28" height="28">Immich Mount</a>
+      <span class="links"><a href="#install">Install</a><a href="https://github.com/jakobhviid/immich-mount">GitHub</a></span>
+    </nav>
+    <div class="stage">
+      <!-- The icon's ring, large: five segments in Immich's five colours, as the lens carries them. -->
+      <svg class="ring" viewBox="0 0 300 300" aria-hidden="true">
+        <path d="M 156.11 10.13 A 140 140 0 0 1 281.13 100.97" stroke="#FA2921"/>
+        <path d="M 284.91 112.59 A 140 140 0 0 1 237.15 259.57" stroke="#ED79B5"/>
+        <path d="M 227.27 266.74 A 140 140 0 0 1 72.73 266.74" stroke="#FFB400"/>
+        <path d="M 62.85 259.57 A 140 140 0 0 1 15.09 112.59" stroke="#1E83F7"/>
+        <path d="M 18.87 100.97 A 140 140 0 0 1 143.89 10.13" stroke="#18C249"/>
+      </svg>
+      <img class="app-icon linux" src="icon.svg" alt="" width="160" height="160">
+      <img class="app-icon macos" src="icon-macos.png" alt="" width="160" height="160">
+    </div>
     <h1>Immich Mount</h1>
     <p class="tagline">Your <a href="https://immich.app">Immich</a> photos and videos as a drive in your file manager.</p>
-    <p class="supported">For <strong>Linux</strong>, on GNOME and KDE Plasma, and <strong>macOS</strong> 14 or later, on
-      Apple silicon and Intel.</p>
-    <p class="lead">Immich Mount puts a self-hosted Immich library in Files, Dolphin, Finder and every file open and
-      upload dialog, as a drive called <strong>Immich Mount</strong>. Attach your holiday photos to an email, open a
-      video in your editor, or drop new pictures in to upload them, without downloading the library first.</p>
+    <ul class="supported" aria-label="Supported platforms">
+      <li><img src="icon.svg" alt="" width="24" height="24"><strong>Linux</strong> on GNOME and KDE Plasma</li>
+      <li><img src="icon-macos.png" alt="" width="24" height="24"><strong>macOS</strong> 14 or later, Apple silicon and Intel</li>
+    </ul>
     <p class="actions">
       <a class="button" href="#install">Download</a>
-      <a class="button secondary" href="https://github.com/jakobhviid/immich-mount">Source on GitHub</a>
+      <a class="button ghost" href="https://github.com/jakobhviid/immich-mount">Source on GitHub</a>
     </p>
     <p class="version">Version {{version}}, released {{published}}. <a href="{{release_url}}">Release notes</a></p>
   </header>
@@ -33,6 +49,10 @@
   </aside>
 
   <main>
+    <p class="lead">Immich Mount puts a self-hosted Immich library in Files, Dolphin, Finder and every file open and
+      upload dialog, as a drive called <strong>Immich Mount</strong>. Attach your holiday photos to an email, open a
+      video in your editor, or drop new pictures in to upload them, without downloading the library first.</p>
+
     <figure class="shot wide">
       <img src="screenshots/files-album.png" alt="An Immich album in GNOME Files, with thumbnails from the server">
     </figure>
@@ -49,8 +69,7 @@
           A move never loses a photo; every other folder is a read-only view.</p></div>
         <div><h3>Changes within seconds</h3><p>What changes in Immich shows in the drive within seconds.</p></div>
         <div><h3>Native on your desktop</h3><p>GTK and libadwaita on GNOME, Kirigami on KDE Plasma, and on the Mac a
-          menu bar app with Finder's own integration. Sign in with your server's single sign-on, a password or an API
-          key.</p></div>
+          menu bar app with Finder's own integration. In English and 20 more languages.</p></div>
       </div>
     </section>
 
@@ -75,7 +94,7 @@
       <p>You need an Immich server at v3.2 or later.</p>
       <div class="platforms">
         <div class="platform" id="linux">
-          <h3>Linux <span class="yours">for your system</span></h3>
+          <h3><img src="icon.svg" alt="" width="44" height="44">Linux <span class="yours">for your system</span></h3>
           <p>With <a href="https://brew.sh">Homebrew</a>, on any Linux that has it (Bazzite included, with nothing
             layered onto the system), one command installs the app, the drive and the command line:</p>
           <pre class="command"><code>brew install jakobhviid/tap/immich-mount</code></pre>
@@ -95,7 +114,7 @@
             <a href="https://github.com/jakobhviid/immich-mount/blob/main/WORKFLOWS.md">WORKFLOWS.md</a>.</p>
         </div>
         <div class="platform" id="macos">
-          <h3>macOS <span class="yours">for your system</span></h3>
+          <h3><img src="icon-macos.png" alt="" width="44" height="44">macOS <span class="yours">for your system</span></h3>
           {{macos}}
         </div>
       </div>
@@ -103,6 +122,7 @@
   </main>
 
   <footer>
+    <p class="brand"><img src="mark.svg" alt="" width="22" height="22">Immich Mount</p>
     <p><strong>Credits.</strong> Inspired by
       <a href="https://github.com/Kartax/immich-desktop-app">Kartax/immich-desktop-app</a>, which shows an Immich
       library as a drive in Finder. The Immich API layer started from
@@ -115,7 +135,7 @@
   </footer>
 
   <script>
-    // Put the visitor's platform first: Linux or macOS, from what the browser says.
+    // Put the visitor's platform first, with its own icon: Linux or macOS, from what the browser says.
     const platform = (navigator.userAgentData && navigator.userAgentData.platform) || navigator.platform || "";
     if (/mac/i.test(platform)) document.body.dataset.os = "macos";
     else if (/linux/i.test(platform)) document.body.dataset.os = "linux";

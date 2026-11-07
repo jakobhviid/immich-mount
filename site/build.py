@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 """Build the download page (jakob.hviid.phd/immich-mount) for one release: site/index.html with that release's file links,
-site/style.css, the icon and the screenshots, written into an output folder for GitHub Pages (ARCHITECTURE.md,
+site/style.css, the mark, the icons and the screenshots, written into an output folder for GitHub Pages (ARCHITECTURE.md,
 "The download page"). Standard library only.
 
     gh release view [TAG] --json tagName,publishedAt,url,assets > release.json
@@ -131,7 +131,11 @@ def main(release_file, output, mac_release_file=None, update_file=None):
     if update_file and files["dmg"]:
         (output / "appcast.xml").write_text(appcast(mac_release, files["dmg"], update_file))
     shutil.copy(ROOT / "site" / "style.css", output / "style.css")
+    # The mark for the project, and each platform's own icon for that platform (DESIGN.md, "The website").
+    shutil.copy(ROOT / "site" / "mark.svg", output / "mark.svg")
     shutil.copy(ROOT / "packaging" / "icons" / "dev.hviid.ImmichMount.svg", output / "icon.svg")
+    shutil.copy(ROOT / "apple" / "App" / "Assets.xcassets" / "AppIcon.appiconset" / "icon_128x128@2x.png",
+                output / "icon-macos.png")
     for shot in sorted((ROOT / "docs" / "screenshots").glob("*.png")):
         shutil.copy(shot, output / "screenshots" / shot.name)
     # A renamed screenshot or icon would leave a broken image rather than fail, so every local link is checked.

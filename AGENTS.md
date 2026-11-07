@@ -45,6 +45,7 @@ change in the same commit. When code and docs disagree, the code wins and the do
 | [SPEC.md](SPEC.md) | The contract: vocabulary, the mount's layout, names and attributes, content, thumbnails, uploads, sign-in, config keys, CLI, D-Bus, files, errors | Observable behaviour changes |
 | [ARCHITECTURE.md](ARCHITECTURE.md) | The model and every design decision with its reason, plus the alternatives that lost where a question tends to recur | A design decision is made or changed |
 | [PRINCIPLES.md](PRINCIPLES.md) | The invariants, and what earned them | Rarely: only after discussing it with the maintainer |
+| [DESIGN.md](DESIGN.md) | The look: the icon family on each platform, the colours, type and words, the website, screenshots, and the apps' interfaces | An icon, the website or the apps' look changes |
 | [ROADMAP.md](ROADMAP.md) | Milestones, open questions, ideas parked on purpose | Plans change, a question opens or closes, or something is deferred |
 | [CREDITS.md](CREDITS.md) | Who we learned from or copied from, with licenses | We take anything from another project |
 | `.claude/skills/` | Procedures for agents: the lab environments, how to drive them, their traps, and where a check's result is recorded | A lab procedure or trap changes |

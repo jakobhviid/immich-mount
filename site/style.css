@@ -1,26 +1,49 @@
-/* The download page's look: Immich's five colours as accents, light and dark with the system. */
+/* The download page's look (DESIGN.md): the icon's aluminium for surfaces, its lens for the dark hero and the text,
+   its status light for the one action, and Immich's five colours only as the ring and small accents. Light and dark
+   with the system; nothing loaded from elsewhere. */
 
 :root {
-  --background: #fafafa;
-  --surface: #ffffff;
-  --text: #1d1d1f;
-  --muted: #5f6368;
-  --line: #e2e2e5;
-  --accent: #1e83f7;
-  --accent-text: #ffffff;
-  --code: #f1f1f4;
+  /* The icon's parts, by name (DESIGN.md, "Colours"). */
+  --aluminium-0: #ffffff;
+  --aluminium-1: #f6f5f4;
+  --aluminium-2: #deddda;
+  --aluminium-3: #c0bfbc;
+  --aluminium-4: #9a9996;
+  --lens-rim: #3d3846;
+  --lens: #241f31;
+  --lens-deep: #0f0d16;
+  --glass: #2d5c9e;
+  --glass-mid: #18294a;
+  --glass-light: #62a0ea;
+  --light: #18c249;
+  --ring-red: #fa2921;
+  --ring-pink: #ed79b5;
+  --ring-amber: #ffb400;
+  --ring-blue: #1e83f7;
+  --ring-green: #18c249;
+
+  /* Their roles on the page. */
+  --background: var(--aluminium-1);
+  --surface: var(--aluminium-0);
+  --line: var(--aluminium-2);
+  --text: var(--lens);
+  --muted: #5e5c64;
+  --link: var(--glass);
+  --code: #edecea;
+  --shadow: 0 1px 2px rgb(36 31 49 / 0.06), 0 8px 24px rgb(36 31 49 / 0.08);
   color-scheme: light dark;
 }
 
 @media (prefers-color-scheme: dark) {
   :root {
-    --background: #161618;
-    --surface: #1f1f22;
-    --text: #ececef;
-    --muted: #a5a5ad;
-    --line: #34343a;
-    --accent: #4a9bff;
-    --code: #2a2a2f;
+    --background: #15131c;
+    --surface: var(--lens);
+    --line: var(--lens-rim);
+    --text: var(--aluminium-1);
+    --muted: var(--aluminium-3);
+    --link: var(--glass-light);
+    --code: #1c1926;
+    --shadow: 0 1px 2px rgb(0 0 0 / 0.3), 0 8px 24px rgb(0 0 0 / 0.35);
   }
 }
 
@@ -33,79 +56,172 @@ body {
   font: 17px/1.55 -apple-system, BlinkMacSystemFont, "Segoe UI", Cantarell, "Noto Sans", Ubuntu, sans-serif;
 }
 
-a { color: var(--accent); }
+a { color: var(--link); }
 
-main, .hero, .notice, footer { max-width: 980px; margin: 0 auto; padding: 0 24px; }
+main, .notice, footer { max-width: 980px; margin: 0 auto; padding: 0 24px; }
 
-.hero { text-align: center; padding-top: 64px; }
-.logo { width: 128px; height: 128px; }
-h1 { font-size: 2.6rem; margin: 12px 0 4px; letter-spacing: -0.02em; }
-.tagline { font-size: 1.3rem; margin: 0 0 8px; }
-.supported { margin: 0 0 16px; }
-.lead { color: var(--muted); max-width: 720px; margin: 0 auto 24px; }
-.version { color: var(--muted); font-size: 0.9rem; }
-
-/* The five colours of the lens, as a thin band under the header. */
-.hero::after {
-  content: "";
-  display: block;
-  height: 4px;
-  max-width: 320px;
-  margin: 32px auto 0;
-  border-radius: 2px;
-  background: linear-gradient(90deg, #fa2921 0 20%, #ed79b5 20% 40%, #ffb400 40% 60%, #1e83f7 60% 80%, #18c249 80%);
+/* The hero is the lens: its glass as the ground in both appearances, the icon at the centre of its ring. */
+.hero {
+  background: radial-gradient(ellipse 70% 90% at 50% 30%, var(--glass) 0%, var(--glass-mid) 55%, var(--lens-deep) 100%);
+  color: var(--aluminium-1);
+  text-align: center;
+  padding: 0 24px 56px;
 }
+/* Links on the glass are white and underlined: the lighter blue reached only 4:1 there. */
+.hero a { color: var(--aluminium-0); text-decoration-color: rgb(255 255 255 / 0.55); }
+
+.bar {
+  max-width: 980px;
+  margin: 0 auto;
+  padding: 16px 0;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+.brand {
+  display: inline-flex;
+  align-items: center;
+  gap: 10px;
+  font-weight: 700;
+  letter-spacing: -0.01em;
+  color: inherit;
+  text-decoration: none;
+}
+.hero .brand { color: var(--aluminium-0); }
+.bar .links a { color: var(--aluminium-2); text-decoration: none; margin-left: 20px; font-size: 0.95rem; }
+.bar .links a:hover { color: var(--aluminium-0); }
+
+.stage { position: relative; width: 260px; height: 260px; margin: 24px auto 8px; }
+.ring { position: absolute; inset: 0; width: 100%; height: 100%; }
+.ring path { fill: none; stroke-width: 4; opacity: 0.9; }
+.app-icon {
+  position: absolute;
+  inset: 50px;
+  width: 160px;
+  height: 160px;
+  filter: drop-shadow(0 12px 24px rgb(0 0 0 / 0.35));
+}
+/* Each platform's own icon for its visitors: the Mac's on a Mac, Linux's drive elsewhere. A macOS icon keeps
+   Apple's margin inside its square (824 of 1024 points), so it is drawn larger to match the drive. */
+.app-icon.macos { display: none; inset: 33px; width: 194px; height: 194px; }
+body[data-os="macos"][data-macos="ready"] .app-icon.macos { display: block; }
+body[data-os="macos"][data-macos="ready"] .app-icon.linux { display: none; }
+
+h1 { font-size: 3rem; line-height: 1.1; margin: 8px 0 8px; letter-spacing: -0.03em; color: var(--aluminium-0); }
+.tagline { font-size: 1.3rem; margin: 0 auto 20px; max-width: 640px; color: var(--aluminium-2); }
+
+.supported {
+  list-style: none;
+  padding: 0;
+  margin: 0 0 28px;
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: 10px;
+}
+.supported li {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 6px 14px 6px 8px;
+  border-radius: 999px;
+  background: rgb(255 255 255 / 0.08);
+  border: 1px solid rgb(255 255 255 / 0.16);
+  font-size: 0.95rem;
+  color: var(--aluminium-2);
+}
+.supported strong { color: var(--aluminium-0); }
 
 .button {
   display: inline-block;
-  padding: 10px 22px;
+  padding: 11px 24px;
   border-radius: 10px;
-  background: var(--accent);
-  color: var(--accent-text);
-  font-weight: 600;
+  background: var(--light);
+  color: var(--lens-deep);
+  font-weight: 700;
   text-decoration: none;
   margin: 4px;
+  box-shadow: 0 0 0 1px rgb(0 0 0 / 0.08), 0 4px 14px rgb(24 194 73 / 0.35);
 }
-.button.secondary { background: var(--surface); color: var(--text); border: 1px solid var(--line); }
+.button:hover { filter: brightness(1.06); }
+.hero .button { color: var(--lens-deep); }
+.button.ghost {
+  background: transparent;
+  color: var(--aluminium-0);
+  box-shadow: inset 0 0 0 1px rgb(255 255 255 / 0.35);
+}
+.version { font-size: 0.9rem; color: var(--aluminium-3); margin: 18px 0 0; }
 
 .notice {
-  margin-top: 32px;
+  margin-top: 28px;
   font-size: 0.85rem;
   color: var(--muted);
   border-left: 3px solid var(--line);
   padding-left: 16px;
 }
 
-section { margin: 56px 0; }
-h2 { font-size: 1.7rem; letter-spacing: -0.01em; }
+.lead { font-size: 1.1rem; max-width: 760px; margin: 40px 0 0; }
+
+section { margin: 64px 0; }
+h2 { font-size: 1.8rem; letter-spacing: -0.02em; margin: 0 0 20px; }
 h3 { font-size: 1.05rem; margin: 0 0 6px; }
 
 .features { display: grid; grid-template-columns: repeat(auto-fit, minmax(260px, 1fr)); gap: 16px; }
-.features > div { background: var(--surface); border: 1px solid var(--line); border-radius: 14px; padding: 18px; }
+.features > div {
+  background: var(--surface);
+  border: 1px solid var(--line);
+  border-radius: 14px;
+  padding: 20px 20px 18px;
+  box-shadow: var(--shadow);
+}
+/* One piece of the ring on each card, in the ring's order. */
+.features > div::before {
+  content: "";
+  display: block;
+  width: 36px;
+  height: 5px;
+  border-radius: 3px;
+  margin-bottom: 14px;
+  background: var(--ring-red);
+}
+.features > div:nth-child(5n + 2)::before { background: var(--ring-pink); }
+.features > div:nth-child(5n + 3)::before { background: var(--ring-amber); }
+.features > div:nth-child(5n + 4)::before { background: var(--ring-blue); }
+.features > div:nth-child(5n + 5)::before { background: var(--ring-green); }
 .features p { margin: 0; color: var(--muted); }
 
 .shot { margin: 40px 0 0; }
-.shot img { width: 100%; height: auto; border-radius: 12px; border: 1px solid var(--line); }
-.gallery { display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 16px; margin-top: 16px; }
+.shot img { display: block; width: 100%; height: auto; border-radius: 12px; border: 1px solid var(--line); box-shadow: var(--shadow); }
+.gallery { display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 18px; margin-top: 18px; }
 .gallery .shot { margin: 0; }
 
 .platforms { display: flex; flex-direction: column; gap: 20px; }
-.platform { background: var(--surface); border: 1px solid var(--line); border-radius: 14px; padding: 20px 22px; }
-.platform h3 { font-size: 1.3rem; }
-.yours { display: none; font-size: 0.75rem; font-weight: 600; color: var(--accent); margin-left: 8px; }
-body[data-os="macos"] #macos { order: -1; border-color: var(--accent); }
+.platform {
+  background: var(--surface);
+  border: 1px solid var(--line);
+  border-radius: 16px;
+  padding: 22px 24px;
+  box-shadow: var(--shadow);
+}
+.platform h3 { display: flex; align-items: center; gap: 12px; font-size: 1.4rem; margin-bottom: 12px; }
+/* The visitor's platform first, marked with the status light. */
+.yours { display: none; align-items: center; gap: 6px; font-size: 0.8rem; font-weight: 600; color: var(--muted); }
+.yours::before { content: ""; width: 9px; height: 9px; border-radius: 50%; background: var(--light); box-shadow: 0 0 6px var(--light); }
+body[data-os="macos"] #macos { order: -1; }
+body[data-os="macos"] #macos,
+body[data-os="linux"] #linux { border-color: var(--light); }
 body[data-os="macos"] #macos .yours,
-body[data-os="linux"] #linux .yours { display: inline; }
-body[data-os="linux"] #linux { border-color: var(--accent); }
+body[data-os="linux"] #linux .yours { display: inline-flex; }
 
 table { width: 100%; border-collapse: collapse; margin: 8px 0 16px; font-size: 0.95rem; }
-th, td { text-align: left; vertical-align: top; padding: 8px 10px 8px 0; border-top: 1px solid var(--line); }
+th, td { text-align: left; vertical-align: top; padding: 9px 10px 9px 0; border-top: 1px solid var(--line); }
 th { width: 34%; font-weight: 600; }
 .missing { color: var(--muted); }
 
 pre.command {
   position: relative;
   background: var(--code);
+  border: 1px solid var(--line);
   border-radius: 10px;
   padding: 12px 70px 12px 14px;
   font-size: 0.92rem;
@@ -128,4 +244,13 @@ pre.command button {
 code { font-family: ui-monospace, "SF Mono", Menlo, "Cascadia Mono", "DejaVu Sans Mono", monospace; }
 .small { font-size: 0.9rem; color: var(--muted); }
 
-footer { border-top: 1px solid var(--line); padding-top: 24px; padding-bottom: 48px; margin-top: 64px; font-size: 0.85rem; color: var(--muted); }
+footer { border-top: 1px solid var(--line); padding-top: 24px; padding-bottom: 48px; margin-top: 72px; font-size: 0.85rem; color: var(--muted); }
+footer .brand { color: var(--text); font-size: 1rem; }
+
+@media (max-width: 560px) {
+  h1 { font-size: 2.3rem; }
+  .stage { width: 210px; height: 210px; }
+  .app-icon { inset: 41px; width: 128px; height: 128px; }
+  .app-icon.macos { inset: 27px; width: 156px; height: 156px; }
+  .bar .links a { margin-left: 14px; }
+}

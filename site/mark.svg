@@ -1,0 +1,16 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="64" height="64" viewBox="34 28 60 60">
+  <!-- Immich Mount's mark: the lens of its icon (packaging/icons/dev.hviid.ImmichMount.svg), which every edition's
+       icon shares, its ring in Immich's five colours. Where the project as a whole is meant (DESIGN.md). -->
+  <defs>
+    <radialGradient id="glass" cx="0.42" cy="0.38" r="0.75">
+      <stop offset="0" stop-color="#2d5c9e"/><stop offset="0.6" stop-color="#18294a"/><stop offset="1" stop-color="#0f0d16"/>
+    </radialGradient>
+  </defs>
+  <circle cx="64" cy="58" r="30" fill="#3d3846"/>
+  <circle cx="64" cy="58" r="28" fill="#241f31"/>
+  <path d="M 65.03 34.32 A 23.7 23.7 0 0 1 86.20 49.70" stroke="#FA2921" stroke-width="7.8" fill="none"/><path d="M 86.84 51.67 A 23.7 23.7 0 0 1 78.75 76.55" stroke="#ED79B5" stroke-width="7.8" fill="none"/><path d="M 77.08 77.76 A 23.7 23.7 0 0 1 50.92 77.76" stroke="#FFB400" stroke-width="7.8" fill="none"/><path d="M 49.25 76.55 A 23.7 23.7 0 0 1 41.16 51.67" stroke="#1E83F7" stroke-width="7.8" fill="none"/><path d="M 41.80 49.70 A 23.7 23.7 0 0 1 62.97 34.32" stroke="#18C249" stroke-width="7.8" fill="none"/>
+  <circle cx="64" cy="58" r="18" fill="url(#glass)"/>
+  <circle cx="64" cy="58" r="11.16" fill="none" stroke="#ffffff" stroke-opacity="0.16" stroke-width="1.44"/>
+  <ellipse cx="58.24" cy="51.52" rx="5.4" ry="3.24" transform="rotate(-35 58.24 51.52)" fill="#ffffff" opacity="0.75"/>
+  <circle cx="70.84" cy="63.4" r="1.44" fill="#ffffff" opacity="0.45"/>
+</svg>

@@ -156,6 +156,7 @@ yet: packages in COPR and the AUR, and a Flatpak.
 | [ARCHITECTURE.md](ARCHITECTURE.md) | How it is built, and why: every design decision with its reasons |
 | [PRINCIPLES.md](PRINCIPLES.md) | The invariants, and what earned them |
 | [ROADMAP.md](ROADMAP.md) | Milestones, open questions, ideas parked on purpose |
+| [DESIGN.md](DESIGN.md) | How it looks: the icons on each platform, the colours, the website, the screenshots |
 | [AGENTS.md](AGENTS.md) | How to contribute: rules, the build, the checks before a push, and the test lab |
 | [CREDITS.md](CREDITS.md) | Who this builds on |
 | [SECURITY.md](SECURITY.md) | How to report a vulnerability, and what Immich Mount keeps on your machine |
