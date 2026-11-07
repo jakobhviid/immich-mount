@@ -223,6 +223,17 @@ where
     let version = server.version.clone().unwrap_or_default();
     let account = server.account.clone().unwrap_or_default();
     let connection = runtime.block_on(crate::dbus::serve(state.clone(), &mount_text, &server.url, &version, &account, actions));
+    if let Some(connection) = &connection {
+        let view = crate::tray::View {
+            state: *state.lock().expect("state lock"),
+            server_url: server.url.clone(),
+            server_version: version.clone(),
+            account: account.clone(),
+            mount_point: mount_text.clone(),
+            on_kde: std::env::var("XDG_CURRENT_DESKTOP").is_ok_and(|desktop| desktop.split(':').any(|name| name == "KDE")),
+        };
+        runtime.block_on(crate::tray::show(connection, view));
+    }
     runtime.spawn(follow_changes(source.clone(), tree.clone(), state, connection.clone()));
 
     let reason = runtime.block_on(wait_for_stop(mount_point, idle));
@@ -274,10 +285,18 @@ async fn follow_changes<Source, Names>(
             log::info!("{}: {message}", current.as_str());
             if let Some(connection) = &connection {
                 let _ = tokio::time::timeout(Duration::from_secs(3), crate::dbus::announce(connection, current, message)).await;
+                let _ = tokio::time::timeout(Duration::from_secs(3), crate::tray::update(connection, current)).await;
             }
+            // The log and D-Bus keep the message in English; the notification says it in the user's language.
             match current {
-                State::Offline => crate::notify::notify_in_background(tr("Immich is unreachable").to_owned(), message.to_owned()),
-                State::SignedOut => crate::notify::notify_in_background(tr("Signed out of Immich").to_owned(), message.to_owned()),
+                State::Offline => crate::notify::notify_in_background(
+                    tr("Immich is unreachable").to_owned(),
+                    tr("The Immich server cannot be reached. Files you opened before stay available.").to_owned(),
+                ),
+                State::SignedOut => crate::notify::notify_in_background(
+                    tr("Signed out of Immich").to_owned(),
+                    tr("Immich no longer accepts this sign-in. Open Immich Mount to sign in again.").to_owned(),
+                ),
                 State::Online | State::Connecting => {}
             }
         }

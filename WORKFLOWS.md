@@ -175,6 +175,11 @@ you unmark or unarchive it. Favorites holds archived favorites too, as Immich's 
 
 ## 4. Status
 
+**At a glance:** while the drive is mounted, Immich Mount's icon sits in the tray, in KDE Plasma's system tray and in
+GNOME's top bar where the AppIndicator extension is on (Ubuntu and Bazzite have it). A click shows whether it is
+connected, to which server and as whom, with Open in Files (Open in Dolphin on Plasma) and Open Immich Mount. On the
+Mac the same menu is the menu bar item's. Without a tray, the app's status page says the same.
+
 ```sh
 immich-mount status
 immich-mount status --json

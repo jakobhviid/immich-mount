@@ -1059,6 +1059,32 @@ Each platform gets a native app that looks and reads like a first-party app (pri
     (`$XDG_RUNTIME_DIR/app/$FLATPAK_ID`), which every instance shares. The previews switch would need write access to
     `xdg-config/kdeglobals`, or would be left out of a Flatpak.
 
+## The tray
+
+The Mac's menu bar item on Linux (DESIGN.md, "The apps' interfaces"): a glance at the connection, and the way to the
+drive and the app, without opening a window. **The daemon serves it,** as a StatusNotifierItem with a
+`com.canonical.dbusmenu` menu (SPEC.md, "The daemon's D-Bus interface"):
+- **D-Bus alone,** so the static daemon carries no toolkit, and the icon lives exactly as long as the mount, which
+  is when there is something to show. The daemon already holds the session bus and knows the state.
+- **KDE Plasma** shows it in its system tray, natively. **GNOME** shows it where the AppIndicator extension is on
+  (Ubuntu and Bazzite ship it); stock GNOME has no tray, and its guidelines want none, so there the app and Files'
+  sidebar stay the way in. Nothing is lost where no tray watches: the registration fails quietly, and is made again
+  whenever a tray starts, after the daemon or again.
+- **The menu is the Mac's:** the state on its first line, grey lines saying what each is, then Open in Files (or
+  Dolphin) and Open Immich Mount. A click shows the menu, as on the Mac (`ItemIsMenu`). Its texts are the Mac's,
+  translated once.
+- **The icon** is the symbolic one, the wide drive with the five-segment ring (DESIGN.md, "The icon family"), which
+  both trays recolour to the panel's text.
+- **Verified** (Fedora 44 VMs, 2026-11-07): in Plasma 6's system tray beside its own icons, the menu's layout as
+  Plasma reads it, and both actions (Activate opens the app, Open in Dolphin opens Dolphin); in GNOME 50's top bar
+  with the AppIndicator extension, the menu drawn with its five lines, connected to the lab server. Plasma drawing
+  the menu was not seen: the lab's headless Plasma takes no pointer input.
+- **Flatpak impact:** the sandbox needs `--talk-name=org.kde.StatusNotifierWatcher` to register; the item itself is
+  served on the app's own connection, by object path.
+- **Not chosen:** the GTK or Qt app holding the icon (the app would have to run at every login, a second process
+  beside the daemon, and GTK 4 has no tray at all); `libayatana-appindicator` (a C library, and GTK 3, in a static
+  Rust daemon).
+
 ## Translations
 
 The apps (GNOME, KDE and macOS), the settings they show, the daemon's notifications and the Linux launcher entry are

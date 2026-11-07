@@ -22,7 +22,7 @@ and how it is built; the platforms' own guidelines (GNOME's, KDE's, Apple's) gov
 | Where | What | Source |
 |---|---|---|
 | Linux: launchers, About, the apps' pages, Dolphin's place | The app icon: the wide drive, white face and grey base, the lens with its five-colour ring, the green status light. GNOME's app icon style: an object, with no tile behind it | `packaging/icons/dev.hviid.ImmichMount.svg`, hand-written SVG |
-| Linux: notifications | The symbolic icon, one colour | `packaging/icons/dev.hviid.ImmichMount-symbolic.svg` |
+| Linux: notifications and the tray | The symbolic icon: the wide drive as one solid shape, the ring in five segments, its centre, the face's edge and the light cut out, the Mac menu bar icon's language in Linux's shape. Recoloured to the text by GTK and KDE | `packaging/icons/dev.hviid.ImmichMount-symbolic.svg` (`packaging/icons/make-symbolic.py`) |
 | Mac: Dock, Finder, System Settings, About | The app icon: the drive filling Apple's rounded square. On macOS 26 and later an Icon Composer document, with the light, dark, tinted and clear appearances and a glass lens | `apple/App/AppIcon.icon` (`apple/make-icon-composer.py`); `AppIcon.appiconset` for macOS 14 and 15 |
 | Mac: the menu bar | One solid shape, the ring, its centre, the face's edge and the light cut out, as menu bar icons are drawn | `MenuBarIcon.imageset` (`apple/make-menu-bar-icon.py`) |
 | Mac: Finder's sidebar | The app icon in outline | `SidebarSymbol.symbolset` (`apple/make-symbol.py --square`) |
@@ -43,7 +43,7 @@ Rules:
   icon.
 - **Change an icon at its source** and run its generator (`apple/make-icons.sh`); never edit exported PNGs.
 - **The small icons follow the Mac's lead on Linux too:** the five-segment ring in one colour, in the wide drive's
-  shape, for the symbolic icon and a future tray icon (ROADMAP.md).
+  shape, for the notifications and the tray.
 
 ## Colours
 
@@ -123,8 +123,8 @@ Measured contrast on the website (WCAG AA asks 4.5:1 for text):
 What the Mac edition taught, for every edition (ARCHITECTURE.md, "The desktop app" and "The macOS edition"):
 - **A window for what needs doing,** not a dashboard: signing in, then switching the location on, then it closes.
 - **Status where it can be glanced at:** on the Mac the menu bar menu, its first line the state and then grey
-  lines, each saying what it is ("Server version: ...", "Signed in as: ..."). On Linux the app's status page, and a
-  tray icon where the desktop has one (ROADMAP.md).
+  lines, each saying what it is ("Server version: ...", "Signed in as: ..."). On Linux the same menu from the tray
+  icon, where the desktop has a tray (ARCHITECTURE.md, "The tray"), and the app's status page.
 - **Settings in the platform's own preferences window,** generated from the core's settings table, showing only
   what means something on that platform.
 - **Destructive actions ask first,** in the platform's own alert, with its destructive button style.

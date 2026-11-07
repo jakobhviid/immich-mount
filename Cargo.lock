@@ -1824,6 +1824,7 @@ dependencies = [
  "chrono",
  "flate2",
  "fuser",
+ "futures-util",
  "image",
  "immich-mount-core",
  "libc",

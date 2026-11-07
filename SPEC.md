@@ -406,6 +406,21 @@ The app ID is `dev.hviid.ImmichMount`. The daemon owns the bus name `dev.hviid.I
 
 The credential itself never crosses D-Bus.
 
+**The tray icon** (ARCHITECTURE.md, "The tray"): on the same connection, the daemon serves an
+`org.kde.StatusNotifierItem` at `/StatusNotifierItem`, named `dev.hviid.ImmichMount-symbolic`, and its
+`com.canonical.dbusmenu` menu at `/MenuBar`, and registers the item with `org.kde.StatusNotifierWatcher` whenever one
+appears. The menu, top to bottom:
+
+| Line | Kind |
+|---|---|
+| "Connected to *host*", "*host* is not reachable", "Signed out of Immich" | grey: the state |
+| "Server version: Immich *version*" | grey, when the server said |
+| "Signed in as: *email*" | grey, when the credential may read it |
+| "Open in Files" ("Open in Dolphin" on KDE Plasma) | the mount point, in the file manager (`xdg-open`) |
+| "Open Immich Mount" | the app (`immich-mount app`); activating the icon does the same |
+
+A click on the icon shows the menu (`ItemIsMenu`), as the Mac's menu bar item does.
+
 ## Files on disk
 
 | What | Where |

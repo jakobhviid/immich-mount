@@ -22,3 +22,4 @@ pub mod seeding;
 pub mod service;
 pub mod staging;
 pub mod thumbnails;
+pub mod tray;
