@@ -159,6 +159,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate, @preconcurrency SPUSta
     /// view's constraints: a window that follows its SwiftUI content during layout is laid out again without end as
     /// the steps change, which stops the app (seen on macOS 27).
     func showWindow() {
+        logger.notice("the sign-in window is shown (\(self.window == nil ? "new" : "again", privacy: .public))")
         if window == nil {
             let content = ContentView(heightChanged: { [weak self] height in
                 DispatchQueue.main.async { self?.fitWindow(to: height) }
@@ -248,7 +249,15 @@ final class AppDelegate: NSObject, NSApplicationDelegate, @preconcurrency SPUSta
 struct MenuBarMenu: View {
     @EnvironmentObject private var model: AppModel
 
+    /// Made anew at each step. Kept in place, the first item, the status line while signed in, became the Sign In
+    /// button on signing out, and clicking it did nothing until the app was started anew (2.17.3 on macOS 27).
     var body: some View {
+        Group { items }
+            .id(model.step)
+    }
+
+    @ViewBuilder
+    private var items: some View {
         if model.server == nil {
             Button("Sign In…") { AppDelegate.shared?.showWindow() }
         } else if model.locationSwitchedOff {
@@ -399,6 +408,12 @@ final class AppModel: ObservableObject {
     @Published private(set) var status = Status.load()
     /// Whether the location waits to be switched on in System Settings, as it does after signing in.
     @Published private(set) var locationSwitchedOff = false
+
+    /// Where the user is: signed out, waiting for the location to be switched on, or using it. The menu bar menu is
+    /// made anew at each change.
+    var step: String {
+        server == nil ? "signed-out" : locationSwitchedOff ? "switched-off" : "on"
+    }
 
     /// The menu bar menu's first line, while signed in.
     var statusLine: String {
