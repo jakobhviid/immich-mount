@@ -168,7 +168,7 @@ Kirigami.ApplicationWindow {
                 Controls.Label {
                     textFormat: Text.StyledText
                     onLinkActivated: link => Qt.openUrlExternally(link)
-                    text: "<a href=\"https://github.com/jakobhviid/immich-mount\">github.com/jakobhviid/immich-mount</a>"
+                    text: "Website: <a href=\"https://jakob.hviid.phd/immich-mount/\">jakob.hviid.phd/immich-mount</a><br>Source code: <a href=\"https://github.com/jakobhviid/immich-mount\">github.com/jakobhviid/immich-mount</a>"
                 }
             }
         }

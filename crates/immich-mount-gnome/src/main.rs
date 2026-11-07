@@ -81,9 +81,10 @@ fn show_about(application: &adw::Application) {
         .developer_name("Jakob Hviid")
         .version(env!("CARGO_PKG_VERSION"))
         .comments(format!("Your Immich photos and videos as a drive in Files.\n\n{NOTICE}"))
-        .website("https://github.com/jakobhviid/immich-mount")
+        .website("https://jakob.hviid.phd/immich-mount/")
         .license_type(gtk::License::MitX11)
         .build();
+    about.add_link("Source Code", "https://github.com/jakobhviid/immich-mount");
     about.add_credit_section(Some("Inspired By"), &["Kartax/immich-desktop-app https://github.com/Kartax/immich-desktop-app"]);
     about.add_credit_section(Some("The Immich API Layer"), &["immich-rs https://github.com/boul2gom/immich-rs"]);
     about.add_legal_section(

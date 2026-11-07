@@ -961,7 +961,8 @@ Each platform gets a native app that looks and reads like a first-party app (pri
 - **One settings table:** the settings dialog is generated from the core's settings table, the same one behind
   `immich-mount configure`. The two can never disagree about which settings exist or what values are valid.
 - **Status:** connection, account, server version, mount point, cache usage and uploads in flight.
-- **The About dialog** carries the non-affiliation notice, the credits, and the AI disclosure.
+- **The About dialog** carries the non-affiliation notice, the links to the website (`jakob.hviid.phd/immich-mount`)
+  and the source code, the credits, and the AI disclosure.
 - **Accessibility:** keyboard navigation everywhere, a keyboard-shortcuts dialog, and accessible labels on every
   control.
 - **One app, native on each desktop:** one launcher entry, `dev.hviid.ImmichMount`, runs `immich-mount app`, which
