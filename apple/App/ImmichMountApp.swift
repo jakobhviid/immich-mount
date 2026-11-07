@@ -46,8 +46,10 @@ struct ImmichMountApp: App {
 
 /// Opens the sign-in window while it is wanted and Settings when asked, and gives the app a Dock icon and its menus
 /// while a window is open: at other times it lives in the menu bar only, as Mac apps that keep something in sync do.
+/// Sparkle calls its user driver's delegate on the main thread, which its protocol does not declare: hence
+/// `@preconcurrency`.
 @MainActor
-final class AppDelegate: NSObject, NSApplicationDelegate, SPUStandardUserDriverDelegate {
+final class AppDelegate: NSObject, NSApplicationDelegate, @preconcurrency SPUStandardUserDriverDelegate {
     private(set) static weak var shared: AppDelegate?
     let model = AppModel()
     /// Sparkle, which reads the download page's appcast and replaces the app in place, so it stays in Applications,
