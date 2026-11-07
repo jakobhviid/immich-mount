@@ -316,6 +316,20 @@ to Immich's values.
 **Not chosen:** months from the first seven characters of `fileCreatedAt` with UTC search ranges, which is wrong
 at month boundaries.
 
+### The archive
+
+Archive is a section like People: one search (`visibility: archive`, what Immich's own Archive page asks for),
+fetched in pages of 1,000, whose year and month folders reuse the one list. A read-only API key may ask for it:
+only `visibility {ne: archive}` needs elevated permission (verified on v3.3.5).
+- **Off by default,** because most libraries hardly use the archive, and a folder nobody opens is clutter.
+- **Date groups always** (`grouping.archive`): an archive mostly grows, and with `atLeast500` every path in it would
+  change the day it reached 500 Assets.
+- **The cost** is that a first visit waits for the whole archive, since a listing must be complete: 5,000 archived
+  photos are five requests, 30,000 are thirty. A large album costs the same.
+- **Not chosen: Photos' layout,** from Immich's buckets with `visibility=archive`, a month at a time. It keeps a
+  first visit cheap at any size, but needs its own folder kinds and change tracking per month; worth it only for
+  archives of tens of thousands.
+
 ### Names
 
 The rules are in SPEC.md. FUSE needs unique, stable names, and Immich provides neither: shots in the same second,
@@ -413,6 +427,14 @@ the server, so freshness is our job:
    or update time changed, are forgotten, with the folders above them; the next visit (or F5 in Files) reads them
    again. Verified in the GNOME VM: an Asset added to an album, or archived out of a month, shows on the next poll.
    Swaps that keep a month's count are left to the freshness windows.
+
+   **A shown Archive is polled too:** `/timeline/buckets?visibility=archive` with `If-None-Match`, one more 304
+   while nothing changed, and only while the section is on. When its month counts change (something archived,
+   unarchived, or trashed from it), the archive's folders are forgotten. Without it, the only safe rule would be
+   that any month change touches the archive, so every upload would read the whole archive again, at once on macOS,
+   whose poll lists changed folders again itself. A section switched on starts by taking note, as a first poll does.
+   Verified against the lab server (the bridge's `tests/lab.rs`): a photo archived in Immich shows in Archive at
+   the next poll, and leaves it when unarchived.
 
    **Sessions also follow the sync stream** in the same poll (`AssetsV2`, `AlbumToAssetsV1`): a changed Asset marks
    its month, album membership marks its album, and a permanent delete or a reset refreshes every folder, since its
@@ -837,8 +859,8 @@ the bucket's ids.
 
 What the API does, verified on v3.3.5, all of which the client encodes:
 - **Sizes:** `withExif: true` on every search; without it there is no `exifInfo` at all, so no sizes.
-- **Visibility:** searches and buckets outside albums restrict visibility to the timeline, since the defaults
-  include archived Assets.
+- **Visibility:** searches and buckets outside albums and the archive restrict visibility to the timeline, since
+  the defaults include archived Assets.
 - **Albums:** album contents come from search by `albumIds`. The album response has no asset list.
 - **The connection probe** is `/api-keys/me` for keys, which needs no scope. `/users/me` needs `user.read`, which
   scoped keys lack.
@@ -1054,8 +1076,9 @@ Urdu and Vietnamese. Portuguese is Brazil's, which both platforms also offer to 
   reached Immich: {count}"). CI's `po/i18n.py check` fails when the template is stale or a translation drops a
   placeholder; an untranslated text shows in English.
 - **The drive's folders keep their names** in every language (SPEC.md, "Names"; folder names in the user's language
-  are parked in the ROADMAP), so a switch or a setting that names one (Photos, Albums, People, Places, Upload) names
-  it as the drive shows it, in a translated sentence. The extractor leaves the bare names out of the catalogs.
+  are parked in the ROADMAP), so a switch or a setting that names one (Photos, Albums, People, Places, Archive,
+  Upload) names it as the drive shows it, in a translated sentence. The extractor leaves the bare names out of the
+  catalogs.
 - **The core and the command line stay English.** The core holds no translation machinery, so it stays portable;
   the apps translate its texts where they show them. The command line's output is a contract (its JSON, these docs,
   `--llm`), and English there is what a search for an error finds. Errors from the server or the system, quoted in

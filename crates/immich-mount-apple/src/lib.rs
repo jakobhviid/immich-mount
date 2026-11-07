@@ -352,7 +352,7 @@ where
         if let Some(memory) = kept {
             self.source.recall_poll(&memory).await;
         }
-        let changes = self.source.changes().await?;
+        let changes = self.source.changes(self.tree.watched()).await?;
         if !changes.is_empty() {
             self.tree.apply_changes(&changes);
             let touched: Vec<NodeKey> = self.store().kept_folders().into_iter().filter(|folder| is_touched(folder, &changes)).collect();
@@ -1001,6 +1001,7 @@ mod tests {
     use super::*;
     use chrono::{NaiveDate, TimeZone, Utc};
     use immich_mount_core::model::{Album, Asset, Person, YearMonth};
+    use immich_mount_core::source::Watched;
     use immich_mount_core::tree::{InMemoryNames, SectionKey};
     use std::sync::atomic::{AtomicBool, Ordering};
 
@@ -1084,7 +1085,10 @@ mod tests {
         async fn city_assets(&self, _country: &str, _city: &str) -> Result<Vec<Asset>, SourceError> {
             Ok(vec![])
         }
-        async fn changes(&self) -> Result<immich_mount_core::source::LibraryChanges, SourceError> {
+        async fn archive_assets(&self) -> Result<Vec<Asset>, SourceError> {
+            Ok(vec![])
+        }
+        async fn changes(&self, _watched: Watched) -> Result<immich_mount_core::source::LibraryChanges, SourceError> {
             let arrived = self.second_photo.load(Ordering::SeqCst) && !self.poll_told.swap(true, Ordering::SeqCst);
             let months = if arrived { vec![YearMonth { year: 2024, month: 3 }] } else { vec![] };
             Ok(immich_mount_core::source::LibraryChanges { months, ..Default::default() })

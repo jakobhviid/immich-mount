@@ -96,7 +96,7 @@ msgid "Thumbnails"
 msgstr "थंबनेल"
 
 #: crates/immich-mount-desktop/src/preferences.rs:18
-#: crates/immich-mount-gnome/src/window.blp:306
+#: crates/immich-mount-gnome/src/window.blp:310
 msgid "Cache"
 msgstr "कॅशे"
 
@@ -143,13 +143,13 @@ msgstr "हा पत्ता वापरता येणार नाही: 
 
 #: crates/immich-mount-desktop/src/session.rs:161
 #: crates/immich-mount-desktop/src/session.rs:171
-#: crates/immich-mount-desktop/src/session.rs:365
-#: crates/immich-mount-desktop/src/session.rs:367
+#: crates/immich-mount-desktop/src/session.rs:368
+#: crates/immich-mount-desktop/src/session.rs:370
 msgid "Kept in {file}"
 msgstr "{file} मध्ये ठेवले आहे"
 
 #: crates/immich-mount-desktop/src/session.rs:166
-#: crates/immich-mount-desktop/src/session.rs:369
+#: crates/immich-mount-desktop/src/session.rs:372
 msgid "Kept in the keyring"
 msgstr "कीरिंगमध्ये ठेवले आहे"
 
@@ -157,11 +157,11 @@ msgstr "कीरिंगमध्ये ठेवले आहे"
 msgid "The keyring stayed locked, so nothing was saved."
 msgstr "कीरिंग लॉक राहिली, त्यामुळे काहीही जतन केले नाही."
 
-#: crates/immich-mount-desktop/src/session.rs:247
+#: crates/immich-mount-desktop/src/session.rs:250
 msgid "Signed in, but the mount cannot start: {error}."
 msgstr "साइन इन झाले, पण माउंट सुरू होऊ शकत नाही: {error}."
 
-#: crates/immich-mount-desktop/src/session.rs:251
+#: crates/immich-mount-desktop/src/session.rs:254
 msgid "Signed in, but the mount did not start: {error}"
 msgstr "साइन इन झाले, पण माउंट सुरू झाले नाही: {error}"
 
@@ -205,66 +205,66 @@ msgstr "कीबोर्ड शॉर्टकट"
 msgid "Quit"
 msgstr "बाहेर पडा"
 
-#: crates/immich-mount-gnome/src/window.rs:263
+#: crates/immich-mount-gnome/src/window.rs:265
 #: crates/immich-mount-kde/qml/Main.qml:321
 msgid "Continue in your browser"
 msgstr "तुमच्या ब्राउझरमध्ये सुरू ठेवा"
 
-#: crates/immich-mount-gnome/src/window.rs:274
+#: crates/immich-mount-gnome/src/window.rs:276
 msgid "This sign-in belongs to an earlier attempt. Finish the latest one, or sign in again."
 msgstr "हे साइन-इन आधीच्या प्रयत्नाचे आहे. सर्वात नवीन प्रयत्न पूर्ण करा, किंवा पुन्हा साइन इन करा."
 
-#: crates/immich-mount-gnome/src/window.rs:286
+#: crates/immich-mount-gnome/src/window.rs:288
 msgid "Enter your email and password"
 msgstr "तुमचा ईमेल आणि पासवर्ड प्रविष्ट करा"
 
-#: crates/immich-mount-gnome/src/window.rs:297
+#: crates/immich-mount-gnome/src/window.rs:299
 msgid "Enter an API key"
 msgstr "API की प्रविष्ट करा"
 
-#: crates/immich-mount-gnome/src/window.rs:324
+#: crates/immich-mount-gnome/src/window.rs:326
 msgid "Signed in as {account}"
 msgstr "{account} म्हणून साइन इन केले"
 
-#: crates/immich-mount-gnome/src/window.rs:390
+#: crates/immich-mount-gnome/src/window.rs:394
 msgid "Signed in, but the status could not be read"
 msgstr "साइन इन झाले, पण स्थिती वाचता आली नाही"
 
-#: crates/immich-mount-gnome/src/window.rs:417
-#: crates/immich-mount-kde/qml/Main.qml:396
+#: crates/immich-mount-gnome/src/window.rs:421
+#: crates/immich-mount-kde/qml/Main.qml:397
 msgid "Signed Out of Immich"
 msgstr "Immich मधून साइन आउट झाले"
 
-#: crates/immich-mount-gnome/src/window.rs:417
-#: crates/immich-mount-kde/qml/Main.qml:397
+#: crates/immich-mount-gnome/src/window.rs:421
+#: crates/immich-mount-kde/qml/Main.qml:398
 msgid "Sign in again to keep browsing. Your caches are kept."
 msgstr "ब्राउझ करत राहण्यासाठी पुन्हा साइन इन करा. तुमचे कॅशे ठेवले आहेत."
 
-#: crates/immich-mount-gnome/src/window.rs:418
-#: crates/immich-mount-gnome/src/window.blp:209
+#: crates/immich-mount-gnome/src/window.rs:422
+#: crates/immich-mount-gnome/src/window.blp:213
 msgid "Your Library Is in Files"
 msgstr "तुमची लायब्ररी फाइल्स् मध्ये आहे"
 
-#: crates/immich-mount-gnome/src/window.rs:418
-#: crates/immich-mount-kde/qml/Main.qml:398
+#: crates/immich-mount-gnome/src/window.rs:422
+#: crates/immich-mount-kde/qml/Main.qml:399
 msgid "Browse it like any folder. Originals download only when you open them."
 msgstr "ती कोणत्याही फोल्डरप्रमाणे ब्राउझ करा. मूळ फाइल तुम्ही उघडल्यावरच डाउनलोड होतात."
 
-#: crates/immich-mount-gnome/src/window.rs:419
-#: crates/immich-mount-kde/qml/Main.qml:396
+#: crates/immich-mount-gnome/src/window.rs:423
+#: crates/immich-mount-kde/qml/Main.qml:397
 msgid "Not Mounted"
 msgstr "माउंट केलेले नाही"
 
-#: crates/immich-mount-gnome/src/window.rs:419
+#: crates/immich-mount-gnome/src/window.rs:423
 msgid "Mount it to browse your library in Files."
 msgstr "फाइल्स् मध्ये तुमची लायब्ररी ब्राउझ करण्यासाठी हे माउंट करा."
 
-#: crates/immich-mount-gnome/src/window.rs:462
+#: crates/immich-mount-gnome/src/window.rs:466
 msgid "Disconnected"
 msgstr "डिस्कनेक्ट झाले"
 
 #: crates/immich-mount-gnome/src/window.blp:26
-#: crates/immich-mount-gnome/src/window.blp:202
+#: crates/immich-mount-gnome/src/window.blp:206
 msgid "Main Menu"
 msgstr "मुख्य मेनू"
 
@@ -348,71 +348,71 @@ msgstr "ड्राइव्ह दाखवत असलेले फोल्
 msgid "The timeline, by year and month"
 msgstr "टाइमलाइन, वर्ष आणि महिन्यानुसार"
 
-#: crates/immich-mount-gnome/src/window.blp:166
-#: crates/immich-mount-gnome/src/window.blp:314
-#: crates/immich-mount-kde/qml/Main.qml:369
+#: crates/immich-mount-gnome/src/window.blp:170
+#: crates/immich-mount-gnome/src/window.blp:318
+#: crates/immich-mount-kde/qml/Main.qml:370
 msgid "Location"
 msgstr "स्थान"
 
-#: crates/immich-mount-gnome/src/window.blp:169
-#: crates/immich-mount-kde/qml/Main.qml:372
+#: crates/immich-mount-gnome/src/window.blp:173
+#: crates/immich-mount-kde/qml/Main.qml:373
 msgid "Folder"
 msgstr "फोल्डर"
 
-#: crates/immich-mount-gnome/src/window.blp:175
-#: crates/immich-mount-gnome/src/window.blp:223
+#: crates/immich-mount-gnome/src/window.blp:179
+#: crates/immich-mount-gnome/src/window.blp:227
 msgid "_Open in Files"
 msgstr "फाइल्स् मध्ये उघडा (_O)"
 
-#: crates/immich-mount-gnome/src/window.blp:234
+#: crates/immich-mount-gnome/src/window.blp:238
 msgid "_Unmount"
 msgstr "अनमाउंट करा (_U)"
 
-#: crates/immich-mount-gnome/src/window.blp:236
+#: crates/immich-mount-gnome/src/window.blp:240
 msgid "Take it out of Files until you mount it again or log in"
 msgstr "तुम्ही पुन्हा माउंट करेपर्यंत किंवा पुढच्या वेळी लॉग इन करेपर्यंत हे फाइल्स् मधून काढा"
 
-#: crates/immich-mount-gnome/src/window.blp:245
+#: crates/immich-mount-gnome/src/window.blp:249
 msgid "_Mount"
 msgstr "माउंट करा (_M)"
 
-#: crates/immich-mount-gnome/src/window.blp:261
+#: crates/immich-mount-gnome/src/window.blp:265
 msgid "Sign In _Again"
 msgstr "पुन्हा साइन इन करा (_A)"
 
-#: crates/immich-mount-gnome/src/window.blp:273
+#: crates/immich-mount-gnome/src/window.blp:277
 msgid "Server"
 msgstr "सर्व्हर"
 
-#: crates/immich-mount-gnome/src/window.blp:281
+#: crates/immich-mount-gnome/src/window.blp:285
 msgid "Account"
 msgstr "खाते"
 
-#: crates/immich-mount-gnome/src/window.blp:290
+#: crates/immich-mount-gnome/src/window.blp:294
 msgid "Credential"
 msgstr "क्रेडेन्शियल"
 
-#: crates/immich-mount-gnome/src/window.blp:298
+#: crates/immich-mount-gnome/src/window.blp:302
 msgid "Connection"
 msgstr "कनेक्शन"
 
-#: crates/immich-mount-gnome/src/window.blp:322
+#: crates/immich-mount-gnome/src/window.blp:326
 msgid "Uploading"
 msgstr "अपलोड होत आहे"
 
-#: crates/immich-mount-gnome/src/window.blp:333
+#: crates/immich-mount-gnome/src/window.blp:337
 msgid "_Disconnect"
 msgstr "डिस्कनेक्ट करा (_D)"
 
-#: crates/immich-mount-gnome/src/window.blp:354
+#: crates/immich-mount-gnome/src/window.blp:358
 msgid "_Preferences"
 msgstr "प्राधान्ये (_P)"
 
-#: crates/immich-mount-gnome/src/window.blp:359
+#: crates/immich-mount-gnome/src/window.blp:363
 msgid "_Keyboard Shortcuts"
 msgstr "कीबोर्ड शॉर्टकट (_K)"
 
-#: crates/immich-mount-gnome/src/window.blp:364
+#: crates/immich-mount-gnome/src/window.blp:368
 msgid "_About Immich Mount"
 msgstr "Immich Mount विषयी (_A)"
 
@@ -540,77 +540,77 @@ msgstr "कोणताही ब्राउझर उघडता आला �
 msgid "Sign-in address"
 msgstr "साइन-इन पत्ता"
 
-#: crates/immich-mount-kde/qml/Main.qml:371
+#: crates/immich-mount-kde/qml/Main.qml:372
 msgid "Folder:"
 msgstr "फोल्डर:"
 
-#: crates/immich-mount-kde/qml/Main.qml:376
+#: crates/immich-mount-kde/qml/Main.qml:377
 msgid "Dolphin"
 msgstr "Dolphin"
 
-#: crates/immich-mount-kde/qml/Main.qml:381
-#: crates/immich-mount-kde/qml/Main.qml:402
+#: crates/immich-mount-kde/qml/Main.qml:382
+#: crates/immich-mount-kde/qml/Main.qml:403
 msgid "Open in Dolphin"
 msgstr "Dolphin मध्ये उघडा"
 
-#: crates/immich-mount-kde/qml/Main.qml:396
+#: crates/immich-mount-kde/qml/Main.qml:397
 msgid "Your Library Is in Dolphin"
 msgstr "तुमची लायब्ररी Dolphin मध्ये आहे"
 
-#: crates/immich-mount-kde/qml/Main.qml:399
+#: crates/immich-mount-kde/qml/Main.qml:400
 msgid "Mount it to browse your library in Dolphin."
 msgstr "Dolphin मध्ये तुमची लायब्ररी ब्राउझ करण्यासाठी हे माउंट करा."
 
-#: crates/immich-mount-kde/qml/Main.qml:402
+#: crates/immich-mount-kde/qml/Main.qml:403
 msgid "Sign In Again"
 msgstr "पुन्हा साइन इन करा"
 
-#: crates/immich-mount-kde/qml/Main.qml:402
+#: crates/immich-mount-kde/qml/Main.qml:403
 msgid "Mount"
 msgstr "माउंट करा"
 
-#: crates/immich-mount-kde/qml/Main.qml:410
+#: crates/immich-mount-kde/qml/Main.qml:411
 #: apple/App/ContentView.swift:105
 msgid "Server:"
 msgstr "सर्व्हर:"
 
-#: crates/immich-mount-kde/qml/Main.qml:411
+#: crates/immich-mount-kde/qml/Main.qml:412
 msgid "Account:"
 msgstr "खाते:"
 
-#: crates/immich-mount-kde/qml/Main.qml:412
+#: crates/immich-mount-kde/qml/Main.qml:413
 msgid "Credential:"
 msgstr "क्रेडेन्शियल:"
 
-#: crates/immich-mount-kde/qml/Main.qml:413
+#: crates/immich-mount-kde/qml/Main.qml:414
 msgid "Connection:"
 msgstr "कनेक्शन:"
 
-#: crates/immich-mount-kde/qml/Main.qml:414
+#: crates/immich-mount-kde/qml/Main.qml:415
 msgid "Cache:"
 msgstr "कॅशे:"
 
-#: crates/immich-mount-kde/qml/Main.qml:415
+#: crates/immich-mount-kde/qml/Main.qml:416
 msgid "Location:"
 msgstr "स्थान:"
 
-#: crates/immich-mount-kde/qml/Main.qml:416
+#: crates/immich-mount-kde/qml/Main.qml:417
 msgid "Uploading:"
 msgstr "अपलोड होत आहे:"
 
-#: crates/immich-mount-kde/qml/Main.qml:417
+#: crates/immich-mount-kde/qml/Main.qml:418
 msgid "Dolphin:"
 msgstr "Dolphin:"
 
-#: crates/immich-mount-kde/qml/Main.qml:422
+#: crates/immich-mount-kde/qml/Main.qml:423
 msgid "Unmount"
 msgstr "अनमाउंट करा"
 
-#: crates/immich-mount-kde/qml/Main.qml:429
+#: crates/immich-mount-kde/qml/Main.qml:430
 msgid "Disconnect"
 msgstr "डिस्कनेक्ट करा"
 
-#: crates/immich-mount-kde/qml/Main.qml:441
+#: crates/immich-mount-kde/qml/Main.qml:442
 msgid "Immich Mount is an independent, unofficial project. It is not affiliated with, endorsed by, or sponsored by the Immich project or FUTO."
 msgstr "Immich Mount हा एक स्वतंत्र प्रकल्प आहे, अधिकृत प्रकल्प नाही. तो Immich प्रकल्प किंवा FUTO शी संलग्न नाही, आणि त्याला त्यांचे समर्थन किंवा प्रायोजकत्व नाही."
 
@@ -647,78 +647,86 @@ msgid "Show the Places section"
 msgstr "Places विभाग दाखवा"
 
 #: crates/immich-mount-core/src/settings.rs:58
+msgid "Show the Archive section"
+msgstr "Archive विभाग दाखवा"
+
+#: crates/immich-mount-core/src/settings.rs:59
 msgid "Day folders inside months"
 msgstr "महिन्यांमध्ये दिवसांचे फोल्डर"
 
-#: crates/immich-mount-core/src/settings.rs:59
+#: crates/immich-mount-core/src/settings.rs:60
 msgid "Year and month folders inside albums"
 msgstr "अल्बममध्ये वर्ष आणि महिन्याचे फोल्डर"
 
-#: crates/immich-mount-core/src/settings.rs:60
+#: crates/immich-mount-core/src/settings.rs:61
 msgid "Year and month folders inside people"
 msgstr "व्यक्तींमध्ये वर्ष आणि महिन्याचे फोल्डर"
 
-#: crates/immich-mount-core/src/settings.rs:61
+#: crates/immich-mount-core/src/settings.rs:62
 msgid "Year and month folders inside cities"
 msgstr "शहरांमध्ये वर्ष आणि महिन्याचे फोल्डर"
 
-#: crates/immich-mount-core/src/settings.rs:62
+#: crates/immich-mount-core/src/settings.rs:63
+msgid "Year and month folders inside the archive"
+msgstr "संग्रहामध्ये वर्ष आणि महिन्याचे फोल्डर"
+
+#: crates/immich-mount-core/src/settings.rs:64
 msgid "How album folders are named and grouped"
 msgstr "अल्बम फोल्डरची नावे आणि गट कसे असावेत"
 
-#: crates/immich-mount-core/src/settings.rs:63
+#: crates/immich-mount-core/src/settings.rs:65
 msgid "How files are named"
 msgstr "फाइलची नावे कशी असावीत"
 
-#: crates/immich-mount-core/src/settings.rs:64
+#: crates/immich-mount-core/src/settings.rs:66
 msgid "The content cache's size limit"
 msgstr "सामग्री कॅशेची आकार मर्यादा"
 
-#: crates/immich-mount-core/src/settings.rs:65
+#: crates/immich-mount-core/src/settings.rs:67
 msgid "Show the Upload folder, and upload what is copied into it"
 msgstr "Upload फोल्डर दाखवा, आणि त्यात कॉपी केलेले अपलोड करा"
 
-#: crates/immich-mount-core/src/settings.rs:66
+#: crates/immich-mount-core/src/settings.rs:68
 msgid "Also seed 1024 px thumbnails from the preview"
 msgstr "पूर्वावलोकनातून 1024 px थंबनेलही तयार करा"
 
-#: crates/immich-mount-core/src/settings.rs:67
+#: crates/immich-mount-core/src/settings.rs:69
 msgid "Refuse thumbnailer reads of originals"
 msgstr "थंबनेलरना मूळ फाइल वाचू देऊ नका"
 
-#: crates/immich-mount-core/src/settings.rs:68
+#: crates/immich-mount-core/src/settings.rs:70
 msgid "Headless only: a 0600 file holding the credential"
 msgstr "फक्त हेडलेस: क्रेडेन्शियल ठेवणारी 0600 फाइल"
 
-#: crates/immich-mount-core/src/settings.rs:74
+#: crates/immich-mount-core/src/settings.rs:76
 msgid "Never"
 msgstr "कधीही नाही"
 
-#: crates/immich-mount-core/src/settings.rs:75
+#: crates/immich-mount-core/src/settings.rs:77
 msgid "From 500 Items"
 msgstr "500 आयटमपासून"
 
-#: crates/immich-mount-core/src/settings.rs:76
+#: crates/immich-mount-core/src/settings.rs:78
 msgid "Always"
 msgstr "नेहमी"
 
-#: crates/immich-mount-core/src/settings.rs:77
+#: crates/immich-mount-core/src/settings.rs:79
 msgid "Year in the Name (2023 - Trip)"
 msgstr "नावात वर्ष (2023 - सहल)"
 
-#: crates/immich-mount-core/src/settings.rs:78
+#: crates/immich-mount-core/src/settings.rs:80
 msgid "Year Folders (2023/Trip)"
 msgstr "वर्षाचे फोल्डर (2023/सहल)"
 
-#: crates/immich-mount-core/src/settings.rs:79
+#: crates/immich-mount-core/src/settings.rs:81
 msgid "Name Only (Trip)"
 msgstr "फक्त नाव (सहल)"
 
-#: crates/immich-mount-core/src/settings.rs:80
+#: crates/immich-mount-core/src/settings.rs:82
 msgid "Date and Time Taken"
 msgstr "फोटो काढल्याची तारीख आणि वेळ"
 
-#: crates/immich-mount-core/src/settings.rs:81
+#: crates/immich-mount-core/src/settings.rs:83
 msgid "Original File Names"
 msgstr "मूळ फाइल नावे"
 

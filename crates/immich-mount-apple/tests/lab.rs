@@ -77,6 +77,62 @@ async fn a_photo_added_to_upload_reaches_the_library_byte_for_byte() {
     assert!(deleted.status().is_success(), "the test's Asset is deleted again");
 }
 
+/// Every file under `folder`, walked the way Finder would, folder by folder.
+async fn files_under(library: &Library, folder: &str) -> Vec<Item> {
+    let mut folders = vec![folder.to_owned()];
+    let mut files = Vec::new();
+    while let Some(folder) = folders.pop() {
+        for item in library.list(folder, None).await.unwrap() {
+            if item.is_folder { folders.push(item.identifier) } else { files.push(item) }
+        }
+    }
+    files
+}
+
+/// Change Assets on the server, as the Immich app would, with the full-access key.
+async fn update_assets(ids: &[&str], change: serde_json::Value) {
+    let mut body = change;
+    body["ids"] = serde_json::json!(ids);
+    let updated = reqwest::Client::new()
+        .put(format!("{}/api/assets", env("IMMICH_URL")))
+        .header("x-api-key", env("IMMICH_API_KEY_FULL"))
+        .json(&body)
+        .send()
+        .await
+        .unwrap();
+    assert!(updated.status().is_success(), "{}", updated.status());
+}
+
+#[tokio::test]
+#[ignore = "needs the lab server"]
+async fn the_archive_holds_what_immich_archived_and_follows_it() {
+    let directory = tempfile::tempdir().unwrap();
+    let key = env("IMMICH_API_KEY_READONLY");
+    let config = "[sections]\narchive = true\n".to_owned();
+    let library = Library::open(env("IMMICH_URL"), Credential::ApiKey { key: key.clone() }, directory.path().display().to_string(), config).unwrap();
+    let client = Client::new(&env("IMMICH_URL"), Some(ApiCredential::ApiKey(key)), "ImmichMount/lab-tests (Linux; lab)").unwrap();
+
+    let sections: Vec<String> = library.list("root".into(), None).await.unwrap().into_iter().map(|item| item.name).collect();
+    assert_eq!(sections, ["Photos", "Albums", "People", "Places", "Archive", "Upload"]);
+    let archived = files_under(&library, "section|Archive").await;
+    assert_eq!(archived.len(), 1, "the seed's one archived photo");
+    assert!(archived[0].parent_identifier.starts_with("group-month|section%7CArchive|"), "in a year and a month folder");
+    assert!(!library.poll(None).await.unwrap(), "the first poll takes note only");
+
+    // A photo archived in Immich arrives at the next poll, and leaves again when it is unarchived.
+    let timeline = files_under(&library, "section|Photos").await;
+    let photo = timeline[0].content_version.clone();
+    update_assets(&[&photo], serde_json::json!({ "visibility": "archive" })).await;
+    assert!(library.poll(None).await.unwrap(), "the poll sees the archive change");
+    let archived: Vec<String> = files_under(&library, "section|Archive").await.into_iter().map(|item| item.content_version).collect();
+    assert_eq!(archived.len(), 2);
+    assert!(archived.contains(&photo));
+    assert_eq!(client.asset(&photo).await.unwrap().visibility, immich_api::Visibility::Archive);
+    update_assets(&[&photo], serde_json::json!({ "visibility": "timeline" })).await;
+    assert!(library.poll(None).await.unwrap(), "and sees it unarchived");
+    assert_eq!(files_under(&library, "section|Archive").await.len(), 1);
+}
+
 #[tokio::test]
 #[ignore = "needs the lab server"]
 async fn every_timeline_original_matches_the_servers_checksum() {

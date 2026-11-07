@@ -39,6 +39,8 @@ pub struct LibraryChanges {
     pub album_list_changed: bool,
     /// Albums whose Assets changed.
     pub albums: Vec<String>,
+    /// The archive's months, or their counts, changed: something was archived, unarchived, or trashed from it.
+    pub archive_changed: bool,
     /// Something changed whose place is unknown (an Asset deleted for good, or the server asking for a full resync):
     /// every listing is read again.
     pub everything: bool,
@@ -48,6 +50,13 @@ impl LibraryChanges {
     pub fn is_empty(&self) -> bool {
         *self == LibraryChanges::default()
     }
+}
+
+/// Which of the sections that are off by default the change poll watches. Each one watched costs a request per poll
+/// (an unchanged one is a `304`), so a section that is not shown is not watched.
+#[derive(Debug, Clone, Copy, Default, PartialEq, Eq)]
+pub struct Watched {
+    pub archive: bool,
 }
 
 /// The library, as Immich presents it.
@@ -63,8 +72,11 @@ pub trait LibrarySource: Send + Sync {
     fn countries(&self) -> impl Future<Output = Result<Vec<String>, SourceError>> + Send;
     fn cities(&self, country: &str) -> impl Future<Output = Result<Vec<String>, SourceError>> + Send;
     fn city_assets(&self, country: &str, city: &str) -> impl Future<Output = Result<Vec<Asset>, SourceError>> + Send;
-    /// What changed since the last call. The first call only takes note of the current state.
-    fn changes(&self) -> impl Future<Output = Result<LibraryChanges, SourceError>> + Send {
+    /// The archived Assets.
+    fn archive_assets(&self) -> impl Future<Output = Result<Vec<Asset>, SourceError>> + Send;
+    /// What changed since the last call, in the library and in the sections `watched` names. The first call only takes
+    /// note of the current state, as does the first call that watches a section.
+    fn changes(&self, _watched: Watched) -> impl Future<Output = Result<LibraryChanges, SourceError>> + Send {
         async { Ok(LibraryChanges::default()) }
     }
 }
@@ -98,8 +110,11 @@ impl<Shared: LibrarySource> LibrarySource for std::sync::Arc<Shared> {
     async fn city_assets(&self, country: &str, city: &str) -> Result<Vec<Asset>, SourceError> {
         self.as_ref().city_assets(country, city).await
     }
-    async fn changes(&self) -> Result<LibraryChanges, SourceError> {
-        self.as_ref().changes().await
+    async fn archive_assets(&self) -> Result<Vec<Asset>, SourceError> {
+        self.as_ref().archive_assets().await
+    }
+    async fn changes(&self, watched: Watched) -> Result<LibraryChanges, SourceError> {
+        self.as_ref().changes(watched).await
     }
 }
 

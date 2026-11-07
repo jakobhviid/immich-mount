@@ -96,7 +96,7 @@ msgid "Thumbnails"
 msgstr "Miniaturer"
 
 #: crates/immich-mount-desktop/src/preferences.rs:18
-#: crates/immich-mount-gnome/src/window.blp:306
+#: crates/immich-mount-gnome/src/window.blp:310
 msgid "Cache"
 msgstr "Cache"
 
@@ -143,13 +143,13 @@ msgstr "Den adresse kan ikke bruges: {error}"
 
 #: crates/immich-mount-desktop/src/session.rs:161
 #: crates/immich-mount-desktop/src/session.rs:171
-#: crates/immich-mount-desktop/src/session.rs:365
-#: crates/immich-mount-desktop/src/session.rs:367
+#: crates/immich-mount-desktop/src/session.rs:368
+#: crates/immich-mount-desktop/src/session.rs:370
 msgid "Kept in {file}"
 msgstr "Gemt i {file}"
 
 #: crates/immich-mount-desktop/src/session.rs:166
-#: crates/immich-mount-desktop/src/session.rs:369
+#: crates/immich-mount-desktop/src/session.rs:372
 msgid "Kept in the keyring"
 msgstr "Gemt i nøgleringen"
 
@@ -157,11 +157,11 @@ msgstr "Gemt i nøgleringen"
 msgid "The keyring stayed locked, so nothing was saved."
 msgstr "Nøgleringen forblev låst, så intet blev gemt."
 
-#: crates/immich-mount-desktop/src/session.rs:247
+#: crates/immich-mount-desktop/src/session.rs:250
 msgid "Signed in, but the mount cannot start: {error}."
 msgstr "Logget ind, men monteringen kan ikke starte: {error}."
 
-#: crates/immich-mount-desktop/src/session.rs:251
+#: crates/immich-mount-desktop/src/session.rs:254
 msgid "Signed in, but the mount did not start: {error}"
 msgstr "Logget ind, men monteringen startede ikke: {error}"
 
@@ -205,66 +205,66 @@ msgstr "Tastaturgenveje"
 msgid "Quit"
 msgstr "Afslut"
 
-#: crates/immich-mount-gnome/src/window.rs:263
+#: crates/immich-mount-gnome/src/window.rs:265
 #: crates/immich-mount-kde/qml/Main.qml:321
 msgid "Continue in your browser"
 msgstr "Fortsæt i din browser"
 
-#: crates/immich-mount-gnome/src/window.rs:274
+#: crates/immich-mount-gnome/src/window.rs:276
 msgid "This sign-in belongs to an earlier attempt. Finish the latest one, or sign in again."
 msgstr "Dette login hører til et tidligere forsøg. Gør det seneste færdigt, eller log ind igen."
 
-#: crates/immich-mount-gnome/src/window.rs:286
+#: crates/immich-mount-gnome/src/window.rs:288
 msgid "Enter your email and password"
 msgstr "Indtast din e-mail og adgangskode"
 
-#: crates/immich-mount-gnome/src/window.rs:297
+#: crates/immich-mount-gnome/src/window.rs:299
 msgid "Enter an API key"
 msgstr "Indtast en API-nøgle"
 
-#: crates/immich-mount-gnome/src/window.rs:324
+#: crates/immich-mount-gnome/src/window.rs:326
 msgid "Signed in as {account}"
 msgstr "Logget ind som {account}"
 
-#: crates/immich-mount-gnome/src/window.rs:390
+#: crates/immich-mount-gnome/src/window.rs:394
 msgid "Signed in, but the status could not be read"
 msgstr "Logget ind, men status kunne ikke læses"
 
-#: crates/immich-mount-gnome/src/window.rs:417
-#: crates/immich-mount-kde/qml/Main.qml:396
+#: crates/immich-mount-gnome/src/window.rs:421
+#: crates/immich-mount-kde/qml/Main.qml:397
 msgid "Signed Out of Immich"
 msgstr "Logget ud af Immich"
 
-#: crates/immich-mount-gnome/src/window.rs:417
-#: crates/immich-mount-kde/qml/Main.qml:397
+#: crates/immich-mount-gnome/src/window.rs:421
+#: crates/immich-mount-kde/qml/Main.qml:398
 msgid "Sign in again to keep browsing. Your caches are kept."
 msgstr "Log ind igen for at fortsætte med at gennemse. Dine cacher bevares."
 
-#: crates/immich-mount-gnome/src/window.rs:418
-#: crates/immich-mount-gnome/src/window.blp:209
+#: crates/immich-mount-gnome/src/window.rs:422
+#: crates/immich-mount-gnome/src/window.blp:213
 msgid "Your Library Is in Files"
 msgstr "Dit bibliotek er i Filer"
 
-#: crates/immich-mount-gnome/src/window.rs:418
-#: crates/immich-mount-kde/qml/Main.qml:398
+#: crates/immich-mount-gnome/src/window.rs:422
+#: crates/immich-mount-kde/qml/Main.qml:399
 msgid "Browse it like any folder. Originals download only when you open them."
 msgstr "Gennemse det som enhver anden mappe. Originaler hentes først, når du åbner dem."
 
-#: crates/immich-mount-gnome/src/window.rs:419
-#: crates/immich-mount-kde/qml/Main.qml:396
+#: crates/immich-mount-gnome/src/window.rs:423
+#: crates/immich-mount-kde/qml/Main.qml:397
 msgid "Not Mounted"
 msgstr "Ikke monteret"
 
-#: crates/immich-mount-gnome/src/window.rs:419
+#: crates/immich-mount-gnome/src/window.rs:423
 msgid "Mount it to browse your library in Files."
 msgstr "Montér drevet for at gennemse dit bibliotek i Filer."
 
-#: crates/immich-mount-gnome/src/window.rs:462
+#: crates/immich-mount-gnome/src/window.rs:466
 msgid "Disconnected"
 msgstr "Forbindelsen er afbrudt"
 
 #: crates/immich-mount-gnome/src/window.blp:26
-#: crates/immich-mount-gnome/src/window.blp:202
+#: crates/immich-mount-gnome/src/window.blp:206
 msgid "Main Menu"
 msgstr "Hovedmenu"
 
@@ -348,71 +348,71 @@ msgstr "De mapper, drevet viser. Du kan ændre det senere i Indstillinger."
 msgid "The timeline, by year and month"
 msgstr "Tidslinjen, efter år og måned"
 
-#: crates/immich-mount-gnome/src/window.blp:166
-#: crates/immich-mount-gnome/src/window.blp:314
-#: crates/immich-mount-kde/qml/Main.qml:369
+#: crates/immich-mount-gnome/src/window.blp:170
+#: crates/immich-mount-gnome/src/window.blp:318
+#: crates/immich-mount-kde/qml/Main.qml:370
 msgid "Location"
 msgstr "Placering"
 
-#: crates/immich-mount-gnome/src/window.blp:169
-#: crates/immich-mount-kde/qml/Main.qml:372
+#: crates/immich-mount-gnome/src/window.blp:173
+#: crates/immich-mount-kde/qml/Main.qml:373
 msgid "Folder"
 msgstr "Mappe"
 
-#: crates/immich-mount-gnome/src/window.blp:175
-#: crates/immich-mount-gnome/src/window.blp:223
+#: crates/immich-mount-gnome/src/window.blp:179
+#: crates/immich-mount-gnome/src/window.blp:227
 msgid "_Open in Files"
 msgstr "_Åbn i Filer"
 
-#: crates/immich-mount-gnome/src/window.blp:234
+#: crates/immich-mount-gnome/src/window.blp:238
 msgid "_Unmount"
 msgstr "_Afmontér"
 
-#: crates/immich-mount-gnome/src/window.blp:236
+#: crates/immich-mount-gnome/src/window.blp:240
 msgid "Take it out of Files until you mount it again or log in"
 msgstr "Fjern det fra Filer, indtil du monterer det igen eller logger ind"
 
-#: crates/immich-mount-gnome/src/window.blp:245
+#: crates/immich-mount-gnome/src/window.blp:249
 msgid "_Mount"
 msgstr "_Montér"
 
-#: crates/immich-mount-gnome/src/window.blp:261
+#: crates/immich-mount-gnome/src/window.blp:265
 msgid "Sign In _Again"
 msgstr "Log _ind igen"
 
-#: crates/immich-mount-gnome/src/window.blp:273
+#: crates/immich-mount-gnome/src/window.blp:277
 msgid "Server"
 msgstr "Server"
 
-#: crates/immich-mount-gnome/src/window.blp:281
+#: crates/immich-mount-gnome/src/window.blp:285
 msgid "Account"
 msgstr "Konto"
 
-#: crates/immich-mount-gnome/src/window.blp:290
+#: crates/immich-mount-gnome/src/window.blp:294
 msgid "Credential"
 msgstr "Loginoplysninger"
 
-#: crates/immich-mount-gnome/src/window.blp:298
+#: crates/immich-mount-gnome/src/window.blp:302
 msgid "Connection"
 msgstr "Forbindelse"
 
-#: crates/immich-mount-gnome/src/window.blp:322
+#: crates/immich-mount-gnome/src/window.blp:326
 msgid "Uploading"
 msgstr "Uploader"
 
-#: crates/immich-mount-gnome/src/window.blp:333
+#: crates/immich-mount-gnome/src/window.blp:337
 msgid "_Disconnect"
 msgstr "Afbryd _forbindelse"
 
-#: crates/immich-mount-gnome/src/window.blp:354
+#: crates/immich-mount-gnome/src/window.blp:358
 msgid "_Preferences"
 msgstr "_Indstillinger"
 
-#: crates/immich-mount-gnome/src/window.blp:359
+#: crates/immich-mount-gnome/src/window.blp:363
 msgid "_Keyboard Shortcuts"
 msgstr "_Tastaturgenveje"
 
-#: crates/immich-mount-gnome/src/window.blp:364
+#: crates/immich-mount-gnome/src/window.blp:368
 msgid "_About Immich Mount"
 msgstr "_Om Immich Mount"
 
@@ -540,77 +540,77 @@ msgstr "Ingen browser kunne åbnes. Åbn denne adresse i en browser:"
 msgid "Sign-in address"
 msgstr "Loginadresse"
 
-#: crates/immich-mount-kde/qml/Main.qml:371
+#: crates/immich-mount-kde/qml/Main.qml:372
 msgid "Folder:"
 msgstr "Mappe:"
 
-#: crates/immich-mount-kde/qml/Main.qml:376
+#: crates/immich-mount-kde/qml/Main.qml:377
 msgid "Dolphin"
 msgstr "Dolphin"
 
-#: crates/immich-mount-kde/qml/Main.qml:381
-#: crates/immich-mount-kde/qml/Main.qml:402
+#: crates/immich-mount-kde/qml/Main.qml:382
+#: crates/immich-mount-kde/qml/Main.qml:403
 msgid "Open in Dolphin"
 msgstr "Åbn i Dolphin"
 
-#: crates/immich-mount-kde/qml/Main.qml:396
+#: crates/immich-mount-kde/qml/Main.qml:397
 msgid "Your Library Is in Dolphin"
 msgstr "Dit bibliotek er i Dolphin"
 
-#: crates/immich-mount-kde/qml/Main.qml:399
+#: crates/immich-mount-kde/qml/Main.qml:400
 msgid "Mount it to browse your library in Dolphin."
 msgstr "Montér drevet for at gennemse dit bibliotek i Dolphin."
 
-#: crates/immich-mount-kde/qml/Main.qml:402
+#: crates/immich-mount-kde/qml/Main.qml:403
 msgid "Sign In Again"
 msgstr "Log ind igen"
 
-#: crates/immich-mount-kde/qml/Main.qml:402
+#: crates/immich-mount-kde/qml/Main.qml:403
 msgid "Mount"
 msgstr "Montér"
 
-#: crates/immich-mount-kde/qml/Main.qml:410
+#: crates/immich-mount-kde/qml/Main.qml:411
 #: apple/App/ContentView.swift:105
 msgid "Server:"
 msgstr "Server:"
 
-#: crates/immich-mount-kde/qml/Main.qml:411
+#: crates/immich-mount-kde/qml/Main.qml:412
 msgid "Account:"
 msgstr "Konto:"
 
-#: crates/immich-mount-kde/qml/Main.qml:412
+#: crates/immich-mount-kde/qml/Main.qml:413
 msgid "Credential:"
 msgstr "Loginoplysninger:"
 
-#: crates/immich-mount-kde/qml/Main.qml:413
+#: crates/immich-mount-kde/qml/Main.qml:414
 msgid "Connection:"
 msgstr "Forbindelse:"
 
-#: crates/immich-mount-kde/qml/Main.qml:414
+#: crates/immich-mount-kde/qml/Main.qml:415
 msgid "Cache:"
 msgstr "Cache:"
 
-#: crates/immich-mount-kde/qml/Main.qml:415
+#: crates/immich-mount-kde/qml/Main.qml:416
 msgid "Location:"
 msgstr "Placering:"
 
-#: crates/immich-mount-kde/qml/Main.qml:416
+#: crates/immich-mount-kde/qml/Main.qml:417
 msgid "Uploading:"
 msgstr "Uploader:"
 
-#: crates/immich-mount-kde/qml/Main.qml:417
+#: crates/immich-mount-kde/qml/Main.qml:418
 msgid "Dolphin:"
 msgstr "Dolphin:"
 
-#: crates/immich-mount-kde/qml/Main.qml:422
+#: crates/immich-mount-kde/qml/Main.qml:423
 msgid "Unmount"
 msgstr "Afmontér"
 
-#: crates/immich-mount-kde/qml/Main.qml:429
+#: crates/immich-mount-kde/qml/Main.qml:430
 msgid "Disconnect"
 msgstr "Afbryd forbindelse"
 
-#: crates/immich-mount-kde/qml/Main.qml:441
+#: crates/immich-mount-kde/qml/Main.qml:442
 msgid "Immich Mount is an independent, unofficial project. It is not affiliated with, endorsed by, or sponsored by the Immich project or FUTO."
 msgstr "Immich Mount er et uafhængigt, uofficielt projekt. Det er ikke tilknyttet, godkendt eller sponsoreret af Immich-projektet eller FUTO."
 
@@ -647,78 +647,86 @@ msgid "Show the Places section"
 msgstr "Vis sektionen Places"
 
 #: crates/immich-mount-core/src/settings.rs:58
+msgid "Show the Archive section"
+msgstr "Vis sektionen Archive"
+
+#: crates/immich-mount-core/src/settings.rs:59
 msgid "Day folders inside months"
 msgstr "Dagsmapper i månederne"
 
-#: crates/immich-mount-core/src/settings.rs:59
+#: crates/immich-mount-core/src/settings.rs:60
 msgid "Year and month folders inside albums"
 msgstr "År- og månedsmapper i albummer"
 
-#: crates/immich-mount-core/src/settings.rs:60
+#: crates/immich-mount-core/src/settings.rs:61
 msgid "Year and month folders inside people"
 msgstr "År- og månedsmapper i personer"
 
-#: crates/immich-mount-core/src/settings.rs:61
+#: crates/immich-mount-core/src/settings.rs:62
 msgid "Year and month folders inside cities"
 msgstr "År- og månedsmapper i byer"
 
-#: crates/immich-mount-core/src/settings.rs:62
+#: crates/immich-mount-core/src/settings.rs:63
+msgid "Year and month folders inside the archive"
+msgstr "År- og månedsmapper i arkivet"
+
+#: crates/immich-mount-core/src/settings.rs:64
 msgid "How album folders are named and grouped"
 msgstr "Hvordan albummapper navngives og grupperes"
 
-#: crates/immich-mount-core/src/settings.rs:63
+#: crates/immich-mount-core/src/settings.rs:65
 msgid "How files are named"
 msgstr "Hvordan filer navngives"
 
-#: crates/immich-mount-core/src/settings.rs:64
+#: crates/immich-mount-core/src/settings.rs:66
 msgid "The content cache's size limit"
 msgstr "Størrelsesgrænsen for indholdscachen"
 
-#: crates/immich-mount-core/src/settings.rs:65
+#: crates/immich-mount-core/src/settings.rs:67
 msgid "Show the Upload folder, and upload what is copied into it"
 msgstr "Vis mappen Upload, og upload det, der kopieres ind i den"
 
-#: crates/immich-mount-core/src/settings.rs:66
+#: crates/immich-mount-core/src/settings.rs:68
 msgid "Also seed 1024 px thumbnails from the preview"
 msgstr "Lav også miniaturer på 1024 px ud fra forhåndsvisningen"
 
-#: crates/immich-mount-core/src/settings.rs:67
+#: crates/immich-mount-core/src/settings.rs:69
 msgid "Refuse thumbnailer reads of originals"
 msgstr "Afvis miniaturegeneratorers læsning af originaler"
 
-#: crates/immich-mount-core/src/settings.rs:68
+#: crates/immich-mount-core/src/settings.rs:70
 msgid "Headless only: a 0600 file holding the credential"
 msgstr "Kun uden skrivebord: en 0600-fil med loginoplysningerne"
 
-#: crates/immich-mount-core/src/settings.rs:74
+#: crates/immich-mount-core/src/settings.rs:76
 msgid "Never"
 msgstr "Aldrig"
 
-#: crates/immich-mount-core/src/settings.rs:75
+#: crates/immich-mount-core/src/settings.rs:77
 msgid "From 500 Items"
 msgstr "Fra 500 elementer"
 
-#: crates/immich-mount-core/src/settings.rs:76
+#: crates/immich-mount-core/src/settings.rs:78
 msgid "Always"
 msgstr "Altid"
 
-#: crates/immich-mount-core/src/settings.rs:77
+#: crates/immich-mount-core/src/settings.rs:79
 msgid "Year in the Name (2023 - Trip)"
 msgstr "År i navnet (2023 - Tur)"
 
-#: crates/immich-mount-core/src/settings.rs:78
+#: crates/immich-mount-core/src/settings.rs:80
 msgid "Year Folders (2023/Trip)"
 msgstr "Årsmapper (2023/Tur)"
 
-#: crates/immich-mount-core/src/settings.rs:79
+#: crates/immich-mount-core/src/settings.rs:81
 msgid "Name Only (Trip)"
 msgstr "Kun navn (Tur)"
 
-#: crates/immich-mount-core/src/settings.rs:80
+#: crates/immich-mount-core/src/settings.rs:82
 msgid "Date and Time Taken"
 msgstr "Dato og klokkeslæt for optagelse"
 
-#: crates/immich-mount-core/src/settings.rs:81
+#: crates/immich-mount-core/src/settings.rs:83
 msgid "Original File Names"
 msgstr "Oprindelige filnavne"
 

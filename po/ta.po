@@ -96,7 +96,7 @@ msgid "Thumbnails"
 msgstr "சிறுபடங்கள்"
 
 #: crates/immich-mount-desktop/src/preferences.rs:18
-#: crates/immich-mount-gnome/src/window.blp:306
+#: crates/immich-mount-gnome/src/window.blp:310
 msgid "Cache"
 msgstr "தற்காலிகச் சேமிப்பு"
 
@@ -143,13 +143,13 @@ msgstr "அந்த முகவரியைப் பயன்படுத்�
 
 #: crates/immich-mount-desktop/src/session.rs:161
 #: crates/immich-mount-desktop/src/session.rs:171
-#: crates/immich-mount-desktop/src/session.rs:365
-#: crates/immich-mount-desktop/src/session.rs:367
+#: crates/immich-mount-desktop/src/session.rs:368
+#: crates/immich-mount-desktop/src/session.rs:370
 msgid "Kept in {file}"
 msgstr "{file} இல் வைக்கப்பட்டுள்ளது"
 
 #: crates/immich-mount-desktop/src/session.rs:166
-#: crates/immich-mount-desktop/src/session.rs:369
+#: crates/immich-mount-desktop/src/session.rs:372
 msgid "Kept in the keyring"
 msgstr "கீரிங்கில் வைக்கப்பட்டுள்ளது"
 
@@ -157,11 +157,11 @@ msgstr "கீரிங்கில் வைக்கப்பட்டுள�
 msgid "The keyring stayed locked, so nothing was saved."
 msgstr "கீரிங் பூட்டியே இருந்தது, எனவே எதுவும் சேமிக்கப்படவில்லை."
 
-#: crates/immich-mount-desktop/src/session.rs:247
+#: crates/immich-mount-desktop/src/session.rs:250
 msgid "Signed in, but the mount cannot start: {error}."
 msgstr "உள்நுழைந்துவிட்டீர்கள், ஆனால் மவுண்ட்டைத் தொடங்க முடியாது: {error}."
 
-#: crates/immich-mount-desktop/src/session.rs:251
+#: crates/immich-mount-desktop/src/session.rs:254
 msgid "Signed in, but the mount did not start: {error}"
 msgstr "உள்நுழைந்துவிட்டீர்கள், ஆனால் மவுண்ட் தொடங்கவில்லை: {error}"
 
@@ -205,66 +205,66 @@ msgstr "விசைப்பலகைக் குறுக்குவழி�
 msgid "Quit"
 msgstr "மூடு"
 
-#: crates/immich-mount-gnome/src/window.rs:263
+#: crates/immich-mount-gnome/src/window.rs:265
 #: crates/immich-mount-kde/qml/Main.qml:321
 msgid "Continue in your browser"
 msgstr "உங்கள் உலாவியில் தொடரவும்"
 
-#: crates/immich-mount-gnome/src/window.rs:274
+#: crates/immich-mount-gnome/src/window.rs:276
 msgid "This sign-in belongs to an earlier attempt. Finish the latest one, or sign in again."
 msgstr "இந்த உள்நுழைவு முந்தைய முயற்சிக்கு உரியது. சமீபத்திய முயற்சியை நிறைவுசெய்யவும், அல்லது மீண்டும் உள்நுழையவும்."
 
-#: crates/immich-mount-gnome/src/window.rs:286
+#: crates/immich-mount-gnome/src/window.rs:288
 msgid "Enter your email and password"
 msgstr "உங்கள் மின்னஞ்சலையும் கடவுச்சொல்லையும் உள்ளிடவும்"
 
-#: crates/immich-mount-gnome/src/window.rs:297
+#: crates/immich-mount-gnome/src/window.rs:299
 msgid "Enter an API key"
 msgstr "API விசையை உள்ளிடவும்"
 
-#: crates/immich-mount-gnome/src/window.rs:324
+#: crates/immich-mount-gnome/src/window.rs:326
 msgid "Signed in as {account}"
 msgstr "{account} ஆக உள்நுழைந்துள்ளீர்கள்"
 
-#: crates/immich-mount-gnome/src/window.rs:390
+#: crates/immich-mount-gnome/src/window.rs:394
 msgid "Signed in, but the status could not be read"
 msgstr "உள்நுழைந்துவிட்டீர்கள், ஆனால் நிலையைப் படிக்க முடியவில்லை"
 
-#: crates/immich-mount-gnome/src/window.rs:417
-#: crates/immich-mount-kde/qml/Main.qml:396
+#: crates/immich-mount-gnome/src/window.rs:421
+#: crates/immich-mount-kde/qml/Main.qml:397
 msgid "Signed Out of Immich"
 msgstr "Immich-இலிருந்து வெளியேறிவிட்டீர்கள்"
 
-#: crates/immich-mount-gnome/src/window.rs:417
-#: crates/immich-mount-kde/qml/Main.qml:397
+#: crates/immich-mount-gnome/src/window.rs:421
+#: crates/immich-mount-kde/qml/Main.qml:398
 msgid "Sign in again to keep browsing. Your caches are kept."
 msgstr "தொடர்ந்து உலாவ மீண்டும் உள்நுழையவும். உங்கள் தற்காலிகச் சேமிப்புகள் வைக்கப்பட்டுள்ளன."
 
-#: crates/immich-mount-gnome/src/window.rs:418
-#: crates/immich-mount-gnome/src/window.blp:209
+#: crates/immich-mount-gnome/src/window.rs:422
+#: crates/immich-mount-gnome/src/window.blp:213
 msgid "Your Library Is in Files"
 msgstr "உங்கள் லைப்ரரி கோப்புகள் பயன்பாட்டில் உள்ளது"
 
-#: crates/immich-mount-gnome/src/window.rs:418
-#: crates/immich-mount-kde/qml/Main.qml:398
+#: crates/immich-mount-gnome/src/window.rs:422
+#: crates/immich-mount-kde/qml/Main.qml:399
 msgid "Browse it like any folder. Originals download only when you open them."
 msgstr "எந்தக் கோப்புறையையும் போல இதை உலாவவும். அசல் கோப்புகள் நீங்கள் திறக்கும்போது மட்டுமே பதிவிறக்கப்படும்."
 
-#: crates/immich-mount-gnome/src/window.rs:419
-#: crates/immich-mount-kde/qml/Main.qml:396
+#: crates/immich-mount-gnome/src/window.rs:423
+#: crates/immich-mount-kde/qml/Main.qml:397
 msgid "Not Mounted"
 msgstr "மவுண்ட் செய்யப்படவில்லை"
 
-#: crates/immich-mount-gnome/src/window.rs:419
+#: crates/immich-mount-gnome/src/window.rs:423
 msgid "Mount it to browse your library in Files."
 msgstr "கோப்புகள் பயன்பாட்டில் உங்கள் லைப்ரரியை உலாவ இதை மவுண்ட் செய்யவும்."
 
-#: crates/immich-mount-gnome/src/window.rs:462
+#: crates/immich-mount-gnome/src/window.rs:466
 msgid "Disconnected"
 msgstr "இணைப்பு துண்டிக்கப்பட்டது"
 
 #: crates/immich-mount-gnome/src/window.blp:26
-#: crates/immich-mount-gnome/src/window.blp:202
+#: crates/immich-mount-gnome/src/window.blp:206
 msgid "Main Menu"
 msgstr "முதன்மை மெனு"
 
@@ -348,71 +348,71 @@ msgstr "டிரைவ் காட்டும் கோப்புறைக�
 msgid "The timeline, by year and month"
 msgstr "காலவரிசை, ஆண்டு மற்றும் மாதவாரியாக"
 
-#: crates/immich-mount-gnome/src/window.blp:166
-#: crates/immich-mount-gnome/src/window.blp:314
-#: crates/immich-mount-kde/qml/Main.qml:369
+#: crates/immich-mount-gnome/src/window.blp:170
+#: crates/immich-mount-gnome/src/window.blp:318
+#: crates/immich-mount-kde/qml/Main.qml:370
 msgid "Location"
 msgstr "இருப்பிடம்"
 
-#: crates/immich-mount-gnome/src/window.blp:169
-#: crates/immich-mount-kde/qml/Main.qml:372
+#: crates/immich-mount-gnome/src/window.blp:173
+#: crates/immich-mount-kde/qml/Main.qml:373
 msgid "Folder"
 msgstr "கோப்புறை"
 
-#: crates/immich-mount-gnome/src/window.blp:175
-#: crates/immich-mount-gnome/src/window.blp:223
+#: crates/immich-mount-gnome/src/window.blp:179
+#: crates/immich-mount-gnome/src/window.blp:227
 msgid "_Open in Files"
 msgstr "கோப்புகள் பயன்பாட்டில் திற (_O)"
 
-#: crates/immich-mount-gnome/src/window.blp:234
+#: crates/immich-mount-gnome/src/window.blp:238
 msgid "_Unmount"
 msgstr "அன்மவுண்ட் செய் (_U)"
 
-#: crates/immich-mount-gnome/src/window.blp:236
+#: crates/immich-mount-gnome/src/window.blp:240
 msgid "Take it out of Files until you mount it again or log in"
 msgstr "மீண்டும் மவுண்ட் செய்யும் வரை அல்லது அடுத்த முறை கணினியில் உள்நுழையும் வரை இதைக் கோப்புகள் பயன்பாட்டிலிருந்து அகற்று"
 
-#: crates/immich-mount-gnome/src/window.blp:245
+#: crates/immich-mount-gnome/src/window.blp:249
 msgid "_Mount"
 msgstr "மவுண்ட் செய் (_M)"
 
-#: crates/immich-mount-gnome/src/window.blp:261
+#: crates/immich-mount-gnome/src/window.blp:265
 msgid "Sign In _Again"
 msgstr "மீண்டும் உள்நுழைக (_A)"
 
-#: crates/immich-mount-gnome/src/window.blp:273
+#: crates/immich-mount-gnome/src/window.blp:277
 msgid "Server"
 msgstr "சேவையகம்"
 
-#: crates/immich-mount-gnome/src/window.blp:281
+#: crates/immich-mount-gnome/src/window.blp:285
 msgid "Account"
 msgstr "கணக்கு"
 
-#: crates/immich-mount-gnome/src/window.blp:290
+#: crates/immich-mount-gnome/src/window.blp:294
 msgid "Credential"
 msgstr "அனுமதிச் சான்று"
 
-#: crates/immich-mount-gnome/src/window.blp:298
+#: crates/immich-mount-gnome/src/window.blp:302
 msgid "Connection"
 msgstr "இணைப்பு"
 
-#: crates/immich-mount-gnome/src/window.blp:322
+#: crates/immich-mount-gnome/src/window.blp:326
 msgid "Uploading"
 msgstr "பதிவேற்றுகிறது"
 
-#: crates/immich-mount-gnome/src/window.blp:333
+#: crates/immich-mount-gnome/src/window.blp:337
 msgid "_Disconnect"
 msgstr "இணைப்பைத் துண்டி (_D)"
 
-#: crates/immich-mount-gnome/src/window.blp:354
+#: crates/immich-mount-gnome/src/window.blp:358
 msgid "_Preferences"
 msgstr "விருப்பங்கள் (_P)"
 
-#: crates/immich-mount-gnome/src/window.blp:359
+#: crates/immich-mount-gnome/src/window.blp:363
 msgid "_Keyboard Shortcuts"
 msgstr "விசைப்பலகைக் குறுக்குவழிகள் (_K)"
 
-#: crates/immich-mount-gnome/src/window.blp:364
+#: crates/immich-mount-gnome/src/window.blp:368
 msgid "_About Immich Mount"
 msgstr "Immich Mount பற்றி (_A)"
 
@@ -540,77 +540,77 @@ msgstr "எந்த உலாவியையும் திறக்க மு
 msgid "Sign-in address"
 msgstr "உள்நுழைவு முகவரி"
 
-#: crates/immich-mount-kde/qml/Main.qml:371
+#: crates/immich-mount-kde/qml/Main.qml:372
 msgid "Folder:"
 msgstr "கோப்புறை:"
 
-#: crates/immich-mount-kde/qml/Main.qml:376
+#: crates/immich-mount-kde/qml/Main.qml:377
 msgid "Dolphin"
 msgstr "Dolphin"
 
-#: crates/immich-mount-kde/qml/Main.qml:381
-#: crates/immich-mount-kde/qml/Main.qml:402
+#: crates/immich-mount-kde/qml/Main.qml:382
+#: crates/immich-mount-kde/qml/Main.qml:403
 msgid "Open in Dolphin"
 msgstr "Dolphin-இல் திற"
 
-#: crates/immich-mount-kde/qml/Main.qml:396
+#: crates/immich-mount-kde/qml/Main.qml:397
 msgid "Your Library Is in Dolphin"
 msgstr "உங்கள் லைப்ரரி Dolphin-இல் உள்ளது"
 
-#: crates/immich-mount-kde/qml/Main.qml:399
+#: crates/immich-mount-kde/qml/Main.qml:400
 msgid "Mount it to browse your library in Dolphin."
 msgstr "Dolphin-இல் உங்கள் லைப்ரரியை உலாவ இதை மவுண்ட் செய்யவும்."
 
-#: crates/immich-mount-kde/qml/Main.qml:402
+#: crates/immich-mount-kde/qml/Main.qml:403
 msgid "Sign In Again"
 msgstr "மீண்டும் உள்நுழைக"
 
-#: crates/immich-mount-kde/qml/Main.qml:402
+#: crates/immich-mount-kde/qml/Main.qml:403
 msgid "Mount"
 msgstr "மவுண்ட் செய்"
 
-#: crates/immich-mount-kde/qml/Main.qml:410
+#: crates/immich-mount-kde/qml/Main.qml:411
 #: apple/App/ContentView.swift:105
 msgid "Server:"
 msgstr "சேவையகம்:"
 
-#: crates/immich-mount-kde/qml/Main.qml:411
+#: crates/immich-mount-kde/qml/Main.qml:412
 msgid "Account:"
 msgstr "கணக்கு:"
 
-#: crates/immich-mount-kde/qml/Main.qml:412
+#: crates/immich-mount-kde/qml/Main.qml:413
 msgid "Credential:"
 msgstr "அனுமதிச் சான்று:"
 
-#: crates/immich-mount-kde/qml/Main.qml:413
+#: crates/immich-mount-kde/qml/Main.qml:414
 msgid "Connection:"
 msgstr "இணைப்பு:"
 
-#: crates/immich-mount-kde/qml/Main.qml:414
+#: crates/immich-mount-kde/qml/Main.qml:415
 msgid "Cache:"
 msgstr "தற்காலிகச் சேமிப்பு:"
 
-#: crates/immich-mount-kde/qml/Main.qml:415
+#: crates/immich-mount-kde/qml/Main.qml:416
 msgid "Location:"
 msgstr "இருப்பிடம்:"
 
-#: crates/immich-mount-kde/qml/Main.qml:416
+#: crates/immich-mount-kde/qml/Main.qml:417
 msgid "Uploading:"
 msgstr "பதிவேற்றுகிறது:"
 
-#: crates/immich-mount-kde/qml/Main.qml:417
+#: crates/immich-mount-kde/qml/Main.qml:418
 msgid "Dolphin:"
 msgstr "Dolphin:"
 
-#: crates/immich-mount-kde/qml/Main.qml:422
+#: crates/immich-mount-kde/qml/Main.qml:423
 msgid "Unmount"
 msgstr "அன்மவுண்ட் செய்"
 
-#: crates/immich-mount-kde/qml/Main.qml:429
+#: crates/immich-mount-kde/qml/Main.qml:430
 msgid "Disconnect"
 msgstr "இணைப்பைத் துண்டி"
 
-#: crates/immich-mount-kde/qml/Main.qml:441
+#: crates/immich-mount-kde/qml/Main.qml:442
 msgid "Immich Mount is an independent, unofficial project. It is not affiliated with, endorsed by, or sponsored by the Immich project or FUTO."
 msgstr "Immich Mount ஒரு சுயாதீனமான, அதிகாரப்பூர்வமற்ற திட்டம். இது Immich திட்டத்துடனோ FUTO உடனோ தொடர்புடையதல்ல, அவற்றின் ஒப்புதலையோ நிதியுதவியையோ பெற்றதும் அல்ல."
 
@@ -647,78 +647,86 @@ msgid "Show the Places section"
 msgstr "Places பிரிவைக் காட்டு"
 
 #: crates/immich-mount-core/src/settings.rs:58
+msgid "Show the Archive section"
+msgstr "Archive பிரிவைக் காட்டு"
+
+#: crates/immich-mount-core/src/settings.rs:59
 msgid "Day folders inside months"
 msgstr "மாதங்களுக்குள் நாள் கோப்புறைகள்"
 
-#: crates/immich-mount-core/src/settings.rs:59
+#: crates/immich-mount-core/src/settings.rs:60
 msgid "Year and month folders inside albums"
 msgstr "ஆல்பங்களுக்குள் ஆண்டு, மாதக் கோப்புறைகள்"
 
-#: crates/immich-mount-core/src/settings.rs:60
+#: crates/immich-mount-core/src/settings.rs:61
 msgid "Year and month folders inside people"
 msgstr "நபர்களுக்குள் ஆண்டு, மாதக் கோப்புறைகள்"
 
-#: crates/immich-mount-core/src/settings.rs:61
+#: crates/immich-mount-core/src/settings.rs:62
 msgid "Year and month folders inside cities"
 msgstr "நகரங்களுக்குள் ஆண்டு, மாதக் கோப்புறைகள்"
 
-#: crates/immich-mount-core/src/settings.rs:62
+#: crates/immich-mount-core/src/settings.rs:63
+msgid "Year and month folders inside the archive"
+msgstr "காப்பகத்துக்குள் ஆண்டு, மாதக் கோப்புறைகள்"
+
+#: crates/immich-mount-core/src/settings.rs:64
 msgid "How album folders are named and grouped"
 msgstr "ஆல்பக் கோப்புறைகளுக்குப் பெயரிடுவதும் குழுவாக்குவதும் எப்படி"
 
-#: crates/immich-mount-core/src/settings.rs:63
+#: crates/immich-mount-core/src/settings.rs:65
 msgid "How files are named"
 msgstr "கோப்புகளுக்குப் பெயரிடுவது எப்படி"
 
-#: crates/immich-mount-core/src/settings.rs:64
+#: crates/immich-mount-core/src/settings.rs:66
 msgid "The content cache's size limit"
 msgstr "உள்ளடக்கத் தற்காலிகச் சேமிப்பின் அளவு வரம்பு"
 
-#: crates/immich-mount-core/src/settings.rs:65
+#: crates/immich-mount-core/src/settings.rs:67
 msgid "Show the Upload folder, and upload what is copied into it"
 msgstr "Upload கோப்புறையைக் காட்டு, அதில் நகலெடுக்கப்படுவதைப் பதிவேற்று"
 
-#: crates/immich-mount-core/src/settings.rs:66
+#: crates/immich-mount-core/src/settings.rs:68
 msgid "Also seed 1024 px thumbnails from the preview"
 msgstr "முன்னோட்டத்திலிருந்து 1024 px சிறுபடங்களையும் உருவாக்கு"
 
-#: crates/immich-mount-core/src/settings.rs:67
+#: crates/immich-mount-core/src/settings.rs:69
 msgid "Refuse thumbnailer reads of originals"
 msgstr "அசல் கோப்புகளைச் சிறுபட உருவாக்கிகள் படிப்பதை மறு"
 
-#: crates/immich-mount-core/src/settings.rs:68
+#: crates/immich-mount-core/src/settings.rs:70
 msgid "Headless only: a 0600 file holding the credential"
 msgstr "ஹெட்லெஸ் மட்டும்: அனுமதிச் சான்றைக் கொண்ட 0600 கோப்பு"
 
-#: crates/immich-mount-core/src/settings.rs:74
+#: crates/immich-mount-core/src/settings.rs:76
 msgid "Never"
 msgstr "ஒருபோதும் இல்லை"
 
-#: crates/immich-mount-core/src/settings.rs:75
+#: crates/immich-mount-core/src/settings.rs:77
 msgid "From 500 Items"
 msgstr "500 உருப்படிகளிலிருந்து"
 
-#: crates/immich-mount-core/src/settings.rs:76
+#: crates/immich-mount-core/src/settings.rs:78
 msgid "Always"
 msgstr "எப்போதும்"
 
-#: crates/immich-mount-core/src/settings.rs:77
+#: crates/immich-mount-core/src/settings.rs:79
 msgid "Year in the Name (2023 - Trip)"
 msgstr "பெயரில் ஆண்டு (2023 - பயணம்)"
 
-#: crates/immich-mount-core/src/settings.rs:78
+#: crates/immich-mount-core/src/settings.rs:80
 msgid "Year Folders (2023/Trip)"
 msgstr "ஆண்டுக் கோப்புறைகள் (2023/பயணம்)"
 
-#: crates/immich-mount-core/src/settings.rs:79
+#: crates/immich-mount-core/src/settings.rs:81
 msgid "Name Only (Trip)"
 msgstr "பெயர் மட்டும் (பயணம்)"
 
-#: crates/immich-mount-core/src/settings.rs:80
+#: crates/immich-mount-core/src/settings.rs:82
 msgid "Date and Time Taken"
 msgstr "எடுத்த தேதியும் நேரமும்"
 
-#: crates/immich-mount-core/src/settings.rs:81
+#: crates/immich-mount-core/src/settings.rs:83
 msgid "Original File Names"
 msgstr "அசல் கோப்புப் பெயர்கள்"
 

@@ -12,11 +12,12 @@ pub enum Section {
     Albums,
     People,
     Places,
+    Archive,
 }
 
 impl Section {
     /// Every section, in the order the root lists them.
-    pub const ALL: [Section; 4] = [Section::Photos, Section::Albums, Section::People, Section::Places];
+    pub const ALL: [Section; 5] = [Section::Photos, Section::Albums, Section::People, Section::Places, Section::Archive];
 
     /// The folder name, using Immich's label.
     pub fn folder_name(self) -> &'static str {
@@ -25,6 +26,7 @@ impl Section {
             Section::Albums => "Albums",
             Section::People => "People",
             Section::Places => "Places",
+            Section::Archive => "Archive",
         }
     }
 }
@@ -112,7 +114,7 @@ mod tests {
     #[test]
     fn sections_use_immichs_labels_in_order() {
         let names: Vec<&str> = Section::ALL.iter().map(|section| section.folder_name()).collect();
-        assert_eq!(names, ["Photos", "Albums", "People", "Places"]);
+        assert_eq!(names, ["Photos", "Albums", "People", "Places", "Archive"]);
     }
 
     #[test]

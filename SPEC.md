@@ -24,11 +24,11 @@ Use these words in code, docs and issues.
 - **Adapter**: the platform code that presents the Core through one native mechanism (FUSE and freedesktop
   services on Linux now). Avoid: driver, plugin.
 - **Section**: a top-level folder of the mount that mirrors an Immich section (the timeline, Albums, People,
-  Places). Each one can be switched off.
+  Places, Archive). Each one can be switched on or off.
 - **Appearance**: one path at which an Asset is visible. An Asset has one Appearance per folder it shows up in
   (its month, each album, each person, its city). Appearances share content, but each has its own path and its own
   thumbnail-cache entry. Avoid: copy, link, duplicate.
-- **Date group**: an automatic `Year/MM Month` level inside an album, person or city folder.
+- **Date group**: an automatic `Year/MM Month` level inside an album, person or city folder, or the archive.
 - **Content cache**: the daemon's bounded store of original bytes, filled on demand in blocks. Never the only
   copy of anything.
 - **Thumbnail seeding**: writing Immich's own thumbnails into the freedesktop thumbnail cache, so the file manager
@@ -53,7 +53,8 @@ Use these words in code, docs and issues.
 
 ### Layout
 
-The sections carry Immich's own labels: Photos, Albums, People, Places. Beside them, `Upload` takes new files.
+The sections carry Immich's own labels: Photos, Albums, People, Places, Archive. Beside them, `Upload` takes new
+files.
 
 ```
 ~/Immich/                                  shown as "Immich Mount" (`mount.name`) in the file manager
@@ -65,10 +66,13 @@ The sections carry Immich's own labels: Photos, Albums, People, Places. Beside t
 │  └─ <Name>/[<Year>/<MM Month>/]<file>
 ├─ Places/
 │  └─ <Country>/<City>/[<Year>/<MM Month>/]<file>
+├─ Archive/                                off until switched on (`sections.archive`)
+│  └─ [<Year>/<MM Month>/]<file>
 └─ Upload/                                 the only folder that takes new files: copied in, uploaded, then gone
 ```
 
-- Each section can be switched off; it then disappears from the root.
+- Each section can be switched off; it then disappears from the root. Archive is off until switched on: most
+  libraries hardly use it, and a folder nobody opens is clutter.
 - Month folders are named `MM Month` (`03 March`), and day folders `DD` (`15`), so sorting by name is chronological.
 - **Busy months in Photos** are split into day folders by the setting `grouping.photos`:
   - `atLeast500` (the default): only months with 500 or more Assets
@@ -89,8 +93,10 @@ The sections carry Immich's own labels: Photos, Albums, People, Places. Beside t
     the mount cannot see.)
   - **An empty album** has no year, and appears without one (`Albums/Summer trip/`, or in `Unknown Year/` with
     `year-folders`).
-- **Date groups** inside albums, people and cities follow a per-section mode: `never`, `atLeast500` (the default)
-  or `always`. With `atLeast500`, a folder with 500 or more Assets is split into years and months.
+- **Date groups** inside albums, people, cities and the archive follow a per-section mode: `never`, `atLeast500` or
+  `always`. With `atLeast500`, a folder with 500 or more Assets is split into years and months. The default is
+  `atLeast500`, and `always` for the archive: an archive mostly grows, and with `atLeast500` its paths would all
+  change the day it reached 500.
 
 ### Membership: Immich decides
 
@@ -108,6 +114,7 @@ has an answer.
 | A person | Search by `personIds`; date groups by each Asset's `localDateTime` |
 | Places | `GET /search/suggestions?type=country`, then `type=city&country=` |
 | A city | Search by `city` + `country`; date groups by each Asset's `localDateTime` (Immich has no city timeline) |
+| Archive | Search by `visibility: archive`, what Immich's Archive page shows; date groups by each Asset's `localDateTime` |
 
 **Undated Assets.** The API never returns an Asset without a date, because an upload must send one. A file with no
 metadata sits wherever its uploader's date put it (the lab's ended up in 1970), and the mount shows it where Immich
@@ -118,7 +125,7 @@ does.
 | Asset | Shown |
 |---|---|
 | On the timeline | Yes |
-| Archived | Only inside albums |
+| Archived | Only inside albums and Archive |
 | Hidden (the video half of a Live Photo) | No; the still is shown |
 | In the locked folder | No |
 | Trashed | No; it disappears at the next refresh |
@@ -327,7 +334,9 @@ table in the Core drives validation, `immich-mount configure`, and the app's set
 | `mount.name` | `immich-mount`, `immich-drive`, `immich` | `immich-mount` | The drive's name in the sidebar: "Immich Mount", "Immich Drive" or "Immich" in Files and Dolphin. The mount point stays `mount.path`; the apps apply it by restarting the daemon. Linux only: Finder's sidebar shows the app's name, "Immich Mount", for a provider's only location |
 | `mount.at_login` | bool | `true` | Mount when the session starts: setting it enables or disables the user service |
 | `sections.photos` / `.albums` / `.people` / `.places` | bool | `true` | Show the section |
+| `sections.archive` | bool | `false` | Show the Archive section |
 | `grouping.albums` / `.people` / `.places` | `never`, `atLeast500`, `always` | `atLeast500` | Date groups |
+| `grouping.archive` | `never`, `atLeast500`, `always` | `always` | Date groups in the archive |
 | `grouping.photos` | `never`, `atLeast500`, `always` | `atLeast500` | Day folders inside months |
 | `albums.layout` | `year-prefix`, `year-folders`, `flat` | `year-prefix` | How album folders are named and grouped |
 | `files.naming` | `date-time`, `original` | `date-time` | How files are named |

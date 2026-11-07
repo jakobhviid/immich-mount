@@ -256,7 +256,7 @@ async fn follow_changes<Source, Names>(
     interval.set_missed_tick_behavior(tokio::time::MissedTickBehavior::Delay);
     loop {
         interval.tick().await;
-        let outcome = source.changes().await;
+        let outcome = source.changes(tree.watched()).await;
         let previous = *state.lock().expect("state lock");
         let current = match &outcome {
             Ok(_) => State::Online,
@@ -288,9 +288,10 @@ async fn follow_changes<Source, Names>(
                     log::info!("Immich changed in a way that touches everything; {forgotten} folder(s) will be read again");
                 } else {
                     log::info!(
-                        "Immich changed: {} month(s), {} album(s); {forgotten} folder(s) will be read again",
+                        "Immich changed: {} month(s), {} album(s){}; {forgotten} folder(s) will be read again",
                         changes.months.len(),
-                        changes.albums.len()
+                        changes.albums.len(),
+                        if changes.archive_changed { ", the archive" } else { "" }
                     );
                 }
             }

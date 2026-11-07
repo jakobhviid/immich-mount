@@ -55,10 +55,12 @@ pub const SETTINGS: &[Setting] = &[
     Setting { key: "sections.albums", kind: Kind::Bool, description: "Show the Albums section", default: "true" },
     Setting { key: "sections.people", kind: Kind::Bool, description: "Show the People section", default: "true" },
     Setting { key: "sections.places", kind: Kind::Bool, description: "Show the Places section", default: "true" },
+    Setting { key: "sections.archive", kind: Kind::Bool, description: "Show the Archive section", default: "false" },
     Setting { key: "grouping.photos", kind: Kind::Choice(GROUPING_CHOICES), description: "Day folders inside months", default: "atLeast500" },
     Setting { key: "grouping.albums", kind: Kind::Choice(GROUPING_CHOICES), description: "Year and month folders inside albums", default: "atLeast500" },
     Setting { key: "grouping.people", kind: Kind::Choice(GROUPING_CHOICES), description: "Year and month folders inside people", default: "atLeast500" },
     Setting { key: "grouping.places", kind: Kind::Choice(GROUPING_CHOICES), description: "Year and month folders inside cities", default: "atLeast500" },
+    Setting { key: "grouping.archive", kind: Kind::Choice(GROUPING_CHOICES), description: "Year and month folders inside the archive", default: "always" },
     Setting { key: "albums.layout", kind: Kind::Choice(&["year-prefix", "year-folders", "flat"]), description: "How album folders are named and grouped", default: "year-prefix" },
     Setting { key: "files.naming", kind: Kind::Choice(&["date-time", "original"]), description: "How files are named", default: "date-time" },
     Setting { key: "cache.limit", kind: Kind::Size, description: "The content cache's size limit", default: "10GiB" },
@@ -150,10 +152,12 @@ pub struct Config {
     pub show_albums: bool,
     pub show_people: bool,
     pub show_places: bool,
+    pub show_archive: bool,
     pub grouping_photos: GroupingMode,
     pub grouping_albums: GroupingMode,
     pub grouping_people: GroupingMode,
     pub grouping_places: GroupingMode,
+    pub grouping_archive: GroupingMode,
     pub album_layout: AlbumLayout,
     pub file_naming: FileNaming,
     pub cache_limit_bytes: u64,
@@ -190,10 +194,12 @@ impl Config {
             show_albums: flag("sections.albums")?,
             show_people: flag("sections.people")?,
             show_places: flag("sections.places")?,
+            show_archive: flag("sections.archive")?,
             grouping_photos: grouping(&effective("grouping.photos")?),
             grouping_albums: grouping(&effective("grouping.albums")?),
             grouping_people: grouping(&effective("grouping.people")?),
             grouping_places: grouping(&effective("grouping.places")?),
+            grouping_archive: grouping(&effective("grouping.archive")?),
             album_layout: match effective("albums.layout")?.as_str() {
                 "year-folders" => AlbumLayout::YearFolders,
                 "flat" => AlbumLayout::Flat,
@@ -281,6 +287,8 @@ mod tests {
         assert_eq!(config.album_layout, AlbumLayout::YearPrefix);
         assert_eq!(config.file_naming, FileNaming::DateTime);
         assert_eq!(config.grouping_photos, GroupingMode::AtLeast500);
+        assert!(!config.show_archive, "the archive is shown only when asked for");
+        assert_eq!(config.grouping_archive, GroupingMode::Always);
         assert_eq!(config.cache_limit_bytes, 10 << 30);
         assert!(config.server_url.is_none());
     }

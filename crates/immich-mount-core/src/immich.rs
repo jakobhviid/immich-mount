@@ -3,10 +3,10 @@
 //! Membership comes from Immich (ARCHITECTURE.md, "Membership comes from Immich"):
 //! - a timeline month is the ids in its timeline bucket, which groups by local time. Search filters in UTC, so it
 //!   only supplies the details (names, sizes, places), over the month widened by 14 hours on each side
-//! - albums, people and places are searches on the server's own filters
+//! - albums, people, places and the archive are searches on the server's own filters
 //!
 //! Hidden Assets (the video half of a Live Photo) and the locked folder never appear; archived Assets appear only in
-//! albums, as in Immich.
+//! albums and the archive, as in Immich.
 
 use std::collections::{HashMap, HashSet};
 
@@ -16,7 +16,7 @@ use immich_api::{ApiError, AssetQuery, Client, Fetched, ThumbnailSize, TimelineS
 
 use crate::content::{ContentSource, RangeBytes};
 use crate::model::{Album, Asset, Person, YearMonth};
-use crate::source::{LibraryChanges, LibrarySource, SourceError, ThumbnailKind, ThumbnailSource};
+use crate::source::{LibraryChanges, LibrarySource, SourceError, ThumbnailKind, ThumbnailSource, Watched};
 use crate::uploads::{MediaTypes, UploadError, UploadTarget, Uploaded};
 
 /// How far a capture in a month can lie outside it in UTC: time zone offsets run from -12 to +14 hours.
@@ -67,6 +67,16 @@ struct PollState {
     albums_etag: Option<String>,
     /// Per album: its name, Asset count and last update.
     albums: HashMap<String, (String, u64, DateTime<Utc>)>,
+    /// The archive's buckets, while it is watched.
+    archive: Option<WatchedBuckets>,
+}
+
+/// What the poll saw of a watched section's buckets: their ETag, and the months that hold Assets, with counts, in
+/// order.
+#[derive(Debug, Clone, Default, PartialEq, serde::Serialize, serde::Deserialize)]
+struct WatchedBuckets {
+    etag: Option<String>,
+    month_counts: Vec<(YearMonth, u32)>,
 }
 
 /// What the change poll saw, in a form kept between runs (`ImmichSource::poll_memory`).
@@ -76,6 +86,8 @@ struct PollMemory {
     month_counts: Vec<(YearMonth, u32)>,
     albums_etag: Option<String>,
     albums: Vec<(String, String, u64, DateTime<Utc>)>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    archive: Option<WatchedBuckets>,
 }
 
 impl ImmichSource {
@@ -108,6 +120,7 @@ impl ImmichSource {
             month_counts: poll.month_counts.iter().map(|(month, count)| (*month, *count)).collect(),
             albums_etag: poll.albums_etag.clone(),
             albums: poll.albums.iter().map(|(id, (name, count, updated_at))| (id.clone(), name.clone(), *count, *updated_at)).collect(),
+            archive: poll.archive.clone(),
         };
         serde_json::to_string(&memory).ok()
     }
@@ -121,12 +134,13 @@ impl ImmichSource {
         poll.month_counts = memory.month_counts.into_iter().collect();
         poll.albums_etag = memory.albums_etag;
         poll.albums = memory.albums.into_iter().map(|(id, name, count, updated_at)| (id, (name, count, updated_at))).collect();
+        poll.archive = memory.archive;
         poll.started = true;
         poll.sync_baseline_done = true;
     }
 
     /// What changed since the last poll (ARCHITECTURE.md, "Freshness").
-    async fn poll_changes(&self) -> Result<LibraryChanges, SourceError> {
+    async fn poll_changes(&self, watched: Watched) -> Result<LibraryChanges, SourceError> {
         let mut poll = self.poll.lock().await;
         let mut changes = LibraryChanges::default();
 
@@ -147,6 +161,12 @@ impl ImmichSource {
             }
             new_buckets = Some((counts, etag));
         }
+        // A section not watched is forgotten, so watching it again starts by taking note.
+        let archive = match watched.archive {
+            true => Some(self.watched_buckets(&TimelineScope::Archive, poll.archive.as_ref()).await?),
+            false => None,
+        };
+        changes.archive_changed = section_changed(poll.archive.as_ref(), archive.as_ref());
 
         // A credential that may not read albums still gets the timeline's changes.
         let albums_answer = match self.client.albums_if_changed(poll.albums_etag.as_deref()).await {
@@ -175,6 +195,7 @@ impl ImmichSource {
             poll.month_counts = counts;
             poll.buckets_etag = etag;
         }
+        poll.archive = archive;
 
         if self.client.credential().is_some_and(|credential| matches!(credential, immich_api::Credential::Session(_))) {
             // Sessions also follow the sync stream, which is exact: deletions and album membership included. Running
@@ -187,6 +208,23 @@ impl ImmichSource {
         }
         poll.started = true;
         Ok(changes)
+    }
+
+    /// A watched section's buckets as they are now: those seen before when the server answers that nothing changed.
+    async fn watched_buckets(&self, scope: &TimelineScope, seen: Option<&WatchedBuckets>) -> Result<WatchedBuckets, SourceError> {
+        let answer = self.client.time_buckets_if_changed(scope, seen.and_then(|seen| seen.etag.as_deref())).await.map_err(source_error)?;
+        Ok(match answer {
+            Fetched::NotModified => seen.cloned().unwrap_or_default(),
+            Fetched::Changed { value, etag } => {
+                let mut month_counts: Vec<(YearMonth, u32)> = value
+                    .iter()
+                    .filter(|bucket| bucket.count > 0)
+                    .map(|bucket| (YearMonth { year: bucket.month.year, month: bucket.month.month }, bucket.count))
+                    .collect();
+                month_counts.sort();
+                WatchedBuckets { etag, month_counts }
+            }
+        })
     }
 
     /// Read the sync stream's records since the last ack into `changes`, then ack them (ARCHITECTURE.md, "Freshness").
@@ -302,7 +340,7 @@ impl LibrarySource for ImmichSource {
             let bucket_month = immich_api::YearMonth::new(month.year, month.month).ok_or(SourceError::NotFound)?;
             let query = AssetQuery {
                 taken: Some(bucket_month.utc_range_widened(Duration::hours(TIME_ZONE_MARGIN_HOURS))),
-                timeline_only: true,
+                visibility: Some(Visibility::Timeline),
                 ..AssetQuery::default()
             };
             // Membership and details are asked for together: neither needs the other's answer.
@@ -391,8 +429,12 @@ impl LibrarySource for ImmichSource {
     async fn person_assets(&self, person_id: &str) -> Result<Vec<Asset>, SourceError> {
         self.check_online()?;
         let outcome: Result<Vec<Asset>, SourceError> = async {
-            self.search(AssetQuery { person_ids: Some(vec![person_id.to_owned()]), timeline_only: true, ..AssetQuery::default() })
-                .await
+            self.search(AssetQuery {
+                person_ids: Some(vec![person_id.to_owned()]),
+                visibility: Some(Visibility::Timeline),
+                ..AssetQuery::default()
+            })
+            .await
         }
         .await;
         self.note_outcome(&outcome);
@@ -419,9 +461,9 @@ impl LibrarySource for ImmichSource {
         outcome
     }
 
-    async fn changes(&self) -> Result<LibraryChanges, SourceError> {
+    async fn changes(&self, watched: Watched) -> Result<LibraryChanges, SourceError> {
         // The poll is also the probe that notices the server is back, so it never waits out the offline grace.
-        let outcome = match tokio::time::timeout(POLL_LIMIT, self.poll_changes()).await {
+        let outcome = match tokio::time::timeout(POLL_LIMIT, self.poll_changes(watched)).await {
             Ok(outcome) => outcome,
             Err(_) => Err(SourceError::Offline("the change poll took too long".to_owned())),
         };
@@ -435,10 +477,20 @@ impl LibrarySource for ImmichSource {
             self.search(AssetQuery {
                 country: Some(country.to_owned()),
                 city: Some(city.to_owned()),
-                timeline_only: true,
+                visibility: Some(Visibility::Timeline),
                 ..AssetQuery::default()
             })
             .await
+        }
+        .await;
+        self.note_outcome(&outcome);
+        outcome
+    }
+
+    async fn archive_assets(&self) -> Result<Vec<Asset>, SourceError> {
+        self.check_online()?;
+        let outcome: Result<Vec<Asset>, SourceError> = async {
+            self.search(AssetQuery { visibility: Some(Visibility::Archive), ..AssetQuery::default() }).await
         }
         .await;
         self.note_outcome(&outcome);
@@ -521,6 +573,11 @@ impl UploadTarget for ImmichSource {
     }
 }
 
+/// Whether a watched section's months changed between two polls. A section seen for the first time only takes note.
+fn section_changed(seen: Option<&WatchedBuckets>, now: Option<&WatchedBuckets>) -> bool {
+    matches!((seen, now), (Some(seen), Some(now)) if seen.month_counts != now.month_counts)
+}
+
 /// Whether an Asset belongs in the mount at all.
 fn is_shown(asset: &immich_api::Asset) -> bool {
     !asset.is_trashed && matches!(asset.visibility, Visibility::Timeline | Visibility::Archive)
@@ -577,6 +634,19 @@ mod tests {
         let fresh = ImmichSource::new(Client::new("http://127.0.0.1:9", None, "test").unwrap());
         fresh.recall_poll("not what a poll keeps").await;
         assert_eq!(fresh.poll_memory().await, None, "ignored: the next poll only takes note");
+        let with_archive = r#"{"buckets_etag":null,"month_counts":[],"albums_etag":null,"albums":[],"archive":{"etag":"W/\"2\"","month_counts":[[{"year":2023,"month":1},4]]}}"#;
+        source.recall_poll(with_archive).await;
+        let again: serde_json::Value = serde_json::from_str(&source.poll_memory().await.unwrap()).unwrap();
+        assert_eq!(again, serde_json::from_str::<serde_json::Value>(with_archive).unwrap(), "the archive's buckets are kept too");
+    }
+
+    #[test]
+    fn a_watched_section_changes_when_its_months_do() {
+        let buckets = |count| WatchedBuckets { etag: None, month_counts: vec![(YearMonth { year: 2023, month: 1 }, count)] };
+        assert!(section_changed(Some(&buckets(4)), Some(&buckets(5))));
+        assert!(!section_changed(Some(&buckets(4)), Some(&buckets(4))));
+        assert!(!section_changed(None, Some(&buckets(4))), "first seen: only noted");
+        assert!(!section_changed(Some(&buckets(4)), None), "no longer watched");
     }
 
     #[test]

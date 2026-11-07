@@ -244,7 +244,7 @@ Open:
 
 - **More sections:**
   - Partner-shared Assets: left out for now, because they belong to someone else's timeline. A `Partners/` section?
-  - Favorites and Archive, which ImmichDrive (Windows) and immichfs both offer
+  - Favorites, which ImmichDrive (Windows) and immichfs both offer
 - **A `CACHEDIR.TAG` at the mount's root,** so restic, borg and tar with `--exclude-caches` skip it. It helps
   backups, but users would see an odd file in their Immich folder. Lean: yes.
 - **Trusting a self-signed server certificate** from the app, for homelabs without a private CA in the system store.

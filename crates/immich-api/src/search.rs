@@ -17,7 +17,7 @@ use chrono::{DateTime, Utc};
 use serde::Deserialize;
 use serde_json::{json, Map, Value};
 
-use crate::asset::{Asset, AssetWire};
+use crate::asset::{Asset, AssetWire, Visibility};
 use crate::client::Client;
 use crate::dates::format_utc;
 use crate::error::ApiError;
@@ -40,8 +40,9 @@ pub struct AssetQuery {
     pub taken: Option<Range<DateTime<Utc>>>,
     /// Changed by Immich after this instant (archive, trash, edits; not album membership).
     pub updated_after: Option<DateTime<Utc>>,
-    /// Only Assets on the main timeline: no archived, hidden or locked ones.
-    pub timeline_only: bool,
+    /// Only Assets of this visibility: `Timeline` for the main timeline (no archived, hidden or locked ones),
+    /// `Archive` for the archive. Without it, a search finds timeline and archived Assets.
+    pub visibility: Option<Visibility>,
 }
 
 impl AssetQuery {
@@ -70,8 +71,8 @@ impl AssetQuery {
         if let Some(updated_after) = &self.updated_after {
             filter.insert("updatedAt".to_owned(), json!({ "gt": format_utc(updated_after) }));
         }
-        if self.timeline_only {
-            filter.insert("visibility".to_owned(), json!({ "eq": "timeline" }));
+        if let Some(visibility) = &self.visibility {
+            filter.insert("visibility".to_owned(), json!({ "eq": visibility.as_str() }));
         }
 
         let mut body = json!({
@@ -191,7 +192,7 @@ mod tests {
             country: Some("France".into()),
             taken: Some(parse_utc("2018-11-01T00:00:00Z").unwrap()..parse_utc("2018-12-01T00:00:00Z").unwrap()),
             updated_after: Some(parse_utc("2026-01-01T00:00:00Z").unwrap()),
-            timeline_only: true,
+            visibility: Some(Visibility::Archive),
         };
         let body = query.to_body(5000, Some("eyJvZmZzZXQiOjJ9"));
         assert_eq!(
@@ -204,7 +205,7 @@ mod tests {
                 "country": { "eq": "France" },
                 "takenAt": { "gte": "2018-11-01T00:00:00.000Z", "lt": "2018-12-01T00:00:00.000Z" },
                 "updatedAt": { "gt": "2026-01-01T00:00:00.000Z" },
-                "visibility": { "eq": "timeline" },
+                "visibility": { "eq": "archive" },
             })
         );
         assert_eq!(body["size"], json!(1000), "clamped to the server's maximum");
@@ -214,7 +215,7 @@ mod tests {
     #[test]
     fn deprecated_fields_are_never_sent() {
         let body = AssetQuery {
-            timeline_only: true,
+            visibility: Some(Visibility::Timeline),
             ..AssetQuery::default()
         }
         .to_body(10, None);

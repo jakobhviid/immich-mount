@@ -96,7 +96,7 @@ msgid "Thumbnails"
 msgstr "缩略图"
 
 #: crates/immich-mount-desktop/src/preferences.rs:18
-#: crates/immich-mount-gnome/src/window.blp:306
+#: crates/immich-mount-gnome/src/window.blp:310
 msgid "Cache"
 msgstr "缓存"
 
@@ -143,13 +143,13 @@ msgstr "无法使用该地址：{error}"
 
 #: crates/immich-mount-desktop/src/session.rs:161
 #: crates/immich-mount-desktop/src/session.rs:171
-#: crates/immich-mount-desktop/src/session.rs:365
-#: crates/immich-mount-desktop/src/session.rs:367
+#: crates/immich-mount-desktop/src/session.rs:368
+#: crates/immich-mount-desktop/src/session.rs:370
 msgid "Kept in {file}"
 msgstr "保存在 {file} 中"
 
 #: crates/immich-mount-desktop/src/session.rs:166
-#: crates/immich-mount-desktop/src/session.rs:369
+#: crates/immich-mount-desktop/src/session.rs:372
 msgid "Kept in the keyring"
 msgstr "保存在密钥环中"
 
@@ -157,11 +157,11 @@ msgstr "保存在密钥环中"
 msgid "The keyring stayed locked, so nothing was saved."
 msgstr "密钥环仍处于锁定状态，因此未保存任何内容。"
 
-#: crates/immich-mount-desktop/src/session.rs:247
+#: crates/immich-mount-desktop/src/session.rs:250
 msgid "Signed in, but the mount cannot start: {error}."
 msgstr "已登录，但无法启动挂载：{error}。"
 
-#: crates/immich-mount-desktop/src/session.rs:251
+#: crates/immich-mount-desktop/src/session.rs:254
 msgid "Signed in, but the mount did not start: {error}"
 msgstr "已登录，但挂载未能启动：{error}"
 
@@ -205,66 +205,66 @@ msgstr "键盘快捷键"
 msgid "Quit"
 msgstr "退出"
 
-#: crates/immich-mount-gnome/src/window.rs:263
+#: crates/immich-mount-gnome/src/window.rs:265
 #: crates/immich-mount-kde/qml/Main.qml:321
 msgid "Continue in your browser"
 msgstr "请在浏览器中继续"
 
-#: crates/immich-mount-gnome/src/window.rs:274
+#: crates/immich-mount-gnome/src/window.rs:276
 msgid "This sign-in belongs to an earlier attempt. Finish the latest one, or sign in again."
 msgstr "此登录属于之前的一次尝试。请完成最近的一次，或重新登录。"
 
-#: crates/immich-mount-gnome/src/window.rs:286
+#: crates/immich-mount-gnome/src/window.rs:288
 msgid "Enter your email and password"
 msgstr "请输入您的电子邮件地址和密码"
 
-#: crates/immich-mount-gnome/src/window.rs:297
+#: crates/immich-mount-gnome/src/window.rs:299
 msgid "Enter an API key"
 msgstr "请输入 API 密钥"
 
-#: crates/immich-mount-gnome/src/window.rs:324
+#: crates/immich-mount-gnome/src/window.rs:326
 msgid "Signed in as {account}"
 msgstr "已以 {account} 身份登录"
 
-#: crates/immich-mount-gnome/src/window.rs:390
+#: crates/immich-mount-gnome/src/window.rs:394
 msgid "Signed in, but the status could not be read"
 msgstr "已登录，但无法读取状态"
 
-#: crates/immich-mount-gnome/src/window.rs:417
-#: crates/immich-mount-kde/qml/Main.qml:396
+#: crates/immich-mount-gnome/src/window.rs:421
+#: crates/immich-mount-kde/qml/Main.qml:397
 msgid "Signed Out of Immich"
 msgstr "已从 Immich 退出登录"
 
-#: crates/immich-mount-gnome/src/window.rs:417
-#: crates/immich-mount-kde/qml/Main.qml:397
+#: crates/immich-mount-gnome/src/window.rs:421
+#: crates/immich-mount-kde/qml/Main.qml:398
 msgid "Sign in again to keep browsing. Your caches are kept."
 msgstr "重新登录即可继续浏览。您的缓存会被保留。"
 
-#: crates/immich-mount-gnome/src/window.rs:418
-#: crates/immich-mount-gnome/src/window.blp:209
+#: crates/immich-mount-gnome/src/window.rs:422
+#: crates/immich-mount-gnome/src/window.blp:213
 msgid "Your Library Is in Files"
 msgstr "您的图库位于“文件”中"
 
-#: crates/immich-mount-gnome/src/window.rs:418
-#: crates/immich-mount-kde/qml/Main.qml:398
+#: crates/immich-mount-gnome/src/window.rs:422
+#: crates/immich-mount-kde/qml/Main.qml:399
 msgid "Browse it like any folder. Originals download only when you open them."
 msgstr "像浏览任何文件夹一样浏览它。原始文件仅在您打开时才会下载。"
 
-#: crates/immich-mount-gnome/src/window.rs:419
-#: crates/immich-mount-kde/qml/Main.qml:396
+#: crates/immich-mount-gnome/src/window.rs:423
+#: crates/immich-mount-kde/qml/Main.qml:397
 msgid "Not Mounted"
 msgstr "未挂载"
 
-#: crates/immich-mount-gnome/src/window.rs:419
+#: crates/immich-mount-gnome/src/window.rs:423
 msgid "Mount it to browse your library in Files."
 msgstr "挂载后即可在“文件”中浏览您的图库。"
 
-#: crates/immich-mount-gnome/src/window.rs:462
+#: crates/immich-mount-gnome/src/window.rs:466
 msgid "Disconnected"
 msgstr "已断开连接"
 
 #: crates/immich-mount-gnome/src/window.blp:26
-#: crates/immich-mount-gnome/src/window.blp:202
+#: crates/immich-mount-gnome/src/window.blp:206
 msgid "Main Menu"
 msgstr "主菜单"
 
@@ -348,71 +348,71 @@ msgstr "驱动器中显示的文件夹。您之后可以在首选项中更改。
 msgid "The timeline, by year and month"
 msgstr "时间线，按年和月"
 
-#: crates/immich-mount-gnome/src/window.blp:166
-#: crates/immich-mount-gnome/src/window.blp:314
-#: crates/immich-mount-kde/qml/Main.qml:369
+#: crates/immich-mount-gnome/src/window.blp:170
+#: crates/immich-mount-gnome/src/window.blp:318
+#: crates/immich-mount-kde/qml/Main.qml:370
 msgid "Location"
 msgstr "位置"
 
-#: crates/immich-mount-gnome/src/window.blp:169
-#: crates/immich-mount-kde/qml/Main.qml:372
+#: crates/immich-mount-gnome/src/window.blp:173
+#: crates/immich-mount-kde/qml/Main.qml:373
 msgid "Folder"
 msgstr "文件夹"
 
-#: crates/immich-mount-gnome/src/window.blp:175
-#: crates/immich-mount-gnome/src/window.blp:223
+#: crates/immich-mount-gnome/src/window.blp:179
+#: crates/immich-mount-gnome/src/window.blp:227
 msgid "_Open in Files"
 msgstr "在“文件”中打开(_O)"
 
-#: crates/immich-mount-gnome/src/window.blp:234
+#: crates/immich-mount-gnome/src/window.blp:238
 msgid "_Unmount"
 msgstr "卸载(_U)"
 
-#: crates/immich-mount-gnome/src/window.blp:236
+#: crates/immich-mount-gnome/src/window.blp:240
 msgid "Take it out of Files until you mount it again or log in"
 msgstr "将其从“文件”中移除，直到您再次挂载或下次登录系统"
 
-#: crates/immich-mount-gnome/src/window.blp:245
+#: crates/immich-mount-gnome/src/window.blp:249
 msgid "_Mount"
 msgstr "挂载(_M)"
 
-#: crates/immich-mount-gnome/src/window.blp:261
+#: crates/immich-mount-gnome/src/window.blp:265
 msgid "Sign In _Again"
 msgstr "重新登录(_A)"
 
-#: crates/immich-mount-gnome/src/window.blp:273
+#: crates/immich-mount-gnome/src/window.blp:277
 msgid "Server"
 msgstr "服务器"
 
-#: crates/immich-mount-gnome/src/window.blp:281
+#: crates/immich-mount-gnome/src/window.blp:285
 msgid "Account"
 msgstr "账户"
 
-#: crates/immich-mount-gnome/src/window.blp:290
+#: crates/immich-mount-gnome/src/window.blp:294
 msgid "Credential"
 msgstr "凭据"
 
-#: crates/immich-mount-gnome/src/window.blp:298
+#: crates/immich-mount-gnome/src/window.blp:302
 msgid "Connection"
 msgstr "连接"
 
-#: crates/immich-mount-gnome/src/window.blp:322
+#: crates/immich-mount-gnome/src/window.blp:326
 msgid "Uploading"
 msgstr "正在上传"
 
-#: crates/immich-mount-gnome/src/window.blp:333
+#: crates/immich-mount-gnome/src/window.blp:337
 msgid "_Disconnect"
 msgstr "断开连接(_D)"
 
-#: crates/immich-mount-gnome/src/window.blp:354
+#: crates/immich-mount-gnome/src/window.blp:358
 msgid "_Preferences"
 msgstr "首选项(_P)"
 
-#: crates/immich-mount-gnome/src/window.blp:359
+#: crates/immich-mount-gnome/src/window.blp:363
 msgid "_Keyboard Shortcuts"
 msgstr "键盘快捷键(_K)"
 
-#: crates/immich-mount-gnome/src/window.blp:364
+#: crates/immich-mount-gnome/src/window.blp:368
 msgid "_About Immich Mount"
 msgstr "关于 Immich Mount(_A)"
 
@@ -540,77 +540,77 @@ msgstr "无法打开任何浏览器。请在浏览器中打开此地址："
 msgid "Sign-in address"
 msgstr "登录地址"
 
-#: crates/immich-mount-kde/qml/Main.qml:371
+#: crates/immich-mount-kde/qml/Main.qml:372
 msgid "Folder:"
 msgstr "文件夹："
 
-#: crates/immich-mount-kde/qml/Main.qml:376
+#: crates/immich-mount-kde/qml/Main.qml:377
 msgid "Dolphin"
 msgstr "Dolphin"
 
-#: crates/immich-mount-kde/qml/Main.qml:381
-#: crates/immich-mount-kde/qml/Main.qml:402
+#: crates/immich-mount-kde/qml/Main.qml:382
+#: crates/immich-mount-kde/qml/Main.qml:403
 msgid "Open in Dolphin"
 msgstr "在 Dolphin 中打开"
 
-#: crates/immich-mount-kde/qml/Main.qml:396
+#: crates/immich-mount-kde/qml/Main.qml:397
 msgid "Your Library Is in Dolphin"
 msgstr "您的图库位于 Dolphin 中"
 
-#: crates/immich-mount-kde/qml/Main.qml:399
+#: crates/immich-mount-kde/qml/Main.qml:400
 msgid "Mount it to browse your library in Dolphin."
 msgstr "挂载后即可在 Dolphin 中浏览您的图库。"
 
-#: crates/immich-mount-kde/qml/Main.qml:402
+#: crates/immich-mount-kde/qml/Main.qml:403
 msgid "Sign In Again"
 msgstr "重新登录"
 
-#: crates/immich-mount-kde/qml/Main.qml:402
+#: crates/immich-mount-kde/qml/Main.qml:403
 msgid "Mount"
 msgstr "挂载"
 
-#: crates/immich-mount-kde/qml/Main.qml:410
+#: crates/immich-mount-kde/qml/Main.qml:411
 #: apple/App/ContentView.swift:105
 msgid "Server:"
 msgstr "服务器："
 
-#: crates/immich-mount-kde/qml/Main.qml:411
+#: crates/immich-mount-kde/qml/Main.qml:412
 msgid "Account:"
 msgstr "账户："
 
-#: crates/immich-mount-kde/qml/Main.qml:412
+#: crates/immich-mount-kde/qml/Main.qml:413
 msgid "Credential:"
 msgstr "凭据："
 
-#: crates/immich-mount-kde/qml/Main.qml:413
+#: crates/immich-mount-kde/qml/Main.qml:414
 msgid "Connection:"
 msgstr "连接："
 
-#: crates/immich-mount-kde/qml/Main.qml:414
+#: crates/immich-mount-kde/qml/Main.qml:415
 msgid "Cache:"
 msgstr "缓存："
 
-#: crates/immich-mount-kde/qml/Main.qml:415
+#: crates/immich-mount-kde/qml/Main.qml:416
 msgid "Location:"
 msgstr "位置："
 
-#: crates/immich-mount-kde/qml/Main.qml:416
+#: crates/immich-mount-kde/qml/Main.qml:417
 msgid "Uploading:"
 msgstr "正在上传："
 
-#: crates/immich-mount-kde/qml/Main.qml:417
+#: crates/immich-mount-kde/qml/Main.qml:418
 msgid "Dolphin:"
 msgstr "Dolphin："
 
-#: crates/immich-mount-kde/qml/Main.qml:422
+#: crates/immich-mount-kde/qml/Main.qml:423
 msgid "Unmount"
 msgstr "卸载"
 
-#: crates/immich-mount-kde/qml/Main.qml:429
+#: crates/immich-mount-kde/qml/Main.qml:430
 msgid "Disconnect"
 msgstr "断开连接"
 
-#: crates/immich-mount-kde/qml/Main.qml:441
+#: crates/immich-mount-kde/qml/Main.qml:442
 msgid "Immich Mount is an independent, unofficial project. It is not affiliated with, endorsed by, or sponsored by the Immich project or FUTO."
 msgstr "Immich Mount 是一个独立的非官方项目，与 Immich 项目或 FUTO 没有关联，也未获得其认可或赞助。"
 
@@ -647,78 +647,86 @@ msgid "Show the Places section"
 msgstr "显示 Places 版块"
 
 #: crates/immich-mount-core/src/settings.rs:58
+msgid "Show the Archive section"
+msgstr "显示 Archive 版块"
+
+#: crates/immich-mount-core/src/settings.rs:59
 msgid "Day folders inside months"
 msgstr "月份内的每日文件夹"
 
-#: crates/immich-mount-core/src/settings.rs:59
+#: crates/immich-mount-core/src/settings.rs:60
 msgid "Year and month folders inside albums"
 msgstr "相册内的年月文件夹"
 
-#: crates/immich-mount-core/src/settings.rs:60
+#: crates/immich-mount-core/src/settings.rs:61
 msgid "Year and month folders inside people"
 msgstr "人物内的年月文件夹"
 
-#: crates/immich-mount-core/src/settings.rs:61
+#: crates/immich-mount-core/src/settings.rs:62
 msgid "Year and month folders inside cities"
 msgstr "城市内的年月文件夹"
 
-#: crates/immich-mount-core/src/settings.rs:62
+#: crates/immich-mount-core/src/settings.rs:63
+msgid "Year and month folders inside the archive"
+msgstr "归档内的年月文件夹"
+
+#: crates/immich-mount-core/src/settings.rs:64
 msgid "How album folders are named and grouped"
 msgstr "相册文件夹的命名与分组方式"
 
-#: crates/immich-mount-core/src/settings.rs:63
+#: crates/immich-mount-core/src/settings.rs:65
 msgid "How files are named"
 msgstr "文件的命名方式"
 
-#: crates/immich-mount-core/src/settings.rs:64
+#: crates/immich-mount-core/src/settings.rs:66
 msgid "The content cache's size limit"
 msgstr "内容缓存的大小上限"
 
-#: crates/immich-mount-core/src/settings.rs:65
+#: crates/immich-mount-core/src/settings.rs:67
 msgid "Show the Upload folder, and upload what is copied into it"
 msgstr "显示 Upload 文件夹，并上传复制到其中的内容"
 
-#: crates/immich-mount-core/src/settings.rs:66
+#: crates/immich-mount-core/src/settings.rs:68
 msgid "Also seed 1024 px thumbnails from the preview"
 msgstr "同时从预览图生成 1024 像素的缩略图"
 
-#: crates/immich-mount-core/src/settings.rs:67
+#: crates/immich-mount-core/src/settings.rs:69
 msgid "Refuse thumbnailer reads of originals"
 msgstr "拒绝缩略图生成程序读取原始文件"
 
-#: crates/immich-mount-core/src/settings.rs:68
+#: crates/immich-mount-core/src/settings.rs:70
 msgid "Headless only: a 0600 file holding the credential"
 msgstr "仅限无图形界面：保存凭据的 0600 权限文件"
 
-#: crates/immich-mount-core/src/settings.rs:74
+#: crates/immich-mount-core/src/settings.rs:76
 msgid "Never"
 msgstr "从不"
 
-#: crates/immich-mount-core/src/settings.rs:75
+#: crates/immich-mount-core/src/settings.rs:77
 msgid "From 500 Items"
 msgstr "500 项起"
 
-#: crates/immich-mount-core/src/settings.rs:76
+#: crates/immich-mount-core/src/settings.rs:78
 msgid "Always"
 msgstr "总是"
 
-#: crates/immich-mount-core/src/settings.rs:77
+#: crates/immich-mount-core/src/settings.rs:79
 msgid "Year in the Name (2023 - Trip)"
 msgstr "名称中带年份（2023 - 旅行）"
 
-#: crates/immich-mount-core/src/settings.rs:78
+#: crates/immich-mount-core/src/settings.rs:80
 msgid "Year Folders (2023/Trip)"
 msgstr "年份文件夹（2023/旅行）"
 
-#: crates/immich-mount-core/src/settings.rs:79
+#: crates/immich-mount-core/src/settings.rs:81
 msgid "Name Only (Trip)"
 msgstr "仅名称（旅行）"
 
-#: crates/immich-mount-core/src/settings.rs:80
+#: crates/immich-mount-core/src/settings.rs:82
 msgid "Date and Time Taken"
 msgstr "拍摄日期和时间"
 
-#: crates/immich-mount-core/src/settings.rs:81
+#: crates/immich-mount-core/src/settings.rs:83
 msgid "Original File Names"
 msgstr "原始文件名"
 

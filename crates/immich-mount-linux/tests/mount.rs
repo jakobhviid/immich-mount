@@ -64,6 +64,9 @@ impl LibrarySource for Library {
         self.answer_or_hang().await;
         Ok(self.assets.clone())
     }
+    async fn archive_assets(&self) -> Result<Vec<Asset>, SourceError> {
+        Ok(vec![])
+    }
 }
 
 impl ContentSource for Library {

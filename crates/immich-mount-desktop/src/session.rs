@@ -186,6 +186,7 @@ pub struct Setup {
     pub albums: bool,
     pub people: bool,
     pub places: bool,
+    pub archive: bool,
     pub location: String,
 }
 
@@ -198,6 +199,7 @@ pub fn current_setup() -> Setup {
         albums: config.show_albums,
         people: config.show_people,
         places: config.show_places,
+        archive: config.show_archive,
         location: config.mount_path,
     }
 }
@@ -212,6 +214,7 @@ pub fn apply_setup(setup: &Setup) -> Result<(), String> {
         ("sections.albums", flag(setup.albums)),
         ("sections.people", flag(setup.people)),
         ("sections.places", flag(setup.places)),
+        ("sections.archive", flag(setup.archive)),
         ("mount.path", setup.location.trim()),
     ] {
         text = settings::set_value(&text, key, value).map_err(|error| error.to_string())?;

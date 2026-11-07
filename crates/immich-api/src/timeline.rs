@@ -6,7 +6,8 @@
 //! through [`Client::time_bucket`] (ids) and then search or [`Client::asset`] for details.
 //!
 //! Visibility: the bucket endpoints include archived Assets by default. The library and person timelines send
-//! `visibility=timeline`; an album sends nothing, because an album shows its archived members too.
+//! `visibility=timeline`; an album sends nothing, because an album shows its archived members too; the archive sends
+//! `visibility=archive`, as Immich's own Archive page does.
 //!
 //! `GET /timeline/bucket` answers in **columns** (`{"id":[...],"fileCreatedAt":[...],...}`), with
 //! `fileCreatedAt` in UTC without a `Z`. A column the server leaves out reads as its default; a column of the
@@ -32,6 +33,8 @@ pub enum TimelineScope {
     Album(String),
     /// One person, by id: timeline visibility only.
     Person(String),
+    /// The archive: archived visibility only.
+    Archive,
 }
 
 impl TimelineScope {
@@ -40,6 +43,7 @@ impl TimelineScope {
             TimelineScope::Library => vec![("visibility", "timeline")],
             TimelineScope::Album(album_id) => vec![("albumId", album_id.as_str())],
             TimelineScope::Person(person_id) => vec![("personId", person_id.as_str()), ("visibility", "timeline")],
+            TimelineScope::Archive => vec![("visibility", "archive")],
         }
     }
 }
@@ -401,6 +405,7 @@ mod tests {
             CannedResponse::json(200, "[]"),
             CannedResponse::json(200, "[]"),
             CannedResponse::json(200, "{}"),
+            CannedResponse::json(200, "[]"),
         ])
         .await;
         let client = Client::new(&server.url, None, "test").unwrap();
@@ -411,6 +416,7 @@ mod tests {
             .time_bucket(&TimelineScope::Person("person-1".into()), month)
             .await
             .unwrap();
+        client.time_buckets(&TimelineScope::Archive).await.unwrap();
         let targets: Vec<String> = server.requests().into_iter().map(|request| request.target).collect();
         assert_eq!(
             targets,
@@ -418,6 +424,7 @@ mod tests {
                 "/api/timeline/buckets?visibility=timeline",
                 "/api/timeline/buckets?albumId=album-1",
                 "/api/timeline/bucket?personId=person-1&visibility=timeline&timeBucket=2018-11-01",
+                "/api/timeline/buckets?visibility=archive",
             ]
         );
     }

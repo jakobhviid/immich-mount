@@ -29,6 +29,7 @@ pub mod qobject {
         #[qproperty(bool, albums)]
         #[qproperty(bool, people)]
         #[qproperty(bool, places)]
+        #[qproperty(bool, archive)]
         #[qproperty(bool, previews)]
         #[qproperty(QString, version)]
         #[qproperty(QString, uploads)]
@@ -150,6 +151,7 @@ pub struct BackendRust {
     albums: bool,
     people: bool,
     places: bool,
+    archive: bool,
     previews: bool,
     version: QString,
     uploads: QString,
@@ -278,6 +280,7 @@ impl qobject::Backend {
             albums: *self.albums(),
             people: *self.people(),
             places: *self.places(),
+            archive: *self.archive(),
             location: self.location().to_string(),
         };
         self.as_mut().set_busy(true);
@@ -345,6 +348,7 @@ impl qobject::Backend {
         self.as_mut().set_albums(setup.albums);
         self.as_mut().set_people(setup.people);
         self.as_mut().set_places(setup.places);
+        self.as_mut().set_archive(setup.archive);
         self.as_mut().set_location(QString::from(&setup.location));
         self.as_mut().read_previews();
         self.as_mut().set_busy(false);

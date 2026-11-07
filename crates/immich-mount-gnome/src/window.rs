@@ -67,6 +67,8 @@ mod imp {
         #[template_child]
         pub places_switch: TemplateChild<adw::SwitchRow>,
         #[template_child]
+        pub archive_switch: TemplateChild<adw::SwitchRow>,
+        #[template_child]
         pub location_row: TemplateChild<adw::EntryRow>,
         #[template_child]
         pub cache_row: TemplateChild<adw::ActionRow>,
@@ -337,6 +339,7 @@ impl Window {
         imp.albums_switch.set_active(setup.albums);
         imp.people_switch.set_active(setup.people);
         imp.places_switch.set_active(setup.places);
+        imp.archive_switch.set_active(setup.archive);
         imp.location_row.set_text(&setup.location);
         imp.navigation.push_by_tag("setup");
     }
@@ -349,6 +352,7 @@ impl Window {
             albums: imp.albums_switch.is_active(),
             people: imp.people_switch.is_active(),
             places: imp.places_switch.is_active(),
+            archive: imp.archive_switch.is_active(),
             location: imp.location_row.text().to_string(),
         };
         self.set_busy(true);

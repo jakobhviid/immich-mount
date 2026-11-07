@@ -168,6 +168,10 @@ Browse it like any folder: Photos by year and month (busy months by day), Albums
 People and Places. Files are named by when they were taken (`2024-03-15 14.32.07.jpg`). Thumbnails come from the
 server, and an original is downloaded only when something opens it.
 
+What you archived in Immich is in **Archive**, by year and month, once you switch it on: in the app's settings under
+Sections, or `immich-mount configure set sections.archive true`. It follows Immich within seconds: a photo you
+archive there appears in Archive, and leaves it when you unarchive it.
+
 ## 4. Status
 
 ```sh

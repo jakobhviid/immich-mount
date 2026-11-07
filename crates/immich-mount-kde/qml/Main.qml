@@ -366,6 +366,7 @@ Kirigami.ApplicationWindow {
                     Controls.Switch { text: i18n("Albums"); checked: backend.albums; onToggled: backend.albums = checked }
                     Controls.Switch { text: i18n("People"); checked: backend.people; onToggled: backend.people = checked }
                     Controls.Switch { text: i18n("Places"); checked: backend.places; onToggled: backend.places = checked }
+                    Controls.Switch { text: i18n("Archive"); checked: backend.archive; onToggled: backend.archive = checked }
                     Kirigami.Separator { Kirigami.FormData.isSection: true; Kirigami.FormData.label: i18n("Location") }
                     Controls.TextField {
                         Kirigami.FormData.label: i18n("Folder:")

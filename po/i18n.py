@@ -57,7 +57,10 @@ SOURCES = [
 
 # Names and examples, never translated: the drive's own folders among them, which keep their names in every
 # language (SPEC.md, "Names"), so a switch or a setting that names one names it as the drive shows it.
-UNTRANSLATED = {"Immich Mount", "Immich Drive", "Immich", "photos.example.org", "Photos", "Albums", "People", "Places"}
+UNTRANSLATED = {
+    "Immich Mount", "Immich Drive", "Immich", "photos.example.org",
+    "Photos", "Albums", "People", "Places", "Archive",
+}
 
 DESKTOP_ENTRY_KEYS = ("Comment", "Keywords")
 

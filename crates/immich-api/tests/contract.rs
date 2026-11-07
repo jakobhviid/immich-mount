@@ -19,7 +19,7 @@ use std::path::PathBuf;
 use chrono::{DateTime, Utc};
 use immich_api::{
     ApiError, AssetQuery, Client, Credential, Fetched, SyncRecord, ThumbnailSize, TimelineScope, UploadCheck,
-    UploadOutcome, YearMonth,
+    UploadOutcome, Visibility, YearMonth,
 };
 
 const USER_AGENT: &str = "ImmichMount/contract-tests (Linux; lab)";
@@ -131,6 +131,8 @@ async fn time_buckets_count_the_timeline() {
     let buckets = client.time_buckets(&TimelineScope::Library).await.unwrap();
     let total: u32 = buckets.iter().map(|bucket| bucket.count).sum();
     assert_eq!(total, 50, "timeline visibility excludes the archived and trashed Assets");
+    let archive_buckets = client.time_buckets(&TimelineScope::Archive).await.unwrap();
+    assert_eq!(archive_buckets.iter().map(|bucket| bucket.count).sum::<u32>(), 1, "the one archived Asset");
     assert_eq!(buckets.len(), 40);
     assert!(buckets.windows(2).all(|pair| pair[0].month > pair[1].month), "newest first");
     assert!(buckets.iter().any(|bucket| bucket.month == YearMonth::new(1970, 1).unwrap()), "no-date.jpg");
@@ -174,7 +176,7 @@ async fn time_bucket_ids_match_counts_and_local_months() {
 async fn search_finds_by_visibility_album_person_place_and_date() {
     let client = readonly();
     let timeline = client
-        .search_all_assets(&AssetQuery { timeline_only: true, ..AssetQuery::default() }, 1000)
+        .search_all_assets(&AssetQuery { visibility: Some(Visibility::Timeline), ..AssetQuery::default() }, 1000)
         .await
         .unwrap();
     assert_eq!(timeline.len(), 50);
@@ -183,9 +185,17 @@ async fn search_finds_by_visibility_album_person_place_and_date() {
     let everything = client.search_all_assets(&AssetQuery::default(), 1000).await.unwrap();
     assert_eq!(everything.len(), 51, "archived included, trashed excluded");
 
+    // A read-only key may ask for the archive alone: only `ne: archive` needs elevated permission.
+    let archive = client
+        .search_all_assets(&AssetQuery { visibility: Some(Visibility::Archive), ..AssetQuery::default() }, 1000)
+        .await
+        .unwrap();
+    assert_eq!(archive.len(), 1);
+    assert_eq!(archive[0].visibility, Visibility::Archive);
+
     // Small pages walk the cursor and find the same set.
     let paged = client
-        .search_all_assets(&AssetQuery { timeline_only: true, ..AssetQuery::default() }, 7)
+        .search_all_assets(&AssetQuery { visibility: Some(Visibility::Timeline), ..AssetQuery::default() }, 7)
         .await
         .unwrap();
     let paged_ids: HashSet<_> = paged.iter().map(|asset| asset.id.clone()).collect();
