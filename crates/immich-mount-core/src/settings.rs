@@ -69,6 +69,7 @@ pub const SETTINGS: &[Setting] = &[
     Setting { key: "uploads.enabled", kind: Kind::Bool, description: "Show the Upload folder, and upload what is copied into it", default: "true" },
     Setting { key: "thumbnails.sharp", kind: Kind::Bool, description: "Also seed 1024 px thumbnails from the preview", default: "true" },
     Setting { key: "thumbnails.safety_net", kind: Kind::Bool, description: "Refuse thumbnailer reads of originals", default: "true" },
+    Setting { key: "updates.check", kind: Kind::Bool, description: "Tell me when a new version is out", default: "true" },
     Setting { key: "credential.file", kind: Kind::Path, description: "Headless only: a 0600 file holding the credential", default: "" },
 ];
 
@@ -168,6 +169,8 @@ pub struct Config {
     pub uploads_enabled: bool,
     pub sharp_thumbnails: bool,
     pub thumbnail_safety_net: bool,
+    /// Linux packages from the download page: tell of a newer release (ARCHITECTURE.md, "Updates on Linux").
+    pub update_check: bool,
     pub credential_file: Option<String>,
 }
 
@@ -216,6 +219,7 @@ impl Config {
             uploads_enabled: flag("uploads.enabled")?,
             sharp_thumbnails: flag("thumbnails.sharp")?,
             thumbnail_safety_net: flag("thumbnails.safety_net")?,
+            update_check: flag("updates.check")?,
             credential_file: optional("credential.file")?,
         })
     }

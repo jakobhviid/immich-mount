@@ -9,6 +9,7 @@ mod commands;
 mod completions;
 mod online;
 mod ui;
+mod updates;
 
 use clap::{CommandFactory, Parser, Subcommand};
 use immich_mount_linux::daemon::StopReason;

@@ -1729,6 +1729,7 @@ dependencies = [
  "immich-mount-linux",
  "log",
  "predicates",
+ "reqwest",
  "rpassword",
  "serde",
  "serde_json",

@@ -16,6 +16,7 @@ pub const GROUPS: &[(&str, &str)] = &[
     ("files", "Files"),
     ("thumbnails", "Thumbnails"),
     ("cache", "Cache"),
+    ("updates", "Updates"),
 ];
 
 /// A setting's title in the user's language: its description in the core's table, translated.

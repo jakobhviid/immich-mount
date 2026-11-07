@@ -228,6 +228,15 @@ Open:
 - **A command line on macOS** (`status`, `doctor`), or none: the sandbox keeps the store and the credential out of
   reach of a plain program.
 
+## Package repositories
+
+The real fix for updates on Linux (ARCHITECTURE.md, "Updates on Linux"): with a repository behind the packages, GNOME
+Software and Discover offer each release like any other update, and the daemon's own look can stop for them.
+1. **COPR for Fedora** (and Fedora's atomic desktops through `rpm-ostree`), built from the release's rpms or its
+   sources. Needs the maintainer's Fedora account and a COPR project.
+2. **An apt repository for Ubuntu,** signed, served beside the download page.
+3. **Then:** packages from a repository carry a marker the daemon reads, and do not look for releases themselves.
+
 ## Watch upstream
 
 - **Blueprint and GTK 5 interface definitions.** The GNOME app's screens are written in Blueprint, which still

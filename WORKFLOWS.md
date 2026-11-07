@@ -236,6 +236,10 @@ immich-mount configure unset thumbnails.sharp      # back to the default
 
 The apps' preferences (GNOME's dialog, KDE's page) edit the same settings. The keys are listed in SPEC.md.
 
+**Updates.** Homebrew updates its install with `brew upgrade`. A package from the download page tells you once when a
+new version is out, with a notification and a line on the tray's menu that opens the page; install the new package
+the way you installed the first (`immich-mount configure set updates.check false` stops the look).
+
 **Language.** The apps and the notifications follow the desktop's language (`LANGUAGE`, then `LC_ALL`,
 `LC_MESSAGES` and `LANG`, as every gettext program does), in English or one of 20 other languages; the command line
 stays English. To see the app in another language once: `LANGUAGE=da immich-mount app`. On the Mac it follows the

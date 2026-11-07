@@ -1085,6 +1085,24 @@ drive and the app, without opening a window. **The daemon serves it,** as a Stat
   beside the daemon, and GTK 4 has no tray at all); `libayatana-appindicator` (a C library, and GTK 3, in a static
   Rust daemon).
 
+## Updates on Linux
+
+A package downloaded from the page is never updated: no repository stands behind it. Until one does (ROADMAP.md,
+"Package repositories"), **the daemon tells of a new release:**
+- **Once a day,** five minutes after it starts and then every 24 hours, it reads `latest.json` from the download page
+  (the release's version and the page's address, written by `site/build.py`), the same host as the Mac's update
+  feed. It sends nothing but the request and its User-Agent, `immich-mount/<version>`.
+- **Told once per version:** a notification ("Immich Mount 2.21.0 is available") the first time, kept in
+  `~/.local/state/immich-mount/update-told`, and a line on the tray's menu, "Get Immich Mount 2.21.0…", which opens
+  the page, for as long as the daemon runs.
+- **Who looks:** not Homebrew's installs (in its Cellar or a cask's folder, which `brew upgrade` keeps current), not a
+  Flatpak (its remote updates it), not a development build (version 0.0.0), and not with `updates.check` off.
+- **Never replaced in place,** as Sparkle replaces the Mac app: the packages own `/usr`, and files changed under dpkg
+  or rpm break their package database. The user updates the way they installed.
+- **Flatpak impact:** none; a Flatpak does not look.
+- **Not chosen:** GitHub's releases API (rate-limited without a token, and a second host to name in SECURITY.md); a
+  check in the apps (they run only when opened).
+
 ## Translations
 
 The apps (GNOME, KDE and macOS), the settings they show, the daemon's notifications and the Linux launcher entry are
@@ -1190,8 +1208,9 @@ Urdu and Vietnamese. Portuguese is Brazil's, which both platforms also offer to 
   - **DEB:** Ubuntu 26.04 (GNOME 50). Debian 13 ships GNOME 48, below the GNOME floor, so it is not served until a
     Flatpak exists.
   - **DEB repository:** an apt repository can follow the GitHub Releases files later.
-  - **Updates** come from the package managers; the Linux edition has no built-in update checker. (The Mac app
-    updates itself: "The macOS edition", "Distribution".)
+  - **Updates** come from the package managers where there is one (Homebrew today; a repository later), and are
+    told of by the daemon for packages from the download page ("Updates on Linux"). The Mac app updates itself
+    ("The macOS edition", "Distribution").
 - **Installed files:**
   - the binaries
   - `immich-mount.service` (`Type=notify`, `ExecStop` unmounts, `Restart=on-failure`)

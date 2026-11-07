@@ -24,6 +24,7 @@ from datetime import datetime
 from pathlib import Path
 
 ROOT = Path(__file__).resolve().parent.parent
+PAGE = "https://jakob.hviid.phd/immich-mount/"
 
 
 def find(assets, pattern):
@@ -51,7 +52,7 @@ def appcast(mac_release, dmg, update_file):
 <rss version="2.0" xmlns:sparkle="http://www.andymatuschak.org/xml-namespaces/sparkle">
   <channel>
     <title>Immich Mount</title>
-    <link>https://jakob.hviid.phd/immich-mount/</link>
+    <link>{PAGE}</link>
     <item>
       <title>Immich Mount {html.escape(version)}</title>
       <pubDate>{email.utils.format_datetime(published)}</pubDate>
@@ -128,6 +129,9 @@ def main(release_file, output, mac_release_file=None, update_file=None):
         shutil.rmtree(output)
     (output / "screenshots").mkdir(parents=True)
     (output / "index.html").write_text(page)
+    # What Linux packages from this page look at once a day, to tell of a newer release (ARCHITECTURE.md, "Updates
+    # on Linux").
+    (output / "latest.json").write_text(json.dumps({"version": version, "page": PAGE}) + "\n")
     if update_file and files["dmg"]:
         (output / "appcast.xml").write_text(appcast(mac_release, files["dmg"], update_file))
     shutil.copy(ROOT / "site" / "style.css", output / "style.css")

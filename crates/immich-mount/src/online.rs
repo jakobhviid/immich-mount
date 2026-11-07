@@ -436,7 +436,8 @@ pub fn daemon(paths: &Paths) -> Result<Option<StopReason>> {
     let account = version.is_some().then(|| runtime.block_on(client.my_email()).ok()).flatten();
     let source = Arc::new(ImmichSource::new(client));
     let server = daemon::ServerInfo { url: server_url, version, account };
-    match daemon::serve(source, server, config, &mount_point, &account_cache, &paths.thumbnail_directory, &paths.not_uploaded_directory(), &runtime) {
+    let updates = crate::updates::wanted(&config).then(|| (crate::updates::check(), paths.state_directory.join("update-told")));
+    match daemon::serve(source, server, config, &mount_point, &account_cache, &paths.thumbnail_directory, &paths.not_uploaded_directory(), updates, &runtime) {
         // Another daemon serves it (the packages' service and Homebrew's both on): this one leaves cleanly, so its
         // service is not restarted every few seconds.
         Err(daemon::DaemonError::AlreadyMounted(path)) => {

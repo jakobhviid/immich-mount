@@ -122,6 +122,8 @@ pub struct ServerInfo {
 
 /// Mount the library at `mount_point` and serve it until stopped. `account_cache` holds this account's metadata store,
 /// content cache and seeding ledger; `thumbnail_directory` is the freedesktop thumbnail cache seeds go into.
+/// `updates`, where this install learns of new releases from the download page, is the look and the file that keeps
+/// the version last told of (`crate::updates`).
 #[allow(clippy::too_many_arguments)]
 pub fn serve<Source>(
     source: Arc<Source>,
@@ -131,6 +133,7 @@ pub fn serve<Source>(
     account_cache: &Path,
     thumbnail_directory: &Path,
     not_uploaded_directory: &Path,
+    updates: Option<(crate::updates::Check, PathBuf)>,
     runtime: &tokio::runtime::Runtime,
 ) -> Result<StopReason, DaemonError>
 where
@@ -231,10 +234,14 @@ where
             account: account.clone(),
             mount_point: mount_text.clone(),
             on_kde: std::env::var("XDG_CURRENT_DESKTOP").is_ok_and(|desktop| desktop.split(':').any(|name| name == "KDE")),
+            update: None,
         };
         runtime.block_on(crate::tray::show(connection, view));
     }
     runtime.spawn(follow_changes(source.clone(), tree.clone(), state, connection.clone()));
+    if let Some((check, told)) = updates {
+        runtime.spawn(crate::updates::follow(check, env!("CARGO_PKG_VERSION"), connection.clone(), told));
+    }
 
     let reason = runtime.block_on(wait_for_stop(mount_point, idle));
     match reason {

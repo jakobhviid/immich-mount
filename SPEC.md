@@ -348,6 +348,7 @@ table in the Core drives validation, `immich-mount configure`, and the app's set
 | `uploads.enabled` | bool | `true` | Show the Upload folder, and upload what is copied into it (also needs the server's upload permission) |
 | `thumbnails.sharp` | bool | `true` | Also seed 1024 px thumbnails from `preview` |
 | `thumbnails.safety_net` | bool | `true` | Refuse thumbnailer reads of originals |
+| `updates.check` | bool | `true` | Tell, once per version, when a new release is out: a notification and a line on the tray's menu (ARCHITECTURE.md, "Updates on Linux"). Only packages from the download page look; Homebrew's installs are left to `brew upgrade`. Linux only: the Mac app has Sparkle's own setting |
 | `credential.file` | path | none | Headless only: a 0600 file holding the credential |
 
 The config file carries a format version; older files are migrated once on load.
@@ -439,6 +440,7 @@ A click on the icon shows the menu (`ItemIsMenu`), as the Mac's menu bar item do
 | The resolved home for GVfs, where home is reached through a symlink | `~/.config/systemd/user/gvfs-udisks2-volume-monitor.service.d/immich-mount.conf`, `Environment=HOME=<resolved home>`: written by the daemon as it starts, which then restarts the volume monitor, so Files lists the mount as a drive; removed by `logout` |
 | The mount in Files' sidebar, where GVfs still does not list it (GNOME app) | A line `file://<mount point> <drive's name>` in `~/.config/gtk-3.0/bookmarks`: added once by the GNOME app's setup, renamed by the daemon as it starts when `mount.name` changed (a bookmark the user titled otherwise keeps its title), removed by the daemon once the drive is listed, and by `logout` (with a bookmark of the resolved path) |
 | The sign-in redirect's handler | `x-scheme-handler/app.immich` in `~/.config/mimeapps.list`, set by the app that last started a browser sign-in |
+| The version last told of (`updates.check`) | `~/.local/state/immich-mount/update-told` |
 | Logs | journald (`journalctl --user -u immich-mount`) |
 
 `<account>` is the server's host and port (`photos.example.org-443`), readable in a file listing. Signing in again,

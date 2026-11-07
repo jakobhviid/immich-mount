@@ -15,6 +15,8 @@ path = "src/main.rs"
 immich-mount-linux = { path = "../immich-mount-linux" }
 immich-mount-core = { path = "../immich-mount-core" }
 immich-api = { path = "../immich-api" }
+# The look for a newer release (src/updates.rs); TLS comes with immich-api's default feature.
+reqwest = { version = "0.12", default-features = false, features = ["json"] }
 tokio = { version = "1", features = ["rt-multi-thread", "time"] }
 log = "0.4"
 rpassword = "7"

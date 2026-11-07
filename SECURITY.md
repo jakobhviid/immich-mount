@@ -21,7 +21,8 @@ Problems in the Immich server itself belong to the Immich project:
 - **Copies of your photos:** server thumbnails and the parts of originals that were read, in your cache directory,
   and thumbnails in the desktop's thumbnail cache. `immich-mount logout` removes them. Files that could not be
   uploaded are kept in `~/.local/share/immich-mount/not-uploaded/`; they are yours, and `logout` leaves them.
-- **Its network use:** it talks only to the Immich server you sign in to. The Mac app also reads its update feed
+- **Its network use:** it talks only to the Immich server you sign in to. Linux packages from the download page also
+  read `jakob.hviid.phd/immich-mount/latest.json` once a day, unless `updates.check` is off. The Mac app also reads its update feed
   (`jakob.hviid.phd/immich-mount/appcast.xml`) and downloads updates from the project's GitHub releases, unless
   automatic checks are switched off in its Settings; each update is checked against the project's signing key.
 - **What it changes on the server:** it uploads files you copy into its Upload folder, and signing out ends its own session.

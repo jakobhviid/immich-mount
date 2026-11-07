@@ -38,6 +38,8 @@ pub struct View {
     pub mount_point: String,
     /// Dolphin's name for the file manager on KDE Plasma, Files' elsewhere.
     pub on_kde: bool,
+    /// A newer release, once the daemon has seen one (`crate::updates`).
+    pub update: Option<crate::updates::Release>,
 }
 
 /// One line of the menu: its label, and what clicking it does (`None` for a grey line).
@@ -52,6 +54,7 @@ pub enum Line {
 pub enum Action {
     OpenDrive,
     OpenApp,
+    OpenUpdate,
 }
 
 impl View {
@@ -82,6 +85,10 @@ impl View {
         let open = if self.on_kde { tr("Open in Dolphin") } else { tr("Open in Files") };
         lines.push(Line::Action(open.to_owned(), Action::OpenDrive));
         lines.push(Line::Action(tr("Open Immich Mount").to_owned(), Action::OpenApp));
+        if let Some(release) = &self.update {
+            lines.push(Line::Separator);
+            lines.push(Line::Action(tr("Get Immich Mount {version}…").replace("{version}", &release.version), Action::OpenUpdate));
+        }
         lines
     }
 }
@@ -304,6 +311,10 @@ impl Menu {
 fn run(action: Action, view: &View) {
     let outcome = match action {
         Action::OpenDrive => std::process::Command::new("xdg-open").arg(&view.mount_point).spawn(),
+        Action::OpenUpdate => match &view.update {
+            Some(release) => std::process::Command::new("xdg-open").arg(&release.page).spawn(),
+            None => return,
+        },
         Action::OpenApp => match std::env::current_exe() {
             Ok(program) => std::process::Command::new(program).arg("app").spawn(),
             Err(error) => Err(error),
@@ -349,11 +360,19 @@ async fn register(connection: &zbus::Connection) {
 
 /// The state changed: the menu and the tooltip follow.
 pub async fn update(connection: &zbus::Connection, state: State) {
+    change(connection, |view| view.state = state).await;
+}
+
+/// A newer release is out: the menu offers it.
+pub async fn offer_update(connection: &zbus::Connection, release: &crate::updates::Release) {
+    change(connection, |view| view.update = Some(release.clone())).await;
+}
+
+async fn change(connection: &zbus::Connection, edit: impl FnOnce(&mut View)) {
     let Ok(menu) = connection.object_server().interface::<_, Menu>(MENU_PATH).await else { return };
     let revision = {
         let menu = menu.get().await;
-        let mut view = menu.shared.view.lock().expect("tray view lock");
-        view.state = state;
+        edit(&mut menu.shared.view.lock().expect("tray view lock"));
         let mut revision = menu.shared.revision.lock().expect("tray revision lock");
         *revision += 1;
         *revision
@@ -376,6 +395,7 @@ mod tests {
             account: "admin@example.com".to_owned(),
             mount_point: "/home/tester/Immich".to_owned(),
             on_kde: false,
+            update: None,
         }
     }
 
@@ -392,6 +412,9 @@ mod tests {
         assert_eq!(offline[0], Line::Text("photos.example.org is not reachable".to_owned()));
         let on_kde = View { on_kde: true, ..view(State::Online) };
         assert!(on_kde.lines().contains(&Line::Action("Open in Dolphin".to_owned(), Action::OpenDrive)));
+        let release = crate::updates::Release { version: "2.21.0".to_owned(), page: "https://example.org/".to_owned() };
+        let behind = View { update: Some(release), ..view(State::Online) };
+        assert_eq!(behind.lines().last(), Some(&Line::Action("Get Immich Mount 2.21.0…".to_owned(), Action::OpenUpdate)));
     }
 
     #[test]

@@ -18,20 +18,20 @@ msgstr "Immich no está montado"
 msgid "The keyring stayed locked. Open Immich Mount, or run “immich-mount mount”, to try again."
 msgstr "El depósito de claves siguió bloqueado. Abre Immich Mount o ejecuta «immich-mount mount» para volver a intentarlo."
 
-#: crates/immich-mount-linux/src/daemon.rs:293
+#: crates/immich-mount-linux/src/daemon.rs:300
 msgid "Immich is unreachable"
 msgstr "No se puede acceder a Immich"
 
-#: crates/immich-mount-linux/src/daemon.rs:294
+#: crates/immich-mount-linux/src/daemon.rs:301
 msgid "The Immich server cannot be reached. Files you opened before stay available."
 msgstr "No se puede acceder al servidor de Immich. Los archivos que abriste antes siguen disponibles."
 
-#: crates/immich-mount-linux/src/daemon.rs:297
-#: crates/immich-mount-linux/src/tray.rs:67
+#: crates/immich-mount-linux/src/daemon.rs:304
+#: crates/immich-mount-linux/src/tray.rs:70
 msgid "Signed out of Immich"
 msgstr "Sesión de Immich cerrada"
 
-#: crates/immich-mount-linux/src/daemon.rs:298
+#: crates/immich-mount-linux/src/daemon.rs:305
 msgid "Immich no longer accepts this sign-in. Open Immich Mount to sign in again."
 msgstr "Immich ya no acepta este inicio de sesión. Abre Immich Mount para volver a iniciar sesión."
 
@@ -79,44 +79,56 @@ msgstr "La subida tardó demasiado. El archivo se conserva en {folder}."
 msgid "Immich takes photos and videos only."
 msgstr "Immich solo admite fotos y vídeos."
 
-#: crates/immich-mount-linux/src/tray.rs:65
+#: crates/immich-mount-linux/src/tray.rs:68
 #: apple/App/ImmichMountApp.swift:469
 msgid "Connected to {server}"
 msgstr "Conectado a {server}"
 
-#: crates/immich-mount-linux/src/tray.rs:66
+#: crates/immich-mount-linux/src/tray.rs:69
 #: apple/App/ImmichMountApp.swift:469
 msgid "{server} is not reachable"
 msgstr "No se puede acceder a {server}"
 
-#: crates/immich-mount-linux/src/tray.rs:68
+#: crates/immich-mount-linux/src/tray.rs:71
 #: apple/App/ImmichMountApp.swift:468
 msgid "Signed in to {server}"
 msgstr "Sesión iniciada en {server}"
 
-#: crates/immich-mount-linux/src/tray.rs:76
+#: crates/immich-mount-linux/src/tray.rs:79
 #: apple/App/ImmichMountApp.swift:477
 msgid "Server version: Immich {version}"
 msgstr "Versión del servidor: Immich {version}"
 
-#: crates/immich-mount-linux/src/tray.rs:79
+#: crates/immich-mount-linux/src/tray.rs:82
 #: apple/App/ImmichMountApp.swift:480
 msgid "Signed in as: {account}"
 msgstr "Sesión iniciada como: {account}"
 
-#: crates/immich-mount-linux/src/tray.rs:82
+#: crates/immich-mount-linux/src/tray.rs:85
 #: crates/immich-mount-kde/qml/Main.qml:383
 #: crates/immich-mount-kde/qml/Main.qml:404
 msgid "Open in Dolphin"
 msgstr "Abrir en Dolphin"
 
-#: crates/immich-mount-linux/src/tray.rs:82
+#: crates/immich-mount-linux/src/tray.rs:85
 msgid "Open in Files"
 msgstr "Abrir en Archivos"
 
-#: crates/immich-mount-linux/src/tray.rs:84
+#: crates/immich-mount-linux/src/tray.rs:87
 msgid "Open Immich Mount"
 msgstr "Abrir Immich Mount"
+
+#: crates/immich-mount-linux/src/tray.rs:90
+msgid "Get Immich Mount {version}…"
+msgstr "Descargar Immich Mount {version}…"
+
+#: crates/immich-mount-linux/src/updates.rs:53
+msgid "Immich Mount {version} is available"
+msgstr "Immich Mount {version} está disponible"
+
+#: crates/immich-mount-linux/src/updates.rs:54
+msgid "Get it from jakob.hviid.phd/immich-mount."
+msgstr "Descárgala desde jakob.hviid.phd/immich-mount."
 
 #: crates/immich-mount-desktop/src/preferences.rs:12
 msgid "Drive"
@@ -147,6 +159,10 @@ msgstr "Miniaturas"
 #: crates/immich-mount-gnome/src/window.blp:314
 msgid "Cache"
 msgstr "Caché"
+
+#: crates/immich-mount-desktop/src/preferences.rs:19
+msgid "Updates"
+msgstr "Actualizaciones"
 
 #: crates/immich-mount-desktop/src/session.rs:62
 msgid "Online"
@@ -746,38 +762,42 @@ msgid "Refuse thumbnailer reads of originals"
 msgstr "Impedir que los generadores de miniaturas lean los originales"
 
 #: crates/immich-mount-core/src/settings.rs:72
+msgid "Tell me when a new version is out"
+msgstr "Avisarme cuando salga una versión nueva"
+
+#: crates/immich-mount-core/src/settings.rs:73
 msgid "Headless only: a 0600 file holding the credential"
 msgstr "Solo sin escritorio: un archivo 0600 que guarda la credencial"
 
-#: crates/immich-mount-core/src/settings.rs:78
+#: crates/immich-mount-core/src/settings.rs:79
 msgid "Never"
 msgstr "Nunca"
 
-#: crates/immich-mount-core/src/settings.rs:79
+#: crates/immich-mount-core/src/settings.rs:80
 msgid "From 500 Items"
 msgstr "A partir de 500 elementos"
 
-#: crates/immich-mount-core/src/settings.rs:80
+#: crates/immich-mount-core/src/settings.rs:81
 msgid "Always"
 msgstr "Siempre"
 
-#: crates/immich-mount-core/src/settings.rs:81
+#: crates/immich-mount-core/src/settings.rs:82
 msgid "Year in the Name (2023 - Trip)"
 msgstr "Año en el nombre (2023 - Viaje)"
 
-#: crates/immich-mount-core/src/settings.rs:82
+#: crates/immich-mount-core/src/settings.rs:83
 msgid "Year Folders (2023/Trip)"
 msgstr "Carpetas por año (2023/Viaje)"
 
-#: crates/immich-mount-core/src/settings.rs:83
+#: crates/immich-mount-core/src/settings.rs:84
 msgid "Name Only (Trip)"
 msgstr "Solo el nombre (Viaje)"
 
-#: crates/immich-mount-core/src/settings.rs:84
+#: crates/immich-mount-core/src/settings.rs:85
 msgid "Date and Time Taken"
 msgstr "Fecha y hora de captura"
 
-#: crates/immich-mount-core/src/settings.rs:85
+#: crates/immich-mount-core/src/settings.rs:86
 msgid "Original File Names"
 msgstr "Nombres de archivo originales"
 
