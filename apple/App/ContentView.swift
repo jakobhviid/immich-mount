@@ -1,62 +1,69 @@
-// The app's one window: sign in, or the status of the Finder location.
+// The app's one window, for signing in (ARCHITECTURE.md, "The macOS edition"): the server's address, then the way to
+// sign in that the server offers, then, while the Finder location waits to be switched on, the step that does it.
+// The window closes once the location is on; everything after that is in the menu bar item's menu.
 
-import AppKit
 import AuthenticationServices
 import SwiftUI
 
 struct ContentView: View {
     @EnvironmentObject private var model: AppModel
+    /// Told the content's height whenever a step changes it, so the window can take it.
+    var heightChanged: (CGFloat) -> Void = { _ in }
 
     var body: some View {
-        VStack(spacing: 0) {
+        VStack(spacing: 18) {
+            Image("Drive")
+                .resizable()
+                .frame(width: 80, height: 80)
             if !Installation.isInApplications {
-                Spacer()
-                Header(title: "Move Immich Mount to Applications",
-                       line: "Finder's location runs from the Applications folder. Drag Immich Mount into Applications, then open it from there.")
-                Button("Quit") { NSApplication.shared.terminate(nil) }
-                    .keyboardShortcut(.defaultAction)
-                    .padding(24)
-                Spacer()
-            } else if let server = model.server {
-                Header(title: "Your Library Is in Finder",
-                       line: "\(FinderLocation.name) is in Finder's sidebar and in every file dialog.")
-                StatusView(server: server)
+                Title(text: "Move Immich Mount to Applications",
+                      line: "Finder's location runs from the Applications folder. Quit Immich Mount, drag it into Applications, then open it from there.")
+            } else if model.server == nil {
+                Title(text: "Sign In to Immich", line: "Your photos and videos in Finder, as a drive.")
+                SignInForm()
             } else {
-                Header(title: "Your Immich Library in Finder",
-                       line: "Browse your photos and videos as a drive. Originals download only when you open them.")
-                SignInView()
+                SwitchOnStep()
             }
         }
-        .frame(minWidth: 480, idealWidth: 520, minHeight: 560, idealHeight: 820)
-        #if DEBUG
-        .task { await model.followLaunchArguments() }
-        #endif
+        .padding(.horizontal, 28)
+        .padding(.top, 20)
+        .padding(.bottom, 24)
+        .frame(width: 460)
+        .fixedSize(horizontal: false, vertical: true)
+        .background(GeometryReader { proxy in
+            Color.clear.preference(key: ContentHeight.self, value: proxy.size.height)
+        })
+        .onPreferenceChange(ContentHeight.self) { heightChanged($0) }
     }
 }
 
-/// The drive over a title and a line, as the GNOME app's welcome and status pages and the README have it: the
-/// drawing itself, not the macOS app icon's tile.
-struct Header: View {
-    let title: String
+private struct ContentHeight: PreferenceKey {
+    static let defaultValue: CGFloat = 0
+
+    static func reduce(value: inout CGFloat, nextValue: () -> CGFloat) {
+        value = max(value, nextValue())
+    }
+}
+
+/// A step's title over a line, centred, as macOS's own setup windows have them.
+struct Title: View {
+    let text: String
     let line: String
 
     var body: some View {
-        VStack(spacing: 8) {
-            Image("Drive")
-                .resizable()
-                .frame(width: 112, height: 112)
-            Text(title).font(.title2.bold())
+        VStack(spacing: 6) {
+            Text(text).font(.title2.bold())
             Text(line)
                 .foregroundStyle(.secondary)
                 .multilineTextAlignment(.center)
+                .fixedSize(horizontal: false, vertical: true)
         }
-        .padding(.top, 24)
-        .padding(.horizontal, 24)
     }
 }
 
-/// Signing in as on Linux: the server's address first, then what it offers (ARCHITECTURE.md, "Signing in").
-struct SignInView: View {
+/// Signing in as on Linux: the server's address first, then what it offers (ARCHITECTURE.md, "Signing in"). The
+/// fields stand in a form with their labels on the left, as in Mail's and Internet Accounts' sign-in windows.
+struct SignInForm: View {
     @EnvironmentObject private var model: AppModel
     @Environment(\.webAuthenticationSession) private var webAuthenticationSession
     @State private var address = ""
@@ -66,127 +73,101 @@ struct SignInView: View {
     @State private var usesKey = false
 
     var body: some View {
-        Form {
-            Section {
-                TextField("Server", text: $address, prompt: Text("photos.example.org"))
-                    .disabled(model.offer != nil)
-            } header: {
-                Text("Sign in to Immich")
-            }
+        VStack(alignment: .leading, spacing: 14) {
             if let offer = model.offer {
+                Text("\(offer.address), Immich \(offer.version)")
+                    .foregroundStyle(.secondary)
+                    .frame(maxWidth: .infinity)
                 if let button = offer.browserButton, !usesKey {
-                    Section {
-                        Button(button) { Task { await model.useBrowser(webAuthenticationSession) } }
-                            .disabled(model.busy)
+                    Button { Task { await model.useBrowser(webAuthenticationSession) } } label: {
+                        Text(button).frame(maxWidth: .infinity)
                     }
+                    .buttonStyle(.borderedProminent)
+                    .controlSize(.large)
+                    .disabled(model.busy)
                 }
-                if offer.password, !usesKey {
-                    Section {
-                        TextField("Email", text: $email)
-                        SecureField("Password", text: $password)
-                        HStack {
-                            Spacer()
-                            Button("Sign In") { Task { await model.usePassword(email: email, password: password) } }
-                                .keyboardShortcut(.defaultAction)
-                                .disabled(model.busy || email.isEmpty || password.isEmpty)
-                        }
+                if usesKey {
+                    Form {
+                        SecureField("API Key:", text: $apiKey)
                     }
-                }
-                Section {
-                    if usesKey {
-                        SecureField("API key", text: $apiKey)
-                        HStack {
-                            Spacer()
-                            Button("Sign In") { Task { await model.useKey(apiKey) } }
-                                .keyboardShortcut(.defaultAction)
-                                .disabled(model.busy || apiKey.isEmpty)
-                        }
-                    } else {
-                        Button("Use an API Key Instead") { usesKey = true }
-                    }
-                } footer: {
-                    Text("Immich \(offer.version). An API key is made in Immich under Account Settings, API Keys; one that may only read is enough to browse.")
+                    Text("Make one in Immich under Account Settings, API Keys; one that may only read is enough to browse.")
+                        .font(.callout)
                         .foregroundStyle(.secondary)
+                        .fixedSize(horizontal: false, vertical: true)
+                } else if offer.password {
+                    Form {
+                        TextField("Email:", text: $email)
+                        SecureField("Password:", text: $password)
+                    }
+                }
+            } else {
+                Form {
+                    TextField("Server:", text: $address, prompt: Text("photos.example.org"))
                 }
             }
             if let message = model.message {
-                Text(message).foregroundStyle(.red)
+                Text(message)
+                    .font(.callout)
+                    .foregroundStyle(.red)
+                    .fixedSize(horizontal: false, vertical: true)
             }
-            HStack {
-                if model.offer != nil {
-                    Button("Other Server") {
-                        model.offer = nil
-                        usesKey = false
-                    }
+            buttons
+        }
+        .formStyle(.columns)
+    }
+
+    @ViewBuilder
+    private var buttons: some View {
+        HStack {
+            if model.offer != nil {
+                Button("Back") {
+                    model.offer = nil
+                    model.message = nil
+                    usesKey = false
                 }
-                Spacer()
-                if model.busy {
-                    ProgressView().controlSize(.small)
-                }
-                if model.offer == nil {
-                    Button("Continue") { Task { await model.check(address: address) } }
-                        .keyboardShortcut(.defaultAction)
-                        .disabled(model.busy || address.isEmpty)
-                }
+                Button(usesKey ? "Use Email and Password" : "Use an API Key") { usesKey.toggle() }
+                    .buttonStyle(.link)
+                    .disabled(usesKey && model.offer?.password != true)
+            }
+            Spacer()
+            if model.busy {
+                ProgressView().controlSize(.small)
+            }
+            if model.offer == nil {
+                Button("Continue") { Task { await model.check(address: address) } }
+                    .keyboardShortcut(.defaultAction)
+                    .disabled(model.busy || address.isEmpty)
+            } else if usesKey {
+                Button("Sign In") { Task { await model.useKey(apiKey) } }
+                    .keyboardShortcut(.defaultAction)
+                    .disabled(model.busy || apiKey.isEmpty)
+            } else if model.offer?.password == true {
+                Button("Sign In") { Task { await model.usePassword(email: email, password: password) } }
+                    .keyboardShortcut(.defaultAction)
+                    .disabled(model.busy || email.isEmpty || password.isEmpty)
             }
         }
-        .formStyle(.grouped)
     }
 }
 
-struct StatusView: View {
-    let server: String
+/// The step after signing in, while the location waits to be switched on: nothing else on the Mac says so, and
+/// Finder shows nothing until it is. The window closes by itself once it is on.
+struct SwitchOnStep: View {
     @EnvironmentObject private var model: AppModel
-    /// What the extension last saw of the server, read again every few seconds.
-    @State private var status = Status.load()
 
     var body: some View {
-        Form {
-            Section {
-                LabeledContent("Server", value: [server, status?.version].compactMap { $0 }.joined(separator: ", Immich "))
-                if let email = Account.email {
-                    LabeledContent("Account", value: email)
-                }
-                if let status {
-                    LabeledContent("Connection") {
-                        if status.online {
-                            Text("Connected, checked \(status.checked, style: .relative) ago")
-                        } else {
-                            Text("Not reachable, \(status.checked, style: .relative) ago: \(status.problem ?? "no reason given")")
-                        }
-                    }
-                }
-                Text("Originals download when something opens them; listing and thumbnails download nothing.")
-            }
-            Section {
-                Text("If \(FinderLocation.name) is missing from Finder's sidebar, switch Immich Mount on in System Settings, under General, Login Items & Extensions, File Providers.")
-                    .foregroundStyle(.secondary)
-                HStack {
-                    Button("Open System Settings") { model.openExtensionSettings() }
-                    Button("Show in Finder") { Task { await model.showInFinder() } }
-                    SettingsLink { Text("Settings…") }
-                }
-            }
-            Section {
-                Toggle("Open at login", isOn: Binding(get: { model.opensAtLogin }, set: { model.setOpensAtLogin($0) }))
-            } footer: {
-                Text("While Immich Mount runs, changes in Immich reach Finder within seconds.")
-                    .foregroundStyle(.secondary)
-            }
-            if let message = model.message {
-                Text(message).foregroundStyle(.red)
-            }
-            HStack {
-                Spacer()
-                Button("Sign Out") { Task { await model.signOut() } }
-                    .disabled(model.busy)
-            }
+        Title(text: "Switch On Immich Mount",
+              line: "macOS asks once before a new location shows in Finder: switch Immich Mount on in System Settings, under General, Login Items & Extensions, File Providers.")
+        HStack {
+            Spacer()
+            Button("Open System Settings") { model.openExtensionSettings() }
+                .keyboardShortcut(.defaultAction)
         }
-        .formStyle(.grouped)
         .task {
+            // Quicker than the change signal, so the window closes as soon as the switch is on.
             while !Task.isCancelled {
-                status = Status.load()
-                try? await Task.sleep(for: .seconds(5))
+                await model.refreshState()
+                try? await Task.sleep(for: .seconds(2))
             }
         }
     }

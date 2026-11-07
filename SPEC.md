@@ -324,7 +324,7 @@ table in the Core drives validation, `immich-mount configure`, and the app's set
 |---|---|---|---|
 | `server.url` | URL | none | The Immich server; `/api` is added |
 | `mount.path` | path | `~/Immich` | Where the mount appears |
-| `mount.name` | `immich-mount`, `immich-drive`, `immich` | `immich-mount` | The drive's name in the sidebar: "Immich Mount", "Immich Drive" or "Immich" in Files, Dolphin and Finder. The mount point stays `mount.path`; the apps apply it by restarting the daemon (Linux) or renaming the Finder location in place (macOS) |
+| `mount.name` | `immich-mount`, `immich-drive`, `immich` | `immich-mount` | The drive's name in the sidebar: "Immich Mount", "Immich Drive" or "Immich" in Files and Dolphin. The mount point stays `mount.path`; the apps apply it by restarting the daemon. Linux only: Finder's sidebar shows the app's name, "Immich Mount", for a provider's only location |
 | `mount.at_login` | bool | `true` | Mount when the session starts: setting it enables or disables the user service |
 | `sections.photos` / `.albums` / `.people` / `.places` | bool | `true` | Show the section |
 | `grouping.albums` / `.people` / `.places` | `never`, `atLeast500`, `always` | `atLeast500` | Date groups |

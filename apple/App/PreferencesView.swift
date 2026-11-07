@@ -5,11 +5,20 @@ import FileProvider
 import SwiftUI
 
 struct PreferencesView: View {
+    @EnvironmentObject private var model: AppModel
     @State private var groups: [PreferenceGroup] = preferences(config: AppGroup.configText)
     @State private var message: String?
 
     var body: some View {
         Form {
+            Section {
+                Toggle("Open at login", isOn: Binding(get: { model.opensAtLogin }, set: { model.setOpensAtLogin($0) }))
+            } header: {
+                Text("General")
+            } footer: {
+                Text("While Immich Mount runs, in the menu bar, changes in Immich reach Finder within seconds.")
+                    .foregroundStyle(.secondary)
+            }
             ForEach(groups, id: \.title) { group in
                 Section(group.title) {
                     ForEach(group.preferences, id: \.key) { preference in
@@ -24,7 +33,7 @@ struct PreferencesView: View {
         .formStyle(.grouped)
         // A change reimports the location's items, which only the copy in Applications may do.
         .disabled(!Installation.isInApplications)
-        .frame(width: 480)
+        .frame(minWidth: 480, maxWidth: .infinity, minHeight: 400, maxHeight: .infinity)
     }
 
     @ViewBuilder
@@ -42,7 +51,7 @@ struct PreferencesView: View {
         }
     }
 
-    /// Keep one value, then have the system list every folder again, by the new rules; a new name renames the location.
+    /// Keep one value, then have the system list every folder again, by the new rules.
     private func change(_ key: String, to value: String) {
         do {
             let updated = try setPreference(config: AppGroup.configText, key: key, value: value)
@@ -51,10 +60,6 @@ struct PreferencesView: View {
             groups = preferences(config: updated)
             message = nil
             Task {
-                if key == "mount.name" {
-                    await FinderLocation.applyName()
-                    return
-                }
                 do {
                     try await NSFileProviderManager(for: FinderLocation.domain)?.reimportItems(below: .rootContainer)
                 } catch {

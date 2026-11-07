@@ -2,8 +2,9 @@
 # The macOS app icon, from the project's own icon (packaging/icons/dev.hviid.ImmichMount.svg): the same drive and
 # lens, unchanged, on the rounded square macOS 26 expects of an app icon (ARCHITECTURE.md, "The icon"). Writes every
 # size the asset catalog needs into apple/App/Assets.xcassets/AppIcon.appiconset/, which is committed: the Mac has no
-# SVG renderer. Also writes Finder's sidebar symbol (apple/make-symbol.py) into SidebarSymbol.symbolset/. Runs where
-# rsvg-convert is, such as the Fedora toolbox; run it again when the icon changes.
+# SVG renderer. Also writes Finder's sidebar symbol (apple/make-symbol.py) and the menu bar icon
+# (apple/make-menu-bar-icon.py). Runs where rsvg-convert is, such as the Fedora toolbox; run it again when the icon
+# changes.
 #
 #   apple/make-icons.sh
 set -euo pipefail
@@ -85,7 +86,7 @@ JSON
 
 symbol_dir=apple/App/Assets.xcassets/SidebarSymbol.symbolset
 mkdir -p "$symbol_dir"
-python3 apple/make-symbol.py "$symbol_dir/SidebarSymbol.svg"
+python3 apple/make-symbol.py "$symbol_dir/SidebarSymbol.svg" --square
 cat >"$symbol_dir/Contents.json" <<'JSON'
 {
   "info" : { "author" : "xcode", "version" : 1 },
@@ -93,4 +94,6 @@ cat >"$symbol_dir/Contents.json" <<'JSON'
   "symbols" : [ { "filename" : "SidebarSymbol.svg", "idiom" : "universal" } ]
 }
 JSON
+
+python3 apple/make-menu-bar-icon.py
 echo "wrote $set_dir, $drive_dir and $symbol_dir"

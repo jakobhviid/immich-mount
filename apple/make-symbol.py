@@ -1,12 +1,14 @@
 #!/usr/bin/env python3
-"""The Finder sidebar symbol: the app icon's drive and lens in outline (ARCHITECTURE.md, "The icon").
+"""Finder's sidebar symbol, the drive and lens in outline (ARCHITECTURE.md, "The icon"): with --square, the one the
+app ships, the drive filling a rounded square as the macOS app icon and the menu bar icon have it; without, the
+drive as the project's icon draws it.
 
 Writes an SF Symbols template (v6.0, "variable"): three source glyphs, Ultralight, Regular and Black at the small
 scale, from which macOS interpolates every weight and scale. They are made from one geometry with three stroke
 widths, so their paths match command for command, as interpolation needs; only lines and cubic curves are used.
 Glyph coordinates are Apple's: x from the left margin, y up from the baseline (negative), cap height 70.459.
 
-    apple/make-symbol.py <output.svg>
+    apple/make-symbol.py <output.svg> [--square]
 """
 import math
 import sys
@@ -79,18 +81,23 @@ def reverse(left, top, right, bottom, radius):
     return " ".join(commands)
 
 
-def glyph(width):
+def glyph(width, square):
     """The glyph at one stroke width, and its advance. Proportions follow the width, so the heavy weights keep a base
     and a ring with an inside; the commands stay the same at every width."""
     w = width
-    body_w, body_h = 104.0 + w * 0.5, 70.0
+    if square:
+        # The drive is the whole rounded square, as on the macOS app icon, a little taller than the capitals.
+        body_w = body_h = 76.0 + w * 0.3
+        radius, base = 18.0, 15.0
+    else:
+        body_w, body_h = 104.0 + w * 0.5, 70.0
+        radius, base = 16.0, 12.0
     left, right = SIDE, SIDE + body_w
     top, bottom = -CAP / 2 - body_h / 2, -CAP / 2 + body_h / 2
-    radius = 16.0
     paths = [rounded_rect(left, top, right, bottom, radius, True), rounded_rect(left + w, top + w, right - w, bottom - w, radius - w, False)]
     # Where the face meets the base, as on the icon's drive, and the base's light as a dot.
     line = w * 0.6
-    split = bottom - (12.0 + w * 0.9)
+    split = bottom - (base + w * 0.9)
     paths.append(rounded_rect(left + w / 2, split - line / 2, right - w / 2, split + line / 2, min(line / 2, 1.0), True))
     light = min(max(w * 0.42, 1.8), (bottom - w - split - line / 2) * 0.45)
     light_y = (split + line / 2 + bottom - w) / 2
@@ -113,10 +120,11 @@ def glyph(width):
     return paths, body_w + 2 * SIDE
 
 
-def template():
+def template(square):
+    which = "Finder sidebar symbol, the drive filling a rounded square" if square else "Finder sidebar symbol, the drive"
     lines = [
         '<?xml version="1.0" encoding="UTF-8"?>',
-        '<!-- Immich Mount\'s Finder sidebar symbol, written by apple/make-symbol.py: the drive and its lens in outline. -->',
+        f'<!-- Immich Mount\'s {which} and its lens in outline, written by apple/make-symbol.py. -->',
         '<svg version="1.1" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 3300 2200">',
         ' <g id="Notes">',
         '  <text id="template-version" style="stroke:none;fill:black;font-family:sans-serif;font-size:13;text-anchor:end;" transform="matrix(1 0 0 1 3036 1933)">Template v.6.0</text>',
@@ -130,7 +138,7 @@ def template():
         lines.append(f'  <line id="Capline-{scale}" {guide} x1="263" x2="3036" y1="{fmt(baseline - CAP)}" y2="{fmt(baseline - CAP)}"/>')
     glyphs = []
     for name, (centre, width) in WEIGHTS.items():
-        paths, advance = glyph(width)
+        paths, advance = glyph(width, square)
         margin_left = centre - advance / 2
         margin = 'style="fill:none;stroke:#00AEEF;stroke-width:0.5;opacity:1.0;"'
         lines.append(f'  <line id="left-margin-{name}" {margin} x1="{fmt(margin_left)}" x2="{fmt(margin_left)}" y1="600.785" y2="720.121"/>')
@@ -147,4 +155,6 @@ def template():
 
 
 if __name__ == "__main__":
-    open(sys.argv[1], "w").write(template())
+    if len(sys.argv) not in (2, 3) or sys.argv[2:] not in ([], ["--square"]):
+        sys.exit(__doc__)
+    open(sys.argv[1], "w").write(template(sys.argv[2:] == ["--square"]))

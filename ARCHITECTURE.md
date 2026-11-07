@@ -96,8 +96,8 @@ icon style, and is MIT like the rest.
   renderer (QuickLook draws the SVG at its own size, not to a given one). The app and the extension both carry it:
   the Dock, Login Items, System Settings' list of file providers and the About panel show it. The app's window shows
   the drawing itself over its title, as the README and the GNOME app's welcome and status pages do: the SVG, kept as
-  a vector in the asset catalog. The About panel has the GNOME About
-  dialog's texts: the non-affiliation notice as its copyright line, then the credits and the AI disclosure.
+  a vector in the asset catalog. The About panel has the GNOME About dialog's texts: the non-affiliation notice as
+  its copyright line, then the website, the source code, the credits and the AI disclosure.
 - **On macOS 26 and later** the icon is an Icon Composer document, `apple/App/AppIcon.icon`, as Apple's guidelines
   ask, so it follows the light, dark, tinted and clear appearances and takes the system's glass and lighting. The
   same drive in layers: the face is the document's background (a light and a dark gradient), the base and its light
@@ -108,9 +108,17 @@ icon style, and is MIT like the rest.
   15; actool compiles both (verified with Xcode 27.2: the catalog holds the layered stacks and the flat sizes).
 - **Finder's sidebar** shows each location with a one-colour symbol, which the provider names in its extension's
   `CFBundleSymbolName` and ships in its asset catalog, as Nextcloud and OneDrive do (without one, Finder draws a
-  generic drive or folder). Ours is the app icon's drive and lens in outline: the face and base, the base's light, and
-  the lens as a ring in five segments, as the icon's ring carries five colours. `apple/make-symbol.py` writes it as
-  an SF Symbols template (v6.0) with its three source weights made from one geometry, so they interpolate.
+  generic drive or folder). Ours is the macOS app icon in outline, as Finder's sidebar draws its symbols: the drive
+  filling a rounded square, the line where its face meets the base, the base's light, and the lens as a ring in five
+  segments, as the icon's ring carries five colours. `apple/make-symbol.py --square` writes it as an SF Symbols
+  template (v6.0) with its three source weights made from one geometry, so they interpolate; without `--square` it
+  draws the drive's own wider shape, which the sidebar showed first.
+- **The menu bar item** shows the macOS app icon as one solid shape, as menu bar icons are drawn (Finder's sidebar
+  draws outlines): the drive filling a rounded square, with the five-segment lens ring, its centre, the line where
+  the face meets the base and the light cut out. `apple/make-menu-bar-icon.py` writes it as a template image at
+  menu bar icons' size, 18 points with a 16-point glyph, rather than a symbol that takes the text's size, which came
+  out smaller than its neighbours. Together with the sidebar's outline and the Icon Composer icon, the rounded square
+  gives the Mac edition a look of its own on the Mac.
 
 ## Two processes: a daemon and an app
 
@@ -1181,7 +1189,7 @@ the Linux edition. **Being built** on the `mac-support` branch (ROADMAP, M7), an
             immich-mount-apple (Rust) ─▶ core: tree, names, metadata store ─▶ immich-api ─▶ Immich
                                   ▲
                                   │ App Group container, Keychain group, signals
-            Immich Mount.app (SwiftUI window and Settings, login item): sign-in, settings, status
+            Immich Mount.app (menu bar app, its window and Settings): sign-in, settings, status
 ```
 
 **Why File Provider:** it is how macOS shows remote storage (iCloud Drive, OneDrive, Dropbox): files that download
@@ -1204,8 +1212,27 @@ when opened, eviction under storage pressure, the Finder sidebar and every file 
 **Two processes, as on Linux,** but macOS decides when the extension runs:
 - **The extension** answers the system: listings, item details, originals, thumbnails, changes and uploads. The
   system starts it on demand and stops it when idle.
-- **The app** signs in, edits settings and shows status, and as a login item keeps changes flowing (below). Closing
-  its window stops nothing.
+- **The app** signs in, edits settings and shows status, and keeps changes flowing while it runs (below). It is a
+  menu bar app, as Mac apps that keep something in sync are (`LSUIElement`):
+  - **Its menu** starts with what needs doing, when something does ("Sign In…", "Switch On in System Settings…"),
+    and otherwise with the connection ("Connected to <server>") and its details in grey lines below, as menu bar
+    apps show them: Immich's version, the account, and when the connection was last checked, or why it failed. Then
+    Open in Finder, Settings…, Sign Out… (asked first: it removes the location and what was downloaded), About and
+    Quit.
+  - **Its one window** is for signing in, laid out as Mail's and Internet Accounts' sign-in windows are: the drive,
+    a title, and a form with its labels on the left (the server's address, then single sign-on as the main button,
+    or an email and password, or an API key). After signing in it shows one step more while the location waits to
+    be switched on, which nothing else on the Mac tells and without which Finder shows nothing, and closes by itself
+    once the switch is on. It takes each step's height, keeping its top edge, as macOS's own setup windows do; the
+    app resizes it after its layout pass, since a window that follows its SwiftUI content during layout is laid out
+    again without end as the content changes, which stopped the app (macOS 27). Settings, whose form scrolls, has a
+    size of its own.
+  - **Opened by someone** (from Finder, Launchpad or Spotlight), it shows what is left to do, or Settings once
+    nothing is; started at login, it only takes its place in the menu bar. Settings is a window of its own, which
+    the menu, the app menu's Command-comma and reopening all reach; "Open at login" is there, under General.
+  - **While a window is open** (the sign-in, Settings, About) it has a Dock icon and its menus, so Command-Q and
+    pasting work as anywhere; with the last one closed it is in the menu bar only.
+  - Quitting it stops only the change signals; the extension serves Finder on its own.
 - **Only the extension opens the metadata store.** redb allows one process, and the extension is the one that needs
   it.
 - **Status goes through a file.** The extension writes what it last saw of the server (reachable or not, when, the
@@ -1270,12 +1297,14 @@ set what changed since a sync anchor (Apple's documentation):
 - **A folder that went away** takes what the store kept below it: its deletion and its contents' are recorded, and
   its kept listing goes, so later polls stop asking for it.
 
-**Settings.** The app's Settings window shows the settings table's entries that mean something on macOS (the
-location's name, sections, date folders, the album layout, file naming), with Linux's labels. A change is written to
-`config.toml` in the App Group, and the app asks the system to list everything again. A new name is the exception:
-adding the domain again under it renames the location in place (the File Provider API updates an existing domain's
-properties), so nothing is listed or downloaded again; the app also renames a location that has an older name as it
-starts. The extension follows a changed file at the next
+**Settings.** The app's Settings window shows the settings table's entries that mean something on macOS (sections,
+date folders, the album layout, file naming), with Linux's labels. A change is written to `config.toml` in the App
+Group, and the app asks the system to list everything again. The drive's name (`mount.name`) is not among them:
+Finder's sidebar shows the extension's name, "Immich Mount", for a provider's only location, and a location's own
+name only as a suffix once there are two (verified: renaming ours changed nothing in the sidebar; Nextcloud and
+OneDrive show the same). Apple offers no way to set it. The location still carries the setting's name, as its
+folder's: adding the domain again under a new name renames it in place, items and downloads kept, and the app does
+so as it starts. The extension follows a changed file at the next
 folder the system asks for, with a new tree on the same store; the mount's path, the cache and thumbnail seeding
 are Linux's.
 

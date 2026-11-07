@@ -49,6 +49,11 @@ Traps (verified on macOS 27.0.1 with Xcode 27.2):
   "encountered an error". `killall fileproviderd` (it runs as the user, and launchd starts it again at once) clears
   the job, and the next request starts the extension from the new path (verified on macOS 27.0.1). Before deleting a
   build, unregister it: `lsregister -u <app>` (in LaunchServices.framework's `Support/`).
+- **No `osascript` over SSH, ever.** Apple events from an SSH session (to System Events, or `tell application … to
+  quit`) make macOS ask the maintainer whether `sshd-keygen-wrapper`, the program that starts SSH sessions, may
+  control that app, and accepting widens what every SSH session may do: a laptop setting this skill must not touch.
+  Quit the app with `pkill -x "Immich Mount"` (a signal needs no permission), and ask the maintainer what is on
+  screen.
 - **zsh aborts a command whose glob matches nothing** ("no matches found"), and the rest of an SSH command line with
   it. Run cleanup scripts through `bash -s`.
 

@@ -1,8 +1,10 @@
-// The app (ARCHITECTURE.md, "The macOS edition"): signs in, adds the Finder location and shows status. Closing it
-// stops nothing; the extension serves Finder on its own.
+// The app (ARCHITECTURE.md, "The macOS edition"): a menu bar app that signs in, adds the Finder location and shows
+// status, and keeps changes flowing while it runs. Quitting it stops nothing but that; the extension serves Finder on
+// its own.
 
 import AppKit
 import AuthenticationServices
+import Combine
 import FileProvider
 import os
 import ServiceManagement
@@ -12,27 +14,230 @@ let logger = Logger(subsystem: "dev.hviid.ImmichMount", category: "app")
 
 @main
 struct ImmichMountApp: App {
-    @StateObject private var model = AppModel()
+    @NSApplicationDelegateAdaptor private var delegate: AppDelegate
+    /// The menu bar item, there once the app runs from Applications.
+    @State private var inMenuBar = Installation.isInApplications
 
     init() {
         startLogging()
     }
 
     var body: some Scene {
-        WindowGroup("Immich Mount") {
-            ContentView()
-                .environmentObject(model)
+        MenuBarExtra(isInserted: $inMenuBar) {
+            MenuBarMenu()
+                .environmentObject(delegate.model)
+        } label: {
+            // The app icon as one solid shape, its lens and base cut out, as menu bar icons are drawn.
+            Image("MenuBarIcon")
         }
-        .defaultSize(width: 520, height: 820)
-        .windowResizability(.contentMinSize)
         .commands {
             CommandGroup(replacing: .appInfo) {
                 Button("About Immich Mount") { showAbout() }
             }
+            CommandGroup(replacing: .appSettings) {
+                Button("Settings…") { AppDelegate.shared?.showSettings() }
+                    .keyboardShortcut(",")
+            }
         }
-        Settings {
-            PreferencesView()
+    }
+}
+
+/// Opens the sign-in window while it is wanted and Settings when asked, and gives the app a Dock icon and its menus
+/// while a window is open: at other times it lives in the menu bar only, as Mac apps that keep something in sync do.
+@MainActor
+final class AppDelegate: NSObject, NSApplicationDelegate {
+    private(set) static weak var shared: AppDelegate?
+    let model = AppModel()
+    private var window: NSWindow?
+    private var settingsWindow: NSWindow?
+    private var setUp: AnyCancellable?
+    /// Whether macOS started the app as a login item, read from the launch event before it is gone.
+    private var launchedAtLogin = false
+
+    override init() {
+        super.init()
+        AppDelegate.shared = self
+    }
+
+    func applicationWillFinishLaunching(_ notification: Notification) {
+        let launch = NSAppleEventManager.shared().currentAppleEvent
+        launchedAtLogin = launch?.eventID == kAEOpenApplication
+            && launch?.paramDescriptor(forKeyword: keyAEPropData)?.enumCodeValue == keyAELaunchedAsLogInItem
+    }
+
+    func applicationDidFinishLaunching(_ notification: Notification) {
+        followWindows()
+        // Back from System Settings, the menu and the window know at once whether the location was switched on.
+        NotificationCenter.default.addObserver(forName: NSApplication.didBecomeActiveNotification, object: nil, queue: .main) { _ in
+            Task { @MainActor in await AppDelegate.shared?.model.refreshState() }
         }
+        // The sign-in window is done once there is an account and its location is on.
+        setUp = model.$server.combineLatest(model.$locationSwitchedOff)
+            .receive(on: RunLoop.main)
+            .sink { [weak self] server, switchedOff in
+                if server != nil && !switchedOff && Installation.isInApplications {
+                    self?.window?.close()
+                }
+            }
+        // At login the app only takes its place in the menu bar. Opened by someone, it shows what is left to do, or
+        // Settings.
+        Task {
+            await model.refreshState()
+            if !Installation.isInApplications || model.server == nil || model.locationSwitchedOff {
+                if !launchedAtLogin || model.server == nil { showWindow() }
+            } else if !launchedAtLogin {
+                showSettings()
+            }
+        }
+        #if DEBUG
+        Task { await model.followLaunchArguments() }
+        #endif
+    }
+
+    /// Signing out removes the location and what was downloaded, so it is asked first.
+    func confirmSignOut() {
+        let alert = NSAlert()
+        alert.messageText = "Sign out of Immich Mount?"
+        alert.informativeText = "Immich Mount leaves Finder, together with the photos and videos downloaded to this Mac. Your library on the server stays as it is."
+        alert.addButton(withTitle: "Sign Out").hasDestructiveAction = true
+        alert.addButton(withTitle: "Cancel")
+        bringForward()
+        if alert.runModal() == .alertFirstButtonReturn {
+            Task { await model.signOut() }
+        }
+    }
+
+    /// Opened again from Finder, Launchpad or Spotlight while it runs: what is left to do, or Settings.
+    func applicationShouldHandleReopen(_ sender: NSApplication, hasVisibleWindows: Bool) -> Bool {
+        if !Installation.isInApplications || model.server == nil || model.locationSwitchedOff {
+            showWindow()
+        } else {
+            showSettings()
+        }
+        return false
+    }
+
+    /// The sign-in window: signing in, then switching the location on. It takes each step's height, as macOS's own
+    /// setup windows do, keeping its top edge. The window is resized after its layout pass, not by the hosting
+    /// view's constraints: a window that follows its SwiftUI content during layout is laid out again without end as
+    /// the steps change, which stops the app (seen on macOS 27).
+    func showWindow() {
+        if window == nil {
+            let content = ContentView(heightChanged: { [weak self] height in
+                DispatchQueue.main.async { self?.fitWindow(to: height) }
+            })
+            let hosting = NSHostingController(rootView: content.environmentObject(model))
+            hosting.sizingOptions = []
+            let window = NSWindow(contentViewController: hosting)
+            window.title = "Immich Mount"
+            window.styleMask = [.titled, .closable, .miniaturizable]
+            window.setContentSize(hosting.view.fittingSize)
+            window.isReleasedWhenClosed = false
+            window.isRestorable = false
+            window.center()
+            self.window = window
+        }
+        present(window)
+    }
+
+    private func fitWindow(to height: CGFloat) {
+        guard let window, height > 0 else { return }
+        let content = window.contentRect(forFrameRect: window.frame)
+        guard abs(content.height - height) > 0.5 else { return }
+        var frame = window.frameRect(forContentRect: NSRect(x: content.minX, y: content.minY, width: content.width, height: height))
+        frame.origin.y = window.frame.maxY - frame.height
+        window.setFrame(frame, display: true, animate: window.isVisible)
+    }
+
+    /// Settings, in a window of the app's own, so the menu, the app menu and reopening all reach it. Its form
+    /// scrolls, so the window has a size of its own rather than its content's, which has none to settle on.
+    func showSettings() {
+        if settingsWindow == nil {
+            let hosting = NSHostingController(rootView: PreferencesView().environmentObject(model))
+            hosting.sizingOptions = []
+            let window = NSWindow(contentViewController: hosting)
+            window.title = "Immich Mount Settings"
+            window.styleMask = [.titled, .closable, .miniaturizable, .resizable]
+            window.setContentSize(NSSize(width: 480, height: 640))
+            window.contentMinSize = NSSize(width: 480, height: 400)
+            window.isReleasedWhenClosed = false
+            window.isRestorable = false
+            window.center()
+            settingsWindow = window
+        }
+        present(settingsWindow)
+    }
+
+    private func present(_ window: NSWindow?) {
+        guard let window else { return }
+        bringForward()
+        window.orderFrontRegardless()
+        window.makeKey()
+    }
+
+    /// Make the app the active one, with its Dock icon and menus. The policy change takes effect on the next turn of
+    /// the run loop, and macOS refuses an activation asked for before it (activation is cooperative since macOS 14),
+    /// which left windows behind the other apps' ones; so it is asked for again once the change has landed.
+    func bringForward() {
+        NSApp.setActivationPolicy(.regular)
+        NSApp.activate()
+        DispatchQueue.main.async {
+            NSApp.activate()
+            NSApp.keyWindow?.orderFrontRegardless()
+        }
+    }
+
+    /// The Dock icon and the menus while any titled window (this one, Settings, About) is open, none after the last.
+    private func followWindows() {
+        let center = NotificationCenter.default
+        center.addObserver(forName: NSWindow.didBecomeKeyNotification, object: nil, queue: .main) { notification in
+            guard let window = notification.object as? NSWindow, window.styleMask.contains(.titled) else { return }
+            MainActor.assumeIsolated { _ = NSApp.setActivationPolicy(.regular) }
+        }
+        center.addObserver(forName: NSWindow.willCloseNotification, object: nil, queue: .main) { notification in
+            guard let closing = notification.object as? NSWindow, closing.styleMask.contains(.titled) else { return }
+            MainActor.assumeIsolated {
+                let others = NSApp.windows.filter { $0 !== closing && $0.isVisible && $0.styleMask.contains(.titled) }
+                if others.isEmpty && Installation.isInApplications {
+                    _ = NSApp.setActivationPolicy(.accessory)
+                }
+            }
+        }
+    }
+}
+
+/// The menu bar item's menu: what needs doing, or how the connection is with its details in grey, as menu bar apps
+/// show them; then the way to everything else.
+struct MenuBarMenu: View {
+    @EnvironmentObject private var model: AppModel
+
+    var body: some View {
+        if model.server == nil {
+            Button("Sign In…") { AppDelegate.shared?.showWindow() }
+        } else if model.locationSwitchedOff {
+            Button("Switch On in System Settings…") { model.openExtensionSettings() }
+        } else {
+            Text(model.statusLine)
+        }
+        if model.server != nil {
+            ForEach(model.details, id: \.self) { Text($0) }
+        }
+        Divider()
+        if model.server != nil {
+            Button("Open in Finder") { Task { await model.showInFinder() } }
+                .disabled(model.locationSwitchedOff)
+        }
+        Button("Settings…") { AppDelegate.shared?.showSettings() }
+            .keyboardShortcut(",")
+        if model.server != nil {
+            Divider()
+            Button("Sign Out…") { AppDelegate.shared?.confirmSignOut() }
+                .disabled(model.busy)
+        }
+        Divider()
+        Button("About Immich Mount") { showAbout() }
+        Button("Quit Immich Mount") { NSApp.terminate(nil) }
+            .keyboardShortcut("q")
     }
 }
 
@@ -51,14 +256,19 @@ private func showAbout() {
         credits.append(NSAttributedString(string: text, attributes: attributes))
     }
     add("Your Immich photos and videos as a drive in Finder. By Jakob Hviid, under the MIT license.\n\n", body)
+    add("Website\n", heading)
+    add("jakob.hviid.phd/immich-mount", body, link: "https://jakob.hviid.phd/immich-mount/")
+    add("\n\nSource code\n", heading)
+    add("github.com/jakobhviid/immich-mount", body, link: "https://github.com/jakobhviid/immich-mount")
+    add("\n\n", body)
     add("Inspired by\n", heading)
     add("Kartax/immich-desktop-app", body, link: "https://github.com/Kartax/immich-desktop-app")
     add("\n\nThe Immich API layer\n", heading)
     add("immich-rs", body, link: "https://github.com/boul2gom/immich-rs")
     add("\n\nAI disclosure\n", heading)
     add("Parts of this project were written with the assistance of AI coding agents. All changes are reviewed by the maintainer.", body)
+    AppDelegate.shared?.bringForward()
     NSApplication.shared.orderFrontStandardAboutPanel(options: [.credits: credits])
-    NSApplication.shared.activate(ignoringOtherApps: true)
 }
 
 /// Where the app runs from. The system starts the extension from the path it first ran it at, for as long as its File
@@ -77,8 +287,8 @@ enum Installation {
     }
 }
 
-/// The Finder location: one File Provider domain, shown in the sidebar under the drive's name (`mount.name`), as the
-/// volume is in Files and Dolphin.
+/// The Finder location: one File Provider domain. Finder's sidebar shows the app's name for a provider's only location;
+/// the domain's own name, the drive's (`mount.name`), names its folder in ~/Library/CloudStorage.
 enum FinderLocation {
     /// Never changes: the system keys its copy of the library by it.
     static let identifier = NSFileProviderDomainIdentifier("library")
@@ -130,6 +340,49 @@ final class AppModel: ObservableObject {
     @Published var message: String?
     /// Whether the app opens at login, so changes keep reaching Finder; the user's choice, off until made.
     @Published private(set) var opensAtLogin = SMAppService.mainApp.status == .enabled
+    /// What the extension last saw of the server, read again at each change signal.
+    @Published private(set) var status = Status.load()
+    /// Whether the location waits to be switched on in System Settings, as it does after signing in.
+    @Published private(set) var locationSwitchedOff = false
+
+    /// The menu bar menu's first line, while signed in.
+    var statusLine: String {
+        let host = server.flatMap { URL(string: $0)?.host() } ?? server ?? ""
+        guard let status else { return "Signed in to \(host)" }
+        return status.online ? "Connected to \(host)" : "\(host) is not reachable"
+    }
+
+    /// The lines under the menu's first one, each saying what it is: the server's version, the account, and when
+    /// the connection was last checked, or why it failed.
+    var details: [String] {
+        var lines: [String] = []
+        if let version = status?.version {
+            lines.append("Server version: Immich \(version)")
+        }
+        if let email = Account.email {
+            lines.append("Signed in as: \(email)")
+        }
+        if let status {
+            if status.online {
+                let ago = RelativeDateTimeFormatter().localizedString(for: status.checked, relativeTo: Date())
+                lines.append("Last checked: \(ago)")
+            } else {
+                lines.append("Reason: \(status.problem ?? "none given")")
+            }
+        }
+        return lines
+    }
+
+    /// Read the extension's status and whether the location is switched on.
+    func refreshState() async {
+        status = Status.load()
+        guard server != nil else {
+            locationSwitchedOff = false
+            return
+        }
+        let location = try? await NSFileProviderManager.domains().first { $0.identifier == FinderLocation.identifier }
+        locationSwitchedOff = location.map { !$0.userEnabled } ?? false
+    }
 
 
     init() {
@@ -139,6 +392,7 @@ final class AppModel: ObservableObject {
         }
         Task { await refreshItemsAfterUpdate() }
         Task { await FinderLocation.applyName() }
+        Task { await refreshState() }
         Task { await keepChangesFlowing() }
     }
 
@@ -165,6 +419,7 @@ final class AppModel: ObservableObject {
     private func keepChangesFlowing() async {
         while !Task.isCancelled {
             try? await Task.sleep(for: AppModel.changeSignal)
+            await refreshState()
             guard server != nil, let manager = NSFileProviderManager(for: FinderLocation.domain) else { continue }
             do {
                 try await manager.signalEnumerator(for: .workingSet)
@@ -234,8 +489,11 @@ final class AppModel: ObservableObject {
             try Account(server: server, credential: signedIn.credential).save()
             Account.keepEmail(signedIn.account)
             try await FinderLocation.add()
+            // A new location waits to be switched on; known before the account is, so the window shows that step.
+            locationSwitchedOff = true
             self.server = server
             offer = nil
+            await refreshState()
             logger.notice("signed in; the Finder location is added")
         } catch {
             message = describe(error)
