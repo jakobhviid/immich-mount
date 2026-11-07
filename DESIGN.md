@@ -114,7 +114,7 @@ Measured contrast on the website (WCAG AA asks 4.5:1 for text):
   Erebus").
 - **Linux** in the lab VMs, cut to the boxes the `lab-desktop-vm` skill lists. **The Mac** on the maintainer's Mac
   against the lab server, each window taken with ⌘⇧4 and Space, which keeps macOS's own shadow.
-- **Names** say what they show: `files-album.png`, `kde-status.png`, and `mac-` for the Mac's (`mac-finder.png`,
+- **Names** say what they show: `files-album.png`, `kde-status.png`, `gnome-tray.png`, and `mac-` for the Mac's (`mac-finder.png`,
   `mac-menu.png`, `mac-sign-in.png`, `mac-settings.png`).
 - **Retaken** when the interface they show changes; keep the file name, so the README and the page need no change.
 

@@ -48,7 +48,7 @@ without downloading the library first.
 ```
 
 <table><tr>
-<td><img src="docs/screenshots/files-root.png" alt="Immich in the Files sidebar, with Albums, People, Photos and Places"></td>
+<td><img src="docs/screenshots/files-root.png" alt="Immich Mount in the Files sidebar, with Albums, People, Photos, Places and Upload"></td>
 <td><img src="docs/screenshots/files-places.png" alt="A city under Places, with photos named by when they were taken"></td>
 </tr></table>
 
@@ -111,18 +111,24 @@ at every login.
 <td><img src="docs/screenshots/app-connect.png" alt="Immich Mount asking for the server address"></td>
 <td><img src="docs/screenshots/app-sign-in.png" alt="Sign-in methods offered by the server: single sign-on, email and password, API key"></td>
 <td><img src="docs/screenshots/app-setup.png" alt="First run: which sections the drive shows, and where it goes"></td>
-<td><img src="docs/screenshots/app-status.png" alt="The status page: the library is in Files, with Open in Files"></td>
+<td><img src="docs/screenshots/app-status.png" alt="The status page: the library is in Files, with Open in Files and Unmount"></td>
 </tr></table>
+
+While it is mounted, its icon sits in the tray: in KDE Plasma's system tray, and in GNOME's top bar where the
+AppIndicator extension is on (Ubuntu and Bazzite have it). One click shows how it is connected, as the Mac's menu bar
+item does:
+
+<img src="docs/screenshots/gnome-tray.png" width="440" alt="The tray icon's menu in GNOME's top bar: connected to the server, its version and the account, then Open in Files and Open Immich Mount">
 
 On KDE Plasma, the same app opens in Kirigami, puts the mount in Dolphin's Places, and offers to let Dolphin show
 the thumbnails:
 
-![An Immich album in Dolphin, with thumbnails from the server and Immich in Places](docs/screenshots/dolphin-album.png)
+![An Immich album in Dolphin, with thumbnails from the server and Immich Mount in Places](docs/screenshots/dolphin-album.png)
 
 <table><tr>
 <td><img src="docs/screenshots/kde-sign-in.png" alt="The KDE app's sign-in page: single sign-on, email and password, API key"></td>
 <td><img src="docs/screenshots/kde-setup.png" alt="The KDE app's first run: sections, location, and Show thumbnails for Dolphin"></td>
-<td><img src="docs/screenshots/kde-status.png" alt="The KDE app's status page: the library is in Dolphin"></td>
+<td><img src="docs/screenshots/kde-status.png" alt="The KDE app's status page: the library is in Dolphin, with Unmount and Disconnect"></td>
 </tr></table>
 
 **From a terminal,** or on a machine without a desktop:

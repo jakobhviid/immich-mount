@@ -86,12 +86,25 @@ def found(app_name, name):
     return node
 
 
-def has_actions(node):
+PRESSES = ("Press", "Toggle", "press", "toggle", "click")
+
+
+def action_names(node):
     try:
         action = node.get_action_iface()
-        return action is not None and action.get_n_actions() > 0
+        if action is None:
+            return []
+        with warnings.catch_warnings():
+            warnings.simplefilter("ignore", DeprecationWarning)
+            return [Atspi.Action.get_action_name(action, index) for index in range(action.get_n_actions())]
     except GLib.Error:
-        return False
+        return []
+
+
+def has_actions(node):
+    """Whether it can be pressed: GTK's labels have actions too (copy, select all), so a page's title named like
+    its button ("Sign In") is passed over."""
+    return any(name in PRESSES for name in action_names(node))
 
 
 def press(node):
@@ -103,7 +116,7 @@ def press(node):
     with warnings.catch_warnings():
         warnings.simplefilter("ignore", DeprecationWarning)
         names = [Atspi.Action.get_action_name(action, index) for index in range(action.get_n_actions())]
-    for wanted in ("Press", "Toggle", "press", "toggle", "click"):
+    for wanted in PRESSES:
         if wanted in names:
             action.do_action(names.index(wanted))
             return

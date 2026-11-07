@@ -66,16 +66,17 @@ in_ct docker run -d --name dex --restart unless-stopped -p 5556:5556 -v /opt/dex
 wait_for "$P" "$NAME" "Dex's discovery document" curl -fsS -o /dev/null "http://127.0.0.1:5556/dex/.well-known/openid-configuration"
 
 step "immich: point OAuth at Dex"
-CONFIG=$(curl -fsS -H "x-api-key: $IMMICH_API_KEY_FULL" "$IMMICH_URL/api/system-config")
+# From inside the server's container, so it works in NAT mode too, where this host cannot reach the server.
+CONFIG=$(in_ct curl -fsS -H "x-api-key: $IMMICH_API_KEY_FULL" "http://127.0.0.1:2283/api/system-config")
 printf '%s' "$CONFIG" | jq --arg issuer "$ISSUER" --arg secret "$CLIENT_SECRET" '.oauth += {
     enabled: true, issuerUrl: $issuer, clientId: "immich", clientSecret: $secret,
     scope: "openid email profile", autoRegister: true, buttonText: "Sign in with Dex",
     tokenEndpointAuthMethod: "client_secret_post", mobileOverrideEnabled: false,
     allowInsecureRequests: true
   }' |
-  curl -fsS -o /dev/null -X PUT -H "x-api-key: $IMMICH_API_KEY_FULL" -H 'content-type: application/json' \
-    --data-binary @- "$IMMICH_URL/api/system-config"
-curl -fsS "$IMMICH_URL/api/server/features" | jq -e '.oauth == true' >/dev/null || die "Immich does not report OAuth"
+  inc exec --project "$P" "$NAME" -- curl -fsS -o /dev/null -X PUT -H "x-api-key: $IMMICH_API_KEY_FULL" \
+    -H 'content-type: application/json' --data-binary @- "http://127.0.0.1:2283/api/system-config"
+in_ct curl -fsS "http://127.0.0.1:2283/api/server/features" | jq -e '.oauth == true' >/dev/null || die "Immich does not report OAuth"
 
 grep -v '^DEX_' "$HERE/.env.local" > "$HERE/.env.local.tmp" || true
 { cat "$HERE/.env.local.tmp"; echo "DEX_ISSUER=$ISSUER"; echo "DEX_EMAIL=admin@example.com"; echo "DEX_PASSWORD=$DEX_PASSWORD"; } > "$HERE/.env.local"

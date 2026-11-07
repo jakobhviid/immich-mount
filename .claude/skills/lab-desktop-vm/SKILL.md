@@ -133,15 +133,31 @@ JPEGs: `fixtures`, then `open <name> <dir>` (cold cache, settle, screenshot, who
 `docs/screenshots/` holds the README's pictures, taken in these VMs against the seeded server (NAT mode, so the
 apps show `http://ind-immich-srv.incus:2283`), so every photo in them is a credited fixture. Retake one at the same
 size, check it for anything that is not test data, and keep the file name so the README needs no change. Take the
-whole session with `shot.sh` and cut the window out with `lab/crop-png.py`; in a fresh VM the windows open where
-these boxes expect them:
+whole session with `shot.sh` and cut the window out with `lab/crop-png.py`. On GNOME, put the window in place first
+with the shell's Eval, since the top bar moves where windows open (`gdbus call --session --dest org.gnome.Shell
+--object-path /org/gnome/Shell --method org.gnome.Shell.Eval "global.display.focus_window.move_resize_frame(false,
+x, y, width, height)"`); on Plasma they open where these boxes expect them:
 
-| Picture | Box (x0 y0 x1 y1) |
-|---|---|
-| GNOME app, `app-connect`, `app-sign-in`, `app-setup` (with 10 px of desktop) | 350 56 930 776 |
-| GNOME app, `app-status` (the window only) | 360 66 920 766 |
-| KDE app, `kde-*` | 449 52 991 801 |
-| Dolphin, `dolphin-album` | 340 138 1101 717 |
+| Picture | Window placed at (x y width height) | Box (x0 y0 x1 y1) |
+|---|---|---|
+| Files, `files-*` | 10 42 1260 748 | 0 32 1280 800 |
+| GNOME app, `app-connect`, `app-sign-in`, `app-setup`, `app-preferences` (with 10 px of desktop) | 360 66 560 700 | 350 56 930 776 |
+| GNOME app, `app-status` (the window only) | 360 66 560 700 | 360 66 920 766 |
+| The tray's menu in GNOME's top bar, `gnome-tray` | | 840 0 1280 280 |
+| KDE app, `kde-*` | | 449 52 991 801 |
+| Dolphin, `dolphin-album` | | 340 138 1101 717 |
+
+The apps' first run gives the sign-in and setup pictures, and the keyring the status page names:
+- **Signed out:** `immich-mount logout`, and `immich-mount configure unset server.url` for an empty address field.
+- **GNOME:** create the login keyring without its prompt, `printf <password> | gnome-keyring-daemon --replace
+  --unlock --components=secrets`, in the session. `act.py` (pushed from `lab/plasma-vm/`) fills GTK 4's fields by
+  name and presses its plain buttons; a row that acts as a button ("Sign In") has no action on the bus, so click
+  it with `exp/input.sh`, once (a second click lands on the next page). Typing with `exp/input.sh` does not reach
+  the app's fields.
+- **Plasma:** `act.py` all the way, KWallet's wizard included; its two password fields are `set-nth ksecretd
+  'password text' 1` and `2` (counted from 1). Finishing the setup with Open in Dolphin puts the drive in Places.
+- **Single sign-on** shows on the sign-in pages once `lab/immich-server/oidc.sh` has run; it restarts Immich, so the
+  daemon may tell of a moment offline, a banner GNOME keeps until someone is active: dismiss it before a picture.
 
 ## Recording the result
 
