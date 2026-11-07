@@ -79,9 +79,9 @@ in a `.command` script, because it signs too. It needs, once per Mac:
 - a notarytool keychain profile, stored in a Terminal window from the API key:
   `xcrun notarytool store-credentials immich-mount-notary --key <.p8> --key-id <ID> --issuer <issuer>`
 
-Then `TEAM_ID=<team> NOTARY_PROFILE=immich-mount-notary apple/release.sh <version> <build>`, without profile names:
+Then `TEAM_ID=<team> NOTARY_PROFILE=immich-mount-notary apple/release.sh`, without profile names:
 Xcode makes the two Developer ID profiles itself. Notarizing takes a few minutes, twice (the app, then the disk
-image); `--not-notarized` checks the signing alone. `apple/release.sh 0.0.0 1 --unsigned` needs none of it and runs
+image); `--not-notarized` checks the signing alone. `apple/release.sh --unsigned` needs none of it and runs
 over SSH. Development and release builds share the team, so they share the App Group and the Keychain group: a
 release build finds the development build's sign-in. Remove the development build before opening a release build,
 so the system has one extension with that identifier to run.

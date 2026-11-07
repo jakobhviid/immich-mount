@@ -64,9 +64,7 @@ jobs:
       - name: Stamp version
         run: |
           git config --global --add safe.directory "$GITHUB_WORKSPACE"
-          v=$(git log --reverse --format='%H%x09%s' | awk -F'\t' 'BEGIN{maj=1;min=0;pat=0}NR==1{next}{s=$2;if(s~/^[A-Za-z]+(\([^)]*\))?!:/){maj++;min=0;pat=0}else if(s~/^feat(\([^)]*\))?:/){min++;pat=0}else{pat++}}END{print maj"."min"."pat}')
-          tmp=$(mktemp)
-          sed -E "s/^version = \"[^\"]*\"/version = \"$v\"/" Cargo.toml > "$tmp" && mv "$tmp" Cargo.toml
+          v=$(ci/version.sh --stamp)
           echo "VERSION=$v" >> "$GITHUB_ENV"
       - name: Green gate for the apps - clippy (warnings are errors) and tests
         run: |
@@ -132,9 +130,7 @@ jobs:
       - name: Stamp version
         run: |
           git config --global --add safe.directory "$GITHUB_WORKSPACE"
-          v=$(git log --reverse --format='%H%x09%s' | awk -F'\t' 'BEGIN{maj=1;min=0;pat=0}NR==1{next}{s=$2;if(s~/^[A-Za-z]+(\([^)]*\))?!:/){maj++;min=0;pat=0}else if(s~/^feat(\([^)]*\))?:/){min++;pat=0}else{pat++}}END{print maj"."min"."pat}')
-          tmp=$(mktemp)
-          sed -E "s/^version = \"[^\"]*\"/version = \"$v\"/" Cargo.toml > "$tmp" && mv "$tmp" Cargo.toml
+          v=$(ci/version.sh --stamp)
           echo "VERSION=$v" >> "$GITHUB_ENV"
       - name: Build and package the apps (.debs for Ubuntu 26.04)
         run: |
@@ -176,11 +172,7 @@ jobs:
           fetch-depth: 0
       - name: Stamp version (so `immich-mount --version` matches the release)
         run: |
-          # Conventional-Commit semver from history (never bump by hand): the first commit is 1.0.0, then
-          #   a breaking type!: -> major | feat: -> minor | anything else -> patch
-          v=$(git log --reverse --format='%H%x09%s' | awk -F'\t' 'BEGIN{maj=1;min=0;pat=0}NR==1{next}{s=$2;if(s~/^[A-Za-z]+(\([^)]*\))?!:/){maj++;min=0;pat=0}else if(s~/^feat(\([^)]*\))?:/){min++;pat=0}else{pat++}}END{print maj"."min"."pat}')
-          tmp=$(mktemp)
-          sed -E "s/^version = \"[^\"]*\"/version = \"$v\"/" Cargo.toml > "$tmp" && mv "$tmp" Cargo.toml
+          v=$(ci/version.sh --stamp)
           echo "stamped $v"
           echo "VERSION=$v" >> "$GITHUB_ENV"
       - uses: dtolnay/rust-toolchain@stable
@@ -252,12 +244,8 @@ jobs:
           fetch-depth: 0
       - name: Stamp version
         run: |
-          v=$(git log --reverse --format='%H%x09%s' | awk -F'\t' 'BEGIN{maj=1;min=0;pat=0}NR==1{next}{s=$2;if(s~/^[A-Za-z]+(\([^)]*\))?!:/){maj++;min=0;pat=0}else if(s~/^feat(\([^)]*\))?:/){min++;pat=0}else{pat++}}END{print maj"."min"."pat}')
-          tmp=$(mktemp)
-          sed -E "s/^version = \"[^\"]*\"/version = \"$v\"/" Cargo.toml > "$tmp" && mv "$tmp" Cargo.toml
+          v=$(ci/version.sh --stamp)
           echo "VERSION=$v" >> "$GITHUB_ENV"
-          # The app's build number, which must grow with every release.
-          echo "BUILD=$(git rev-list --count HEAD)" >> "$GITHUB_ENV"
       - uses: dtolnay/rust-toolchain@stable
         with:
           targets: aarch64-apple-darwin,x86_64-apple-darwin
@@ -297,7 +285,7 @@ jobs:
           NOTARY_ISSUER: ${{ secrets.NOTARY_ISSUER }}
         run: |
           brew install xcodegen
-          NOTARY_KEY="$RUNNER_TEMP/notary.p8" apple/release.sh "$VERSION" "$BUILD"
+          NOTARY_KEY="$RUNNER_TEMP/notary.p8" apple/release.sh
       - uses: actions/upload-artifact@v4
         with:
           name: macos
@@ -321,7 +309,7 @@ jobs:
           merge-multiple: true
       - name: Version
         run: |
-          VERSION=$(git log --reverse --format='%H%x09%s' | awk -F'\t' 'BEGIN{maj=1;min=0;pat=0}NR==1{next}{s=$2;if(s~/^[A-Za-z]+(\([^)]*\))?!:/){maj++;min=0;pat=0}else if(s~/^feat(\([^)]*\))?:/){min++;pat=0}else{pat++}}END{print maj"."min"."pat}')
+          VERSION=$(ci/version.sh)
           echo "VERSION=$VERSION" >> "$GITHUB_ENV"
       - name: Homebrew bottle (x86_64 Linux)
         run: |

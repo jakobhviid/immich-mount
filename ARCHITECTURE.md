@@ -1045,7 +1045,8 @@ Each platform gets a native app that looks and reads like a first-party app (pri
   servers), RPM (COPR), DEB (GitHub Releases) and AUR. All four package the same CI-built artifacts.
 - **The daemon and CLI follow the house release pipeline:**
   - the version is derived from Conventional Commits: the first commit is 1.0.0, then a breaking change bumps the
-    major version, a feature the minor, anything else the patch (AGENTS.md, "Versioning")
+    major version, a feature the minor, anything else the patch (AGENTS.md, "Versioning"). One script,
+    `ci/version.sh`, gives every job and the Mac build the same number
   - the clippy gate and the tests run first; the build needs them
   - static musl builds for x86_64 and aarch64
   - releases pruned to the last ten
@@ -1281,7 +1282,8 @@ Mac and in the release workflow's `macos` job:
   key, a .p12 in base64) and `MACOS_CERTIFICATE_PASSWORD`; `MACOS_APP_PROFILE` and `MACOS_EXTENSION_PROFILE` (in
   base64); `NOTARY_KEY` (the .p8), `NOTARY_KEY_ID` and `NOTARY_ISSUER`. The job signs from a keychain of its own,
   deleted at the end.
-- **The version is the release's,** and the build number the commit count, which grows with every release.
+- **One version with Linux:** `apple/build-rust.sh` hands Xcode the release line's version (`ci/version.sh`) and the
+  commit count as the build number, which grows with every release; development builds show the same.
 
 Development builds run under a free Personal Team on the maintainer's Mac. Each Mac switches the
 extension on once, in System Settings (General, Login Items & Extensions); no program can do it for the user. The

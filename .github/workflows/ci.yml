@@ -63,4 +63,4 @@ jobs:
           xcodebuild -project ImmichMount.xcodeproj -scheme ImmichMount -configuration Debug -destination 'platform=macOS' \
             CODE_SIGNING_ALLOWED=NO build
       - name: The disk image, unsigned, as the release builds it
-        run: apple/release.sh 0.0.0 1 --unsigned
+        run: apple/release.sh --unsigned
