@@ -72,6 +72,20 @@ The first signed build stops at a keychain dialog ("codesign wants to sign using
 maintainer's login password and **Always Allow**, once per key; later signed builds need nothing (verified). The
 script's Terminal window stays open after the build; the maintainer closes it.
 
+**A release build** (`apple/release.sh`; ARCHITECTURE.md, "The macOS edition", "Distribution") runs the same way,
+in a `.command` script, because it signs too. It needs, once per Mac:
+- the Developer ID Application certificate in the login keychain, which the maintainer makes in Xcode (Settings,
+  Accounts, Manage Certificates)
+- the two Developer ID profiles, named as in the script, downloaded from the developer portal and opened once, or
+  copied into `~/Library/Developer/Xcode/UserData/Provisioning Profiles/`
+- a notarytool keychain profile, stored in a Terminal window from the API key:
+  `xcrun notarytool store-credentials immich-mount-notary --key <.p8> --key-id <ID> --issuer <issuer>`
+
+Then `TEAM_ID=<paid team> NOTARY_PROFILE=immich-mount-notary apple/release.sh <version> <build>`. Notarizing takes a
+few minutes, twice (the app, then the disk image). `apple/release.sh 0.0.0 1 --unsigned` needs none of it and runs
+over SSH. The paid team's ID differs from the Personal Team's, and with it the App Group: a release build starts
+signed out, beside a development build's data, so sign out of the development build and quit it first.
+
 ## The server
 
 The lab server in NAT mode (the `lab-immich-server` skill; LAN mode is never left up unattended), forwarded to the
