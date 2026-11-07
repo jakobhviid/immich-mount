@@ -47,7 +47,7 @@ const RELIST_BUDGET: Duration = Duration::from_secs(20);
 /// What the extension's items carry (their capabilities and fields). The system keeps an item's details until its
 /// version changes, so the format is part of every version: raising it, with the app's reimport, has the system take
 /// every item again (ARCHITECTURE.md, "The macOS edition", "Content").
-const ITEM_FORMAT: u32 = 2;
+const ITEM_FORMAT: u32 = 3;
 /// How long the server check keeps trying a connection that fails: macOS may refuse sockets while its Local Network
 /// prompt waits for an answer (Apple's TN3179).
 const LOCAL_NETWORK_PATIENCE: Duration = Duration::from_secs(30);

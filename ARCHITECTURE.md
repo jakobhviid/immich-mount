@@ -1192,17 +1192,22 @@ when opened, eviction under storage pressure, the Finder sidebar and every file 
 looked up in the album list.
 
 **Content.** The system asks for an original when something opens the file. The extension downloads it whole into
-a file the system then keeps, and evicts under storage pressure; the block cache is not used. Every item allows
-evicting, so Finder offers "Remove Download" on a file or a folder, which frees the local copies and leaves the
-library alone (verified on a downloaded folder). The system keeps the details of items it holds (their capabilities
-included), so the bridge's item format is part of every item's version: a release that changes what items carry
-raises it, and the app, seeing a new format at launch, has the system read every item again once.
+a file the system then keeps, and evicts under storage pressure; the block cache is not used. Every item's content
+policy is to download lazily, which allows evicting it (the policy replaces macOS 11's eviction capability), so
+Finder offers "Remove Download" on a file or a folder, which frees the local copies and leaves the library alone.
+The system keeps the details of items it holds (their capabilities and policy included), so the bridge's item
+format is part of every item's version: a release that changes what items carry raises it, and the app, seeing a
+new format at launch, has the system read every item again once.
 - **A reimport** (after a new item format, or a settings change) drops the system's database: it then finds what is on
   disk again and offers each as a new item, marked "may already exist". The extension answers with the item the
   library has under that name in that folder; refusing it, as a read-only folder refuses new folders, left the
-  system keeping its own copy beside the library's, renamed "People 2" (seen on macOS 27). Partial fetching
-(`NSFileProviderPartialContentFetching`, macOS 12.3 and later) would bring range reads back for long videos
-(ROADMAP, M7).
+  system keeping its own copy beside the library's, renamed "People 2" (seen on macOS 27).
+- **The import after a reimport waits on macOS,** which runs it at a priority it defers: on the maintainer's Mac, in
+  use and on mains power, it had not run 10 minutes after the format changed from 2 to 3 (macOS 27.0.1). Until it
+  runs, everything below the sections is the system's own local copy, not yet matched to the library: no "Remove
+  Download" on it (ROADMAP, M7, has the open question).
+- **Partial fetching** (`NSFileProviderPartialContentFetching`, macOS 12.3 and later) would bring range reads back
+  for long videos (ROADMAP, M7).
 
 **Thumbnails.** The system asks the extension for each item's thumbnail at a size, and the extension answers with
 Immich's small thumbnail (250 pixels on its short side) up to 320 pixels, and its preview (1440) above. Nothing is

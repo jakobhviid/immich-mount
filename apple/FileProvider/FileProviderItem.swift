@@ -19,14 +19,17 @@ final class FileProviderItem: NSObject, NSFileProviderItem {
         return UTType(filenameExtension: (item.name as NSString).pathExtension) ?? .data
     }
 
-    /// Read-only, as on Linux; the Upload folder also takes new files. Evicting frees the downloaded copy, never the
-    /// Asset: Finder offers "Remove Download" for it, on a file or a whole folder.
+    /// Read-only, as on Linux; the Upload folder also takes new files.
     var capabilities: NSFileProviderItemCapabilities {
-        guard item.isFolder else { return [.allowsReading, .allowsEvicting] }
+        guard item.isFolder else { return [.allowsReading] }
         return item.acceptsNewFiles
-            ? [.allowsReading, .allowsContentEnumerating, .allowsEvicting, .allowsAddingSubItems]
-            : [.allowsReading, .allowsContentEnumerating, .allowsEvicting]
+            ? [.allowsReading, .allowsContentEnumerating, .allowsAddingSubItems]
+            : [.allowsReading, .allowsContentEnumerating]
     }
+
+    /// Downloaded when read, and evictable: Finder offers "Remove Download" on a file or a whole folder, which frees
+    /// the downloaded copy, never the Asset. The policy replaces macOS 11's eviction capability.
+    var contentPolicy: NSFileProviderContentPolicy { .downloadLazily }
 
     var documentSize: NSNumber? { item.size.map { NSNumber(value: $0) } }
     var creationDate: Date? { item.taken }

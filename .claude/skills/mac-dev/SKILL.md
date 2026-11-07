@@ -43,6 +43,14 @@ Traps (verified on macOS 27.0.1 with Xcode 27.2):
 - **macOS caches an app's icon by its path.** A build at a path macOS saw without an icon keeps showing the blank
   placeholder (also in the app's own window, through `applicationIconImage`). `touch` the built `.app` and start it
   again; a fresh copy elsewhere shows the icon at once (verified on macOS 27).
+- **fileproviderd keeps the extension's launch job at the path it first ran from.** After that build is deleted, a
+  copy elsewhere (a release build in `/Applications`) never starts: launchd logs "Attempt to re-bootstrap service
+  from different path, will use existing" and "Missing executable detected", and Finder says the provider
+  "encountered an error". `killall fileproviderd` (it runs as the user, and launchd starts it again at once) clears
+  the job, and the next request starts the extension from the new path (verified on macOS 27.0.1). Before deleting a
+  build, unregister it: `lsregister -u <app>` (in LaunchServices.framework's `Support/`).
+- **zsh aborts a command whose glob matches nothing** ("no matches found"), and the rest of an SSH command line with
+  it. Run cleanup scripts through `bash -s`.
 
 ## Build
 
