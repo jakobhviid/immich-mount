@@ -30,6 +30,12 @@
 	<string>Immich Mount is an independent, unofficial project. It is not affiliated with, endorsed by, or sponsored by the Immich project or FUTO. “Immich” is used only to describe the server this software works with, and remains the mark of its owner.</string>
 	<key>NSLocalNetworkUsageDescription</key>
 	<string>Immich Mount connects to your Immich server, which may be on your local network.</string>
+	<key>SUFeedURL</key>
+	<string>https://jakob.hviid.phd/immich-mount/appcast.xml</string>
+	<key>SUPublicEDKey</key>
+	<string>GQNkgiU4gfx323lqMbSUu2u+xWurW1eYtmZYm/NLfG8=</string>
+	<key>SUEnableInstallerLauncherService</key>
+	<true/>
 	<key>ImmichMountAppGroup</key>
 	<string>$(TeamIdentifierPrefix)dev.hviid.ImmichMount</string>
 	<key>ImmichMountKeychainGroup</key>

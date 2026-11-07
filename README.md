@@ -136,7 +136,7 @@ Debian 13. Releases follow semantic versioning: a change that breaks settings or
 version.
 
 The macOS edition is new: signed and notarized, and tested on macOS 27 against a real Immich server. Not there
-yet: Homebrew and in-app updates for the Mac, packages in COPR and the AUR, and a Flatpak.
+yet: Homebrew for the Mac, packages in COPR and the AUR, and a Flatpak.
 [ROADMAP.md](ROADMAP.md) has the plans and the open questions.
 
 ## Documentation

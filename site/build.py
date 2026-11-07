@@ -4,18 +4,23 @@ site/style.css, the icon and the screenshots, written into an output folder for 
 "The download page"). Standard library only.
 
     gh release view [TAG] --json tagName,publishedAt,url,assets > release.json
-    site/build.py release.json OUTPUT [--macos MAC_RELEASE_JSON]
+    site/build.py release.json OUTPUT [--macos MAC_RELEASE_JSON [--update DMG.update]]
 
-The Mac download comes from MAC_RELEASE_JSON, the newest release with a disk image (ci/latest-mac-release.sh), while
-the Mac is released by hand and the releases after it carry none; without one, the page shows the macOS edition as
-not released yet, so it never offers a file that is not there.
+site/build-latest.sh gathers these for the latest release. The Mac download comes from MAC_RELEASE_JSON, the newest
+release with a disk image (ci/latest-mac-release.sh), while the Mac is released by hand and the releases after it
+carry none; without one, the page shows the macOS edition as not released yet, so it never offers a file that is not
+there. With the disk image's update file (ci/sign-mac-update.sh), the page also carries appcast.xml, the feed the
+Mac app's updates read.
 """
 
+import argparse
+import email.utils
 import html
 import json
 import re
 import shutil
 import sys
+from datetime import datetime
 from pathlib import Path
 
 ROOT = Path(__file__).resolve().parent.parent
@@ -35,7 +40,34 @@ def link(url, text):
     return f'<a href="{html.escape(url)}">{html.escape(text)}</a>'
 
 
-def main(release_file, output, mac_release_file=None):
+def appcast(mac_release, dmg, update_file):
+    """Sparkle's feed with the one update: the version Sparkle compares is the build number, the disk image's size
+    and signature are what the app checks before installing it."""
+    update = dict(line.split("=", 1) for line in Path(update_file).read_text().split() if "=" in line)
+    asset = next(asset for asset in mac_release["assets"] if asset["url"] == dmg)
+    version = mac_release["tagName"].lstrip("v")
+    published = datetime.fromisoformat(mac_release["publishedAt"].replace("Z", "+00:00"))
+    return f"""<?xml version="1.0" encoding="utf-8"?>
+<rss version="2.0" xmlns:sparkle="http://www.andymatuschak.org/xml-namespaces/sparkle">
+  <channel>
+    <title>Immich Mount</title>
+    <link>https://jakob.hviid.phd/immich-mount/</link>
+    <item>
+      <title>Immich Mount {html.escape(version)}</title>
+      <pubDate>{email.utils.format_datetime(published)}</pubDate>
+      <sparkle:version>{html.escape(update["build"])}</sparkle:version>
+      <sparkle:shortVersionString>{html.escape(version)}</sparkle:shortVersionString>
+      <sparkle:minimumSystemVersion>14.0</sparkle:minimumSystemVersion>
+      <sparkle:releaseNotesLink>{html.escape(mac_release["url"])}</sparkle:releaseNotesLink>
+      <enclosure url="{html.escape(dmg)}" length="{asset["size"]}" type="application/octet-stream"
+                 sparkle:edSignature="{html.escape(update["signature"])}"/>
+    </item>
+  </channel>
+</rss>
+"""
+
+
+def main(release_file, output, mac_release_file=None, update_file=None):
     release = json.loads(Path(release_file).read_text())
     assets = release["assets"]
     version = release["tagName"].lstrip("v")
@@ -94,6 +126,8 @@ def main(release_file, output, mac_release_file=None):
         shutil.rmtree(output)
     (output / "screenshots").mkdir(parents=True)
     (output / "index.html").write_text(page)
+    if update_file and files["dmg"]:
+        (output / "appcast.xml").write_text(appcast(mac_release, files["dmg"], update_file))
     shutil.copy(ROOT / "site" / "style.css", output / "style.css")
     shutil.copy(ROOT / "packaging" / "icons" / "dev.hviid.ImmichMount.svg", output / "icon.svg")
     for shot in sorted((ROOT / "docs" / "screenshots").glob("*.png")):
@@ -106,10 +140,12 @@ def main(release_file, output, mac_release_file=None):
 
 
 if __name__ == "__main__":
-    arguments = sys.argv[1:]
-    if len(arguments) == 4 and arguments[2] == "--macos":
-        main(arguments[0], arguments[1], arguments[3])
-    elif len(arguments) == 2:
-        main(arguments[0], arguments[1])
-    else:
-        sys.exit(__doc__)
+    parser = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
+    parser.add_argument("release")
+    parser.add_argument("output")
+    parser.add_argument("--macos", help="the newest release with a disk image, as gh release view writes it")
+    parser.add_argument("--update", help="that disk image's update file, from ci/sign-mac-update.sh")
+    arguments = parser.parse_args()
+    if arguments.update and not arguments.macos:
+        parser.error("--update goes with --macos")
+    main(arguments.release, arguments.output, arguments.macos, arguments.update)

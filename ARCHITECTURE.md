@@ -1359,6 +1359,16 @@ Mac and in the release workflow's `macos` job:
   base64); `NOTARY_KEY` (the .p8), `NOTARY_KEY_ID` and `NOTARY_ISSUER`. The job signs from a keychain of its own,
   deleted at the end. It runs only when the repository variable `MACOS_RELEASES` is `on` (a job's condition cannot
   read secrets), and the release goes out with whatever was built: without the job, the Linux packages alone.
+- **Updates by Sparkle** (MIT), as most Mac apps outside the App Store have them: "Check for Updates…" in the menu
+  and the app menu, a daily check once the user agrees (Sparkle asks; Settings has the switch), and the new version
+  replaces the app in place in Applications, where Finder's location runs it from. The feed is `appcast.xml` on the
+  download page, which `site/build-latest.sh` makes from the newest release with a disk image and that image's
+  update file (`ci/sign-mac-update.sh`): an Ed25519 signature over the disk image, which the app checks against the
+  public key in its Info.plist (`SUPublicEDKey`), and the build number Sparkle compares. OpenSSL makes the
+  signature, so no Sparkle tool is needed to release. The private key is the maintainer's, kept outside the
+  repository. In the sandbox Sparkle installs through its installer service (`SUEnableInstallerLauncherService`,
+  with two mach-lookup exceptions); the app's network entitlement covers the download. A check sends a request for
+  the feed to jakob.hviid.phd (GitHub Pages), with the app's version in its user agent, and no system profile.
 - **One version with Linux:** `apple/build-rust.sh` hands Xcode the release line's version (`ci/version.sh`) and the
   commit count as the build number, which grows with every release; development builds show the same.
 

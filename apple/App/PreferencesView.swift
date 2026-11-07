@@ -6,6 +6,7 @@ import SwiftUI
 
 struct PreferencesView: View {
     @EnvironmentObject private var model: AppModel
+    @State private var checksForUpdates = AppDelegate.shared?.updater.updater.automaticallyChecksForUpdates ?? false
     @State private var groups: [PreferenceGroup] = preferences(config: AppGroup.configText)
     @State private var message: String?
 
@@ -13,10 +14,14 @@ struct PreferencesView: View {
         Form {
             Section {
                 Toggle("Open at login", isOn: Binding(get: { model.opensAtLogin }, set: { model.setOpensAtLogin($0) }))
+                Toggle("Check for updates automatically", isOn: $checksForUpdates)
+                    .onChange(of: checksForUpdates) { _, checks in
+                        AppDelegate.shared?.updater.updater.automaticallyChecksForUpdates = checks
+                    }
             } header: {
                 Text("General")
             } footer: {
-                Text("While Immich Mount runs, in the menu bar, changes in Immich reach Finder within seconds.")
+                Text("While Immich Mount runs, in the menu bar, changes in Immich reach Finder within seconds. Updates come from jakob.hviid.phd, signed by the project and notarized by Apple.")
                     .foregroundStyle(.secondary)
             }
             ForEach(groups, id: \.title) { group in

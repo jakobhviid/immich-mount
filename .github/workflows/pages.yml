@@ -29,14 +29,7 @@ jobs:
         env:
           GH_TOKEN: ${{ github.token }}
         run: |
-          gh release view --json tagName,publishedAt,url,assets > release.json
-          mac=$(ci/latest-mac-release.sh)
-          if [ -n "$mac" ]; then
-            gh release view "$mac" --json tagName,publishedAt,url,assets > macos.json
-            python3 site/build.py release.json _site --macos macos.json
-          else
-            python3 site/build.py release.json _site
-          fi
+          site/build-latest.sh _site
       - uses: actions/upload-pages-artifact@v5
         with:
           path: _site

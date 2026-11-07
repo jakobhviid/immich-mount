@@ -12,6 +12,8 @@ between the two. Thank you, Kartax.
 - **[immich-rs](https://github.com/boul2gom/immich-rs)** by boul2gom (MIT OR Apache-2.0): our Immich API layer
   (`immich-api`) started from parts of it, taken at commit `60d1eb3` and adapted under the MIT license. Its notice
   is in [THIRD-PARTY-NOTICES.md](THIRD-PARTY-NOTICES.md).
+- **[Sparkle](https://sparkle-project.org)** (MIT): the macOS app's updates. Its notice, with those of the parts it
+  includes, is in [THIRD-PARTY-NOTICES.md](THIRD-PARTY-NOTICES.md), which the app carries.
 - **The Rust crates we depend on** are listed with their licenses in `THIRD-PARTY-LICENSES.md`, which every
   package ships, generated from `Cargo.lock` (`packaging/third-party-licenses.py`).
 

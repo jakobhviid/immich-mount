@@ -8,6 +8,7 @@ import Combine
 import FileProvider
 import os
 import ServiceManagement
+import Sparkle
 import SwiftUI
 
 let logger = Logger(subsystem: "dev.hviid.ImmichMount", category: "app")
@@ -33,6 +34,7 @@ struct ImmichMountApp: App {
         .commands {
             CommandGroup(replacing: .appInfo) {
                 Button("About Immich Mount") { showAbout() }
+                Button("Check for Updates…") { AppDelegate.shared?.updater.checkForUpdates(nil) }
             }
             CommandGroup(replacing: .appSettings) {
                 Button("Settings…") { AppDelegate.shared?.showSettings() }
@@ -45,9 +47,13 @@ struct ImmichMountApp: App {
 /// Opens the sign-in window while it is wanted and Settings when asked, and gives the app a Dock icon and its menus
 /// while a window is open: at other times it lives in the menu bar only, as Mac apps that keep something in sync do.
 @MainActor
-final class AppDelegate: NSObject, NSApplicationDelegate {
+final class AppDelegate: NSObject, NSApplicationDelegate, SPUStandardUserDriverDelegate {
     private(set) static weak var shared: AppDelegate?
     let model = AppModel()
+    /// Sparkle, which reads the download page's appcast and replaces the app in place, so it stays in Applications,
+    /// where Finder's location runs it from. It starts only there: a copy anywhere else has nothing to update.
+    private(set) lazy var updater = SPUStandardUpdaterController(startingUpdater: Installation.isInApplications,
+                                                                  updaterDelegate: nil, userDriverDelegate: self)
     private var window: NSWindow?
     private var settingsWindow: NSWindow?
     private var setUp: AnyCancellable?
@@ -66,6 +72,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
     }
 
     func applicationDidFinishLaunching(_ notification: Notification) {
+        _ = updater
         followWindows()
         // Back from System Settings, the menu and the window know at once whether the location was switched on.
         NotificationCenter.default.addObserver(forName: NSApplication.didBecomeActiveNotification, object: nil, queue: .main) { _ in
@@ -92,6 +99,17 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         #if DEBUG
         Task { await model.followLaunchArguments() }
         #endif
+    }
+
+    /// Sparkle's scheduled update alerts come without a window of the app's in front: they bring the app forward, so
+    /// they are not left behind other apps, as a menu bar app's would be.
+    var supportsGentleScheduledUpdateReminders: Bool { true }
+
+    func standardUserDriverWillHandleShowingUpdate(_ handleShowingUpdate: Bool, forUpdate update: SUAppcastItem,
+                                                   state: SPUUserUpdateState) {
+        if handleShowingUpdate {
+            bringForward()
+        }
     }
 
     /// Signing out removes the location and what was downloaded, so it is asked first.
@@ -229,6 +247,7 @@ struct MenuBarMenu: View {
         }
         Button("Settings…") { AppDelegate.shared?.showSettings() }
             .keyboardShortcut(",")
+        Button("Check for Updates…") { AppDelegate.shared?.updater.checkForUpdates(nil) }
         if model.server != nil {
             Divider()
             Button("Sign Out…") { AppDelegate.shared?.confirmSignOut() }

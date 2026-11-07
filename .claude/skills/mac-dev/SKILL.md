@@ -99,6 +99,12 @@ over SSH. Development and release builds share the team, so they share the App G
 release build finds the development build's sign-in. Remove the development build before opening a release build,
 so the system has one extension with that identifier to run.
 
+**Releasing by hand,** while the release workflow's `macos` job waits for its secrets: once `main`'s release
+workflow has published `v<version>`, check out that commit on the Mac and build there; then from Linux, copy the disk
+image over, sign it for Sparkle with `ci/sign-mac-update.sh <dmg> ~/.config/immich-mount-release/sparkle-ed25519.pem`,
+attach both (`gh release upload v<version> <dmg> <dmg>.update`), and run the page (`gh workflow run pages.yml`),
+which then offers the disk image and the update feed.
+
 ## The server
 
 The lab server in NAT mode (the `lab-immich-server` skill; LAN mode is never left up unattended), forwarded to the

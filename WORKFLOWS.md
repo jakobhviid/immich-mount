@@ -39,7 +39,9 @@ libadwaita 1.8 for the GTK one); on a Plasma whose Qt is not Fedora 44's, the GT
 there (an app opened from the disk image asks to be moved first). Sign in; the app then asks you to switch Immich
 Mount on once, in System Settings, under General, Login Items & Extensions, File Providers, and closes its window
 when you have. It lives in the menu bar: its menu has the connection, Open in Finder, Settings (with Open at login),
-Sign Out, and Quit. To upgrade, replace the app in Applications with the new one; your sign-in and settings stay.
+Sign Out, and Quit. It updates itself: "Check for Updates…" in its menu, or a daily check once you allow it (it asks,
+and Settings has the switch). Replacing the app in Applications with a newer one works too; your sign-in and settings
+stay.
 
 **Without a desktop, with Homebrew** (x86_64 or ARM): the daemon and CLI alone, as the formula
 `immich-mount-headless`. It and the app hold the same `immich-mount`, so a machine has one or the other. FUSE comes

@@ -25,14 +25,7 @@ jobs:
         env:
           GH_TOKEN: ${{ github.token }}
         run: |
-          gh release view --json tagName,publishedAt,url,assets > release.json
-          mac=$(ci/latest-mac-release.sh)
-          if [ -n "$mac" ]; then
-            gh release view "$mac" --json tagName,publishedAt,url,assets > macos.json
-            python3 site/build.py release.json _site --macos macos.json
-          else
-            python3 site/build.py release.json _site
-          fi
+          site/build-latest.sh _site
 
   fedora-apps:
     # The desktop apps need newer libraries than Ubuntu's (GTK 4.18, libadwaita 1.8 and blueprint-compiler for GNOME;
