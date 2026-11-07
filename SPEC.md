@@ -12,8 +12,9 @@ Use these words in code, docs and issues.
 
 - **Asset**: a photo or video in the Immich library. A file in the mount is one Appearance of an
   Asset. Avoid: item, image.
-- **Mount**: the FUSE filesystem the daemon serves, by default at `~/Immich`. The file manager shows it as
-  "Immich". Avoid: sync folder (nothing is synchronised).
+- **Mount**: the FUSE filesystem the daemon serves, by default at `~/Immich`. The file manager shows it under the
+  drive's name, "Immich Mount" unless `mount.name` chooses "Immich Drive" or "Immich"; the name never changes the
+  mount point. Avoid: sync folder (nothing is synchronised).
 - **Daemon**: the per-user background process `immich-mount daemon`. It owns the mount, the caches and the uploads.
   It runs without a display.
 - **App**: the desktop program for sign-in, settings and status, one launcher (`immich-mount app`) that opens the
@@ -55,7 +56,7 @@ Use these words in code, docs and issues.
 The sections carry Immich's own labels: Photos, Albums, People, Places. Beside them, `Upload` takes new files.
 
 ```
-~/Immich/                                  shown as "Immich" in the file manager
+~/Immich/                                  shown as "Immich Mount" (`mount.name`) in the file manager
 ├─ Photos/                                 the timeline
 │  └─ <Year>/<MM Month>/[<DD>/]<file>
 ├─ Albums/
@@ -166,8 +167,8 @@ cameras. Clashes are detected case-insensitively, after Unicode NFC normalisatio
 
 ### Files the mount answers itself
 
-- `/.xdg-volume-info` (`[Volume Info]`, `Name=Immich`): the display name in the file manager (verified in a
-  GNOME 50 VM).
+- `/.xdg-volume-info` (`[Volume Info]`, `Name=Immich Mount`, the drive's name from `mount.name`): the display name
+  in the file manager (verified in a GNOME 50 VM).
 - `/.nomedia` and `/.trackerignore`: hidden; they keep GNOME's indexer out.
 - Anything else that tools probe for (`.hidden`, `.directory`, `.Trash-<uid>`, `autorun.inf`, `.DS_Store`, and
   rom-properties' `code`, `title.tik`, `default.xex` and `default.xbe` in their spellings): a fast `ENOENT`, which
@@ -323,6 +324,7 @@ table in the Core drives validation, `immich-mount configure`, and the app's set
 |---|---|---|---|
 | `server.url` | URL | none | The Immich server; `/api` is added |
 | `mount.path` | path | `~/Immich` | Where the mount appears |
+| `mount.name` | `immich-mount`, `immich-drive`, `immich` | `immich-mount` | The drive's name in the sidebar: "Immich Mount", "Immich Drive" or "Immich" in Files, Dolphin and Finder. The mount point stays `mount.path`; the apps apply it by restarting the daemon (Linux) or renaming the Finder location in place (macOS) |
 | `mount.at_login` | bool | `true` | Mount when the session starts: setting it enables or disables the user service |
 | `sections.photos` / `.albums` / `.people` / `.places` | bool | `true` | Show the section |
 | `grouping.albums` / `.people` / `.places` | `never`, `atLeast500`, `always` | `atLeast500` | Date groups |
@@ -405,9 +407,9 @@ The credential itself never crosses D-Bus.
 | Seeded thumbnails | `$HOME/.cache/thumbnails/{x-large,xx-large}/`, and on KDE `{normal,large}/` too, each URI recorded in `~/.cache/immich-mount/<account>/seeded-thumbnails`; where home is reached through a symlink, under both the resolved and the configured path |
 | A browser sign-in waiting for its redirect (KDE app) | `$XDG_RUNTIME_DIR/immich-mount-sign-in`, mode 0600: the server, the state and the PKCE verifier, replaced by the outcome once the redirect arrives, and removed when the app reads it |
 | Dolphin's previews of remote files (KDE app, only when the user turns them on) | `[PreviewSettings] MaximumRemoteSize=104857600` in `~/.config/kdeglobals`; turning them off removes the key |
-| The mount in Dolphin's Places (KDE) | A bookmark for the mount point, titled "Immich", in `~/.local/share/user-places.xbel`: added once by the KDE app's setup, removed by `logout` |
+| The mount in Dolphin's Places (KDE) | A bookmark for the mount point, titled with the drive's name (`mount.name`), in `~/.local/share/user-places.xbel`: added once by the KDE app's setup, renamed by the daemon as it starts when the name changed (a place the user renamed otherwise keeps its name), removed by `logout` |
 | The resolved home for GVfs, where home is reached through a symlink | `~/.config/systemd/user/gvfs-udisks2-volume-monitor.service.d/immich-mount.conf`, `Environment=HOME=<resolved home>`: written by the daemon as it starts, which then restarts the volume monitor, so Files lists the mount as a drive; removed by `logout` |
-| The mount in Files' sidebar, where GVfs still does not list it (GNOME app) | A line `file://<mount point> Immich` in `~/.config/gtk-3.0/bookmarks`: added once by the GNOME app's setup, removed by the daemon once the drive is listed, and by `logout` (with a bookmark of the resolved path) |
+| The mount in Files' sidebar, where GVfs still does not list it (GNOME app) | A line `file://<mount point> <drive's name>` in `~/.config/gtk-3.0/bookmarks`: added once by the GNOME app's setup, renamed by the daemon as it starts when `mount.name` changed (a bookmark the user titled otherwise keeps its title), removed by the daemon once the drive is listed, and by `logout` (with a bookmark of the resolved path) |
 | The sign-in redirect's handler | `x-scheme-handler/app.immich` in `~/.config/mimeapps.list`, set by the app that last started a browser sign-in |
 | Logs | journald (`journalctl --user -u immich-mount`) |
 

@@ -23,6 +23,8 @@ enum AppGroup {
     static var emailFile: URL { container.appendingPathComponent("account") }
     /// The same settings table as on Linux (SPEC.md, "Configuration"); absent means the defaults.
     static var configFile: URL { container.appendingPathComponent("config.toml") }
+    /// The settings' text, empty before any was changed.
+    static var configText: String { (try? String(contentsOf: configFile, encoding: .utf8)) ?? "" }
     /// The extension's own files: the metadata store. Only the extension opens it.
     static var libraryDirectory: URL { container.appendingPathComponent("Library", isDirectory: true) }
 

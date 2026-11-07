@@ -33,6 +33,13 @@ pub fn current_value(setting: &Setting) -> String {
     stored.get(setting.key).cloned().unwrap_or_else(|| setting.default.to_owned())
 }
 
+/// The drive's name in the sidebar (`mount.name`), for the entry the setup adds.
+pub fn drive_name() -> &'static str {
+    SETTINGS.iter().find(|setting| setting.key == "mount.name").map_or(settings::DEFAULT_MOUNT_NAME, |setting| {
+        settings::mount_name(&current_value(setting))
+    })
+}
+
 /// Store one value, comments in `config.toml` kept. The message says why when it is refused.
 pub fn store(key: &str, value: &str) -> Result<(), String> {
     let paths = Paths::from_environment();

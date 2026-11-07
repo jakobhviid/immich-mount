@@ -40,11 +40,16 @@ pub struct Setting {
 }
 
 const GROUPING_CHOICES: &[&str] = &["never", "atLeast500", "always"];
+/// The names the drive may have in a file manager's sidebar, as `mount.name` stores them.
+const MOUNT_NAMES: &[&str] = &["immich-mount", "immich-drive", "immich"];
+/// The drive's name when none is chosen.
+pub const DEFAULT_MOUNT_NAME: &str = "Immich Mount";
 
 /// Every setting, in display order.
 pub const SETTINGS: &[Setting] = &[
     Setting { key: "server.url", kind: Kind::Text, description: "The Immich server; /api is added", default: "" },
     Setting { key: "mount.path", kind: Kind::Path, description: "Where the mount appears", default: "~/Immich" },
+    Setting { key: "mount.name", kind: Kind::Choice(MOUNT_NAMES), description: "The drive's name in the sidebar", default: "immich-mount" },
     Setting { key: "mount.at_login", kind: Kind::Bool, description: "Mount when the session starts", default: "true" },
     Setting { key: "sections.photos", kind: Kind::Bool, description: "Show the Photos section", default: "true" },
     Setting { key: "sections.albums", kind: Kind::Bool, description: "Show the Albums section", default: "true" },
@@ -74,8 +79,23 @@ pub fn choice_label(word: &str) -> &str {
         "flat" => "Name Only (Trip)",
         "date-time" => "Date and Time Taken",
         "original" => "Original File Names",
+        "immich-mount" | "immich-drive" | "immich" => mount_name(word),
         other => other,
     }
+}
+
+/// The name a `mount.name` choice shows in the sidebar. It names the drive only: the mount point is `mount.path`.
+pub fn mount_name(choice: &str) -> &'static str {
+    match choice {
+        "immich-drive" => "Immich Drive",
+        "immich" => "Immich",
+        _ => DEFAULT_MOUNT_NAME,
+    }
+}
+
+/// Every name the drive may have, so a sidebar entry under any of them is known as ours.
+pub fn mount_names() -> impl Iterator<Item = &'static str> {
+    MOUNT_NAMES.iter().map(|choice| mount_name(choice))
 }
 
 /// Why a setting could not be read or changed.
@@ -123,6 +143,8 @@ pub fn parse_size(text: &str) -> Option<u64> {
 pub struct Config {
     pub server_url: Option<String>,
     pub mount_path: String,
+    /// The drive's name in the sidebar (`mount.name`).
+    pub mount_name: &'static str,
     pub mount_at_login: bool,
     pub show_photos: bool,
     pub show_albums: bool,
@@ -162,6 +184,7 @@ impl Config {
         Ok(Config {
             server_url: optional("server.url")?,
             mount_path: effective("mount.path")?,
+            mount_name: mount_name(&effective("mount.name")?),
             mount_at_login: flag("mount.at_login")?,
             show_photos: flag("sections.photos")?,
             show_albums: flag("sections.albums")?,
@@ -254,11 +277,22 @@ mod tests {
     fn an_empty_file_gives_the_defaults() {
         let config = Config::from_toml("").unwrap();
         assert_eq!(config.mount_path, "~/Immich");
+        assert_eq!(config.mount_name, "Immich Mount");
         assert_eq!(config.album_layout, AlbumLayout::YearPrefix);
         assert_eq!(config.file_naming, FileNaming::DateTime);
         assert_eq!(config.grouping_photos, GroupingMode::AtLeast500);
         assert_eq!(config.cache_limit_bytes, 10 << 30);
         assert!(config.server_url.is_none());
+    }
+
+    #[test]
+    fn the_drive_is_named_by_a_choice_and_the_mount_point_stays() {
+        let config = Config::from_toml("[mount]\nname = \"immich\"\n").unwrap();
+        assert_eq!((config.mount_name, config.mount_path.as_str()), ("Immich", "~/Immich"));
+        assert_eq!(Config::from_toml("[mount]\nname = \"immich-drive\"\n").unwrap().mount_name, "Immich Drive");
+        assert_eq!(choice_label("immich-mount"), "Immich Mount");
+        assert!(Config::from_toml("[mount]\nname = \"Photos\"\n").is_err());
+        assert_eq!(mount_names().collect::<Vec<_>>(), ["Immich Mount", "Immich Drive", "Immich"]);
     }
 
     #[test]

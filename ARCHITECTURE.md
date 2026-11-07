@@ -107,7 +107,7 @@ icon style, and is MIT like the rest.
 ## Two processes: a daemon and an app
 
 ```
- Files, file dialogs, players ──▶ kernel FUSE (~/Immich, shown as "Immich")
+ Files, file dialogs, players ──▶ kernel FUSE (~/Immich, shown as "Immich Mount")
                                          │ /dev/fuse
  ┌───────────────────────────────────────▼─────────────────────────────────────────┐
  │ immich-mount daemon      systemd user service, no display needed                │
@@ -876,9 +876,9 @@ What the API does, verified on v3.3.5, all of which the client encodes:
       `logout` removes the drop-in. Verified in a GNOME 50 VM with `/home` a link to `/var/home`: with Files
       already open, the drive appeared once the daemon started.
     - **A bookmark is the fallback** where the volume monitor is not a user service: the GNOME app's setup
-      bookmarks the mount once, titled "Immich", in GTK's bookmarks file, and the daemon takes that bookmark away
-      once the drive is listed (a bookmark the user made, untitled, stays). `doctor` applies GVfs's rule, with the
-      home it was given, to say which case a machine is in.
+      bookmarks the mount once, titled with the drive's name, in GTK's bookmarks file, and the daemon takes that
+      bookmark away once the drive is listed (a bookmark the user made, untitled, stays). `doctor` applies GVfs's
+      rule, with the home it was given, to say which case a machine is in.
     - **Flatpak impact:** a Flatpak app could not write the drop-in, but the daemon writes it, and the daemon stays
       on the host.
     - **Not chosen: the `x-gvfs-show` mount option,** which GVfs honours before the path. Only root may record a
@@ -1235,9 +1235,12 @@ set what changed since a sync anchor (Apple's documentation):
 - **A folder that went away** takes what the store kept below it: its deletion and its contents' are recorded, and
   its kept listing goes, so later polls stop asking for it.
 
-**Settings.** The app's Settings window shows the settings table's entries that mean something on macOS (sections,
-date folders, the album layout, file naming), with Linux's labels. A change is written to `config.toml` in the App
-Group, and the app asks the system to list everything again. The extension follows a changed file at the next
+**Settings.** The app's Settings window shows the settings table's entries that mean something on macOS (the
+location's name, sections, date folders, the album layout, file naming), with Linux's labels. A change is written to
+`config.toml` in the App Group, and the app asks the system to list everything again. A new name is the exception:
+adding the domain again under it renames the location in place (the File Provider API updates an existing domain's
+properties), so nothing is listed or downloaded again; the app also renames a location that has an older name as it
+starts. The extension follows a changed file at the next
 folder the system asks for, with a new tree on the same store; the mount's path, the cache and thumbnail seeding
 are Linux's.
 

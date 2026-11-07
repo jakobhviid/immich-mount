@@ -168,7 +168,7 @@ where
 
     let store = MetadataStore::open(&account_cache.join("metadata.redb")).map_err(|error| prepare_error(account_cache, error.to_string()))?;
     let (sharp_thumbnails, safety_net, cache_limit_bytes) = (config.sharp_thumbnails, config.thumbnail_safety_net, config.cache_limit_bytes);
-    let uploads_enabled = config.uploads_enabled;
+    let (uploads_enabled, drive_name) = (config.uploads_enabled, config.mount_name);
     let tree = Arc::new(Tree::new(source.clone(), store, config));
     let content_directory = account_cache.join("content");
     let seeder = Seeder::new(Arc::new(source.clone()), thumbnail_directory, account_cache, sharp_thumbnails)
@@ -185,6 +185,7 @@ where
             .with_disk_floor(disk_room),
     );
     let mut filesystem = ImmichFilesystem::new(tree.clone(), content.clone(), runtime.handle().clone())
+        .with_drive_name(drive_name)
         .with_thumbnails(Arc::new(seeder), &thumbnail_roots, safety_net);
     let mut staging = None;
     if uploads_enabled {

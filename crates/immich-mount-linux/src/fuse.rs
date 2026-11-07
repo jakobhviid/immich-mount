@@ -19,6 +19,7 @@ use fuser::{
     ReplyEntry, ReplyOpen, ReplyStatfs, ReplyWrite, ReplyXattr, Request, TimeOrNow, WriteFlags,
 };
 use immich_mount_core::content::{BlockCache, ContentSource};
+use immich_mount_core::settings::DEFAULT_MOUNT_NAME;
 use immich_mount_core::source::{LibrarySource, SourceError, ThumbnailSource};
 use immich_mount_core::tree::{Entry, EntryKind, NameMemory, NodeKey, Tree};
 use immich_mount_core::uploads::{completeness, Admission, Completeness, MediaTypes, UploadError, UploadTarget, Uploaded};
@@ -276,12 +277,14 @@ fn is_probe_name(name: &str) -> bool {
     PROBED.contains(&name) || ROM_PROPERTIES.contains(&name) || name.starts_with(".Trash-") || name.starts_with("._")
 }
 
-/// Files the mount answers itself, at its root.
-const VIRTUAL_FILES: &[(&str, &str)] = &[
-    (".xdg-volume-info", "[Volume Info]\nName=Immich\n"),
-    (".nomedia", ""),
-    (".trackerignore", ""),
-];
+/// Files the mount answers itself, at its root; all but the volume information are empty.
+const VIRTUAL_FILES: &[&str] = &[VOLUME_INFO, ".nomedia", ".trackerignore"];
+/// GVfs's volume information: Files and Dolphin show the mount under its `Name`, the drive's name (`mount.name`).
+const VOLUME_INFO: &str = ".xdg-volume-info";
+
+fn volume_info(drive_name: &str) -> Arc<str> {
+    format!("[Volume Info]\nName={drive_name}\n").into()
+}
 
 /// What an inode stands for.
 #[derive(Debug, Clone, PartialEq, Eq, Hash)]
@@ -443,6 +446,8 @@ pub struct ImmichFilesystem<Library, Names, Content> {
     runtime: tokio::runtime::Handle,
     owner_uid: u32,
     owner_gid: u32,
+    /// The volume information's text, with the drive's name.
+    volume_info: Arc<str>,
     mounted_at: SystemTime,
     generation: Generation,
     thumbnails: Option<ThumbnailSetup<Content>>,
@@ -501,6 +506,7 @@ where
             runtime,
             owner_uid: unsafe { libc::getuid() },
             owner_gid: unsafe { libc::getgid() },
+            volume_info: volume_info(DEFAULT_MOUNT_NAME),
             mounted_at,
             generation: Generation(generation),
             thumbnails: None,
@@ -523,6 +529,12 @@ where
     }
 
     /// Accept new files in Upload, staged in `staging` and uploaded to `target` on close.
+    /// The name file managers show for the mount (`mount.name`).
+    pub fn with_drive_name(mut self, name: &str) -> Self {
+        self.volume_info = volume_info(name);
+        self
+    }
+
     pub fn with_uploads(mut self, staging: Arc<Staging>, media: MediaTypes, target: Arc<Content>) -> Self {
         self.uploads = Some(UploadSetup { staging, media: Arc::new(media), target });
         self
@@ -562,10 +574,6 @@ where
     {
         self.runtime.spawn(work);
     }
-}
-
-fn virtual_content(name: &str) -> &'static str {
-    VIRTUAL_FILES.iter().find(|(file_name, _)| *file_name == name).map(|(_, content)| *content).unwrap_or("")
 }
 
 /// Whether a folder is Upload, the only place new files are accepted. Photos and its date folders are views built
@@ -701,7 +709,7 @@ where
             return reply.entry(&Duration::ZERO, &self.staged_attributes(inode, id, &file), self.generation);
         }
         if parent_key == NodeKey::Root {
-            if let Some((virtual_name, _)) = VIRTUAL_FILES.iter().find(|(file_name, _)| *file_name == name) {
+            if let Some(virtual_name) = VIRTUAL_FILES.iter().find(|file_name| **file_name == name) {
                 let node = MountNode::Virtual(virtual_name);
                 let kind = EntryKind::Folder;
                 let inode = self.inodes.lock().expect("inode table lock").assign(node.clone(), kind.clone(), PathBuf::from(&name), true);
@@ -835,7 +843,7 @@ where
                 _ => reply.error(Errno::EIO),
             },
             (MountNode::Virtual(name), _) => {
-                let bytes = virtual_content(name).as_bytes();
+                let bytes = if *name == VOLUME_INFO { self.volume_info.as_bytes() } else { &[] };
                 let start = (offset as usize).min(bytes.len());
                 let end = (start + size as usize).min(bytes.len());
                 reply.data(&bytes[start..end]);
@@ -1014,7 +1022,7 @@ where
             {
                 let mut table = inodes.lock().expect("inode table lock");
                 if key == NodeKey::Root {
-                    for (name, _) in VIRTUAL_FILES {
+                    for name in VIRTUAL_FILES {
                         let child = table.assign(MountNode::Virtual(name), EntryKind::Folder, folder_path.join(name), false);
                         listing.push((child, FileType::RegularFile, name.to_string()));
                     }
@@ -1401,6 +1409,7 @@ impl<Library, Names, Content> ImmichFilesystem<Library, Names, Content> {
         AttributeMaker {
             owner_uid: self.owner_uid,
             owner_gid: self.owner_gid,
+            volume_info_size: self.volume_info.len() as u64,
             mounted_at: self.mounted_at,
             generation: self.generation,
         }
@@ -1412,6 +1421,7 @@ impl<Library, Names, Content> ImmichFilesystem<Library, Names, Content> {
 struct AttributeMaker {
     owner_uid: u32,
     owner_gid: u32,
+    volume_info_size: u64,
     mounted_at: SystemTime,
     generation: Generation,
 }
@@ -1421,7 +1431,9 @@ impl AttributeMaker {
         // The modes are what a copy of the file or folder gets, so a photo copied out is an ordinary file (0644) and
         // a copied album an ordinary folder (0755). What the mount allows is `access()`'s answer and each operation's.
         let (file_type, permissions, size, modified) = match (node, kind) {
-            (MountNode::Virtual(name), _) => (FileType::RegularFile, 0o644, virtual_content(name).len() as u64, self.mounted_at),
+            (MountNode::Virtual(name), _) => {
+                (FileType::RegularFile, 0o644, if *name == VOLUME_INFO { self.volume_info_size } else { 0 }, self.mounted_at)
+            }
             (_, EntryKind::Folder) => (FileType::Directory, 0o755, 0, self.mounted_at),
             (_, EntryKind::File { size, modified, .. }) => (FileType::RegularFile, 0o644, size.unwrap_or(0), SystemTime::from(*modified)),
         };

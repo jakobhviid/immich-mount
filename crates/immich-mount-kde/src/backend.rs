@@ -288,7 +288,7 @@ impl qobject::Backend {
             }
             // Dolphin lists the mount nowhere by itself: give it a place, once, as "Add to Places" would.
             if let Some(status) = status.as_ref().filter(|_| first_run) {
-                if let Err(error) = kde::add_place(&Paths::from_environment(), &status.mount_point, "Immich") {
+                if let Err(error) = kde::add_place(&Paths::from_environment(), &status.mount_point, preferences::drive_name()) {
                     eprintln!("could not add the mount to Dolphin's Places: {error}");
                 }
             }
