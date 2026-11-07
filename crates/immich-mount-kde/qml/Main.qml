@@ -50,7 +50,7 @@ Kirigami.ApplicationWindow {
     // KDE counts the mount as a remote location, where Dolphin shows no thumbnails until they are allowed.
     component PreviewsSwitch: ColumnLayout {
         Controls.Switch {
-            text: i18n("Show thumbnails")
+            text: root.i18n("Show thumbnails")
             checked: backend.previews
             onToggled: backend.allowPreviews(checked)
         }
@@ -59,7 +59,7 @@ Kirigami.ApplicationWindow {
             wrapMode: Text.WordWrap
             font: Kirigami.Theme.smallFont
             opacity: 0.7
-            text: i18n("Lets Dolphin preview files up to 100 MB on remote locations, this drive included. Thumbnails come from the server; no original is downloaded.")
+            text: root.i18n("Lets Dolphin preview files up to 100 MB on remote locations, this drive included. Thumbnails come from the server; no original is downloaded.")
         }
     }
 

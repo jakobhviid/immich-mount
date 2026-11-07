@@ -112,6 +112,10 @@ JPEGs: `fixtures`, then `open <name> <dir>` (cold cache, settle, screenshot, who
   notification from a script: `gdbus call ... Notify ... "int32 -1"` (a bare `-1` reads as an option).
 - **`pkill -f immich-mount-gnome` inside `in-session sh -c`** kills its own shell; match the process name with
   `pkill -x immich-mount-gn` (15 characters).
+- **The VMs run under `LANG=C.UTF-8`,** where gettext ignores `LANGUAGE`, so `LANGUAGE=da` shows English. To see
+  an app in another language: `dnf install glibc-langpack-da` as root, then start it with `LANG=da_DK.UTF-8`; for the
+  daemon, `systemctl --user set-environment LANG=da_DK.UTF-8` and restart its service. Without the langpack GTK
+  falls back to C and shows its Blueprint texts in English while the rest is translated.
 - **Harmless noise:** "Error registering session with GDM", and `xdg-desktop-portal` failing because
   `graphical-session.target` is inactive.
 

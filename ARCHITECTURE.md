@@ -1072,6 +1072,9 @@ Urdu and Vietnamese. Portuguese is Brazil's, which both platforms also offer to 
   and `InfoPlist.strings` for the About panel's notice and the Local Network prompt, into the app's resources.
   SwiftUI looks up a view's literal title by itself; other texts go through `tr`. An English table is there too,
   empty, so a Mac whose first language is English and second Danish stays in English.
+- **Verified** in GNOME 50 and Plasma 6 VMs (Fedora 44) under `LANG=da_DK.UTF-8`: both apps' pages in Danish,
+  the GNOME app's Blueprint texts through GTK's gettext beside its other texts, and the daemon's notification of a
+  refused file in Danish.
 - **Made by an AI model,** and disclosed in the README; corrections from native speakers come as pull requests to
   the language's `.po` file.
 - **Flatpak impact:** none. The catalogs travel in the app's own `share/locale`, which the lookup beside the program
