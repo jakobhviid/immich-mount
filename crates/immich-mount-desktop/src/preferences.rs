@@ -2,12 +2,14 @@
 //! `immich-mount configure` (ARCHITECTURE.md, "The desktop app"). The apps differ only in their widgets.
 
 use immich_mount_core::settings::{self, Setting, SETTINGS};
+use immich_mount_linux::i18n::tr;
 use immich_mount_linux::paths::Paths;
 
-/// The groups the apps show, by the settings' key prefix, with their titles. Settings outside these (the server, set
-/// by signing in; the headless credential file; uploads) are left to `immich-mount configure`.
+/// The groups the apps show, by the settings' key prefix, with their titles in English (`tr` translates them).
+/// Settings outside these (the server, set by signing in; the headless credential file; uploads) are left to
+/// `immich-mount configure`.
 pub const GROUPS: &[(&str, &str)] = &[
-    ("mount", "Mount"),
+    ("mount", "Drive"),
     ("sections", "Sections"),
     ("grouping", "Date Folders"),
     ("albums", "Albums"),
@@ -16,12 +18,20 @@ pub const GROUPS: &[(&str, &str)] = &[
     ("cache", "Cache"),
 ];
 
+/// A setting's title in the user's language: its description in the core's table, translated.
+pub fn title(setting: &Setting) -> &'static str {
+    tr(setting.description)
+}
+
+/// How a choice reads in a dialog, in the user's language. The names the drive may have stay as they are.
+pub fn choice_label(word: &str) -> &str {
+    tr(settings::choice_label(word))
+}
+
 /// The settings of one group, in table order.
 pub fn settings_in(prefix: &str) -> impl Iterator<Item = &'static Setting> + '_ {
     SETTINGS.iter().filter(move |setting| setting.key.split('.').next() == Some(prefix))
 }
-
-pub use immich_mount_core::settings::choice_label;
 
 fn config_text(paths: &Paths) -> String {
     std::fs::read_to_string(paths.config_file()).unwrap_or_default()

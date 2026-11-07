@@ -34,6 +34,8 @@ without downloading the library first.
   through Apple's File Provider, as iCloud Drive's is. Sign in with your server's single sign-on in your own browser (passkeys
   and password managers work as usual), with email and password, or with an API key. The credential stays in your
   keyring (GNOME Keyring or KWallet).
+- **In your language:** the apps speak English and 20 more of the world's most spoken languages, Danish among
+  them.
 - **A command line and a background service** (`immich-mount`, a FUSE filesystem written in Rust), which also run
   headless, without a desktop.
 
@@ -181,7 +183,8 @@ More, including similar projects: [CREDITS.md](CREDITS.md).
 ## AI disclosure
 
 Parts of this project were written with the assistance of AI coding agents (Claude Code, opencode, and others).
-All changes are reviewed by the maintainer. This is the single place that fact is disclosed; it is deliberately
+All changes are reviewed by the maintainer. The translations into 20 languages were made by an AI model: if you
+speak one of them, corrections to its `po/<language>.po` are very welcome. This is the single place that fact is disclosed; it is deliberately
 kept out of the commit history.
 
 ## License

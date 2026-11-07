@@ -36,6 +36,9 @@ install -Dm644 %{payload}/dev.hviid.ImmichMount-symbolic.svg %{buildroot}%{_data
 # The app's one launcher entry, which opens the interface native to the desktop, and its AppStream data.
 install -Dm644 %{payload}/dev.hviid.ImmichMount.desktop %{buildroot}%{_datadir}/applications/dev.hviid.ImmichMount.desktop
 install -Dm644 %{payload}/dev.hviid.ImmichMount.metainfo.xml %{buildroot}%{_datadir}/metainfo/dev.hviid.ImmichMount.metainfo.xml
+# The translations of both apps and the daemon's notifications.
+mkdir -p %{buildroot}%{_datadir}/locale
+cp -r %{payload}/locale/. %{buildroot}%{_datadir}/locale/
 install -Dm644 %{payload}/LICENSE %{buildroot}%{_licensedir}/%{name}/LICENSE
 install -Dm644 %{payload}/THIRD-PARTY-LICENSES.md %{buildroot}%{_licensedir}/%{name}/THIRD-PARTY-LICENSES.md
 install -Dm644 %{payload}/README.md %{buildroot}%{_docdir}/%{name}/README.md
@@ -47,6 +50,7 @@ install -Dm644 %{payload}/README.md %{buildroot}%{_docdir}/%{name}/README.md
 %{_datadir}/icons/hicolor/symbolic/apps/dev.hviid.ImmichMount-symbolic.svg
 %{_datadir}/applications/dev.hviid.ImmichMount.desktop
 %{_datadir}/metainfo/dev.hviid.ImmichMount.metainfo.xml
+%{_datadir}/locale/*/LC_MESSAGES/immich-mount.mo
 %license %{_licensedir}/%{name}/LICENSE
 %license %{_licensedir}/%{name}/THIRD-PARTY-LICENSES.md
 %doc %{_docdir}/%{name}/README.md

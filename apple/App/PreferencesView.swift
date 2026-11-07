@@ -25,7 +25,7 @@ struct PreferencesView: View {
                     .foregroundStyle(.secondary)
             }
             ForEach(groups, id: \.title) { group in
-                Section(group.title) {
+                Section(tr(group.title)) {
                     ForEach(group.preferences, id: \.key) { preference in
                         row(for: preference)
                     }
@@ -45,12 +45,12 @@ struct PreferencesView: View {
     private func row(for preference: Preference) -> some View {
         switch preference.kind {
         case .toggle:
-            Toggle(preference.title, isOn: Binding(get: { preference.value == "true" },
+            Toggle(tr(preference.title), isOn: Binding(get: { preference.value == "true" },
                                                    set: { change(preference.key, to: $0 ? "true" : "false") }))
         case .choice(let options):
-            Picker(preference.title, selection: Binding(get: { preference.value }, set: { change(preference.key, to: $0) })) {
+            Picker(tr(preference.title), selection: Binding(get: { preference.value }, set: { change(preference.key, to: $0) })) {
                 ForEach(options, id: \.value) { option in
-                    Text(option.label).tag(option.value)
+                    Text(tr(option.label)).tag(option.value)
                 }
             }
         }

@@ -7,6 +7,7 @@ use adw::prelude::*;
 use adw::subclass::prelude::*;
 use gtk::{gio, glib};
 use immich_mount_core::sign_in::BrowserSignIn;
+use immich_mount_linux::i18n::tr;
 
 use immich_mount_desktop::session::{self, ServerOffer, SignedIn, Status};
 
@@ -259,7 +260,7 @@ impl Window {
             Ok(address) => {
                 claim_redirect();
                 gtk::UriLauncher::new(&address).launch(Some(&window), gio::Cancellable::NONE, |_| {});
-                window.toast("Continue in your browser");
+                window.toast(tr("Continue in your browser"));
             }
             Err(message) => window.toast(&message),
         });
@@ -270,7 +271,7 @@ impl Window {
         // A redirect for an older attempt (a double click) must not use up the live one.
         let belongs = self.imp().attempt.borrow().as_ref().is_some_and(|attempt| immich_mount_core::sign_in::is_redirect_for(address, &attempt.state));
         let (Some(url), true, Some(attempt)) = (self.server_url(), belongs, if belongs { self.imp().attempt.take() } else { None }) else {
-            return self.toast("This sign-in belongs to an earlier attempt. Finish the latest one, or sign in again.");
+            return self.toast(tr("This sign-in belongs to an earlier attempt. Finish the latest one, or sign in again."));
         };
         let window = self.clone();
         self.set_busy(true);
@@ -282,7 +283,7 @@ impl Window {
         let imp = self.imp();
         let (email, password) = (imp.email_row.text().to_string(), imp.password_row.text().to_string());
         if email.trim().is_empty() || password.is_empty() {
-            return self.toast("Enter your email and password");
+            return self.toast(tr("Enter your email and password"));
         }
         self.set_busy(true);
         let window = self.clone();
@@ -293,7 +294,7 @@ impl Window {
         let Some(url) = self.server_url() else { return };
         let key = self.imp().api_key_row.text().to_string();
         if key.trim().is_empty() {
-            return self.toast("Enter an API key");
+            return self.toast(tr("Enter an API key"));
         }
         self.set_busy(true);
         let window = self.clone();
@@ -320,7 +321,7 @@ impl Window {
         run(session::save(url, signed_in.credential), move |outcome| match outcome {
             Ok(_) => {
                 if let Some(account) = account {
-                    window.toast(&format!("Signed in as {account}"));
+                    window.toast(&tr("Signed in as {account}").replace("{account}", &account));
                 }
                 window.show_setup();
             }
@@ -386,7 +387,7 @@ impl Window {
                 }
                 None if seconds_left == 0 => {
                     window.set_busy(false);
-                    window.toast("Signed in, but the status could not be read");
+                    window.toast(tr("Signed in, but the status could not be read"));
                 }
                 _ => window.wait_for_mount(seconds_left - 1),
             });
@@ -408,26 +409,14 @@ impl Window {
         imp.uploads_row.set_subtitle(&status.uploads_text().unwrap_or_default());
         imp.account_row.set_subtitle(&status.credential_place);
         imp.mount_row.set_subtitle(&status.mount_point.display().to_string());
-        let (connection, cache) = match &status.daemon {
-            Some(report) => (
-                match report.state.as_str() {
-                    "online" => "Online".to_owned(),
-                    "offline" => "Server unreachable; files you opened before stay available".to_owned(),
-                    "signed-out" => "Signed out; sign in again".to_owned(),
-                    other => other.to_owned(),
-                },
-                format!("{} of {}", glib::format_size(report.cache_used), glib::format_size(report.cache_limit)),
-            ),
-            None => ("Not running".to_owned(), "Not running".to_owned()),
-        };
-        imp.connection_row.set_subtitle(&connection);
+        imp.connection_row.set_subtitle(&status.connection_text());
         imp.sign_in_again_group.set_visible(status.daemon.as_ref().is_some_and(|report| report.state == "signed-out"));
-        imp.cache_row.set_subtitle(&cache);
+        imp.cache_row.set_subtitle(&status.cache_text(|bytes| glib::format_size(bytes).to_string()));
         let signed_out = status.daemon.as_ref().is_some_and(|report| report.state == "signed-out");
         let (title, description) = match (signed_out, status.mounted) {
-            (true, _) => ("Signed Out of Immich", "Sign in again to keep browsing. Your caches are kept."),
-            (false, true) => ("Your Library Is in Files", "Browse it like any folder. Originals download only when you open them."),
-            (false, false) => ("Not Mounted", "Mount it to browse your library in Files."),
+            (true, _) => (tr("Signed Out of Immich"), tr("Sign in again to keep browsing. Your caches are kept.")),
+            (false, true) => (tr("Your Library Is in Files"), tr("Browse it like any folder. Originals download only when you open them.")),
+            (false, false) => (tr("Not Mounted"), tr("Mount it to browse your library in Files.")),
         };
         imp.open_button.set_visible(status.mounted);
         imp.unmount_button.set_visible(status.mounted);
@@ -470,7 +459,7 @@ impl Window {
         run(async { session::disconnect() }, move |outcome| match outcome {
             Ok(()) => {
                 window.imp().navigation.replace_with_tags(&["connect"]);
-                window.toast("Disconnected");
+                window.toast(tr("Disconnected"));
             }
             Err(message) => window.toast(&message),
         });

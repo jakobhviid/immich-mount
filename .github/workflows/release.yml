@@ -31,6 +31,7 @@ jobs:
           cargo clippy --workspace --exclude immich-mount-gnome --exclude immich-mount-kde --all-targets -- -D warnings
           cargo test --workspace --exclude immich-mount-gnome --exclude immich-mount-kde
           cargo check -p immich-api -p immich-mount-core --no-default-features --target aarch64-apple-darwin
+          python3 po/i18n.py check
       - name: The mount through the kernel (FUSE), with an in-memory library
         run: |
           # The runner has /dev/fuse; fusermount3 comes with fuse3. These tests catch what only a real mount shows
@@ -91,7 +92,9 @@ jobs:
           app="$PWD/dist/app"
           mkdir -p "$app"
           cp target/release/immich-mount-gnome target/release/immich-mount-kde LICENSE packaging/icons/*.svg "$app/"
-          cp packaging/desktop/dev.hviid.ImmichMount.desktop.in "$app/dev.hviid.ImmichMount.desktop"
+          python3 po/i18n.py desktop packaging/desktop/dev.hviid.ImmichMount.desktop.in "$app/dev.hviid.ImmichMount.desktop"
+          # The translations, where the programs look beside themselves (ARCHITECTURE.md, "Translations").
+          python3 po/i18n.py mo "$app/share/locale"
           python3 packaging/third-party-licenses.py "$app/THIRD-PARTY-LICENSES.md" immich-mount-gnome immich-mount-kde immich-mount
           tar czf dist/immich-mount-app-x86_64.tar.gz -C "$app" .
           ls -l dist/*.rpm dist/*.tar.gz
@@ -206,7 +209,11 @@ jobs:
           cp "target/${{ matrix.target }}/release/immich-mount" LICENSE README.md dist/stage/THIRD-PARTY-LICENSES.md \
             packaging/icons/*.svg packaging/desktop/dev.hviid.ImmichMount.metainfo.xml "$payload/"
           sed 's|@BINDIR@|/usr/bin|' packaging/systemd/immich-mount.service.in > "$payload/immich-mount.service"
-          sed 's|@BINDIR@|/usr/bin|' packaging/desktop/dev.hviid.ImmichMount.desktop.in > "$payload/dev.hviid.ImmichMount.desktop"
+          python3 po/i18n.py desktop packaging/desktop/dev.hviid.ImmichMount.desktop.in "$payload/desktop.in"
+          sed 's|@BINDIR@|/usr/bin|' "$payload/desktop.in" > "$payload/dev.hviid.ImmichMount.desktop"
+          # The translations of both apps and the daemon's notifications, here because both app packages depend on
+          # this one (ARCHITECTURE.md, "Translations").
+          python3 po/i18n.py mo "$payload/locale"
           root=dist/deb
           install -Dm755 "$payload/immich-mount" "$root/usr/bin/immich-mount"
           install -Dm644 "$payload/immich-mount.service" "$root/usr/lib/systemd/user/immich-mount.service"
@@ -215,6 +222,8 @@ jobs:
             "$root/usr/share/icons/hicolor/symbolic/apps/dev.hviid.ImmichMount-symbolic.svg"
           install -Dm644 "$payload/dev.hviid.ImmichMount.desktop" "$root/usr/share/applications/dev.hviid.ImmichMount.desktop"
           install -Dm644 "$payload/dev.hviid.ImmichMount.metainfo.xml" "$root/usr/share/metainfo/dev.hviid.ImmichMount.metainfo.xml"
+          mkdir -p "$root/usr/share/locale"
+          cp -r "$payload/locale/." "$root/usr/share/locale/"
           install -Dm644 LICENSE "$root/usr/share/doc/immich-mount/copyright"
           install -Dm644 README.md "$root/usr/share/doc/immich-mount/README.md"
           install -Dm644 "$payload/THIRD-PARTY-LICENSES.md" "$root/usr/share/doc/immich-mount/THIRD-PARTY-LICENSES.md"

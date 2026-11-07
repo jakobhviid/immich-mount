@@ -13,6 +13,7 @@ use immich_mount_core::sign_in::{self, BrowserSignIn};
 use immich_mount_linux::credentials::{read_credential_file, write_credential_file, Credential};
 use immich_mount_linux::keyring::{self, KeyringError};
 use immich_mount_linux::daemon::{self, StopReason};
+use immich_mount_linux::i18n::tr;
 use immich_mount_linux::mounts::{mount_state, MountState};
 use immich_mount_linux::paths::Paths;
 use serde::Serialize;
@@ -388,8 +389,8 @@ pub fn daemon(paths: &Paths) -> Result<Option<StopReason>> {
         Err(error) if matches!(error.downcast_ref::<KeyringError>(), Some(KeyringError::Dismissed)) => {
             log::error!("the keyring stayed locked, so Immich is not mounted; run `systemctl --user start immich-mount` after unlocking it");
             runtime.block_on(immich_mount_linux::notify::notify(
-                "Immich is not mounted",
-                "The keyring stayed locked. Open Immich Mount, or run “immich-mount mount”, to try again.",
+                tr("Immich is not mounted"),
+                tr("The keyring stayed locked. Open Immich Mount, or run “immich-mount mount”, to try again."),
             ));
             return Ok(None);
         }

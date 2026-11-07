@@ -1033,6 +1033,54 @@ Each platform gets a native app that looks and reads like a first-party app (pri
     (`$XDG_RUNTIME_DIR/app/$FLATPAK_ID`), which every instance shares. The previews switch would need write access to
     `xdg-config/kdeglobals`, or would be left out of a Flatpak.
 
+## Translations
+
+The apps (GNOME, KDE and macOS), the settings they show, the daemon's notifications and the Linux launcher entry are
+in English and 20 other languages. Machine translation makes a language cheap, so the list follows reach: the most
+spoken languages by total speakers (Ethnologue's ranking) that desktops commonly offer, with the Arabic and Chinese
+varieties under their written standards and languages whose speakers mostly set another listed one (Javanese,
+Nigerian Pidgin) left out, and Danish, the maintainer's: Arabic, Bengali, Chinese (Simplified), Danish, French,
+German, Hindi, Indonesian, Italian, Japanese, Korean, Marathi, Portuguese, Russian, Spanish, Tamil, Telugu, Turkish,
+Urdu and Vietnamese. Portuguese is Brazil's, which both platforms also offer to Portugal.
+
+- **One source for every platform:** gettext catalogs, `po/<language>.po`, keyed by the English text and made from
+  `po/immich-mount.pot`. `po/i18n.py extract` writes the template from the sources and brings every catalog in line
+  with it; it finds `tr("...")` in Rust and Swift, `i18n("...")` in QML, `_("...")` in Blueprint, a SwiftUI view's
+  literal title, the rows of a table of titles (`("grouping", "Date Folders")`), and the settings table's
+  descriptions and choice labels, which the core keeps unmarked. Catalogs are what translation platforms and
+  translators know, and GTK reads them itself.
+- **Values are `{name}` placeholders,** filled in after the lookup, the same way on every platform, so a translation
+  may move them. No text has plural forms: those with a count are phrased around it ("Files in Upload that have not
+  reached Immich: {count}"). CI's `po/i18n.py check` fails when the template is stale or a translation drops a
+  placeholder; an untranslated text shows in English.
+- **The drive's folders keep their names** in every language (SPEC.md, "Names"; folder names in the user's language
+  are parked in the ROADMAP), so a switch or a setting that names one (Photos, Albums, People, Places, Upload) names
+  it as the drive shows it, in a translated sentence. The extractor leaves the bare names out of the catalogs.
+- **The core and the command line stay English.** The core holds no translation machinery, so it stays portable;
+  the apps translate its texts where they show them. The command line's output is a contract (its JSON, these docs,
+  `--llm`), and English there is what a search for an error finds. Errors from the server or the system, quoted in
+  a message, stay as they come.
+- **Linux:** `po/i18n.py mo` compiles the catalogs; the `immich-mount` package installs them in `/usr/share/locale`,
+  since both app packages depend on it, and the cask keeps them in `share/locale` beside its programs. A program
+  looks beside itself, in `share/locale` and then `../share/locale`, which also finds a Flatpak's `/app/share/locale`.
+  `immich-mount-linux`'s `i18n::tr` reads them by gettext's rules (`LANGUAGE`, unless the locale is C, then
+  `LC_ALL`, `LC_MESSAGES`, `LANG`) without the C library's gettext, so the static daemon translates its
+  notifications too. GTK looks up the Blueprint's texts through the C library's gettext, which the GNOME app binds
+  to the same folder. The KDE app's QML calls `i18n()`, which asks the backend; Kirigami's own texts come from KDE's
+  catalogs. The launcher entry carries `Comment` and `Keywords` in every language (`po/i18n.py desktop`).
+- **macOS:** `apple/build-rust.sh` runs `po/i18n.py apple`, which writes `<language>.lproj/Localizable.strings`,
+  and `InfoPlist.strings` for the About panel's notice and the Local Network prompt, into the app's resources.
+  SwiftUI looks up a view's literal title by itself; other texts go through `tr`. An English table is there too,
+  empty, so a Mac whose first language is English and second Danish stays in English.
+- **Made by an AI model,** and disclosed in the README; corrections from native speakers come as pull requests to
+  the language's `.po` file.
+- **Flatpak impact:** none. The catalogs travel in the app's own `share/locale`, which the lookup beside the program
+  finds; a Flatpak's separate locale extensions are not needed for one small domain.
+- **Not chosen:** Fluent (Rust-native, but foreign to GTK, Qt, Apple and the translation platforms); Qt Linguist's
+  `.ts`/`.qm` for the KDE app, or an Xcode String Catalog as the source (one format per platform, kept in step by
+  hand); the `gettext-rs` crate (it links libintl into the static daemon); KDE's KI18n (a C++ framework more to
+  build for a few dozen texts).
+
 ## Security and privacy
 
 - **Credentials** live in the keyring (`oo7`, which speaks both the Secret Service and the Secret portal).
@@ -1093,7 +1141,9 @@ Each platform gets a native app that looks and reads like a first-party app (pri
   - `immich-mount.service` (`Type=notify`, `ExecStop` unmounts, `Restart=on-failure`)
   - a D-Bus activation file
   - the one launcher entry (`dev.hviid.ImmichMount.desktop`, running `immich-mount app`), named "Immich Mount", with the
-    keywords `Immich;Drive;Mount;Photos;Videos;Files;` and the `x-scheme-handler/app.immich` handler
+    keywords `Immich;photos;videos;drive;mount;` and the `x-scheme-handler/app.immich` handler, its comment and
+    keywords in every language ("Translations")
+  - the translations, `/usr/share/locale/<language>/LC_MESSAGES/immich-mount.mo`, in the `immich-mount` package
   - the icon, `dev.hviid.ImmichMount` and its symbolic variant, in the `immich-mount` package ("The icon")
   - AppStream metadata carrying the non-affiliation notice
   - the license notices: `LICENSE`, and `THIRD-PARTY-LICENSES.md`, written at release by

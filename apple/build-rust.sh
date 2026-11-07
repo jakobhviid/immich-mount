@@ -1,7 +1,8 @@
 #!/usr/bin/env bash
 # Build the bridge (crates/immich-mount-apple) for the Xcode project: a static library for both Mac architectures,
-# its Swift bindings, and an xcframework that wraps them (ARCHITECTURE.md, "The macOS edition"), and the app's
-# version for Xcode. Runs on a Mac with both Rust targets added; xcodegen reads the results from apple/build/.
+# its Swift bindings, and an xcframework that wraps them (ARCHITECTURE.md, "The macOS edition"), the app's
+# translations, and its version for Xcode. Runs on a Mac with both Rust targets added; xcodegen reads the results
+# from apple/build/.
 #
 #   apple/build-rust.sh [debug|release]      (release when not given)
 set -euo pipefail
@@ -44,6 +45,10 @@ mv "$out/Generated/immich_mount_appleFFI.modulemap" "$out/headers/module.modulem
 
 xcodebuild -create-xcframework -library "$out/universal/libimmich_mount_apple.a" -headers "$out/headers" \
   -output "$out/ImmichMountCore.xcframework" >/dev/null
+
+# The app's texts in every language, from the catalogs the Linux apps read too (ARCHITECTURE.md, "Translations").
+rm -rf "$out/Localization"
+python3 po/i18n.py apple "$out/Localization"
 
 # The release line's version (ci/version.sh), the same as the Linux packages', and a build number that grows with
 # every commit; Config/Base.xcconfig reads them.

@@ -286,6 +286,7 @@ These are the options for when that is not enough on a real server, with what ea
 | **Several servers or accounts** | The cache already separates accounts, so this is additive |
 | **"Move to Trash" mapped to Immich's trash** | It makes a library-wide change one keystroke away in a file manager. Needs careful thought first |
 | **Tray icon** | Stock GNOME has none. Possible later as a StatusNotifierItem, for desktops with AppIndicator |
-| **Localisation** | Month folder names and the app's interface |
+| **Folder names in the user's language** | The interface is translated (ARCHITECTURE, "Translations"), the folders are not: a section's or a month's name is part of the mount's contract (SPEC, "Names"), and a path that changes with the desktop's language breaks scripts, links and bookmarks |
+| **More languages** | Next by reach: Persian, Swahili, Tagalog, Punjabi and Hausa, once someone asks or offers to check them |
 | **The websocket for `all` API keys** | Every credential is polled every 10 seconds, so changes show within seconds already; the websocket would shave those seconds for one kind of key, at the price of a socket.io client and a second connection |
 | **fanotify pre-content events** | Real placeholder files, the closest Linux match to macOS and Windows. They need root today |

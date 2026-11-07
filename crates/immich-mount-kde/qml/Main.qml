@@ -26,6 +26,14 @@ Kirigami.ApplicationWindow {
         onActivated: root.pageStack.layers.push(preferencesPage)
     }
 
+    // A text in the user's language (ARCHITECTURE.md, "Translations"), its {name} placeholders filled from values.
+    function i18n(text, values) {
+        let translated = backend.translate(text)
+        for (const name in values)
+            translated = translated.replace("{" + name + "}", values[name])
+        return translated
+    }
+
     property bool browserOpened: true
     function openBrowser() {
         browserOpened = Qt.openUrlExternally(backend.address)
@@ -42,7 +50,7 @@ Kirigami.ApplicationWindow {
     // KDE counts the mount as a remote location, where Dolphin shows no thumbnails until they are allowed.
     component PreviewsSwitch: ColumnLayout {
         Controls.Switch {
-            text: "Show thumbnails"
+            text: i18n("Show thumbnails")
             checked: backend.previews
             onToggled: backend.allowPreviews(checked)
         }
@@ -51,7 +59,7 @@ Kirigami.ApplicationWindow {
             wrapMode: Text.WordWrap
             font: Kirigami.Theme.smallFont
             opacity: 0.7
-            text: "Lets Dolphin preview files up to 100 MB on remote locations, this drive included. Thumbnails come from the server; no original is downloaded."
+            text: i18n("Lets Dolphin preview files up to 100 MB on remote locations, this drive included. Thumbnails come from the server; no original is downloaded.")
         }
     }
 
@@ -60,7 +68,7 @@ Kirigami.ApplicationWindow {
         id: preferencesPage
         Kirigami.ScrollablePage {
             id: preferences
-            title: "Preferences"
+            title: i18n("Preferences")
             readonly property var rows: JSON.parse(backend.preferenceRows())
             function store(key, value) {
                 refusal.text = backend.storeSetting(key, value)
@@ -132,7 +140,7 @@ Kirigami.ApplicationWindow {
     Component {
         id: aboutPage
         Kirigami.ScrollablePage {
-            title: "About"
+            title: i18n("About")
             ColumnLayout {
                 spacing: Kirigami.Units.largeSpacing
                 Kirigami.Icon {
@@ -144,31 +152,33 @@ Kirigami.ApplicationWindow {
                 Controls.Label {
                     Layout.fillWidth: true
                     wrapMode: Text.WordWrap
-                    text: "Your Immich photos and videos as a drive in Dolphin. By Jakob Hviid, under the MIT license."
+                    text: i18n("Your Immich photos and videos as a drive in Dolphin. By Jakob Hviid, under the MIT license.")
                 }
                 Controls.Label {
                     Layout.fillWidth: true
                     wrapMode: Text.WordWrap
-                    text: "Immich Mount is an independent, unofficial project. It is not affiliated with, endorsed by, or sponsored by the Immich project or FUTO. \u201cImmich\u201d is used only to describe the server this software works with, and remains the mark of its owner."
+                    text: i18n("Immich Mount is an independent, unofficial project. It is not affiliated with, endorsed by, or sponsored by the Immich project or FUTO. “Immich” is used only to describe the server this software works with, and remains the mark of its owner.")
                 }
-                Kirigami.Heading { level: 3; text: "Credits" }
+                Kirigami.Heading { level: 3; text: i18n("Credits") }
                 Controls.Label {
                     Layout.fillWidth: true
                     wrapMode: Text.WordWrap
                     textFormat: Text.StyledText
                     onLinkActivated: link => Qt.openUrlExternally(link)
-                    text: "Inspired by <a href=\"https://github.com/Kartax/immich-desktop-app\">Kartax/immich-desktop-app</a><br>The Immich API layer: <a href=\"https://github.com/boul2gom/immich-rs\">immich-rs</a>"
+                    text: i18n("Inspired by {project}", { project: "<a href=\"https://github.com/Kartax/immich-desktop-app\">Kartax/immich-desktop-app</a>" })
+                        + "<br>" + i18n("The Immich API layer: {project}", { project: "<a href=\"https://github.com/boul2gom/immich-rs\">immich-rs</a>" })
                 }
-                Kirigami.Heading { level: 3; text: "AI disclosure" }
+                Kirigami.Heading { level: 3; text: i18n("AI disclosure") }
                 Controls.Label {
                     Layout.fillWidth: true
                     wrapMode: Text.WordWrap
-                    text: "Parts of this project were written with the assistance of AI coding agents. All changes are reviewed by the maintainer."
+                    text: i18n("Parts of this project were written with the assistance of AI coding agents. All changes are reviewed by the maintainer.")
                 }
                 Controls.Label {
                     textFormat: Text.StyledText
                     onLinkActivated: link => Qt.openUrlExternally(link)
-                    text: "Website: <a href=\"https://jakob.hviid.phd/immich-mount/\">jakob.hviid.phd/immich-mount</a><br>Source code: <a href=\"https://github.com/jakobhviid/immich-mount\">github.com/jakobhviid/immich-mount</a>"
+                    text: i18n("Website: {link}", { link: "<a href=\"https://jakob.hviid.phd/immich-mount/\">jakob.hviid.phd/immich-mount</a>" })
+                        + "<br>" + i18n("Source code: {link}", { link: "<a href=\"https://github.com/jakobhviid/immich-mount\">github.com/jakobhviid/immich-mount</a>" })
                 }
             }
         }
@@ -178,30 +188,30 @@ Kirigami.ApplicationWindow {
         actions: [
             Kirigami.Action {
                 icon.name: "go-previous"
-                text: "Back"
+                text: i18n("Back")
                 visible: backend.page === "signin" || backend.page === "waiting"
                 enabled: !backend.busy
                 onTriggered: backend.goBack()
             },
             Kirigami.Action {
                 icon.name: "configure"
-                text: "Preferences"
+                text: i18n("Preferences")
                 displayHint: Kirigami.DisplayHint.AlwaysHide
                 onTriggered: root.pageStack.layers.push(preferencesPage)
             },
             Kirigami.Action {
                 icon.name: "help-about"
-                text: "About"
+                text: i18n("About")
                 displayHint: Kirigami.DisplayHint.AlwaysHide
                 onTriggered: root.pageStack.layers.push(aboutPage)
             }
         ]
         title: {
             switch (backend.page) {
-            case "connect": return "Connect"
-            case "signin": return "Sign In"
-            case "waiting": return "Continue in Your Browser"
-            case "setup": return "Your Library in Dolphin"
+            case "connect": return i18n("Connect")
+            case "signin": return i18n("Sign In")
+            case "waiting": return i18n("Continue in Your Browser")
+            case "setup": return i18n("Your Library in Dolphin")
             default: return "Immich Mount"
             }
         }
@@ -223,15 +233,15 @@ Kirigami.ApplicationWindow {
                 Kirigami.PlaceholderMessage {
                     Layout.fillWidth: true
                     icon.name: "dev.hviid.ImmichMount"
-                    text: "Your Immich Library in Dolphin"
-                    explanation: "Browse your photos and videos as a drive. Originals download only when you open them."
+                    text: i18n("Your Immich Library in Dolphin")
+                    explanation: i18n("Browse your photos and videos as a drive. Originals download only when you open them.")
                 }
                 Kirigami.FormLayout {
                     Layout.fillWidth: true
                     Controls.TextField {
                         id: addressField
-                        Kirigami.FormData.label: "Server address:"
-                        Accessible.name: "Server address"
+                        Kirigami.FormData.label: i18n("Server address:")
+                        Accessible.name: i18n("Server address")
                         text: backend.server
                         placeholderText: "https://photos.example.org"
                         onAccepted: backend.checkServer(text)
@@ -239,7 +249,7 @@ Kirigami.ApplicationWindow {
                 }
                 Controls.Button {
                     Layout.alignment: Qt.AlignHCenter
-                    text: "Continue"
+                    text: i18n("Continue")
                     icon.name: "go-next"
                     enabled: !backend.busy && addressField.text.trim().length > 0
                     onClicked: backend.checkServer(addressField.text)
@@ -263,40 +273,40 @@ Kirigami.ApplicationWindow {
                     visible: backend.sso.length > 0
                     wrapMode: Text.WordWrap
                     horizontalAlignment: Text.AlignHCenter
-                    text: "Opens your browser, where you sign in as usual, with a passkey or a password manager."
+                    text: i18n("Opens your browser, where you sign in as usual, with a passkey or a password manager.")
                 }
                 Kirigami.FormLayout {
                     Layout.fillWidth: true
                     Kirigami.Separator {
                         Kirigami.FormData.isSection: true
-                        Kirigami.FormData.label: "Email and password"
+                        Kirigami.FormData.label: i18n("Email and password")
                         visible: backend.passwords
                     }
-                    Controls.TextField { id: emailField; Kirigami.FormData.label: "Email:"; Accessible.name: "Email"; visible: backend.passwords }
+                    Controls.TextField { id: emailField; Kirigami.FormData.label: i18n("Email:"); Accessible.name: i18n("Email"); visible: backend.passwords }
                     Kirigami.PasswordField {
                         id: passwordField
-                        Kirigami.FormData.label: "Password:"
-                        Accessible.name: "Password"
+                        Kirigami.FormData.label: i18n("Password:")
+                        Accessible.name: i18n("Password")
                         placeholderText: ""
                         visible: backend.passwords
                         onAccepted: backend.signInPassword(emailField.text, text)
                     }
                     Controls.Button {
-                        text: "Sign In"
+                        text: i18n("Sign In")
                         visible: backend.passwords
                         enabled: !backend.busy
                         onClicked: backend.signInPassword(emailField.text, passwordField.text)
                     }
-                    Kirigami.Separator { Kirigami.FormData.isSection: true; Kirigami.FormData.label: "API key" }
+                    Kirigami.Separator { Kirigami.FormData.isSection: true; Kirigami.FormData.label: i18n("API key") }
                     Kirigami.PasswordField {
                         id: keyField
-                        Kirigami.FormData.label: "Key:"
-                        Accessible.name: "API key"
+                        Kirigami.FormData.label: i18n("Key:")
+                        Accessible.name: i18n("API key")
                         placeholderText: ""
                         onAccepted: backend.signInKey(text)
                     }
                     Controls.Button {
-                        text: "Sign In With Key"
+                        text: i18n("Sign In With Key")
                         enabled: !backend.busy
                         onClicked: backend.signInKey(keyField.text)
                     }
@@ -308,11 +318,11 @@ Kirigami.ApplicationWindow {
                 visible: backend.page === "waiting"
                 Layout.fillWidth: true
                 icon.name: "internet-web-browser"
-                text: "Continue in your browser"
-                explanation: "Sign in there. When your browser asks to open Immich Mount, allow it."
+                text: i18n("Continue in your browser")
+                explanation: i18n("Sign in there. When your browser asks to open Immich Mount, allow it.")
                 helpfulAction: Kirigami.Action {
                     icon.name: "internet-web-browser"
-                    text: "Open the Sign-In Page Again"
+                    text: i18n("Open the Sign-In Page Again")
                     onTriggered: root.openBrowser()
                 }
             }
@@ -323,14 +333,14 @@ Kirigami.ApplicationWindow {
                     Layout.fillWidth: true
                     visible: !root.browserOpened
                     wrapMode: Text.WordWrap
-                    text: "No browser could be opened. Open this address in one:"
+                    text: i18n("No browser could be opened. Open this address in one:")
                 }
                 Controls.TextField {
                     Layout.fillWidth: true
                     visible: !root.browserOpened
                     readOnly: true
                     selectByMouse: true
-                    Accessible.name: "Sign-in address"
+                    Accessible.name: i18n("Sign-in address")
                     text: backend.address
                 }
             }
@@ -351,24 +361,24 @@ Kirigami.ApplicationWindow {
                 Layout.fillWidth: true
                 Kirigami.FormLayout {
                     Layout.fillWidth: true
-                    Kirigami.Separator { Kirigami.FormData.isSection: true; Kirigami.FormData.label: "Sections" }
-                    Controls.Switch { text: "Photos"; checked: backend.photos; onToggled: backend.photos = checked }
-                    Controls.Switch { text: "Albums"; checked: backend.albums; onToggled: backend.albums = checked }
-                    Controls.Switch { text: "People"; checked: backend.people; onToggled: backend.people = checked }
-                    Controls.Switch { text: "Places"; checked: backend.places; onToggled: backend.places = checked }
-                    Kirigami.Separator { Kirigami.FormData.isSection: true; Kirigami.FormData.label: "Location" }
+                    Kirigami.Separator { Kirigami.FormData.isSection: true; Kirigami.FormData.label: i18n("Sections") }
+                    Controls.Switch { text: i18n("Photos"); checked: backend.photos; onToggled: backend.photos = checked }
+                    Controls.Switch { text: i18n("Albums"); checked: backend.albums; onToggled: backend.albums = checked }
+                    Controls.Switch { text: i18n("People"); checked: backend.people; onToggled: backend.people = checked }
+                    Controls.Switch { text: i18n("Places"); checked: backend.places; onToggled: backend.places = checked }
+                    Kirigami.Separator { Kirigami.FormData.isSection: true; Kirigami.FormData.label: i18n("Location") }
                     Controls.TextField {
-                        Kirigami.FormData.label: "Folder:"
-                        Accessible.name: "Folder"
+                        Kirigami.FormData.label: i18n("Folder:")
+                        Accessible.name: i18n("Folder")
                         text: backend.location
                         onEditingFinished: backend.location = text
                     }
-                    Kirigami.Separator { Kirigami.FormData.isSection: true; Kirigami.FormData.label: "Dolphin" }
+                    Kirigami.Separator { Kirigami.FormData.isSection: true; Kirigami.FormData.label: i18n("Dolphin") }
                     PreviewsSwitch {}
                 }
                 Controls.Button {
                     Layout.alignment: Qt.AlignHCenter
-                    text: "Open in Dolphin"
+                    text: i18n("Open in Dolphin")
                     icon.name: "system-file-manager"
                     enabled: !backend.busy
                     onClicked: backend.finishSetup()
@@ -383,13 +393,13 @@ Kirigami.ApplicationWindow {
                 Kirigami.PlaceholderMessage {
                     Layout.fillWidth: true
                     icon.name: "dev.hviid.ImmichMount"
-                    text: backend.signedout ? "Signed Out of Immich" : (backend.mounted ? "Your Library Is in Dolphin" : "Not Mounted")
-                    explanation: backend.signedout ? "Sign in again to keep browsing. Your caches are kept."
-                        : (backend.mounted ? "Browse it like any folder. Originals download only when you open them."
-                        : "Mount it to browse your library in Dolphin.")
+                    text: backend.signedout ? i18n("Signed Out of Immich") : (backend.mounted ? i18n("Your Library Is in Dolphin") : i18n("Not Mounted"))
+                    explanation: backend.signedout ? i18n("Sign in again to keep browsing. Your caches are kept.")
+                        : (backend.mounted ? i18n("Browse it like any folder. Originals download only when you open them.")
+                        : i18n("Mount it to browse your library in Dolphin."))
                     helpfulAction: Kirigami.Action {
                         icon.name: backend.signedout ? "im-user" : (backend.mounted ? "system-file-manager" : "media-mount")
-                        text: backend.signedout ? "Sign In Again" : (backend.mounted ? "Open in Dolphin" : "Mount")
+                        text: backend.signedout ? i18n("Sign In Again") : (backend.mounted ? i18n("Open in Dolphin") : i18n("Mount"))
                         enabled: !backend.busy
                         onTriggered: backend.signedout ? backend.signInAgain()
                             : (backend.mounted ? Qt.openUrlExternally("file://" + backend.location) : backend.switchMount(true))
@@ -397,26 +407,26 @@ Kirigami.ApplicationWindow {
                 }
                 Kirigami.FormLayout {
                     Layout.fillWidth: true
-                    Controls.Label { Kirigami.FormData.label: "Server:"; text: backend.serverline }
-                    Controls.Label { Kirigami.FormData.label: "Account:"; text: backend.account; visible: text.length > 0 }
-                    Controls.Label { Kirigami.FormData.label: "Credential:"; text: backend.credential }
-                    Controls.Label { Kirigami.FormData.label: "Connection:"; text: backend.connection }
-                    Controls.Label { Kirigami.FormData.label: "Cache:"; text: backend.cache }
-                    Controls.Label { Kirigami.FormData.label: "Location:"; text: backend.location }
-                    Controls.Label { Kirigami.FormData.label: "Uploading:"; text: backend.uploads; visible: text.length > 0 }
-                    PreviewsSwitch { Kirigami.FormData.label: "Dolphin:"; Kirigami.FormData.labelAlignment: Qt.AlignTop }
+                    Controls.Label { Kirigami.FormData.label: i18n("Server:"); text: backend.serverline }
+                    Controls.Label { Kirigami.FormData.label: i18n("Account:"); text: backend.account; visible: text.length > 0 }
+                    Controls.Label { Kirigami.FormData.label: i18n("Credential:"); text: backend.credential }
+                    Controls.Label { Kirigami.FormData.label: i18n("Connection:"); text: backend.connection }
+                    Controls.Label { Kirigami.FormData.label: i18n("Cache:"); text: backend.cache }
+                    Controls.Label { Kirigami.FormData.label: i18n("Location:"); text: backend.location }
+                    Controls.Label { Kirigami.FormData.label: i18n("Uploading:"); text: backend.uploads; visible: text.length > 0 }
+                    PreviewsSwitch { Kirigami.FormData.label: i18n("Dolphin:"); Kirigami.FormData.labelAlignment: Qt.AlignTop }
                 }
                 RowLayout {
                     Layout.alignment: Qt.AlignHCenter
                     Controls.Button {
-                        text: "Unmount"
+                        text: i18n("Unmount")
                         icon.name: "media-eject"
                         visible: backend.mounted
                         enabled: !backend.busy
                         onClicked: backend.switchMount(false)
                     }
                     Controls.Button {
-                        text: "Disconnect"
+                        text: i18n("Disconnect")
                         icon.name: "network-disconnect"
                         enabled: !backend.busy
                         onClicked: backend.disconnect()
@@ -428,7 +438,7 @@ Kirigami.ApplicationWindow {
                     horizontalAlignment: Text.AlignHCenter
                     font: Kirigami.Theme.smallFont
                     opacity: 0.7
-                    text: "Immich Mount is an independent, unofficial project. It is not affiliated with, endorsed by, or sponsored by the Immich project or FUTO."
+                    text: i18n("Immich Mount is an independent, unofficial project. It is not affiliated with, endorsed by, or sponsored by the Immich project or FUTO.")
                 }
             }
         }

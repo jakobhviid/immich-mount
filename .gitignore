@@ -11,3 +11,4 @@ lab/**/evidence/
 /apple/build/
 /apple/*.xcodeproj/
 /apple/Config/Local.xcconfig
+__pycache__/

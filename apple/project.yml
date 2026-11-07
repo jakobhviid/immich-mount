@@ -42,6 +42,9 @@ targets:
         buildPhase: resources
       - Shared
       - build/Generated
+      # One <language>.lproj per language, made from po/ by build-rust.sh (ARCHITECTURE.md, "Translations").
+      - path: build/Localization
+        buildPhase: resources
     settings:
       base:
         PRODUCT_BUNDLE_IDENTIFIER: dev.hviid.ImmichMount

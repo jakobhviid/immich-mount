@@ -10,9 +10,11 @@ use std::sync::OnceLock;
 
 use adw::prelude::*;
 use gtk::{gio, glib};
+use immich_mount_linux::i18n::tr;
 
 const APP_ID: &str = "dev.hviid.ImmichMount";
 
+/// The non-affiliation notice (SPEC.md), in English here and translated where it is shown.
 const NOTICE: &str = "Immich Mount is an independent, unofficial project. It is not affiliated with, endorsed by, or \
                       sponsored by the Immich project or FUTO. “Immich” is used only to describe the server this \
                       software works with, and remains the mark of its owner.";
@@ -31,6 +33,7 @@ fn main() -> glib::ExitCode {
     if std::env::args().nth(1).as_deref() == Some("--probe") {
         return glib::ExitCode::SUCCESS;
     }
+    bind_translations();
     let application = adw::Application::builder().application_id(APP_ID).flags(gio::ApplicationFlags::HANDLES_OPEN).build();
     application.connect_activate(|application| window_of(application).present());
     application.connect_open(|application, files, _hint| {
@@ -47,23 +50,43 @@ fn main() -> glib::ExitCode {
         .build();
     let shortcuts = gio::ActionEntry::builder("shortcuts").activate(|application: &adw::Application, _, _| show_shortcuts(application)).build();
     application.add_action_entries([about, quit, preferences, shortcuts]);
-    for (action, keys) in SHORTCUTS.iter().map(|(_, action, keys)| (action, keys)) {
+    for (action, keys) in SHORTCUTS.iter().map(|(action, _, keys)| (action, keys)) {
         application.set_accels_for_action(action, &[*keys]);
     }
     application.run()
 }
 
-/// The app's keyboard shortcuts: what each does, its action, and its keys. The dialog lists exactly these.
+/// Point the C library's gettext, which GTK uses for the Blueprint's texts, at the catalogs `tr` reads (ARCHITECTURE.md,
+/// "Translations"). GTK sets the locale itself when it starts.
+fn bind_translations() {
+    use std::ffi::{c_char, CString};
+    extern "C" {
+        fn bindtextdomain(domain: *const c_char, directory: *const c_char) -> *mut c_char;
+        fn bind_textdomain_codeset(domain: *const c_char, codeset: *const c_char) -> *mut c_char;
+    }
+    let Some(directory) = immich_mount_linux::i18n::locale_directory() else { return };
+    let (Ok(domain), Ok(directory)) = (CString::new(immich_mount_linux::i18n::DOMAIN), CString::new(directory.as_os_str().as_encoded_bytes()))
+    else {
+        return;
+    };
+    // SAFETY: both are NUL-terminated strings that live across the calls, which copy them.
+    unsafe {
+        bindtextdomain(domain.as_ptr(), directory.as_ptr());
+        bind_textdomain_codeset(domain.as_ptr(), c"UTF-8".as_ptr());
+    }
+}
+
+/// The app's keyboard shortcuts: its action, what it does, and its keys. The dialog lists exactly these.
 const SHORTCUTS: &[(&str, &str, &str)] = &[
-    ("Preferences", "app.preferences", "<Control>comma"),
-    ("Keyboard Shortcuts", "app.shortcuts", "<Control>question"),
-    ("Quit", "app.quit", "<Control>q"),
+    ("app.preferences", "Preferences", "<Control>comma"),
+    ("app.shortcuts", "Keyboard Shortcuts", "<Control>question"),
+    ("app.quit", "Quit", "<Control>q"),
 ];
 
 fn show_shortcuts(application: &adw::Application) {
     let section = adw::ShortcutsSection::new(None);
-    for (title, _, keys) in SHORTCUTS {
-        section.add(adw::ShortcutsItem::new(title, keys));
+    for (_, title, keys) in SHORTCUTS {
+        section.add(adw::ShortcutsItem::new(tr(title), keys));
     }
     let dialog = adw::ShortcutsDialog::new();
     dialog.add(section);
@@ -80,18 +103,18 @@ fn show_about(application: &adw::Application) {
         .application_icon("dev.hviid.ImmichMount")
         .developer_name("Jakob Hviid")
         .version(env!("CARGO_PKG_VERSION"))
-        .comments(format!("Your Immich photos and videos as a drive in Files.\n\n{NOTICE}"))
+        .comments(format!("{}\n\n{}", tr("Your Immich photos and videos as a drive in Files."), tr(NOTICE)))
         .website("https://jakob.hviid.phd/immich-mount/")
         .license_type(gtk::License::MitX11)
         .build();
-    about.add_link("Source Code", "https://github.com/jakobhviid/immich-mount");
-    about.add_credit_section(Some("Inspired By"), &["Kartax/immich-desktop-app https://github.com/Kartax/immich-desktop-app"]);
-    about.add_credit_section(Some("The Immich API Layer"), &["immich-rs https://github.com/boul2gom/immich-rs"]);
+    about.add_link(tr("Source Code"), "https://github.com/jakobhviid/immich-mount");
+    about.add_credit_section(Some(tr("Inspired By")), &["Kartax/immich-desktop-app https://github.com/Kartax/immich-desktop-app"]);
+    about.add_credit_section(Some(tr("The Immich API Layer")), &["immich-rs https://github.com/boul2gom/immich-rs"]);
     about.add_legal_section(
-        "AI Disclosure",
+        tr("AI Disclosure"),
         None,
         gtk::License::Unknown,
-        Some("Parts of this project were written with the assistance of AI coding agents. All changes are reviewed by the maintainer."),
+        Some(tr("Parts of this project were written with the assistance of AI coding agents. All changes are reviewed by the maintainer.")),
     );
     about.present(application.active_window().as_ref());
 }

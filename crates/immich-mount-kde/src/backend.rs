@@ -107,6 +107,11 @@ pub mod qobject {
         #[qinvokable]
         #[cxx_name = "signInAgain"]
         fn sign_in_again(self: Pin<&mut Backend>);
+
+        /// A text of the page in the user's language, from the same catalogs as the rest (ARCHITECTURE.md,
+        /// "Translations"). QML's `i18n` fills in its placeholders.
+        #[qinvokable]
+        fn translate(self: &Backend, text: &QString) -> QString;
     }
 
     impl cxx_qt::Threading for Backend {}
@@ -122,6 +127,7 @@ use cxx_qt_lib::QString;
 use immich_mount_core::settings::Kind;
 use immich_mount_desktop::preferences;
 use immich_mount_desktop::session::{self, ServerOffer, SignedIn, Status};
+use immich_mount_linux::i18n::tr;
 use immich_mount_linux::kde;
 use immich_mount_linux::paths::Paths;
 
@@ -356,21 +362,9 @@ impl qobject::Backend {
         self.as_mut().set_location(QString::from(&status.mount_point.display().to_string()));
         self.as_mut().set_mounted(status.mounted);
         self.as_mut().read_previews();
-        let (connection, cache, signed_out) = match &status.daemon {
-            Some(report) => (
-                match report.state.as_str() {
-                    "online" => "Online".to_owned(),
-                    "offline" => "Server unreachable; files you opened before stay available".to_owned(),
-                    "signed-out" => "Signed out; sign in again".to_owned(),
-                    other => other.to_owned(),
-                },
-                format!("{} of {}", format_bytes(report.cache_used), format_bytes(report.cache_limit)),
-                report.state == "signed-out",
-            ),
-            None => ("Not running".to_owned(), "Not running".to_owned(), false),
-        };
-        self.as_mut().set_connection(QString::from(&connection));
-        self.as_mut().set_cache(QString::from(&cache));
+        let signed_out = status.daemon.as_ref().is_some_and(|report| report.state == "signed-out");
+        self.as_mut().set_connection(QString::from(&status.connection_text()));
+        self.as_mut().set_cache(QString::from(&status.cache_text(format_bytes)));
         self.as_mut().set_signedout(signed_out);
     }
 
@@ -389,10 +383,14 @@ impl qobject::Backend {
         }
     }
 
+    pub fn translate(&self, text: &QString) -> QString {
+        QString::from(tr(&text.to_string()))
+    }
+
     pub fn preference_rows(&self) -> QString {
         let mut rows = Vec::new();
-        for (prefix, title) in preferences::GROUPS {
-            rows.push(serde_json::json!({ "kind": "section", "title": title }));
+        for (prefix, heading) in preferences::GROUPS {
+            rows.push(serde_json::json!({ "kind": "section", "title": tr(heading) }));
             for setting in preferences::settings_in(prefix) {
                 let (kind, choices) = match setting.kind {
                     Kind::Bool => ("bool", Vec::new()),
@@ -405,7 +403,7 @@ impl qobject::Backend {
                 rows.push(serde_json::json!({
                     "kind": kind,
                     "key": setting.key,
-                    "title": setting.description,
+                    "title": preferences::title(setting),
                     "value": preferences::current_value(setting),
                     "choices": choices,
                 }));

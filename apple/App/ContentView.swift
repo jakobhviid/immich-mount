@@ -16,10 +16,10 @@ struct ContentView: View {
                 .resizable()
                 .frame(width: 80, height: 80)
             if !Installation.isInApplications {
-                Title(text: "Move Immich Mount to Applications",
-                      line: "Finder's location runs from the Applications folder. Quit Immich Mount, drag it into Applications, then open it from there.")
+                Title(text: tr("Move Immich Mount to Applications"),
+                      line: tr("Finder's location runs from the Applications folder. Quit Immich Mount, drag it into Applications, then open it from there."))
             } else if model.server == nil {
-                Title(text: "Sign In to Immich", line: "Your photos and videos in Finder, as a drive.")
+                Title(text: tr("Sign In to Immich"), line: tr("Your photos and videos in Finder, as a drive."))
                 SignInForm()
             } else {
                 SwitchOnStep()
@@ -75,7 +75,7 @@ struct SignInForm: View {
     var body: some View {
         VStack(alignment: .leading, spacing: 14) {
             if let offer = model.offer {
-                Text("\(offer.address), Immich \(offer.version)")
+                Text(verbatim: "\(offer.address), Immich \(offer.version)")
                     .foregroundStyle(.secondary)
                     .frame(maxWidth: .infinity)
                 if let button = offer.browserButton, !usesKey {
@@ -102,7 +102,7 @@ struct SignInForm: View {
                 }
             } else {
                 Form {
-                    TextField("Server:", text: $address, prompt: Text("photos.example.org"))
+                    TextField("Server:", text: $address, prompt: Text(verbatim: "photos.example.org"))
                 }
             }
             if let message = model.message {
@@ -125,7 +125,7 @@ struct SignInForm: View {
                     model.message = nil
                     usesKey = false
                 }
-                Button(usesKey ? "Use Email and Password" : "Use an API Key") { usesKey.toggle() }
+                Button(usesKey ? tr("Use Email and Password") : tr("Use an API Key")) { usesKey.toggle() }
                     .buttonStyle(.link)
                     .disabled(usesKey && model.offer?.password != true)
             }
@@ -156,8 +156,8 @@ struct SwitchOnStep: View {
     @EnvironmentObject private var model: AppModel
 
     var body: some View {
-        Title(text: "Switch On Immich Mount",
-              line: "macOS asks once before a new location shows in Finder: switch Immich Mount on in System Settings, under General, Login Items & Extensions, File Providers.")
+        Title(text: tr("Switch On Immich Mount"),
+              line: tr("macOS asks once before a new location shows in Finder: switch Immich Mount on in System Settings, under General, Login Items & Extensions, File Providers."))
         HStack {
             Spacer()
             Button("Open System Settings") { model.openExtensionSettings() }

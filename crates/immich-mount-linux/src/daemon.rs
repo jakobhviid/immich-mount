@@ -17,6 +17,7 @@ use immich_mount_core::tree::Tree;
 use crate::fuse::{mount, ImmichFilesystem};
 use crate::mounts::{mount_state, unmount, MountState};
 use crate::dbus::{Actions, State};
+use crate::i18n::tr;
 use crate::seeding::Seeder;
 use crate::staging::Staging;
 
@@ -275,8 +276,8 @@ async fn follow_changes<Source, Names>(
                 let _ = tokio::time::timeout(Duration::from_secs(3), crate::dbus::announce(connection, current, message)).await;
             }
             match current {
-                State::Offline => crate::notify::notify_in_background("Immich is unreachable".to_owned(), message.to_owned()),
-                State::SignedOut => crate::notify::notify_in_background("Signed out of Immich".to_owned(), message.to_owned()),
+                State::Offline => crate::notify::notify_in_background(tr("Immich is unreachable").to_owned(), message.to_owned()),
+                State::SignedOut => crate::notify::notify_in_background(tr("Signed out of Immich").to_owned(), message.to_owned()),
                 State::Online | State::Connecting => {}
             }
         }

@@ -10,6 +10,7 @@ use immich_api::Client;
 use immich_mount_core::settings::{self, Config};
 use immich_mount_core::sign_in::{self, BrowserSignIn};
 use immich_mount_linux::credentials::{write_credential_file, Credential};
+use immich_mount_linux::i18n::tr;
 use immich_mount_linux::keyring::{self, KeyringError};
 use immich_mount_linux::mounts::{mount_state, MountState};
 use immich_mount_linux::paths::Paths;
@@ -55,6 +56,27 @@ impl Status {
         }
     }
 
+    /// The connection line of a status page, in the user's language.
+    pub fn connection_text(&self) -> String {
+        match self.daemon.as_ref().map(|report| report.state.as_str()) {
+            Some("online") => tr("Online").to_owned(),
+            Some("offline") => tr("Server unreachable; files you opened before stay available").to_owned(),
+            Some("signed-out") => tr("Signed out; sign in again").to_owned(),
+            Some(other) => other.to_owned(),
+            None => tr("Not running").to_owned(),
+        }
+    }
+
+    /// The cache line of a status page, its sizes written by the app's own `format_size`.
+    pub fn cache_text(&self, format_size: impl Fn(u64) -> String) -> String {
+        match &self.daemon {
+            Some(report) => tr("{used} of {limit}")
+                .replace("{used}", &format_size(report.cache_used))
+                .replace("{limit}", &format_size(report.cache_limit)),
+            None => tr("Not running").to_owned(),
+        }
+    }
+
     /// The account line of a status page, `None` when the daemon cannot name it.
     pub fn account_text(&self) -> Option<String> {
         self.daemon.as_ref().map(|report| report.account.clone()).filter(|account| !account.is_empty())
@@ -64,8 +86,13 @@ impl Status {
     pub fn uploads_text(&self) -> Option<String> {
         match self.daemon.as_ref().map(|report| report.uploads.as_slice()).unwrap_or_default() {
             [] => None,
-            [(name, phase, _)] => Some(format!("{name}, {phase}")),
-            [(name, _, _), rest @ ..] => Some(format!("{name} and {} more", rest.len())),
+            [(name, phase, _)] => {
+                let phase = if phase == "writing" { tr("writing") } else { tr("uploading") };
+                Some(tr("{name}, {phase}").replace("{name}", name).replace("{phase}", phase))
+            }
+            [(name, _, _), rest @ ..] => {
+                Some(tr("{name} and {count} more").replace("{name}", name).replace("{count}", &rest.len().to_string()))
+            }
         }
     }
 }
@@ -91,7 +118,7 @@ fn client(url: &str, credential: Option<&Credential>) -> Result<Client, String> 
         Credential::ApiKey(key) => immich_api::Credential::ApiKey(key.clone()),
         Credential::Session(token) => immich_api::Credential::Session(token.clone()),
     });
-    Client::new(url, credential, USER_AGENT).map_err(|error| format!("That address cannot be used: {error}"))
+    Client::new(url, credential, USER_AGENT).map_err(|error| tr("That address cannot be used: {error}").replace("{error}", &error.to_string()))
 }
 
 /// Check the server and what sign-in methods it offers. Needs no credential.
@@ -131,19 +158,19 @@ pub async fn save(url: String, credential: Credential) -> Result<String, String>
         Some(file) => {
             let file = paths.expand(&file);
             write_credential_file(&file, &credential).map_err(|error| error.to_string())?;
-            format!("Kept in {}", file.display())
+            tr("Kept in {file}").replace("{file}", &file.display().to_string())
         }
         None => match keyring::store(&url, &credential).await {
             Ok(()) => {
                 let _ = std::fs::remove_file(paths.default_credential_file());
-                "Kept in the keyring".to_owned()
+                tr("Kept in the keyring").to_owned()
             }
             Err(KeyringError::Unavailable(_)) => {
                 let file = paths.default_credential_file();
                 write_credential_file(&file, &credential).map_err(|error| error.to_string())?;
-                format!("Kept in {}", file.display())
+                tr("Kept in {file}").replace("{file}", &file.display().to_string())
             }
-            Err(KeyringError::Dismissed) => return Err("The keyring stayed locked, so nothing was saved.".to_owned()),
+            Err(KeyringError::Dismissed) => return Err(tr("The keyring stayed locked, so nothing was saved.").to_owned()),
             Err(error) => return Err(error.to_string()),
         },
     };
@@ -217,14 +244,12 @@ fn remember_server(paths: &Paths, url: &str) -> Result<(), String> {
 /// nobody has to start a service by hand.
 fn start_daemon() -> Result<(), String> {
     let unit = immich_mount_linux::service::ensure_user_service(&Paths::from_environment())
-        .map_err(|error| format!("Signed in, but the mount cannot start: {error}."))?;
+        .map_err(|error| tr("Signed in, but the mount cannot start: {error}.").replace("{error}", &error.to_string()))?;
     for arguments in [["--user", "enable", unit], ["--user", "restart", unit]] {
         let outcome = Command::new("systemctl").args(arguments).output().map_err(|error| format!("systemctl: {error}"))?;
         if !outcome.status.success() {
-            return Err(format!(
-                "Signed in, but the mount did not start: {}",
-                String::from_utf8_lossy(&outcome.stderr).trim()
-            ));
+            return Err(tr("Signed in, but the mount did not start: {error}")
+                .replace("{error}", String::from_utf8_lossy(&outcome.stderr).trim()));
         }
     }
     Ok(())
@@ -337,9 +362,11 @@ pub async fn current_status() -> Option<Status> {
     let server = config.server_url.clone().filter(|url| !url.trim().is_empty())?;
     let mount_point = paths.expand(&config.mount_path);
     let credential_place = match &config.credential_file {
-        Some(file) => format!("Kept in {}", paths.expand(file).display()),
-        None if paths.default_credential_file().exists() => format!("Kept in {}", paths.default_credential_file().display()),
-        None if keyring::is_stored(&server).await => "Kept in the keyring".to_owned(),
+        Some(file) => tr("Kept in {file}").replace("{file}", &paths.expand(file).display().to_string()),
+        None if paths.default_credential_file().exists() => {
+            tr("Kept in {file}").replace("{file}", &paths.default_credential_file().display().to_string())
+        }
+        None if keyring::is_stored(&server).await => tr("Kept in the keyring").to_owned(),
         None => return None,
     };
     Some(Status {

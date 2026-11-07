@@ -120,22 +120,24 @@ final class AppDelegate: NSObject, NSApplicationDelegate, @preconcurrency SPUSta
         Task {
             let waiting = await FinderLocation.waitingUploads()
             let alert = NSAlert()
-            alert.messageText = "Sign out of Immich Mount?"
-            var text = "Immich Mount leaves Finder, together with the photos and videos downloaded to this Mac. Your library on the server stays as it is."
+            alert.messageText = tr("Sign out of Immich Mount?")
+            var text = tr("Immich Mount leaves Finder, together with the photos and videos downloaded to this Mac. Your library on the server stays as it is.")
             if waiting > 0 {
-                text += "\n\nFiles in Upload that have not reached Immich: \(waiting). They stay on this Mac, and Finder shows where once you have signed out."
+                text += "\n\n" + tr("Files in Upload that have not reached Immich: {count}. They stay on this Mac, and Finder shows where once you have signed out.",
+                                    ["count": String(waiting)])
             }
             alert.informativeText = text
-            alert.addButton(withTitle: "Sign Out").hasDestructiveAction = true
-            alert.addButton(withTitle: "Cancel")
+            alert.addButton(withTitle: tr("Sign Out")).hasDestructiveAction = true
+            alert.addButton(withTitle: tr("Cancel"))
             bringForward()
             guard alert.runModal() == .alertFirstButtonReturn else { return }
             do {
                 try await model.signOut()
             } catch {
                 let failure = NSAlert()
-                failure.messageText = "Still signed in"
-                failure.informativeText = "Finder's location could not be removed, so Immich Mount stays signed in: \(describe(error))"
+                failure.messageText = tr("Still signed in")
+                failure.informativeText = tr("Finder's location could not be removed, so Immich Mount stays signed in: {error}",
+                                             ["error": describe(error)])
                 bringForward()
                 failure.runModal()
             }
@@ -191,7 +193,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate, @preconcurrency SPUSta
             let hosting = NSHostingController(rootView: PreferencesView().environmentObject(model))
             hosting.sizingOptions = []
             let window = NSWindow(contentViewController: hosting)
-            window.title = "Immich Mount Settings"
+            window.title = tr("Immich Mount Settings")
             window.styleMask = [.titled, .closable, .miniaturizable, .resizable]
             window.setContentSize(NSSize(width: 480, height: 640))
             window.contentMinSize = NSSize(width: 480, height: 400)
@@ -291,18 +293,18 @@ private func showAbout() {
         if let link { attributes[.link] = URL(string: link) }
         credits.append(NSAttributedString(string: text, attributes: attributes))
     }
-    add("Your Immich photos and videos as a drive in Finder. By Jakob Hviid, under the MIT license.\n\n", body)
-    add("Website\n", heading)
+    add(tr("Your Immich photos and videos as a drive in Finder. By Jakob Hviid, under the MIT license.") + "\n\n", body)
+    add(tr("Website") + "\n", heading)
     add("jakob.hviid.phd/immich-mount", body, link: "https://jakob.hviid.phd/immich-mount/")
-    add("\n\nSource code\n", heading)
+    add("\n\n" + tr("Source code") + "\n", heading)
     add("github.com/jakobhviid/immich-mount", body, link: "https://github.com/jakobhviid/immich-mount")
     add("\n\n", body)
-    add("Inspired by\n", heading)
+    add(tr("Inspired by") + "\n", heading)
     add("Kartax/immich-desktop-app", body, link: "https://github.com/Kartax/immich-desktop-app")
-    add("\n\nThe Immich API layer\n", heading)
+    add("\n\n" + tr("The Immich API layer") + "\n", heading)
     add("immich-rs", body, link: "https://github.com/boul2gom/immich-rs")
-    add("\n\nAI disclosure\n", heading)
-    add("Parts of this project were written with the assistance of AI coding agents. All changes are reviewed by the maintainer.", body)
+    add("\n\n" + tr("AI disclosure") + "\n", heading)
+    add(tr("Parts of this project were written with the assistance of AI coding agents. All changes are reviewed by the maintainer."), body)
     AppDelegate.shared?.bringForward()
     NSApplication.shared.orderFrontStandardAboutPanel(options: [.credits: credits])
 }
@@ -401,8 +403,8 @@ final class AppModel: ObservableObject {
     /// The menu bar menu's first line, while signed in.
     var statusLine: String {
         let host = server.flatMap { URL(string: $0)?.host() } ?? server ?? ""
-        guard let status else { return "Signed in to \(host)" }
-        return status.online ? "Connected to \(host)" : "\(host) is not reachable"
+        guard let status else { return tr("Signed in to {server}", ["server": host]) }
+        return status.online ? tr("Connected to {server}", ["server": host]) : tr("{server} is not reachable", ["server": host])
     }
 
     /// The lines under the menu's first one, each saying what it is: the server's version, the account, and when
@@ -410,17 +412,17 @@ final class AppModel: ObservableObject {
     var details: [String] {
         var lines: [String] = []
         if let version = status?.version {
-            lines.append("Server version: Immich \(version)")
+            lines.append(tr("Server version: Immich {version}", ["version": version]))
         }
         if let email = Account.email {
-            lines.append("Signed in as: \(email)")
+            lines.append(tr("Signed in as: {account}", ["account": email]))
         }
         if let status {
             if status.online {
                 let ago = RelativeDateTimeFormatter().localizedString(for: status.checked, relativeTo: Date())
-                lines.append("Last checked: \(ago)")
+                lines.append(tr("Last checked: {time}", ["time": ago]))
             } else {
-                lines.append("Reason: \(status.problem ?? "none given")")
+                lines.append(tr("Reason: {reason}", ["reason": status.problem ?? tr("none given")]))
             }
         }
         return lines
@@ -506,7 +508,7 @@ final class AppModel: ObservableObject {
                 try SMAppService.mainApp.unregister()
             }
         } catch {
-            message = "The login item could not be changed: \(error.localizedDescription)"
+            message = tr("The login item could not be changed: {error}", ["error": error.localizedDescription])
         }
         opensAtLogin = SMAppService.mainApp.status == .enabled
     }
@@ -540,7 +542,7 @@ final class AppModel: ObservableObject {
         await finishSignIn(on: server) {
             let attempt = try await beginBrowserSignIn(server: server)
             guard let address = URL(string: attempt.address()) else {
-                throw BridgeError.Failed(message: "The server sent an address that cannot be opened.")
+                throw BridgeError.Failed(message: tr("The server sent an address that cannot be opened."))
             }
             let redirect = try await session.authenticate(using: address, callbackURLScheme: attempt.callbackScheme(),
                                                           preferredBrowserSession: nil)
@@ -625,7 +627,7 @@ final class AppModel: ObservableObject {
                 NSWorkspace.shared.activateFileViewerSelecting([url])
             }
         } catch {
-            message = "Finder does not show Immich yet. Is the extension switched on in System Settings? (\(error.localizedDescription))"
+            message = tr("Finder does not show Immich yet. Is the extension switched on in System Settings? ({error})", ["error": error.localizedDescription])
         }
     }
 

@@ -25,6 +25,7 @@ use immich_mount_core::tree::{Entry, EntryKind, NameMemory, NodeKey, Tree};
 use immich_mount_core::uploads::{completeness, Admission, Completeness, MediaTypes, UploadError, UploadTarget, Uploaded};
 
 use crate::caller;
+use crate::i18n::tr;
 use crate::seeding::{SeedFile, Seeder};
 use crate::staging::{wait_for, CloseAction, PendingUpload, StagedFile, Staging, UploadResult};
 
@@ -617,7 +618,7 @@ where
     let judged = tokio::task::spawn_blocking(move || completeness(&path)).await;
     if matches!(judged, Ok(Ok(Completeness::Truncated))) {
         log::warn!("not uploading {name}: the file ends before its own structure does (a cancelled or broken copy)");
-        crate::notify::notify_in_background(format!("Not uploaded: {name}"), "The file is incomplete, as if its copy was cancelled.".to_owned());
+        crate::notify::notify_in_background(tr("Not uploaded: {name}").replace("{name}", &name), tr("The file is incomplete, as if its copy was cancelled.").to_owned());
         staging.finish_cut_short(pending);
         return Err(libc::EIO);
     }
@@ -631,7 +632,10 @@ where
         tokio::select! {
             outcome = tokio::time::timeout(limit, &mut upload) => outcome,
             () = tokio::time::sleep(LONG_UPLOAD), if limit > LONG_UPLOAD => {
-                crate::notify::notify_in_background(format!("Uploading {name} to Immich"), "The copy finishes once Immich has the file.".to_owned());
+                crate::notify::notify_in_background(
+                    tr("Uploading {name} to Immich").replace("{name}", &name),
+                    tr("The copy finishes once Immich has the file.").to_owned(),
+                );
                 tokio::time::timeout(limit - LONG_UPLOAD, &mut upload).await
             }
         }
@@ -642,8 +646,9 @@ where
                 Uploaded::Created(_) => log::info!("uploaded {name}"),
                 Uploaded::AlreadyInLibrary(_) => {
                     log::info!("{name} is already in the library");
-                    let body = "Immich has this photo already, so nothing was added.";
-                    crate::notify::notify_once_in_a_while("already-in-library", &format!("Already in Immich: {name}"), body).await;
+                    let body = tr("Immich has this photo already, so nothing was added.");
+                    let summary = tr("Already in Immich: {name}").replace("{name}", &name);
+                    crate::notify::notify_once_in_a_while("already-in-library", &summary, body).await;
                 }
             }
             tree.forget_timeline();
@@ -651,27 +656,28 @@ where
         }
         Ok(Err(error)) => {
             log::warn!("upload of {name} failed: {error}");
-            let body = format!("{error}. The file is kept in {}.", staging.kept_directory().display());
-            crate::notify::notify_once_in_a_while(&format!("failed:{error}"), &format!("Not uploaded: {name}"), &body).await;
+            let body = tr("{error}. The file is kept in {folder}.")
+                .replace("{error}", &error.to_string())
+                .replace("{folder}", &staging.kept_directory().display().to_string());
+            crate::notify::notify_once_in_a_while(&format!("failed:{error}"), &tr("Not uploaded: {name}").replace("{name}", &name), &body).await;
             Err(errno_for_upload(&error).code())
         }
         Err(_) if limit < UPLOAD_LIMIT => {
             log::warn!("upload of {name} stopped after {} s, the kernel's limit on one FUSE request", limit.as_secs());
             crate::notify::notify_in_background(
-                format!("Not uploaded: {name}"),
-                format!(
-                    "This computer lets a file operation take at most {} seconds (fs.fuse.default_request_timeout). Set it to 0 for longer uploads. The file is kept in {}.",
-                    REQUEST_LIMIT.get().copied().flatten().map_or(0, |limit| limit.as_secs()),
-                    staging.kept_directory().display()
-                ),
+                tr("Not uploaded: {name}").replace("{name}", &name),
+                tr("This computer lets a file operation take at most {seconds} seconds (fs.fuse.default_request_timeout). Set it to 0 for longer uploads. The file is kept in {folder}.")
+                    .replace("{seconds}", &REQUEST_LIMIT.get().copied().flatten().map_or(0, |limit| limit.as_secs()).to_string())
+                    .replace("{folder}", &staging.kept_directory().display().to_string()),
             );
             Err(libc::EIO)
         }
         Err(_) => {
             log::warn!("upload of {name} took longer than {} minutes", UPLOAD_LIMIT.as_secs() / 60);
             crate::notify::notify_in_background(
-                format!("Not uploaded: {name}"),
-                format!("The upload took too long. The file is kept in {}.", staging.kept_directory().display()),
+                tr("Not uploaded: {name}").replace("{name}", &name),
+                tr("The upload took too long. The file is kept in {folder}.")
+                    .replace("{folder}", &staging.kept_directory().display().to_string()),
             );
             Err(libc::EIO)
         }
@@ -1120,7 +1126,7 @@ where
             // Refused before a byte is copied: not an image or video Immich takes (SPEC.md, "Uploads").
             let name = name.clone();
             self.spawn(async move {
-                crate::notify::notify_once_in_a_while("refused", &format!("Not uploaded: {name}"), "Immich takes photos and videos only.").await;
+                crate::notify::notify_once_in_a_while("refused", &tr("Not uploaded: {name}").replace("{name}", &name), tr("Immich takes photos and videos only.")).await;
             });
             return reply.error(Errno::ENOTSUP);
         }
