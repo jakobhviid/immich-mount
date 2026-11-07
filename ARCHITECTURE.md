@@ -1293,9 +1293,13 @@ once the paid Apple Developer Program is in place. `apple/release.sh` builds it,
 Mac and in the release workflow's `macos` job:
 - **The app is universal,** archived and signed with Developer ID, then notarized and stapled, so a copy taken out
   of the disk image passes Gatekeeper offline too. The disk image is then signed, notarized and stapled itself.
-- **Two Developer ID provisioning profiles,** one for the app and one for the extension, made once in the
-  developer portal and named in the script: the Keychain group they share is an entitlement only a profile grants
-  (Apple's TN3125). The team-prefixed App Group needs none.
+- **Two Developer ID provisioning profiles,** one for the app and one for the extension: the Keychain group they
+  share is an entitlement only a profile grants (Apple's TN3125). The team-prefixed App Group needs none. On a Mac
+  whose Xcode is signed in to the team, Xcode makes them as it signs; the release workflow names two made in the
+  developer portal, because a manually signed build cannot use profiles Xcode manages.
+- **Only the Account Holder can make the Developer ID certificate.** Xcode 27.2 shows an individual membership's
+  role as Admin and does not offer it (seen on the maintainer's Mac), so the certificate is made in the developer
+  portal, from a signing request made in Keychain Access.
 - **Notarization uses an App Store Connect API key** (Developer role), not an Apple ID with an app-specific
   password: it is scoped to the team, and can be revoked on its own.
 - **The release workflow's secrets:** `APPLE_TEAM_ID`; `MACOS_CERTIFICATE` (the Developer ID certificate with its
