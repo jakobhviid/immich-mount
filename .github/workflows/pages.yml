@@ -1,9 +1,9 @@
 name: pages
 
 # The download page (jakob.hviid.phd/immich-mount; ARCHITECTURE.md, "The download page"), built for the latest release,
-# with the Mac download from the newest release that has one. The release workflow runs it after every release; run it
-# by hand after attaching a Mac disk image to a release, so the page offers it at once. It needs GitHub Pages on, with
-# GitHub Actions as its source.
+# with the Mac download and Sparkle's feed from the newest release that has a disk image and its update file. The
+# release workflow runs it after every release; run it by hand to build the page again without releasing. It needs
+# GitHub Pages on, with GitHub Actions as its source.
 on:
   workflow_call:
   workflow_dispatch:

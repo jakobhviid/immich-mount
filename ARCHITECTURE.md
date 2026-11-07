@@ -1086,7 +1086,8 @@ Each platform gets a native app that looks and reads like a first-party app (pri
   - **DEB:** Ubuntu 26.04 (GNOME 50). Debian 13 ships GNOME 48, below the GNOME floor, so it is not served until a
     Flatpak exists.
   - **DEB repository:** an apt repository can follow the GitHub Releases files later.
-  - **Updates** come from the package managers; there is no built-in update checker.
+  - **Updates** come from the package managers; the Linux edition has no built-in update checker. (The Mac app
+    updates itself: "The macOS edition", "Distribution".)
 - **Installed files:**
   - the binaries
   - `immich-mount.service` (`Type=notify`, `ExecStop` unmounts, `Restart=on-failure`)
@@ -1106,7 +1107,7 @@ Each platform gets a native app that looks and reads like a first-party app (pri
 
 `jakob.hviid.phd/immich-mount` is one static page: what Immich Mount is, its screenshots, and the files of the latest
 release. GitHub Pages serves it, and the `pages` workflow deploys it: called by the release workflow after every
-release, and run by hand after a Mac disk image is attached to a release.
+release, and run by hand to build the page again without releasing.
 - **Its links come from the release itself.** `site/build.py` reads the release's file list (`gh release view
   --json`) and fills `site/index.html` with direct links to those files, so a link never points at an older version,
   and a file a release lacks shows as plain text, not a dead link. GitHub's `releases/latest/download/` links lost:
@@ -1116,10 +1117,11 @@ release, and run by hand after a Mac disk image is attached to a release.
   the operating system: browsers do not reliably tell the CPU architecture, and never the distribution, so the
   Linux files are listed by distribution, x86_64 and ARM side by side. Without script, Linux comes first.
 - **The supported platforms come first,** under the tagline: Linux on GNOME and KDE Plasma, and macOS 14 or later.
-- **The Mac download comes from the newest release that has one** (`ci/latest-mac-release.sh`), since the Mac is
-  released by hand for now and the releases after it carry no disk image; pruning keeps that release among the last
-  ten. Without one, the macOS block says the edition is not released yet, so the page never offers a file that is
-  not there.
+- **The Mac download comes from the newest release with a disk image and its update file**
+  (`ci/latest-mac-release.sh`): every release the workflow makes carries both, so that is the latest one, unless its
+  Mac job was switched off (`MACOS_RELEASES`). The appcast is made from the same release, so the page never offers a
+  Mac version the installed apps cannot update to; pruning keeps that release among the last ten. Without one, the
+  macOS block says the edition is not released yet, so the page never offers a file that is not there.
 - **Nothing is loaded from elsewhere:** no analytics, cookies, web fonts or third-party scripts. The icon and the
   README's screenshots (`docs/screenshots/`) are copied in, and the build fails if a local link has no file.
 - **Python's standard library, one template and one script,** rather than a static site generator: there is one
@@ -1181,7 +1183,7 @@ Every design change states its Flatpak impact against this table.
 ## The macOS edition
 
 The same library in Finder's sidebar and in every file dialog, through Apple's File Provider, on the same core as
-the Linux edition. **Being built** on the `mac-support` branch (ROADMAP, M7), and not released. A claim marked
+the Linux edition. **Released** with every release since 2.14.2, its milestone (ROADMAP, M7) not yet closed. A claim marked
 *verified* was seen on the maintainer's Mac (macOS 27.0.1, Xcode 27.2) against the lab server, most of them by
 `lab/mac/check.sh`; where a claim comes from Apple's documentation, it says so.
 
@@ -1341,7 +1343,7 @@ server at sign-out.
   release's disk image there, unsigned, so the release script is checked without the signing secrets.
 
 **Distribution:** a notarized disk image on the GitHub release (`immich-mount-<version>.dmg`) and the Homebrew cask,
-once the paid Apple Developer Program is in place. `apple/release.sh` builds it, the same way on the maintainer's
+signed with the maintainer's paid Apple Developer Program team. `apple/release.sh` builds it, the same way on the maintainer's
 Mac and in the release workflow's `macos` job:
 - **The app is universal,** archived and signed with Developer ID, then notarized and stapled, so a copy taken out
   of the disk image passes Gatekeeper offline too. The disk image is then signed, notarized and stapled itself.

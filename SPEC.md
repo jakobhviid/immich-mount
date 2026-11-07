@@ -420,6 +420,33 @@ listings show the first account's folders until each is refreshed (offline, unti
 `immich-mount logout` removes every cache, which is the way to switch accounts.
 Directories are 0700 and files 0600.
 
+## In Finder (the macOS edition)
+
+The same layout, names, attributes and content as the mount, through Apple's File Provider (ARCHITECTURE.md, "The
+macOS edition"). Where Finder's way differs:
+
+- **Uploads:** the system hands over a finished file, so there is no staging. A file Immich refuses stays in Upload
+  with its reason, and one that has not reached Immich yet stays there while the system tries again; there is no
+  `not-uploaded/` folder. An uploaded file leaves Upload after about 10 seconds, as on Linux.
+- **Signing out** (the menu bar item's menu) ends the session on the server and removes the Finder location with
+  what was downloaded. A file in Upload that has not reached Immich is kept: the confirmation counts them, the
+  system preserves them, and Finder opens the folder they are kept in. When the location cannot be removed, the app
+  stays signed in and says why.
+- **Settings:** the settings table less the Linux-only ones (`mount.*`, `cache.limit`, `thumbnails.*`), in the
+  app's Settings window. A change has the system list every folder again.
+- **Updates:** the app checks `https://jakob.hviid.phd/immich-mount/appcast.xml` once a day, unless switched off in
+  Settings, and installs only a disk image signed with the project's key.
+- **Files on disk:**
+
+  | What | Where |
+  |---|---|
+  | Settings, the server's address, the account's email, the metadata store (`Library/`), the extension's status (`status.json`) | The App Group container, `~/Library/Group Containers/<team>.dev.hviid.ImmichMount/` |
+  | Credential | The Keychain, service `dev.hviid.ImmichMount`, in the app's access group |
+  | The system's copy of the location: downloaded originals and what waits in Upload | `~/Library/CloudStorage/ImmichMount-<name>/`, kept by macOS |
+
+  Signing out removes all of them but what waits in Upload. Uninstalling does not sign out: sign out first, or the
+  location stays in Finder without its app.
+
 ## Errors seen by programs using the mount
 
 | Condition | Error code | Daemon behaviour |

@@ -161,8 +161,8 @@ Dolphin, where it is in Places and shows the seeded thumbnails with no original 
 
 ## M7. macOS edition
 
-Finder through Apple's File Provider, on the same core (ARCHITECTURE, "The macOS edition"). It is built on the
-`mac-support` branch, and merged once the first slice runs on a Mac. Work that needs no Mac is done on Linux and
+Finder through Apple's File Provider, on the same core (ARCHITECTURE, "The macOS edition"). Released with every
+release since 2.14.2; the milestone closes when the exits below are met. Work that needs no Mac is done on Linux and
 checked by CI's macOS job; the maintainer's Mac is needed only to run and debug it.
 
 1. **The first slice.** The bridge crate (`immich-mount-apple`) and the item identifiers; the extension lists
@@ -187,7 +187,8 @@ checked by CI's macOS job; the maintainer's Mac is needed only to run and debug 
    **Built:** the shared sign-in, and the app's single sign-on, password and API key sign-in; on the maintainer's
    Mac, key and password sign-in add the location (single sign-on not yet tried there). The Settings window, which the extension
    follows. Status from the extension, through a file. The icon, the same drive on macOS's rounded square
-   (ARCHITECTURE, "The icon"). Not yet seen: what Finder's sidebar shows for the location.
+   (ARCHITECTURE, "The icon"). Finder's sidebar shows the location under the app's name, with the drive symbol
+   (ARCHITECTURE, "The macOS edition", "Settings"). Not yet: single sign-on on a Mac.
 4. **Uploads** into the Upload folder, through the core's upload sequence.
    **Built and verified in Finder:** a photo copied or moved into Upload reaches the server byte for byte and leaves
    Upload; a moved photo's source is gone; a file Immich does not take stays in Upload, refused with its reason.

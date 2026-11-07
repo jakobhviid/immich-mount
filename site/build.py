@@ -7,10 +7,10 @@ site/style.css, the icon and the screenshots, written into an output folder for 
     site/build.py release.json OUTPUT [--macos MAC_RELEASE_JSON [--update DMG.update]]
 
 site/build-latest.sh gathers these for the latest release. The Mac download comes from MAC_RELEASE_JSON, the newest
-release with a disk image (ci/latest-mac-release.sh), while the Mac is released by hand and the releases after it
-carry none; without one, the page shows the macOS edition as not released yet, so it never offers a file that is not
-there. With the disk image's update file (ci/sign-mac-update.sh), the page also carries appcast.xml, the feed the
-Mac app's updates read.
+release with a disk image and its update file (ci/latest-mac-release.sh), which is the latest release unless its Mac
+job was switched off; without one, the page shows the macOS edition as not released yet, so it never offers a file
+that is not there. With the disk image's update file (ci/sign-mac-update.sh), the page also carries appcast.xml, the
+feed the Mac app's updates read.
 """
 
 import argparse

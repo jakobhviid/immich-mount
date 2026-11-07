@@ -296,7 +296,8 @@ jobs:
           SPARKLE_KEY: ${{ secrets.SPARKLE_KEY }}
         run: |
           printf '%s\n' "$SPARKLE_KEY" > "$RUNNER_TEMP/sparkle.pem"
-          ci/sign-mac-update.sh apple/build/release/immich-mount-$VERSION.dmg "$RUNNER_TEMP/sparkle.pem"
+          build=$(sed -n 's/^CURRENT_PROJECT_VERSION = //p' apple/build/Version.xcconfig)
+          ci/sign-mac-update.sh apple/build/release/immich-mount-$VERSION.dmg "$RUNNER_TEMP/sparkle.pem" "$build"
           rm -f "$RUNNER_TEMP/sparkle.pem"
       - uses: actions/upload-artifact@v4
         with:

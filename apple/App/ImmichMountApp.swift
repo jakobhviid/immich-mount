@@ -114,16 +114,31 @@ final class AppDelegate: NSObject, NSApplicationDelegate, @preconcurrency SPUSta
         }
     }
 
-    /// Signing out removes the location and what was downloaded, so it is asked first.
+    /// Signing out removes the location and what was downloaded, so it is asked first, saying which files in Upload
+    /// have not reached Immich: those are kept (`FinderLocation.remove`).
     func confirmSignOut() {
-        let alert = NSAlert()
-        alert.messageText = "Sign out of Immich Mount?"
-        alert.informativeText = "Immich Mount leaves Finder, together with the photos and videos downloaded to this Mac. Your library on the server stays as it is."
-        alert.addButton(withTitle: "Sign Out").hasDestructiveAction = true
-        alert.addButton(withTitle: "Cancel")
-        bringForward()
-        if alert.runModal() == .alertFirstButtonReturn {
-            Task { await model.signOut() }
+        Task {
+            let waiting = await FinderLocation.waitingUploads()
+            let alert = NSAlert()
+            alert.messageText = "Sign out of Immich Mount?"
+            var text = "Immich Mount leaves Finder, together with the photos and videos downloaded to this Mac. Your library on the server stays as it is."
+            if waiting > 0 {
+                text += "\n\nFiles in Upload that have not reached Immich: \(waiting). They stay on this Mac, and Finder shows where once you have signed out."
+            }
+            alert.informativeText = text
+            alert.addButton(withTitle: "Sign Out").hasDestructiveAction = true
+            alert.addButton(withTitle: "Cancel")
+            bringForward()
+            guard alert.runModal() == .alertFirstButtonReturn else { return }
+            do {
+                try await model.signOut()
+            } catch {
+                let failure = NSAlert()
+                failure.messageText = "Still signed in"
+                failure.informativeText = "Finder's location could not be removed, so Immich Mount stays signed in: \(describe(error))"
+                bringForward()
+                failure.runModal()
+            }
         }
     }
 
@@ -337,9 +352,26 @@ enum FinderLocation {
         }
     }
 
-    /// Remove the location and everything the system kept of it.
+    /// Remove the location and what was downloaded, keeping what has not reached Immich: a file moved into Upload is
+    /// its only copy until the upload succeeds (PRINCIPLES.md). The system preserves those files, and Finder shows
+    /// where.
     static func remove() async throws {
-        _ = try await NSFileProviderManager.remove(domain, mode: .removeAll)
+        guard let preserved = try await NSFileProviderManager.remove(domain, mode: .preserveDirtyUserData) else { return }
+        let kept = (try? FileManager.default.contentsOfDirectory(atPath: preserved.path)) ?? ["unreadable here"]
+        logger.notice("removed; \(kept.count) entries not uploaded are kept at \(preserved.path, privacy: .public)")
+        if !kept.isEmpty {
+            NSWorkspace.shared.activateFileViewerSelecting([preserved])
+        }
+    }
+
+    /// How many files wait in Upload: the system keeps a file there until its upload succeeds, and an uploaded one
+    /// for the few seconds before it leaves.
+    static func waitingUploads() async -> Int {
+        guard let root = try? await rootURL() else { return 0 }
+        let scoped = root.startAccessingSecurityScopedResource()
+        defer { if scoped { root.stopAccessingSecurityScopedResource() } }
+        let names = (try? FileManager.default.contentsOfDirectory(atPath: root.appendingPathComponent("Upload").path)) ?? []
+        return names.filter { !$0.hasPrefix(".") }.count
     }
 
     /// Where Finder shows the location's root.
@@ -421,17 +453,28 @@ final class AppModel: ObservableObject {
     /// part of every item's version, so the system takes the new details (capabilities and fields) it would otherwise
     /// keep.
     private func refreshItemsAfterUpdate() async {
-        let file = AppGroup.container.appendingPathComponent("item-format")
-        let kept = (try? String(contentsOf: file, encoding: .utf8)).flatMap { UInt32($0) }
+        let kept = (try? String(contentsOf: Self.itemFormatFile, encoding: .utf8)).flatMap { UInt32($0) }
         let format = itemFormat()
-        guard server != nil, kept != format, let manager = NSFileProviderManager(for: FinderLocation.domain) else { return }
+        guard kept != format else { return }
+        // Signed out, the system keeps no items to read again.
+        guard server != nil, let manager = NSFileProviderManager(for: FinderLocation.domain) else {
+            recordItemFormat()
+            return
+        }
         do {
             try await manager.reimportItems(below: .rootContainer)
-            try String(format).write(to: file, atomically: true, encoding: .utf8)
+            recordItemFormat()
             logger.notice("the items are read again for item format \(format)")
         } catch {
             logger.error("the items were not read again: \(String(describing: error), privacy: .public)")
         }
+    }
+
+    private static let itemFormatFile = AppGroup.container.appendingPathComponent("item-format")
+
+    /// The system's items are in the bridge's item format: a new location's are, from the start.
+    private func recordItemFormat() {
+        try? String(itemFormat()).write(to: Self.itemFormatFile, atomically: true, encoding: .utf8)
     }
 
     /// Wake the extension on the poll interval: the system stops it when idle, and it has no clock of its own. It
@@ -440,8 +483,13 @@ final class AppModel: ObservableObject {
     private func keepChangesFlowing() async {
         while !Task.isCancelled {
             try? await Task.sleep(for: AppModel.changeSignal)
+            let wasOnline = status?.online
             await refreshState()
             guard server != nil, let manager = NSFileProviderManager(for: FinderLocation.domain) else { continue }
+            // The extension answered "server unreachable" while it was; tell the system it may stop waiting.
+            if wasOnline == false, status?.online == true {
+                try? await manager.signalErrorResolved(NSFileProviderError(.serverUnreachable))
+            }
             do {
                 try await manager.signalEnumerator(for: .workingSet)
             } catch {
@@ -510,6 +558,7 @@ final class AppModel: ObservableObject {
             try Account(server: server, credential: signedIn.credential).save()
             Account.keepEmail(signedIn.account)
             try await FinderLocation.add()
+            recordItemFormat()
             // A new location waits to be switched on; known before the account is, so the window shows that step.
             locationSwitchedOff = true
             self.server = server
@@ -523,17 +572,20 @@ final class AppModel: ObservableObject {
     }
 
     /// End the session on the server, and remove the Finder location, the account and the extension's store.
-    func signOut() async {
+    /// A location that cannot be removed leaves the user signed in, so it is not left behind unseen: the error is
+    /// thrown, for the caller to show.
+    func signOut() async throws {
         busy = true
         message = nil
         defer { busy = false }
-        if let account = Account.load() {
-            await endSession(server: account.server, credential: account.credential)
-        }
         do {
             try await FinderLocation.remove()
         } catch {
-            message = describe(error)
+            logger.error("the Finder location was not removed, so the account stays: \(String(describing: error), privacy: .public)")
+            throw error
+        }
+        if let account = Account.load() {
+            await endSession(server: account.server, credential: account.credential)
         }
         Account.forget()
         try? FileManager.default.removeItem(at: AppGroup.libraryDirectory)
@@ -548,7 +600,7 @@ final class AppModel: ObservableObject {
     func followLaunchArguments() async {
         let arguments = UserDefaults.standard
         if arguments.bool(forKey: "signOut") {
-            await signOut()
+            try? await signOut()
         }
         guard server == nil, let address = arguments.string(forKey: "signInServer") else { return }
         await check(address: address)

@@ -343,7 +343,8 @@ where
     ///
     /// The touched folders are marked in the store before the poll's memory is kept, so a folder that cannot be
     /// listed now (the server busy, or the budget spent) is listed at a later poll; a change is never seen once and
-    /// then lost. Deletions are settled after the listing, so a node that only moved is not deleted.
+    /// then lost. Deletions are settled once every touched folder was listed again, so a node that only moved, to a
+    /// folder not listed yet, is not deleted.
     async fn poll(&self) -> Result<bool, BridgeError> {
         let before = self.store().journal_anchor().map_err(failed)?;
         self.record_departures(seconds_since_epoch(SystemTime::now()))?;
@@ -369,12 +370,17 @@ where
                 continue;
             }
             match tokio::time::timeout(left, self.tree.relist(&folder)).await {
-                Ok(Ok(_)) => self.store().relisted(&folder).map_err(failed)?,
+                // A folder gone from the server has nothing to list: its parent's listing records its departure.
+                Ok(Ok(_) | Err(SourceError::NotFound)) => self.store().relisted(&folder).map_err(failed)?,
                 Ok(Err(error)) => log::info!("a changed folder could not be listed again ({error}); the next poll tries again"),
                 Err(_) => log::info!("a changed folder was not listed again in time; the next poll tries again"),
             }
         }
-        self.store().settle_departures().map_err(failed)?;
+        if self.store().folders_to_relist().is_empty() {
+            self.store().settle_departures().map_err(failed)?;
+        } else {
+            log::info!("deletions wait until every changed folder is listed again");
+        }
         Ok(self.store().journal_anchor().map_err(failed)? != before)
     }
 
@@ -921,10 +927,11 @@ fn runtime() -> &'static tokio::runtime::Runtime {
 }
 
 /// A way to stop a request the system no longer wants. uniffi's Swift does not pass a task's cancellation on to the
-/// Rust future, so the extension hands a long request one of these, and cancels it from the request's progress.
+/// Rust future, so the extension hands a long request one of these, and cancels it from the request's progress. One
+/// request may run several pieces of work under it (a batch of thumbnails): cancelling stops them all.
 #[derive(Default, uniffi::Object)]
 pub struct Cancel {
-    state: Mutex<(bool, Option<tokio::task::AbortHandle>)>,
+    state: Mutex<(bool, Vec<tokio::task::AbortHandle>)>,
 }
 
 #[uniffi::export]
@@ -938,7 +945,7 @@ impl Cancel {
     pub fn cancel(&self) {
         let mut state = self.state.lock().expect("cancel lock");
         state.0 = true;
-        if let Some(work) = state.1.take() {
+        for work in state.1.drain(..) {
             work.abort();
         }
     }
@@ -962,7 +969,8 @@ async fn cancellable<Output: Send + 'static>(
         if state.0 {
             task.abort();
         } else {
-            state.1 = Some(task.abort_handle());
+            state.1.retain(|work| !work.is_finished());
+            state.1.push(task.abort_handle());
         }
     }
     match Cancelling(task).await {
@@ -1364,6 +1372,24 @@ mod tests {
         tokio::time::sleep(Duration::from_millis(400)).await;
         assert!(!finished.load(Ordering::SeqCst), "the work stopped, though the caller never dropped it");
         assert_eq!(cancellable(Some(cancel), async { Ok(()) }).await, Err(BridgeError::Cancelled), "cancelled before it began");
+    }
+
+    #[tokio::test]
+    async fn one_cancel_stops_every_piece_of_work_under_it() {
+        let cancel = Cancel::new();
+        let stopper = cancel.clone();
+        let piece = || {
+            cancellable(Some(cancel.clone()), async {
+                tokio::time::sleep(Duration::from_millis(300)).await;
+                Ok(())
+            })
+        };
+        tokio::spawn(async move {
+            tokio::time::sleep(Duration::from_millis(20)).await;
+            stopper.cancel();
+        });
+        let (first, second) = tokio::join!(piece(), piece());
+        assert_eq!((first, second), (Err(BridgeError::Cancelled), Err(BridgeError::Cancelled)), "a batch of thumbnails");
     }
 
     #[test]
