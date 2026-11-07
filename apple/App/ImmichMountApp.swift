@@ -119,29 +119,42 @@ final class AppDelegate: NSObject, NSApplicationDelegate, @preconcurrency SPUSta
     func confirmSignOut() {
         Task {
             let waiting = await FinderLocation.waitingUploads()
-            let alert = NSAlert()
-            alert.messageText = tr("Sign out of Immich Mount?")
-            var text = tr("Immich Mount leaves Finder, together with the photos and videos downloaded to this Mac. Your library on the server stays as it is.")
-            if waiting > 0 {
-                text += "\n\n" + tr("Files in Upload that have not reached Immich: {count}. They stay on this Mac, and Finder shows where once you have signed out.",
-                                    ["count": String(waiting)])
-            }
-            alert.informativeText = text
-            alert.addButton(withTitle: tr("Sign Out")).hasDestructiveAction = true
-            alert.addButton(withTitle: tr("Cancel"))
-            bringForward()
-            guard alert.runModal() == .alertFirstButtonReturn else { return }
+            // A modal alert run inside a task holds the main queue, where the second activation `bringForward` asks
+            // for waits, so the alert stayed behind other apps' windows and the menu stopped answering (2.17.3 and
+            // 2.17.4 on macOS 27). From the run loop, the queue keeps running under the alert.
+            RunLoop.main.perform { MainActor.assumeIsolated { self.askToSignOut(waiting: waiting) } }
+        }
+    }
+
+    private func askToSignOut(waiting: Int) {
+        let alert = NSAlert()
+        alert.messageText = tr("Sign out of Immich Mount?")
+        var text = tr("Immich Mount leaves Finder, together with the photos and videos downloaded to this Mac. Your library on the server stays as it is.")
+        if waiting > 0 {
+            text += "\n\n" + tr("Files in Upload that have not reached Immich: {count}. They stay on this Mac, and Finder shows where once you have signed out.",
+                                ["count": String(waiting)])
+        }
+        alert.informativeText = text
+        alert.addButton(withTitle: tr("Sign Out")).hasDestructiveAction = true
+        alert.addButton(withTitle: tr("Cancel"))
+        bringForward()
+        guard alert.runModal() == .alertFirstButtonReturn else { return }
+        Task {
             do {
                 try await model.signOut()
             } catch {
-                let failure = NSAlert()
-                failure.messageText = tr("Still signed in")
-                failure.informativeText = tr("Finder's location could not be removed, so Immich Mount stays signed in: {error}",
-                                             ["error": describe(error)])
-                bringForward()
-                failure.runModal()
+                RunLoop.main.perform { MainActor.assumeIsolated { self.reportStillSignedIn(error) } }
             }
         }
+    }
+
+    private func reportStillSignedIn(_ error: Error) {
+        let failure = NSAlert()
+        failure.messageText = tr("Still signed in")
+        failure.informativeText = tr("Finder's location could not be removed, so Immich Mount stays signed in: {error}",
+                                     ["error": describe(error)])
+        bringForward()
+        failure.runModal()
     }
 
     /// Opened again from Finder, Launchpad or Spotlight while it runs: what is left to do, or Settings.
@@ -368,11 +381,22 @@ enum FinderLocation {
     /// where.
     static func remove() async throws {
         guard let preserved = try await NSFileProviderManager.remove(domain, mode: .preserveDirtyUserData) else { return }
-        let kept = (try? FileManager.default.contentsOfDirectory(atPath: preserved.path)) ?? ["unreadable here"]
-        logger.notice("removed; \(kept.count) entries not uploaded are kept at \(preserved.path, privacy: .public)")
-        if !kept.isEmpty {
+        let kept = keptFiles(in: preserved)
+        logger.notice("removed; \(kept.map { String($0) } ?? "unknown", privacy: .public) files not uploaded are kept at \(preserved.path, privacy: .public)")
+        // The system keeps a folder even when nothing in it waited for Immich; Finder opens it only for real files.
+        if kept != 0 {
             NSWorkspace.shared.activateFileViewerSelecting([preserved])
         }
+    }
+
+    /// The files a removal kept: regular files only, hidden ones (Finder's `.DS_Store`) left out. Nil when the folder
+    /// cannot be read, so it is shown rather than missed.
+    private static func keptFiles(in folder: URL) -> Int? {
+        guard let walker = FileManager.default.enumerator(at: folder, includingPropertiesForKeys: [.isRegularFileKey],
+                                                          options: [.skipsHiddenFiles]) else { return nil }
+        return walker.compactMap { $0 as? URL }
+            .filter { (try? $0.resourceValues(forKeys: [.isRegularFileKey]).isRegularFile) == true }
+            .count
     }
 
     /// How many files wait in Upload: the system keeps a file there until its upload succeeds, and an uploaded one
