@@ -49,6 +49,13 @@ Traps (verified on macOS 27.0.1 with Xcode 27.2):
   "encountered an error". `killall fileproviderd` (it runs as the user, and launchd starts it again at once) clears
   the job, and the next request starts the extension from the new path (verified on macOS 27.0.1). Before deleting a
   build, unregister it: `lsregister -u <app>` (in LaunchServices.framework's `Support/`).
+- **notarytool's keychain profile is not found while the screen is locked** ("No Keychain password item found",
+  with the maintainer away, two hours after it worked; seen on macOS 27.0.1), though the login keychain's signing key
+  still is. An unattended release build notarizes with the API key file instead: `NOTARY_KEY=<.p8>
+  NOTARY_KEY_ID=<ID> NOTARY_ISSUER=<issuer> apple/release.sh`.
+- **A keychain dialog left open stops Xcode's package downloads:** Sparkle's framework archive waited for over an hour
+  behind one (`waitForRemoteSourcePackagesToFinishLoading`, nothing downloading). `pgrep -x SecurityAgent` shows one
+  is open; it is the maintainer's to answer, or, with their leave, stopping SecurityAgent cancels it.
 - **No `osascript` over SSH, ever.** Apple events from an SSH session (to System Events, or `tell application … to
   quit`) make macOS ask the maintainer whether `sshd-keygen-wrapper`, the program that starts SSH sessions, may
   control that app, and accepting widens what every SSH session may do: a laptop setting this skill must not touch.

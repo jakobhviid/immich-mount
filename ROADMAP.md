@@ -205,7 +205,8 @@ checked by CI's macOS job; the maintainer's Mac is needed only to run and debug 
    to its GitHub release by hand; the workflow's `macos` job waits for its secrets (the certificate as a .p12, the
    two Developer ID profiles made in the developer portal, the notary key) and the variable `MACOS_RELEASES`.
    **Released: 2.14.2 (2026-11-07),** the first Mac release, attached to its release by hand; the download page
-   offers it. The cask's macOS part waits for the `macos` job: a cask has one version, so every release must carry
+   offers it. **2.15.1** is the first that updates itself (Sparkle), its update file beside it; the feed is on the
+   download page. The cask's macOS part waits for the `macos` job: a cask has one version, so every release must carry
    the disk image before Homebrew can point at it.
    Exit: a Mac that never had it installs from Homebrew, switches the extension on, and browses.
 
