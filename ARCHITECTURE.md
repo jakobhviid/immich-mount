@@ -1285,11 +1285,26 @@ server at sign-out.
 - The team ID stays out of the repository: a development build reads it from the git-ignored
   `apple/Config/Local.xcconfig`.
 - **CI builds all of it on GitHub's macOS runner** on every branch push, unsigned, and runs the core's and the
-  bridge's tests there. A Rust change is checked against the Swift side without a Mac at hand. Signing and
-  notarization happen only in the release workflow, with the Developer ID certificate as a secret.
+  bridge's tests there. A Rust change is checked against the Swift side without a Mac at hand. It also builds the
+  release's disk image there, unsigned, so the release script is checked without the signing secrets.
 
-**Distribution:** a notarized DMG on the GitHub release and the Homebrew cask, once the paid Apple Developer Program
-is in place. Development builds run under a free Personal Team on the maintainer's Mac. Each Mac switches the
+**Distribution:** a notarized disk image on the GitHub release (`immich-mount-<version>.dmg`) and the Homebrew cask,
+once the paid Apple Developer Program is in place. `apple/release.sh` builds it, the same way on the maintainer's
+Mac and in the release workflow's `macos` job:
+- **The app is universal,** archived and signed with Developer ID, then notarized and stapled, so a copy taken out
+  of the disk image passes Gatekeeper offline too. The disk image is then signed, notarized and stapled itself.
+- **Two Developer ID provisioning profiles,** one for the app and one for the extension, made once in the
+  developer portal and named in the script: the Keychain group they share is an entitlement only a profile grants
+  (Apple's TN3125). The team-prefixed App Group needs none.
+- **Notarization uses an App Store Connect API key** (Developer role), not an Apple ID with an app-specific
+  password: it is scoped to the team, and can be revoked on its own.
+- **The release workflow's secrets:** `APPLE_TEAM_ID`; `MACOS_CERTIFICATE` (the Developer ID certificate with its
+  key, a .p12 in base64) and `MACOS_CERTIFICATE_PASSWORD`; `MACOS_APP_PROFILE` and `MACOS_EXTENSION_PROFILE` (in
+  base64); `NOTARY_KEY` (the .p8), `NOTARY_KEY_ID` and `NOTARY_ISSUER`. The job signs from a keychain of its own,
+  deleted at the end.
+- **The version is the release's,** and the build number the commit count, which grows with every release.
+
+Development builds run under a free Personal Team on the maintainer's Mac. Each Mac switches the
 extension on once, in System Settings (General, Login Items & Extensions); no program can do it for the user. The
 app adds the location switched off (verified: `fileproviderctl dump` shows it `enabled: no` until then), and its
 folder is `~/Library/CloudStorage/ImmichMount-Immich`.

@@ -241,8 +241,75 @@ jobs:
             dist/*.deb
             dist/*.rpm
 
+  macos:
+    # The macOS edition (ARCHITECTURE.md, "The macOS edition"): a universal disk image, signed with Developer ID and
+    # notarized by apple/release.sh. The certificate, the two provisioning profiles and the notary key are secrets.
+    needs: test
+    runs-on: macos-latest
+    steps:
+      - uses: actions/checkout@v5
+        with:
+          fetch-depth: 0
+      - name: Stamp version
+        run: |
+          v=$(git log --reverse --format='%H%x09%s' | awk -F'\t' 'BEGIN{maj=1;min=0;pat=0}NR==1{next}{s=$2;if(s~/^[A-Za-z]+(\([^)]*\))?!:/){maj++;min=0;pat=0}else if(s~/^feat(\([^)]*\))?:/){min++;pat=0}else{pat++}}END{print maj"."min"."pat}')
+          tmp=$(mktemp)
+          sed -E "s/^version = \"[^\"]*\"/version = \"$v\"/" Cargo.toml > "$tmp" && mv "$tmp" Cargo.toml
+          echo "VERSION=$v" >> "$GITHUB_ENV"
+          # The app's build number, which must grow with every release.
+          echo "BUILD=$(git rev-list --count HEAD)" >> "$GITHUB_ENV"
+      - uses: dtolnay/rust-toolchain@stable
+        with:
+          targets: aarch64-apple-darwin,x86_64-apple-darwin
+      - name: Signing keychain, profiles and notary key
+        env:
+          MACOS_CERTIFICATE: ${{ secrets.MACOS_CERTIFICATE }}
+          MACOS_CERTIFICATE_PASSWORD: ${{ secrets.MACOS_CERTIFICATE_PASSWORD }}
+          MACOS_APP_PROFILE: ${{ secrets.MACOS_APP_PROFILE }}
+          MACOS_EXTENSION_PROFILE: ${{ secrets.MACOS_EXTENSION_PROFILE }}
+          NOTARY_KEY: ${{ secrets.NOTARY_KEY }}
+        run: |
+          # A keychain of its own holds the Developer ID certificate, and is deleted at the end.
+          keychain="$RUNNER_TEMP/signing.keychain-db"
+          password=$(uuidgen)
+          security create-keychain -p "$password" "$keychain"
+          security set-keychain-settings -lut 21600 "$keychain"
+          security unlock-keychain -p "$password" "$keychain"
+          base64 --decode <<<"$MACOS_CERTIFICATE" > "$RUNNER_TEMP/certificate.p12"
+          security import "$RUNNER_TEMP/certificate.p12" -k "$keychain" -P "$MACOS_CERTIFICATE_PASSWORD" -T /usr/bin/codesign
+          rm "$RUNNER_TEMP/certificate.p12"
+          security set-key-partition-list -S apple-tool:,apple:,codesign: -k "$password" "$keychain" >/dev/null
+          security list-keychains -d user -s "$keychain" $(security list-keychains -d user | tr -d '"')
+          # Each profile under its UUID, in both places Xcode versions look.
+          for profile in "$MACOS_APP_PROFILE" "$MACOS_EXTENSION_PROFILE"; do
+            base64 --decode <<<"$profile" > "$RUNNER_TEMP/profile"
+            uuid=$(security cms -D -i "$RUNNER_TEMP/profile" | plutil -extract UUID raw -o - -)
+            for dir in "$HOME/Library/Developer/Xcode/UserData/Provisioning Profiles" "$HOME/Library/MobileDevice/Provisioning Profiles"; do
+              mkdir -p "$dir"
+              cp "$RUNNER_TEMP/profile" "$dir/$uuid.provisionprofile"
+            done
+          done
+          printf '%s\n' "$NOTARY_KEY" > "$RUNNER_TEMP/notary.p8"
+      - name: The disk image, signed and notarized
+        env:
+          TEAM_ID: ${{ secrets.APPLE_TEAM_ID }}
+          NOTARY_KEY_ID: ${{ secrets.NOTARY_KEY_ID }}
+          NOTARY_ISSUER: ${{ secrets.NOTARY_ISSUER }}
+        run: |
+          brew install xcodegen
+          NOTARY_KEY="$RUNNER_TEMP/notary.p8" apple/release.sh "$VERSION" "$BUILD"
+      - uses: actions/upload-artifact@v4
+        with:
+          name: macos
+          path: apple/build/release/*.dmg
+      - name: Remove the signing keychain and the notary key
+        if: always()
+        run: |
+          security delete-keychain "$RUNNER_TEMP/signing.keychain-db" 2>/dev/null || true
+          rm -f "$RUNNER_TEMP/notary.p8"
+
   release:
-    needs: build
+    needs: [build, macos]
     runs-on: ubuntu-latest
     outputs:
       version: ${{ steps.version.outputs.version }}
@@ -295,9 +362,9 @@ jobs:
         env:
           GH_TOKEN: ${{ github.token }}
         run: |
-          gh release create "v$VERSION" art/*.tar.gz art/*.deb art/*.rpm \
+          gh release create "v$VERSION" art/*.tar.gz art/*.deb art/*.rpm art/*.dmg \
             --title "v$VERSION" --notes "Automated build from ${GITHUB_SHA:0:7}" \
-            || gh release upload "v$VERSION" art/*.tar.gz art/*.deb art/*.rpm --clobber
+            || gh release upload "v$VERSION" art/*.tar.gz art/*.deb art/*.rpm art/*.dmg --clobber
       - name: Prune old releases (keep the latest 10)
         env:
           GH_TOKEN: ${{ github.token }}

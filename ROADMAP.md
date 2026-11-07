@@ -196,11 +196,11 @@ checked by CI's macOS job; the maintainer's Mac is needed only to run and debug 
    Program. The Homebrew cask `immich-mount` gains a macOS part beside its Linux one (the DMG, the app into
    Applications, macOS 14 or later, and a zap of the App Group folder and the sandbox containers), so one command
    installs on either system; the tap's pipeline bumps it from the releases. Gatekeeper refuses an unsigned app, so
-   the cask waits for notarization.
-   A download page at `immichmount.hviid.dev` (GitHub Pages, the domain by a CNAME record), with what it is, the
-   screenshots and the non-affiliation notice: the release workflow builds it with that release's file links, so it
-   is never stale, and a few lines of script put the visitor's platform first (Homebrew first on Linux, whose
-   distribution a browser cannot tell).
+   the cask waits for notarization. The download page (`jakob.hviid.phd/immich-mount`, built on `main`) offers the
+   disk image and the cask once a release carries a `.dmg`.
+   **Built:** `apple/release.sh` and the release workflow's `macos` job (ARCHITECTURE, "The macOS edition",
+   "Distribution"); CI builds the unsigned disk image on every branch. Waiting on the Developer Program: the
+   Developer ID certificate, the two profiles, the notary key and the workflow's secrets.
    Exit: a Mac that never had it installs from Homebrew, switches the extension on, and browses.
 
 Open:
