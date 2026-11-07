@@ -98,6 +98,14 @@ icon style, and is MIT like the rest.
   the drawing itself over its title, as the README and the GNOME app's welcome and status pages do: the SVG, kept as
   a vector in the asset catalog. The About panel has the GNOME About
   dialog's texts: the non-affiliation notice as its copyright line, then the credits and the AI disclosure.
+- **On macOS 26 and later** the icon is an Icon Composer document, `apple/App/AppIcon.icon`, as Apple's guidelines
+  ask, so it follows the light, dark, tinted and clear appearances and takes the system's glass and lighting. The
+  same drive in layers: the face is the document's background (a light and a dark gradient), the base and its light
+  are one group, and the lens another, its glass a glass layer. `apple/make-icon-composer.py` writes it from the SVG,
+  with SVG layers, which Icon Composer reads as they are; Xcode's `ictool` renders it to check each appearance. Apple
+  publishes no schema of `icon.json`: the keys follow Xcode's own template and documents saved by Icon Composer, as
+  reconstructed by community references. The asset catalog's AppIcon set, of the same name, stays for macOS 14 and
+  15; actool compiles both (verified with Xcode 27.2: the catalog holds the layered stacks and the flat sizes).
 - **Finder's sidebar** shows each location with a one-colour symbol, which the provider names in its extension's
   `CFBundleSymbolName` and ships in its asset catalog, as Nextcloud and OneDrive do (without one, Finder draws a
   generic drive or folder). Ours is the app icon's drive and lens in outline: the face and base, the base's light, and
@@ -1216,14 +1224,14 @@ when opened, eviction under storage pressure, the Finder sidebar and every file 
 (an Asset's parent is part of its key, a month's is its year), except an album under year folders, whose year is
 looked up in the album list.
 
-**Content.** The system asks for an original when something opens the file. The extension downloads it whole into
-a file the system then keeps, and evicts under storage pressure; the block cache is not used. Every item's content
-policy is to download lazily, which allows evicting it (the policy replaces macOS 11's eviction capability), so
-Finder offers "Remove Download" on a file or a folder, which frees the local copies and leaves the library alone
-(verified on macOS 27.0.1: the system derives the eviction capability from the policy, and evicts a downloaded photo
-as Remove Download does). The system keeps the details of items it holds (their capabilities and policy included), so the bridge's item
-format is part of every item's version: a release that changes what items carry raises it, and the app, seeing a
-new format at launch, has the system read every item again once.
+**Content.** The system asks for an original when something opens the file. The extension downloads it whole into a
+file the system then keeps, and evicts under storage pressure; the block cache is not used. Every item's content
+policy is to download lazily, which allows evicting it (the policy replaces macOS 11's eviction capability), so Finder
+offers "Remove Download" on a file or a folder, which frees the local copies and leaves the library alone (verified on
+macOS 27.0.1: the system derives the eviction capability from the policy, and evicts a downloaded photo as Remove
+Download does). The system keeps the details of items it holds (their capabilities and policy included), so the
+bridge's item format is part of every item's version: a release that changes what items carry raises it, and the app,
+seeing a new format at launch, has the system read every item again once.
 - **A reimport** (after a new item format, or a settings change) drops the system's database: it then finds what is on
   disk again and offers each as a new item, marked "may already exist". The extension answers with the item the
   library has under that name in that folder; refusing it, as a read-only folder refuses new folders, left the
