@@ -205,7 +205,8 @@ check_mounted() {
   local filesystem name
   filesystem=$(findmnt -n -o FSTYPE --mountpoint "$resolved_mount" 2>/dev/null)
   name=$(sed -n 's/^Name=//p' "$mount_point/.xdg-volume-info" 2>/dev/null)
-  if [ "${filesystem#fuse}" != "$filesystem" ] && [ "$name" = Immich ]; then
+  # The drive's name, "Immich Mount" unless mount.name chooses another (SPEC.md, "Files the mount answers itself").
+  if [ "${filesystem#fuse}" != "$filesystem" ] && [ "$name" = "Immich Mount" ]; then
     pass mounted "$filesystem at $resolved_mount, named $name"
   else
     fail mounted "at $resolved_mount: filesystem '${filesystem:-none}', volume name '${name:-none}'"

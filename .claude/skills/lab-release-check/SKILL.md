@@ -54,7 +54,7 @@ Show thumbnails switch does), which also checks that doctor's advice works.
 | `translations` | the Danish catalog where the programs look (`share/locale` beside them, or `../share/locale`), and `Comment[da]` in the launcher; it counts the languages | ARCHITECTURE "Translations" |
 | `status` | `status --json`: online, mounted, not stale, an account | WORKFLOWS "Status" |
 | `service` | `immich-mount.service` enabled and active | WORKFLOWS "The mount" |
-| `mounted` | a FUSE mount at `~/Immich` (resolved), named Immich by `.xdg-volume-info` | SPEC "Files the mount answers" |
+| `mounted` | a FUSE mount at `~/Immich` (resolved), named Immich Mount (the default `mount.name`) by `.xdg-volume-info` | SPEC "Files the mount answers" |
 | `sidebar` (GNOME) | `gio mount -li` lists it, unmountable, so Files shows it as a drive with an eject button; on Bazzite through the GVfs drop-in | ARCHITECTURE "GNOME integration" |
 | `places` (KDE) | Dolphin's Places hold it; SKIP unless `--app-setup`, since only the KDE app's first run adds it | SPEC "Files on disk" |
 | `access` | `access::can-write`: not the root, Albums or a photo; Photos, a year and a month | SPEC "Attributes" |
