@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Build the download page (immichmount.hviid.dev) for one release: site/index.html with that release's file links,
+"""Build the download page (jakob.hviid.phd/immich-mount) for one release: site/index.html with that release's file links,
 site/style.css, the icon and the screenshots, written into an output folder for GitHub Pages (ARCHITECTURE.md,
 "The download page"). Standard library only.
 

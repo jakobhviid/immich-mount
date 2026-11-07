@@ -1069,7 +1069,7 @@ Each platform gets a native app that looks and reads like a first-party app (pri
 
 ### The download page
 
-`immichmount.hviid.dev` is one static page: what Immich Mount is, its screenshots, and the files of the latest
+`jakob.hviid.phd/immich-mount` is one static page: what Immich Mount is, its screenshots, and the files of the latest
 release. GitHub Pages serves it, and the release workflow's `pages` job deploys it after every release.
 - **Its links come from the release itself.** `site/build.py` reads the release's file list (`gh release view
   --json`) and fills `site/index.html` with direct links to those files, so a link never points at an older version,
@@ -1086,8 +1086,9 @@ release. GitHub Pages serves it, and the release workflow's `pages` job deploys 
 - **Python's standard library, one template and one script,** rather than a static site generator: there is one
   page, and nothing to install in CI. CI builds it against the latest release on every branch, so a template change
   that breaks it fails before it reaches `main`.
-- **The custom domain** is set in the repository's Pages settings, with a DNS CNAME from `immichmount.hviid.dev` to
-  `jakobhviid.github.io`: a site deployed by a workflow ignores a `CNAME` file.
+- **No domain of its own.** GitHub serves a repository's site under its owner's user site (`jakobhviid.github.io`,
+  whose domain is `jakob.hviid.phd`), so the page needs no DNS record and no domain setting. Its links are relative,
+  so it works under any path.
 - The page carries the non-affiliation notice word for word, the credits and the AI disclosure, as the README does.
 - **Flatpak impact:** none; a Flatpak would add a Flathub link.
 

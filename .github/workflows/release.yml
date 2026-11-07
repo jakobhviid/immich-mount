@@ -335,7 +335,7 @@ jobs:
           git push --force origin "HEAD:refs/heads/auto/formula-immich-mount-headless"
 
   pages:
-    # The download page (immichmount.hviid.dev), built for the release just published, so its links are never stale
+    # The download page (jakob.hviid.phd/immich-mount), built for the release just published, so its links are never stale
     # (ARCHITECTURE.md, "The download page"). It needs GitHub Pages on, with GitHub Actions as its source.
     needs: release
     runs-on: ubuntu-latest
