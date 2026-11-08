@@ -80,27 +80,27 @@ msgid "Immich takes photos and videos only."
 msgstr "Immich শুধু ফটো ও ভিডিও নেয়।"
 
 #: crates/immich-mount-linux/src/tray.rs:68
-#: apple/App/ImmichMountApp.swift:469
+#: apple/App/ImmichMountApp.swift:538
 msgid "Connected to {server}"
 msgstr "{server}-এর সঙ্গে সংযুক্ত"
 
 #: crates/immich-mount-linux/src/tray.rs:69
-#: apple/App/ImmichMountApp.swift:469
+#: apple/App/ImmichMountApp.swift:538
 msgid "{server} is not reachable"
 msgstr "{server}-এ পৌঁছানো যাচ্ছে না"
 
 #: crates/immich-mount-linux/src/tray.rs:71
-#: apple/App/ImmichMountApp.swift:468
+#: apple/App/ImmichMountApp.swift:537
 msgid "Signed in to {server}"
 msgstr "{server}-এ সাইন-ইন করা হয়েছে"
 
 #: crates/immich-mount-linux/src/tray.rs:79
-#: apple/App/ImmichMountApp.swift:477
+#: apple/App/ImmichMountApp.swift:546
 msgid "Server version: Immich {version}"
 msgstr "সার্ভারের সংস্করণ: Immich {version}"
 
 #: crates/immich-mount-linux/src/tray.rs:82
-#: apple/App/ImmichMountApp.swift:480
+#: apple/App/ImmichMountApp.swift:549
 msgid "Signed in as: {account}"
 msgstr "সাইন-ইন করা অ্যাকাউন্ট: {account}"
 
@@ -137,17 +137,17 @@ msgstr "ড্রাইভ"
 #: crates/immich-mount-desktop/src/preferences.rs:13
 #: crates/immich-mount-gnome/src/window.blp:144
 #: crates/immich-mount-kde/qml/Main.qml:364
-#: crates/immich-mount-apple/src/lib.rs:676
+#: apple/App/SettingsView.swift:142
 msgid "Sections"
 msgstr "বিভাগ"
 
 #: crates/immich-mount-desktop/src/preferences.rs:14
-#: crates/immich-mount-apple/src/lib.rs:677
+#: apple/App/SettingsView.swift:144
 msgid "Date Folders"
 msgstr "তারিখের ফোল্ডার"
 
 #: crates/immich-mount-desktop/src/preferences.rs:16
-#: crates/immich-mount-apple/src/lib.rs:679
+#: apple/App/SettingsView.swift:156
 msgid "Files"
 msgstr "ফাইল"
 
@@ -251,7 +251,7 @@ msgstr "AI ব্যবহারের ঘোষণা"
 
 #: crates/immich-mount-gnome/src/main.rs:117
 #: crates/immich-mount-kde/qml/Main.qml:175
-#: apple/App/ImmichMountApp.swift:352
+#: apple/App/ImmichMountApp.swift:421
 msgid "Parts of this project were written with the assistance of AI coding agents. All changes are reviewed by the maintainer."
 msgstr "এই প্রকল্পের কিছু অংশ AI কোডিং এজেন্টের সহায়তায় লেখা হয়েছে। সব পরিবর্তন রক্ষণাবেক্ষণকারী পর্যালোচনা করেন।"
 
@@ -449,6 +449,7 @@ msgid "Server"
 msgstr "সার্ভার"
 
 #: crates/immich-mount-gnome/src/window.blp:289
+#: apple/App/SettingsView.swift:16
 msgid "Account"
 msgstr "অ্যাকাউন্ট"
 
@@ -515,7 +516,7 @@ msgid "The Immich API layer: {project}"
 msgstr "Immich API স্তর: {project}"
 
 #: crates/immich-mount-kde/qml/Main.qml:171
-#: apple/App/ImmichMountApp.swift:351
+#: apple/App/ImmichMountApp.swift:420
 msgid "AI disclosure"
 msgstr "AI ব্যবহারের ঘোষণা"
 
@@ -801,15 +802,13 @@ msgstr "তোলার তারিখ ও সময়"
 msgid "Original File Names"
 msgstr "আসল ফাইলের নাম"
 
-#: crates/immich-mount-apple/src/lib.rs:680
-msgid "Uploads"
-msgstr "আপলোড"
-
 #: apple/App/ContentView.swift:19
+#: apple/App/SettingsView.swift:237
 msgid "Move Immich Mount to Applications"
 msgstr "Immich Mount-কে Applications-এ সরান"
 
 #: apple/App/ContentView.swift:20
+#: apple/App/SettingsView.swift:238
 msgid "Finder's location runs from the Applications folder. Quit Immich Mount, drag it into Applications, then open it from there."
 msgstr "Finder-এর অবস্থানটি শুধু Applications ফোল্ডার থেকে চলে। Immich Mount থেকে প্রস্থান করুন, এটিকে Applications-এ টেনে আনুন, তারপর সেখান থেকে খুলুন।"
 
@@ -849,132 +848,148 @@ msgstr "Immich-এ “অ্যাকাউন্ট সেটিংস”, “A
 msgid "Open System Settings"
 msgstr "System Settings খুলুন"
 
-#: apple/App/ImmichMountApp.swift:139
+#: apple/App/ImmichMountApp.swift:153
 msgid "Sign out of Immich Mount?"
 msgstr "Immich Mount থেকে সাইন-আউট করবেন?"
 
-#: apple/App/ImmichMountApp.swift:140
+#: apple/App/ImmichMountApp.swift:154
 msgid "Immich Mount leaves Finder, together with the photos and videos downloaded to this Mac. Your library on the server stays as it is."
 msgstr "এই Mac-এ ডাউনলোড করা ফটো ও ভিডিওসহ Immich Mount, Finder থেকে সরে যায়। সার্ভারে আপনার লাইব্রেরি যেমন আছে তেমনই থাকে।"
 
-#: apple/App/ImmichMountApp.swift:142
+#: apple/App/ImmichMountApp.swift:156
 msgid "Files in Upload that have not reached Immich: {count}. They stay on this Mac, and Finder shows where once you have signed out."
 msgstr "Upload-এর যে ফাইলগুলো Immich-এ পৌঁছায়নি: {count}। সেগুলো এই Mac-এ থাকে, এবং সাইন-আউট করার পর Finder দেখায় সেগুলো কোথায় আছে।"
 
-#: apple/App/ImmichMountApp.swift:146
+#: apple/App/ImmichMountApp.swift:160
 msgid "Sign Out"
 msgstr "সাইন-আউট করুন"
 
-#: apple/App/ImmichMountApp.swift:147
+#: apple/App/ImmichMountApp.swift:161
 msgid "Cancel"
 msgstr "বাতিল করুন"
 
-#: apple/App/ImmichMountApp.swift:162
+#: apple/App/ImmichMountApp.swift:176
 msgid "Still signed in"
 msgstr "এখনো সাইন-ইন করা আছে"
 
-#: apple/App/ImmichMountApp.swift:163
+#: apple/App/ImmichMountApp.swift:177
 msgid "Finder's location could not be removed, so Immich Mount stays signed in: {error}"
 msgstr "Finder-এর অবস্থানটি সরানো যায়নি, তাই Immich Mount সাইন-ইন অবস্থায় থাকছে: {error}"
 
-#: apple/App/ImmichMountApp.swift:220
-msgid "Immich Mount Settings"
-msgstr "Immich Mount সেটিংস"
-
-#: apple/App/ImmichMountApp.swift:341
+#: apple/App/ImmichMountApp.swift:410
 msgid "Your Immich photos and videos as a drive in Finder. By Jakob Hviid, under the MIT license."
 msgstr "Finder-এ একটি ড্রাইভ হিসেবে আপনার Immich-এর ফটো ও ভিডিও। Jakob Hviid-এর তৈরি, MIT লাইসেন্সের অধীনে।"
 
-#: apple/App/ImmichMountApp.swift:342
+#: apple/App/ImmichMountApp.swift:411
 msgid "Website"
 msgstr "ওয়েবসাইট"
 
-#: apple/App/ImmichMountApp.swift:344
+#: apple/App/ImmichMountApp.swift:413
 msgid "Source code"
 msgstr "সোর্স কোড"
 
-#: apple/App/ImmichMountApp.swift:347
+#: apple/App/ImmichMountApp.swift:416
 msgid "Inspired by"
 msgstr "অনুপ্রেরণা"
 
-#: apple/App/ImmichMountApp.swift:349
+#: apple/App/ImmichMountApp.swift:418
 msgid "The Immich API layer"
 msgstr "Immich API স্তর"
 
-#: apple/App/ImmichMountApp.swift:485
+#: apple/App/ImmichMountApp.swift:554
 msgid "Last checked: {time}"
 msgstr "শেষ পরীক্ষা: {time}"
 
-#: apple/App/ImmichMountApp.swift:487
+#: apple/App/ImmichMountApp.swift:556
 msgid "Reason: {reason}"
 msgstr "কারণ: {reason}"
 
-#: apple/App/ImmichMountApp.swift:487
+#: apple/App/ImmichMountApp.swift:556
 msgid "none given"
 msgstr "কিছু জানানো হয়নি"
 
-#: apple/App/ImmichMountApp.swift:573
+#: apple/App/ImmichMountApp.swift:642
 msgid "The login item could not be changed: {error}"
 msgstr "লগইন আইটেম পরিবর্তন করা যায়নি: {error}"
 
-#: apple/App/ImmichMountApp.swift:607
+#: apple/App/ImmichMountApp.swift:676
 msgid "The server sent an address that cannot be opened."
 msgstr "সার্ভার এমন একটি ঠিকানা পাঠিয়েছে যা খোলা যায় না।"
 
-#: apple/App/ImmichMountApp.swift:692
+#: apple/App/ImmichMountApp.swift:761
 msgid "Finder does not show Immich yet. Is the extension switched on in System Settings? ({error})"
 msgstr "Finder এখনো Immich দেখাচ্ছে না। System Settings-এ এক্সটেনশনটি কি চালু আছে? ({error})"
 
 #: apple/App/ImmichMountApp.swift:36
-#: apple/App/ImmichMountApp.swift:321
+#: apple/App/ImmichMountApp.swift:390
 msgid "About Immich Mount"
 msgstr "Immich Mount সম্পর্কে"
 
 #: apple/App/ImmichMountApp.swift:37
-#: apple/App/ImmichMountApp.swift:314
+#: apple/App/ImmichMountApp.swift:383
 msgid "Check for Updates…"
 msgstr "আপডেট আছে কিনা দেখুন…"
 
 #: apple/App/ImmichMountApp.swift:40
-#: apple/App/ImmichMountApp.swift:312
+#: apple/App/ImmichMountApp.swift:381
 msgid "Settings…"
 msgstr "সেটিংস…"
 
-#: apple/App/ImmichMountApp.swift:298
+#: apple/App/ImmichMountApp.swift:367
+#: apple/App/SettingsView.swift:196
 msgid "Sign In…"
 msgstr "সাইন-ইন করুন…"
 
-#: apple/App/ImmichMountApp.swift:300
+#: apple/App/ImmichMountApp.swift:369
+#: apple/App/SettingsView.swift:216
 msgid "Switch On in System Settings…"
 msgstr "System Settings-এ চালু করুন…"
 
-#: apple/App/ImmichMountApp.swift:309
+#: apple/App/ImmichMountApp.swift:378
+#: apple/App/SettingsView.swift:218
 msgid "Open in Finder"
 msgstr "Finder-এ খুলুন"
 
-#: apple/App/ImmichMountApp.swift:317
+#: apple/App/ImmichMountApp.swift:386
+#: apple/App/SettingsView.swift:221
 msgid "Sign Out…"
 msgstr "সাইন-আউট করুন…"
 
-#: apple/App/ImmichMountApp.swift:322
+#: apple/App/ImmichMountApp.swift:391
 msgid "Quit Immich Mount"
 msgstr "Immich Mount থেকে প্রস্থান করুন"
 
-#: apple/App/PreferencesView.swift:16
-msgid "Open at login"
-msgstr "লগইনের সময় খুলুন"
-
-#: apple/App/PreferencesView.swift:17
-msgid "Check for updates automatically"
-msgstr "স্বয়ংক্রিয়ভাবে আপডেট দেখুন"
-
-#: apple/App/PreferencesView.swift:22
+#: apple/App/SettingsView.swift:14
 msgid "General"
 msgstr "সাধারণ"
 
-#: apple/App/PreferencesView.swift:24
+#: apple/App/SettingsView.swift:15
+msgid "Folders"
+msgstr "ফোল্ডার"
+
+#: apple/App/SettingsView.swift:195
+msgid "Not signed in"
+msgstr "সাইন-ইন করা নেই"
+
+#: apple/App/SettingsView.swift:97
+msgid "Open at login"
+msgstr "লগইনের সময় খুলুন"
+
+#: apple/App/SettingsView.swift:98
+msgid "Check for updates automatically"
+msgstr "স্বয়ংক্রিয়ভাবে আপডেট দেখুন"
+
+#: apple/App/SettingsView.swift:103
 msgid "While Immich Mount runs, in the menu bar, changes in Immich reach Finder within seconds. Updates come from jakob.hviid.phd, signed by the project and notarized by Apple."
 msgstr "Immich Mount মেনু বারে চলার সময়, Immich-এর পরিবর্তনগুলো কয়েক সেকেন্ডের মধ্যে Finder-এ পৌঁছায়। আপডেট আসে jakob.hviid.phd থেকে, প্রকল্পের স্বাক্ষরযুক্ত এবং Apple-এর নোটারাইজ করা।"
+
+#: apple/App/SettingsView.swift:147
+msgid "Date folders are day folders inside each month in Photos, and year and month folders in the other sections."
+msgstr "তারিখের ফোল্ডার হলো Photos-এ প্রতিটি মাসের ভেতরে দিনের ফোল্ডার, আর অন্য বিভাগগুলোতে বছর ও মাসের ফোল্ডার।"
+
+#: apple/App/SettingsView.swift:158
+msgid "Finder lists Immich again after each change."
+msgstr "প্রতিটি পরিবর্তনের পরে Finder আবার Immich-এর তালিকা দেখায়।"
 
 #: packaging/desktop/dev.hviid.ImmichMount.desktop.in (Comment)
 msgid "Your Immich photos and videos as a drive in your file manager"

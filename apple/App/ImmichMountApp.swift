@@ -224,17 +224,15 @@ final class AppDelegate: NSObject, NSApplicationDelegate, SPUUpdaterDelegate,
         window.setFrame(frame, display: true, animate: window.isVisible)
     }
 
-    /// Settings, in a window of the app's own, so the menu, the app menu and reopening all reach it. Its form
-    /// scrolls, so the window has a size of its own rather than its content's, which has none to settle on.
+    /// Settings, in a window of the app's own, so the menu, the app menu and reopening all reach it: a toolbar of
+    /// panes, titled by the pane shown, opening on the pane last used, and sized by each pane, so it neither
+    /// resizes nor minimises, as Apple's Human Interface Guidelines ask for a settings window.
     func showSettings() {
         if settingsWindow == nil {
-            let hosting = NSHostingController(rootView: PreferencesView().environmentObject(model))
-            hosting.sizingOptions = []
-            let window = NSWindow(contentViewController: hosting)
-            window.title = tr("Immich Mount Settings")
-            window.styleMask = [.titled, .closable, .miniaturizable, .resizable]
-            window.setContentSize(NSSize(width: 480, height: 640))
-            window.contentMinSize = NSSize(width: 480, height: 400)
+            let panes = SettingsTabController(model: model)
+            let window = NSWindow(contentViewController: panes)
+            window.styleMask = [.titled, .closable]
+            window.toolbarStyle = .preference
             window.isReleasedWhenClosed = false
             window.isRestorable = false
             window.center()
@@ -298,6 +296,56 @@ final class AppDelegate: NSObject, NSApplicationDelegate, SPUUpdaterDelegate,
         if others.isEmpty {
             NSApp.setActivationPolicy(.accessory)
         }
+    }
+}
+
+/// The Settings window's panes, switched by its toolbar (`SettingsPane`). Each pane is measured as it is chosen, after
+/// its layout, and the window takes that size; a window that follows its SwiftUI content during layout is laid out
+/// again without end as the content changes, which stopped the app on macOS 27.
+final class SettingsTabController: NSTabViewController {
+    /// The pane last chosen, in the app's own defaults.
+    private static let lastPaneKey = "SettingsPane"
+    private static let width: CGFloat = 520
+
+    init(model: AppModel) {
+        super.init(nibName: nil, bundle: nil)
+        tabStyle = .toolbar
+        let settings = SettingsModel()
+        for pane in SettingsPane.allCases {
+            let hosting = NSHostingController(rootView: pane.view(model: model, settings: settings))
+            hosting.sizingOptions = []
+            hosting.title = pane.title
+            let item = NSTabViewItem(viewController: hosting)
+            item.label = pane.title
+            item.image = NSImage(systemSymbolName: pane.symbol, accessibilityDescription: pane.title)
+            addTabViewItem(item)
+        }
+        let last = UserDefaults.standard.integer(forKey: Self.lastPaneKey)
+        selectedTabViewItemIndex = SettingsPane(rawValue: last) == nil ? 0 : last
+        fit(tabViewItems[selectedTabViewItemIndex])
+    }
+
+    @available(*, unavailable)
+    required init?(coder: NSCoder) {
+        fatalError("not made from a nib")
+    }
+
+    override func tabView(_ tabView: NSTabView, willSelect tabViewItem: NSTabViewItem?) {
+        if let tabViewItem { fit(tabViewItem) }
+        super.tabView(tabView, willSelect: tabViewItem)
+    }
+
+    override func tabView(_ tabView: NSTabView, didSelect tabViewItem: NSTabViewItem?) {
+        super.tabView(tabView, didSelect: tabViewItem)
+        UserDefaults.standard.set(selectedTabViewItemIndex, forKey: Self.lastPaneKey)
+    }
+
+    /// The pane's height for the window's width, between bounds that keep a short pane a window and a long one on
+    /// screen (it scrolls beyond).
+    private func fit(_ item: NSTabViewItem) {
+        guard let hosting = item.viewController as? NSHostingController<AnyView> else { return }
+        let ideal = hosting.sizeThatFits(in: NSSize(width: Self.width, height: 10_000))
+        hosting.preferredContentSize = NSSize(width: Self.width, height: min(max(ideal.height, 200), 680))
     }
 }
 

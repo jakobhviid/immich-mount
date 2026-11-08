@@ -1404,12 +1404,12 @@ when opened, eviction under storage pressure, the Finder sidebar and every file 
     be switched on, which nothing else on the Mac tells and without which Finder shows nothing, and closes by itself
     once the switch is on. It takes each step's height, keeping its top edge, as macOS's own setup windows do; the
     app resizes it after its layout pass, since a window that follows its SwiftUI content during layout is laid out
-    again without end as the content changes, which stopped the app (macOS 27). Settings, whose form scrolls, has a
-    size of its own.
+    again without end as the content changes, which stopped the app (macOS 27). Settings measures each pane once, as
+    it is chosen, for the same reason.
   - **Opened by someone** (from Finder, Launchpad or Spotlight), it shows what is left to do, or Settings once
     nothing is; started at login, or for the first time after an update (its build differs from the one it last
     ran, which it keeps), it only takes its place in the menu bar. Settings is a window of its own, which
-    the menu, the app menu's Command-comma and reopening all reach; "Open at login" is there, under General.
+    the menu, the app menu's Command-comma and reopening all reach (below, "Settings").
   - **While a window is open** (the sign-in, Settings, About, an update's) it has a Dock icon and its menus, so
     Command-Q and pasting work as anywhere; with the last one closed it is in the menu bar only. During an update
     it keeps them until Sparkle's session ends: Sparkle closes each of its windows before it opens the next, and an
@@ -1479,8 +1479,24 @@ set what changed since a sync anchor (Apple's documentation):
 - **A folder that went away** takes what the store kept below it: its deletion and its contents' are recorded, and
   its kept listing goes, so later polls stop asking for it.
 
-**Settings.** The app's Settings window shows the settings table's entries that mean something on macOS (sections,
-date folders, the album layout, file naming), with Linux's labels. A change is written to `config.toml` in the App
+**Settings.** The app's Settings window is laid out as Apple's Human Interface Guidelines ask of one, and as the
+Mac's own apps and its sync apps (Dropbox, OneDrive) lay theirs out:
+- **A toolbar of panes:** General, Folders and Account. The window is titled by the pane shown, opens on the pane last
+  used, and takes each pane's height (measured as the pane is chosen), so it neither resizes nor minimises.
+- **General:** opening at login, checking for updates, and the Upload folder (`uploads.enabled`): a behaviour, not a
+  folder layout.
+- **Folders:** one row per section, its switch beside its date folders (greyed out while the section is hidden), then
+  the album layout and file naming, so a section and its date folders are set in one place.
+- **Account:** the connection, as the menu bar menu tells it, then Open in Finder (or Switch On in System
+  Settings…) and Sign Out…, which asks first; with nobody signed in, Sign In…. It repeats the menu, and is where
+  Mac users look for signing out.
+- **Run from elsewhere than Applications,** each pane says so, as the sign-in window does, and greys out what reaches
+  Finder.
+- **Grouped forms,** as System Settings has them; the centred columns of older Mac apps are the fallback should a
+  form's height not settle.
+
+The settings come from the bridge's `settings_panes`, generated from the core's settings table: the entries that
+mean something on macOS, with Linux's labels. A change is written to `config.toml` in the App
 Group, and the app asks the system to list everything again. The drive's name (`mount.name`) is not among them:
 Finder's sidebar shows the extension's name, "Immich Mount", for a provider's only location, and a location's own
 name only as a suffix once there are two (verified: renaming ours changed nothing in the sidebar; Nextcloud and

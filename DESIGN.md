@@ -134,8 +134,9 @@ What the Mac edition taught, for every edition (ARCHITECTURE.md, "The desktop ap
 - **Status where it can be glanced at:** on the Mac the menu bar menu, its first line the state and then grey
   lines, each saying what it is ("Server version: ...", "Signed in as: ..."). On Linux the same menu from the tray
   icon, where the desktop has a tray (ARCHITECTURE.md, "The tray"), and the app's status page.
-- **Settings in the platform's own preferences window,** generated from the core's settings table, showing only
-  what means something on that platform.
+- **Settings in the platform's own preferences window,** in panes where the platform's settings windows have them
+  (the Mac: General, Folders, Account), with an account pane where the platform's sync apps have one, generated from
+  the core's settings table, showing only what means something on that platform.
 - **Destructive actions ask first,** in the platform's own alert, with its destructive button style.
 - **Windows come forward the platform's way:** on the Mac, where macOS refuses a menu bar app's activation, they
   float above other apps' windows until used.

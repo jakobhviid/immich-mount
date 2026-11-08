@@ -695,23 +695,43 @@ impl Library {
     }
 }
 
-/// The settings groups the macOS app shows: those that mean something there. The mount's path, the cache and
-/// thumbnail seeding are Linux's.
-/// The mount's group is Linux's: on macOS Finder's sidebar shows the app's name for a provider's only location, so
-/// its name (`mount.name`) would change nothing there, and its path and mounting at login are Linux's too.
-const PREFERENCE_GROUPS: &[(&str, &str)] = &[
-    ("sections", "Sections"),
-    ("grouping", "Date Folders"),
+/// The sections, in the order the Folders pane lists them, each with the folder name it shows in Finder (never
+/// translated: the drive's folders keep their names in every language, SPEC.md, "Names").
+const SECTIONS: &[(&str, &str)] = &[
+    ("photos", "Photos"),
     ("albums", "Albums"),
-    ("files", "Files"),
-    ("uploads", "Uploads"),
+    ("people", "People"),
+    ("places", "Places"),
+    ("favorites", "Favorites"),
+    ("archive", "Archive"),
 ];
 
-/// A group of settings, as the app shows it.
+/// What the Settings window shows (ARCHITECTURE.md, "The macOS edition", "Settings"): the settings table's entries
+/// that mean something on macOS, laid out as its panes are. The mount's group is Linux's: on macOS Finder's sidebar
+/// shows the app's name for a provider's only location, so its name (`mount.name`) would change nothing there, and
+/// its path and mounting at login are Linux's too; so are the cache and thumbnail seeding.
 #[derive(Debug, Clone, PartialEq, Eq, uniffi::Record)]
-pub struct PreferenceGroup {
-    pub title: String,
-    pub preferences: Vec<Preference>,
+pub struct SettingsPanes {
+    /// The Folders pane: each section's switch beside its date folders.
+    pub sections: Vec<SectionSettings>,
+    /// The Folders pane: how album folders are named and grouped (`albums.layout`).
+    pub album_layout: Preference,
+    /// The Folders pane: how files are named (`files.naming`).
+    pub file_naming: Preference,
+    /// The General pane: the Upload folder (`uploads.enabled`).
+    pub uploads: Preference,
+}
+
+/// One section of the drive, as a row of the Folders pane.
+#[derive(Debug, Clone, PartialEq, Eq, uniffi::Record)]
+pub struct SectionSettings {
+    /// The section's folder name in Finder, untranslated.
+    pub name: String,
+    /// Whether Finder shows it (`sections.<section>`).
+    pub shown: Preference,
+    /// Its date folders (`grouping.<section>`): day folders inside months for Photos, year and month folders for
+    /// the others.
+    pub date_folders: Preference,
 }
 
 /// One setting of the core's settings table (SPEC.md, "Configuration"), with its value.
@@ -739,34 +759,46 @@ pub struct PreferenceOption {
     pub label: String,
 }
 
-/// The preferences the app shows, with their values in `config`, the text of `config.toml`.
+/// The Settings window's settings, with their values in `config`, the text of `config.toml`.
 #[uniffi::export]
-pub fn preferences(config: String) -> Vec<PreferenceGroup> {
+pub fn settings_panes(config: String) -> Result<SettingsPanes, BridgeError> {
     let stored = settings::stored_values(&config).unwrap_or_default();
-    PREFERENCE_GROUPS
+    let preference = |key: &str| -> Result<Preference, BridgeError> {
+        let setting = SETTINGS
+            .iter()
+            .find(|setting| setting.key == key)
+            .ok_or_else(|| BridgeError::Failed { message: format!("the settings table has no `{key}`") })?;
+        let kind = match setting.kind {
+            Kind::Bool => PreferenceKind::Toggle,
+            Kind::Choice(words) => PreferenceKind::Choice {
+                options: words
+                    .iter()
+                    .map(|word| PreferenceOption { value: (*word).to_owned(), label: choice_label(word).to_owned() })
+                    .collect(),
+            },
+            Kind::Text | Kind::Path | Kind::Size => {
+                return Err(BridgeError::Failed { message: format!("`{key}` is not a switch or a choice") })
+            }
+        };
+        let value = stored.get(setting.key).cloned().unwrap_or_else(|| setting.default.to_owned());
+        Ok(Preference { key: setting.key.to_owned(), title: setting.description.to_owned(), kind, value })
+    };
+    let sections = SECTIONS
         .iter()
-        .map(|(prefix, title)| PreferenceGroup {
-            title: (*title).to_owned(),
-            preferences: SETTINGS
-                .iter()
-                .filter(|setting| setting.key.split('.').next() == Some(*prefix))
-                .filter_map(|setting| {
-                    let kind = match setting.kind {
-                        Kind::Bool => PreferenceKind::Toggle,
-                        Kind::Choice(words) => PreferenceKind::Choice {
-                            options: words
-                                .iter()
-                                .map(|word| PreferenceOption { value: (*word).to_owned(), label: choice_label(word).to_owned() })
-                                .collect(),
-                        },
-                        Kind::Text | Kind::Path | Kind::Size => return None,
-                    };
-                    let value = stored.get(setting.key).cloned().unwrap_or_else(|| setting.default.to_owned());
-                    Some(Preference { key: setting.key.to_owned(), title: setting.description.to_owned(), kind, value })
-                })
-                .collect(),
+        .map(|(section, name)| {
+            Ok(SectionSettings {
+                name: (*name).to_owned(),
+                shown: preference(&format!("sections.{section}"))?,
+                date_folders: preference(&format!("grouping.{section}"))?,
+            })
         })
-        .collect()
+        .collect::<Result<Vec<_>, BridgeError>>()?;
+    Ok(SettingsPanes {
+        sections,
+        album_layout: preference("albums.layout")?,
+        file_naming: preference("files.naming")?,
+        uploads: preference("uploads.enabled")?,
+    })
 }
 
 /// The Finder location's name in the sidebar (`mount.name`), the default when `config` does not say or cannot be read.
@@ -1285,17 +1317,20 @@ mod tests {
     }
 
     #[test]
-    fn the_preferences_are_the_settings_that_mean_something_on_macos() {
-        let groups = preferences("[sections]\npeople = false\n".into());
-        let titles: Vec<&str> = groups.iter().map(|group| group.title.as_str()).collect();
-        assert_eq!(titles, ["Sections", "Date Folders", "Albums", "Files", "Uploads"]);
-        let people = groups[0].preferences.iter().find(|preference| preference.key == "sections.people").unwrap();
-        assert_eq!((&people.kind, people.value.as_str()), (&PreferenceKind::Toggle, "false"));
-        let layout = &groups[2].preferences[0];
-        assert_eq!((layout.key.as_str(), layout.value.as_str()), ("albums.layout", "year-prefix"), "the default");
-        assert!(matches!(&layout.kind, PreferenceKind::Choice { options } if options[1].label == "Year Folders (2023/Trip)"));
+    fn the_settings_panes_are_the_settings_that_mean_something_on_macos() {
+        let panes = settings_panes("[sections]\npeople = false\n".into()).unwrap();
+        let names: Vec<&str> = panes.sections.iter().map(|section| section.name.as_str()).collect();
+        assert_eq!(names, ["Photos", "Albums", "People", "Places", "Favorites", "Archive"]);
+        let people = &panes.sections[2];
+        assert_eq!((people.shown.key.as_str(), &people.shown.kind, people.shown.value.as_str()), ("sections.people", &PreferenceKind::Toggle, "false"));
+        assert_eq!((people.date_folders.key.as_str(), people.date_folders.value.as_str()), ("grouping.people", "atLeast500"));
+        assert_eq!(panes.sections[4].shown.value, "false", "Favorites is off by default");
+        assert_eq!((panes.album_layout.key.as_str(), panes.album_layout.value.as_str()), ("albums.layout", "year-prefix"));
+        assert!(matches!(&panes.album_layout.kind, PreferenceKind::Choice { options } if options[1].label == "Year Folders (2023/Trip)"));
+        assert_eq!(panes.file_naming.key, "files.naming");
+        assert_eq!((panes.uploads.key.as_str(), panes.uploads.value.as_str()), ("uploads.enabled", "true"));
         let changed = set_preference("# mine\n".into(), "albums.layout".into(), "flat".into()).unwrap();
-        assert!(changed.contains("# mine") && preferences(changed)[2].preferences[0].value == "flat");
+        assert!(changed.contains("# mine") && settings_panes(changed).unwrap().album_layout.value == "flat");
         assert!(set_preference(String::new(), "albums.layout".into(), "sideways".into()).is_err());
     }
 
