@@ -261,6 +261,9 @@ lab server on v3.3.6 and v3.2.0, and the machine-learning tests on a server buil
    that runs the contract tests against Immich in Docker (`contract` in `.github/workflows/ci.yml`) is checked in
    an Ubuntu 24.04 container set up as a GitHub runner: `ci.sh` seeded v3.3.6 from an empty fixture cache in four
    minutes, and every contract test passed against it. It has not run on GitHub yet.
+7. **The mount on the grown crate:** the daemon built from the branch mounted the lab server (v3.3.6) on the
+   development host: 50 photos, both albums, Lab Person and the seven countries listed as before, an album's five
+   originals byte-identical to Immich's checksums, and a copy into Upload uploaded before `cp` returned.
 
 ## Package repositories
 
