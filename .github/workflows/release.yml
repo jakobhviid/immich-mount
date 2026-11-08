@@ -414,15 +414,6 @@ jobs:
           gh release create "v$VERSION" "${files[@]}" \
             --title "v$VERSION" --notes-file "$RUNNER_TEMP/notes.md" \
             || gh release upload "v$VERSION" "${files[@]}" --clobber
-      - name: Prune old releases (keep the latest 10, and the newest with a Mac disk image)
-        env:
-          GH_TOKEN: ${{ github.token }}
-        run: |
-          mac=$(ci/latest-mac-release.sh)
-          for tag in $(gh release list --json tagName,createdAt -q 'sort_by(.createdAt) | reverse | .[10:] | .[].tagName'); do
-            [ "$tag" = "$mac" ] && continue
-            gh release delete "$tag" --cleanup-tag -y || true
-          done
       - name: Update Homebrew tap
         env:
           TAP_DEPLOY_KEY: ${{ secrets.TAP_DEPLOY_KEY }}

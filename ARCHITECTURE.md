@@ -1192,7 +1192,7 @@ Urdu and Vietnamese. Portuguese is Brazil's, which both platforms also offer to 
     `ci/version.sh`, gives every job and the Mac build the same number
   - the clippy gate and the tests run first; the build needs them
   - static musl builds for x86_64 and aarch64
-  - releases pruned to the last ten
+  - every release kept, with its tag, files and notes ("Note for the house guidelines")
   - the headless Homebrew formula (`ci/immich-mount-headless.rb.tmpl`) with an x86_64 Linux bottle, pushed to a
     candidate branch of the maintainer's tap (`jakobhviid/homebrew-tap`), whose gate installs and tests it before it
     lands; `brew services` runs the daemon as `homebrew.immich-mount-headless.service`, which `logout` turns off like
@@ -1249,8 +1249,8 @@ release, and run by hand to build the page again without releasing.
 - **The Mac download comes from the newest release with a disk image and its update file**
   (`ci/latest-mac-release.sh`): every release the workflow makes carries both, so that is the latest one, unless its
   Mac job was switched off (`MACOS_RELEASES`). The appcast is made from the same release, so the page never offers a
-  Mac version the installed apps cannot update to; pruning keeps that release among the last ten. Without one, the
-  macOS block says the edition is not released yet, so the page never offers a file that is not there.
+  Mac version the installed apps cannot update to. Without one, the macOS block says the edition is not released
+  yet, so the page never offers a file that is not there.
 - **Nothing is loaded from elsewhere:** no analytics, cookies, web fonts or third-party scripts. The mark, both
   platforms' icons and the README's screenshots (`docs/screenshots/`) are copied in, and the build fails if a local
   link has no file.
@@ -1612,3 +1612,7 @@ run-and-exit command-line tools. These are the deviations, and what they suggest
   to it only as far as Rust style goes.
 - **The release pipeline** runs as specified for the CLI. The desktop app adds native packages (RPM, DEB, AUR) and
   a Linux cask beside the Homebrew formula.
+- **Every release is kept,** where the guidelines prune to the last ten. A busy day cuts more than ten releases, so
+  pruning would leave users no version to roll back to by evening, and would break any formula, cask or package
+  still pointing at an older version's files. GitHub sets no limit on a repository's release storage (only 2 GiB per
+  file), and nothing here reads old releases. The guidelines could drop the pruning step.
