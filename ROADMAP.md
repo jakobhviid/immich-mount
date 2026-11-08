@@ -162,8 +162,11 @@ Dolphin, where it is in Places and shows the seeded thumbnails with no original 
 ## M7. macOS edition
 
 Finder through Apple's File Provider, on the same core (ARCHITECTURE, "The macOS edition"). Released with every
-release since 2.14.2; the milestone closes when the exits below are met. Work that needs no Mac is done on Linux and
-checked by CI's macOS job; the maintainer's Mac is needed only to run and debug it.
+release since 2.14.2. Work that needs no Mac is done on Linux and checked by CI's macOS job; the maintainer's Mac is
+needed only to run and debug it.
+
+**Status (2026-11-08): closed,** tested and stable on the maintainer's Mac. Steps 2, 3 and 5 are met, 5 without the
+install on a second Mac, which the maintainer dropped; what steps 1 and 4 left unseen is in "Open" below.
 
 1. **The first slice.** The bridge crate (`immich-mount-apple`) and the item identifiers; the extension lists
    folders, fetches originals and answers thumbnails; the app signs in with an API key, reaches the server first
@@ -219,6 +222,14 @@ checked by CI's macOS job; the maintainer's Mac is needed only to run and debug 
    Exit: a Mac that never had it installs from Homebrew, switches the extension on, and browses.
 
 Open:
+- **The Local Network prompt,** with a server on the LAN: macOS asks only before an app reaches a local address, so
+  a server whose address is public never brings it (step 1).
+- **How Finder shows a refused upload,** and **signing out with a file waiting in Upload** (removed with
+  `preserveDirtyUserData`: where macOS keeps the file, and that Finder opens that folder) (step 4).
+- **Three points the milestone's review could not check without a Mac:** that a location the system paused after
+  "server unreachable" resumes once the app reports the server back (`signalErrorResolved`); what macOS does with
+  files waiting in Upload when `uploads.enabled` is turned off; and that a reimport after a settings change, which
+  matches items by name, never keeps an old file's bytes under a name that moved to another Asset.
 - **A new item format without a reimport** (ARCHITECTURE, "The macOS edition", "Content"): the reimport leaves
   items unmatched until macOS runs a deferred import. Expiring the change anchor would have the system enumerate
   again without dropping its database; whether that refreshes the items it holds outside the working set is to be
