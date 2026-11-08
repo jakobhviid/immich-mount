@@ -1,0 +1,52 @@
+# Immich Mount
+
+> Immich Mount shows a self-hosted Immich library as a drive in Files, Dolphin and Finder and in every file dialog, with thumbnails from the server and originals downloaded only when opened. For Linux and macOS. Unofficial and independent.
+
+Immich Mount is an independent, unofficial project. It is not affiliated with, endorsed by, or sponsored by the Immich project or FUTO. The complete reference, for people and LLMs, is built into the tool: run `immich-mount --llm`. Immich Mount is one of the software projects by Jakob Hviid, all listed at https://jakob.hviid.phd/software/ (for LLMs: https://jakob.hviid.phd/llms.txt).
+
+## What it does
+
+- **Your library as folders**: the timeline by year and month, albums, people and places, and favorites and archive if switched on, named the way Immich names them.
+- **Thumbnails from the server**, so browsing a folder never downloads the photos in it.
+- **Originals on demand**: a file is fetched only when a program opens it, and only the parts it reads. Folders already visited stay browsable offline.
+- **Uploads by copy and move**: photos and videos dropped into `Upload` are uploaded unchanged. Every other folder is a read-only view of the library.
+- **Native on each desktop**: GTK and libadwaita on GNOME, Kirigami on KDE Plasma, a menu bar app with Finder's sidebar (File Provider) on the Mac. The credential stays in the system keyring.
+- **A command line and a background service** (`immich-mount`, a FUSE filesystem written in Rust), which also run headless.
+- **What it does not do**: sync or mirror the library, edit, rename or delete what is already in Immich, or replace Immich's own apps.
+
+## Install
+
+Needs an Immich server at v3.2 or later. With Homebrew, on Linux (x86_64, GNOME or KDE Plasma) and macOS 14 or later; the tap is trusted once first, as Homebrew 6 and later ask:
+
+```sh
+brew trust --tap jakobhviid/tap
+brew install --cask jakobhviid/tap/immich-mount
+```
+
+On a server, without the desktop app:
+
+```sh
+brew install jakobhviid/tap/immich-mount-headless
+```
+
+Packages for Fedora, Ubuntu and Debian, a static Linux binary, and the macOS disk image are on the download page and in the releases.
+
+## Docs
+
+- [README](https://raw.githubusercontent.com/jakobhviid/immich-mount/main/README.md): what it does, install, getting started, status
+- [WORKFLOWS.md](https://raw.githubusercontent.com/jakobhviid/immich-mount/main/WORKFLOWS.md): what you run: install, sign in, status, doctor, settings, uploading, troubleshooting
+- [SPEC.md](https://raw.githubusercontent.com/jakobhviid/immich-mount/main/SPEC.md): exactly what it does: the mount's layout, names, content, thumbnails, uploads, sign-in, settings, CLI, D-Bus
+- [ARCHITECTURE.md](https://raw.githubusercontent.com/jakobhviid/immich-mount/main/ARCHITECTURE.md): how it is built, and why
+- [PRINCIPLES.md](https://raw.githubusercontent.com/jakobhviid/immich-mount/main/PRINCIPLES.md): the invariants, and what earned them
+- [SECURITY.md](https://raw.githubusercontent.com/jakobhviid/immich-mount/main/SECURITY.md): how to report a vulnerability, and what Immich Mount keeps on your machine
+
+## Optional
+
+- [Download page](https://jakob.hviid.phd/immich-mount/): the page this file accompanies
+- [Source](https://github.com/jakobhviid/immich-mount): MIT licensed
+- [Releases](https://github.com/jakobhviid/immich-mount/releases)
+- [ROADMAP.md](https://raw.githubusercontent.com/jakobhviid/immich-mount/main/ROADMAP.md): milestones, open questions, ideas parked on purpose
+- [DESIGN.md](https://raw.githubusercontent.com/jakobhviid/immich-mount/main/DESIGN.md): the icons, colours, website and screenshots
+- [CREDITS.md](https://raw.githubusercontent.com/jakobhviid/immich-mount/main/CREDITS.md): who this builds on
+- [All software by Jakob Hviid](https://jakob.hviid.phd/software/)
+- [Jakob Hviid's site, for LLMs](https://jakob.hviid.phd/llms.txt)

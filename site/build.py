@@ -178,6 +178,7 @@ def main(release_file, output, mac_release_file=None, update_file=None, notes_fi
     shutil.copy(ROOT / "site" / "style.css", output / "style.css")
     # The mark for the project, and each platform's own icon for that platform (DESIGN.md, "The website").
     shutil.copy(ROOT / "site" / "mark.svg", output / "mark.svg")
+    shutil.copy(ROOT / "site" / "llms.txt", output / "llms.txt")
     shutil.copy(ROOT / "packaging" / "icons" / "dev.hviid.ImmichMount.svg", output / "icon.svg")
     shutil.copy(ROOT / "apple" / "App" / "Assets.xcassets" / "AppIcon.appiconset" / "icon_128x128@2x.png",
                 output / "icon-macos.png")
