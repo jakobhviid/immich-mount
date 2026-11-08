@@ -25,34 +25,42 @@ enum SettingsPane: Int, CaseIterable {
         }
     }
 
-    /// The pane, at its ideal height rather than any it is offered: a grouped form scrolls, so it takes whatever
-    /// height it is given, and the window could not tell how tall the pane wants to be.
+    /// A height for the pane until it has measured itself, and on macOS 14, which cannot tell a form's content
+    /// height.
+    var defaultHeight: CGFloat {
+        switch self {
+        case .general: 200
+        case .folders: 640
+        case .account: 330
+        }
+    }
+
+    /// The pane, telling the window its content's height once laid out, and again whenever it changes.
     @MainActor
-    func view(model: AppModel, settings: SettingsModel, refit: @escaping () -> Void) -> AnyView {
+    func view(model: AppModel, settings: SettingsModel, report: @escaping (CGFloat) -> Void) -> AnyView {
         let pane: AnyView = switch self {
         case .general: AnyView(GeneralPane())
         case .folders: AnyView(FoldersPane())
         case .account: AnyView(AccountPane())
         }
-        return AnyView(
-            pane
-                .fixedSize(horizontal: false, vertical: true)
-                .environment(\.refitSettings, refit)
-                .environmentObject(model)
-                .environmentObject(settings)
-        )
+        return AnyView(pane.reportingContentHeight(report).environmentObject(model).environmentObject(settings))
     }
 }
 
-/// Asks the Settings window to measure the pane shown again, after a change that makes it taller or shorter.
-private struct RefitSettingsKey: EnvironmentKey {
-    static let defaultValue: () -> Void = {}
-}
-
-extension EnvironmentValues {
-    var refitSettings: () -> Void {
-        get { self[RefitSettingsKey.self] }
-        set { self[RefitSettingsKey.self] = newValue }
+extension View {
+    /// The height of a grouped form's content, insets included, as laid out: a form scrolls, so it takes any height
+    /// it is offered and has none of its own to ask, but its scroll geometry tells (macOS 15 and later).
+    @ViewBuilder
+    fileprivate func reportingContentHeight(_ report: @escaping (CGFloat) -> Void) -> some View {
+        if #available(macOS 15, *) {
+            onScrollGeometryChange(for: CGFloat.self) { geometry in
+                geometry.contentSize.height + geometry.contentInsets.top + geometry.contentInsets.bottom
+            } action: { _, height in
+                report(height)
+            }
+        } else {
+            self
+        }
     }
 }
 
@@ -207,7 +215,6 @@ struct FoldersPane: View {
 /// The account: the connection as the menu bar menu tells it, the location, and signing out, or in.
 struct AccountPane: View {
     @EnvironmentObject private var model: AppModel
-    @Environment(\.refitSettings) private var refit
 
     var body: some View {
         Form {
@@ -247,8 +254,6 @@ struct AccountPane: View {
             }
         }
         .formStyle(.grouped)
-        .onChange(of: model.step) { refit() }
-        .onChange(of: model.details) { refit() }
     }
 }
 
@@ -269,16 +274,12 @@ private struct OutsideApplications: View {
 /// Why the last change was refused, in the pane it was made in.
 private struct Refusal: View {
     @EnvironmentObject private var settings: SettingsModel
-    @Environment(\.refitSettings) private var refit
 
     var body: some View {
-        Group {
-            if let message = settings.message {
-                Section {
-                    Text(message).foregroundStyle(.red)
-                }
+        if let message = settings.message {
+            Section {
+                Text(message).foregroundStyle(.red)
             }
         }
-        .onChange(of: settings.message) { refit() }
     }
 }

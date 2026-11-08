@@ -304,23 +304,30 @@ final class AppDelegate: NSObject, NSApplicationDelegate, SPUUpdaterDelegate,
     }
 }
 
-/// The Settings window's panes, switched by its toolbar (`SettingsPane`). Each pane is measured as it is chosen, after
-/// its layout, and the window takes that size; a window that follows its SwiftUI content during layout is laid out
-/// again without end as the content changes, which stopped the app on macOS 27.
+/// The Settings window's panes, switched by its toolbar (`SettingsPane`). Each pane tells its content's height once
+/// laid out, and again when it changes (signing in or out, a refusal); the window takes the height of the pane shown,
+/// keeping its top edge. Resizing the window changes no pane's content, so this ends; a window that followed its
+/// SwiftUI content's layout instead was laid out again without end on macOS 27.
 final class SettingsTabController: NSTabViewController {
     /// The pane last chosen, in the app's own defaults.
     private static let lastPaneKey = "SettingsPane"
     private static let width: CGFloat = 520
+    /// The tallest the window grows for a pane; beyond it the pane scrolls.
+    private static let tallest: CGFloat = 720
+
+    /// Each pane's content height, as it last told it.
+    private var heights: [SettingsPane: CGFloat] = [:]
 
     init(model: AppModel) {
         super.init(nibName: nil, bundle: nil)
         tabStyle = .toolbar
         let settings = SettingsModel()
         for pane in SettingsPane.allCases {
-            let refit: () -> Void = { [weak self] in self?.refitShownPane() }
-            let hosting = NSHostingController(rootView: pane.view(model: model, settings: settings, refit: refit))
+            let report: (CGFloat) -> Void = { [weak self] height in self?.pane(pane, measures: height) }
+            let hosting = NSHostingController(rootView: pane.view(model: model, settings: settings, report: report))
             hosting.sizingOptions = []
             hosting.title = pane.title
+            hosting.preferredContentSize = NSSize(width: Self.width, height: pane.defaultHeight)
             let item = NSTabViewItem(viewController: hosting)
             item.label = pane.title
             item.image = NSImage(systemSymbolName: pane.symbol, accessibilityDescription: pane.title)
@@ -328,7 +335,6 @@ final class SettingsTabController: NSTabViewController {
         }
         let last = UserDefaults.standard.integer(forKey: Self.lastPaneKey)
         selectedTabViewItemIndex = SettingsPane(rawValue: last) == nil ? 0 : last
-        fit(tabViewItems[selectedTabViewItemIndex])
     }
 
     @available(*, unavailable)
@@ -336,32 +342,20 @@ final class SettingsTabController: NSTabViewController {
         fatalError("not made from a nib")
     }
 
-    override func tabView(_ tabView: NSTabView, willSelect tabViewItem: NSTabViewItem?) {
-        if let tabViewItem { fit(tabViewItem) }
-        super.tabView(tabView, willSelect: tabViewItem)
-    }
-
     override func tabView(_ tabView: NSTabView, didSelect tabViewItem: NSTabViewItem?) {
         super.tabView(tabView, didSelect: tabViewItem)
         UserDefaults.standard.set(selectedTabViewItemIndex, forKey: Self.lastPaneKey)
     }
 
-    /// The pane's own height for the window's width (its view is fixed at its ideal height), up to what keeps a long
-    /// one on screen.
-    private func fit(_ item: NSTabViewItem) {
-        guard let hosting = item.viewController as? NSHostingController<AnyView> else { return }
-        let ideal = hosting.sizeThatFits(in: NSSize(width: Self.width, height: 10_000))
-        hosting.preferredContentSize = NSSize(width: Self.width, height: min(max(ideal.height, 120), 680))
-    }
-
-    /// Measure the pane shown again, after a change that makes it taller or shorter (signing in or out, a refusal),
-    /// and give the window that height, keeping its top edge. Run after the change's layout pass, never during it.
-    func refitShownPane() {
+    /// Keep a pane's height, and give the window that height when the pane is the one shown. After the layout pass
+    /// that measured it, never during it.
+    private func pane(_ pane: SettingsPane, measures height: CGFloat) {
+        let height = min(max(height.rounded(.up), 120), Self.tallest)
+        guard heights[pane] != height else { return }
+        heights[pane] = height
+        tabViewItems[pane.rawValue].viewController?.preferredContentSize = NSSize(width: Self.width, height: height)
         DispatchQueue.main.async { [weak self] in
-            guard let self, tabViewItems.indices.contains(selectedTabViewItemIndex) else { return }
-            let item = tabViewItems[selectedTabViewItemIndex]
-            fit(item)
-            guard let window = view.window, let height = item.viewController?.preferredContentSize.height else { return }
+            guard let self, selectedTabViewItemIndex == pane.rawValue, let window = view.window else { return }
             let content = window.contentRect(forFrameRect: window.frame)
             guard abs(content.height - height) > 0.5 else { return }
             var frame = window.frameRect(forContentRect: NSRect(x: content.minX, y: content.minY, width: content.width, height: height))
