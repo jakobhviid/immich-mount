@@ -64,9 +64,10 @@ sharing and editing stay in Immich's web and mobile apps.
 
 One app, which opens in the interface native to your desktop: Kirigami on KDE Plasma, GTK and libadwaita everywhere
 else. With Homebrew (any Linux that has it, Bazzite included, with nothing layered onto the system), one command
-installs all of it, and **Immich Mount** is then in the app grid:
+installs all of it once the tap is trusted, and **Immich Mount** is then in the app grid:
 
 ```sh
+brew trust --tap jakobhviid/tap   # once: Homebrew 6 and later load a third-party tap only when trusted
 brew install jakobhviid/tap/immich-mount
 ```
 

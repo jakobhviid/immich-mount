@@ -136,8 +136,10 @@
         <div class="platform" id="linux">
           <h3><img src="icon.svg" alt="" width="44" height="44">Linux <span class="yours">for your system</span></h3>
           <p>With <a href="https://brew.sh">Homebrew</a>, on any Linux that has it (Bazzite included, with nothing
-            layered onto the system), one command installs the app, the drive and the command line:</p>
-          <pre class="command"><code>brew install jakobhviid/tap/immich-mount</code></pre>
+            layered onto the system), the tap is trusted once, as Homebrew 6 and later ask, and one command then
+            installs the app, the drive and the command line:</p>
+          <pre class="command"><code>brew trust --tap jakobhviid/tap
+brew install jakobhviid/tap/immich-mount</code></pre>
           <p>Or the packages of version {{version}}:</p>
           <table>
             <tr><th>Fedora 44</th><td>{{fedora}}</td></tr>
@@ -171,7 +173,8 @@
       <a href="https://github.com/jakobhviid/immich-mount/blob/main/CREDITS.md">CREDITS.md</a>.</p>
     <p><strong>AI disclosure.</strong> Parts of this project were written with the assistance of AI coding agents. All
       changes are reviewed by the maintainer.</p>
-    <p>MIT license. By Jakob Hviid.</p>
+    <p>MIT license. By <a href="https://jakob.hviid.phd/">Jakob Hviid</a>, whose other software is at
+      <a href="https://jakob.hviid.phd/software/">jakob.hviid.phd/software</a>.</p>
   </footer>
 
   <script>
