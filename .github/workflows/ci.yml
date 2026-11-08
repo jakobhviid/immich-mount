@@ -48,7 +48,7 @@ jobs:
           path: lab/immich-server/fixtures/cache
           key: fixtures-${{ hashFiles('lab/immich-server/fixtures/manifest.json') }}
       - name: Fixtures, every one (the contract tests count both videos)
-        run: FIXTURES_ALL=1 lab/immich-server/fixtures.sh
+        run: FIXTURES_ALL=1 FIXTURES_LENIENT=1 lab/immich-server/fixtures.sh
       - name: Save the fixture cache
         if: steps.fixtures.outputs.cache-hit != 'true'
         uses: actions/cache/save@v4

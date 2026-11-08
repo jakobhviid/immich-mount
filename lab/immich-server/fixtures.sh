@@ -7,6 +7,9 @@
 # Env: WIKIMEDIA_UA, the User-Agent for Commons downloads (their policy asks for a descriptive one).
 #      FIXTURES_ALL=1 makes the optional files required too, waiting out Commons' Retry-After (CI: the contract
 #      tests count both videos).
+#      FIXTURES_LENIENT=1 keeps a file whose sha1 differs when it is still a JPEG or WebM, with a warning: GitHub's
+#      runners are served another rendition of one photo (002.jpg) by Commons, every time, while the lab gets the
+#      pinned one (seen 2026-11-08). CI needs a photo, not those exact bytes.
 set -euo pipefail
 
 HERE=$(cd "$(dirname "$0")" && pwd)
@@ -37,7 +40,14 @@ while IFS=$'\t' read -r url file sha1 optional; do
     echo "         sha1 mismatch for $file on attempt $attempt: $got" >&2
     sleep $(( attempt * 10 ))
   done
-  [ "$got" = "$sha1" ] || { echo "sha1 mismatch for $url: $got (manifest $sha1)" >&2; exit 1; }
+  if [ "$got" != "$sha1" ]; then
+    magic=$(head -c 4 "$f.part" | od -An -tx1 | tr -d ' \n')
+    if [ "${FIXTURES_LENIENT:-}" = 1 ] && case $magic in ffd8ff*|1a45dfa3) true ;; *) false ;; esac; then
+      echo "         kept $file, another rendition (sha1 $got, manifest $sha1)" >&2
+    else
+      echo "sha1 mismatch for $url: $got (manifest $sha1)" >&2; exit 1
+    fi
+  fi
   mv "$f.part" "$f"; echo "         fetched $file"
   sleep 1   # be gentle with Commons
 done
