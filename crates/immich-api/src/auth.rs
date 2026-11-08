@@ -77,6 +77,14 @@ struct MeWire {
     email: String,
 }
 
+pub(crate) const ENDPOINTS: &[crate::wire::Endpoint] = crate::wire::endpoints![
+    POST "/auth/login" -,
+    POST "/auth/logout" -,
+    POST "/oauth/authorize" -,
+    POST "/oauth/callback" -,
+    GET "/users/me" "user.read",
+];
+
 impl Client {
     /// Sign in with email and password (`POST /auth/login`). Immich has no second factor on this path.
     pub async fn login_password(&self, email: &str, password: &str) -> Result<LoginResponse, ApiError> {

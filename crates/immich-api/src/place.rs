@@ -15,6 +15,10 @@ fn names(suggestions: Vec<Option<String>>) -> Vec<String> {
         .collect()
 }
 
+pub(crate) const ENDPOINTS: &[crate::wire::Endpoint] = crate::wire::endpoints![
+    GET "/search/suggestions" "asset.read",
+];
+
 impl Client {
     /// Every country with at least one Asset, sorted by the server.
     pub async fn countries(&self) -> Result<Vec<String>, ApiError> {

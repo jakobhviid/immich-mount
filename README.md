@@ -199,7 +199,8 @@ procedures in `.claude/skills/`.
 
 - Inspired by **[Kartax/immich-desktop-app](https://github.com/Kartax/immich-desktop-app)**, which shows an Immich
   library as a drive in Finder on macOS. Thank you, Kartax.
-- The Immich API layer started from **[immich-rs](https://github.com/boul2gom/immich-rs)** (MIT).
+- The Immich API layer started from **[immich-rs](https://github.com/boul2gom/immich-rs)** (MIT), and learned the
+  rest of the API from **[ImmichGallery](https://github.com/IGOLz/ImmichGallery)** and **[Mimick](https://github.com/nicx17/mimick)**.
 - **[Immich](https://github.com/immich-app/immich)**, the server all of this talks to.
 - The photographers on **Wikimedia Commons** whose freely licensed photos fill the test server and the screenshots
   ([credited one by one](lab/immich-server/fixtures/ATTRIBUTION.md)).

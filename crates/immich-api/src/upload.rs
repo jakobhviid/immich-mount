@@ -179,6 +179,11 @@ fn into_checks(answer: BulkCheckAnswerWire, sent: usize) -> Result<Vec<UploadChe
         .collect()
 }
 
+pub(crate) const ENDPOINTS: &[crate::wire::Endpoint] = crate::wire::endpoints![
+    POST "/assets/bulk-upload-check" "asset.upload",
+    POST "/assets" "asset.upload",
+];
+
 impl Client {
     /// Ask whether files with these checksums (hex or base64) are already in the library
     /// (`POST /assets/bulk-upload-check`). Results come back in the order given. Needs `asset.upload`.

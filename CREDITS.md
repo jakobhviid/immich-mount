@@ -12,6 +12,12 @@ between the two. Thank you, Kartax.
 - **[immich-rs](https://github.com/boul2gom/immich-rs)** by boul2gom (MIT OR Apache-2.0): our Immich API layer
   (`immich-api`) started from parts of it, taken at commit `60d1eb3` and adapted under the MIT license. Its notice
   is in [THIRD-PARTY-NOTICES.md](THIRD-PARTY-NOTICES.md).
+- **[ImmichGallery](https://github.com/IGOLz/ImmichGallery)** by Alessandro Craciun (MIT), a native macOS client for
+  Immich: its API client showed which endpoints a full client needs and the requests it sends, which shaped the
+  parts of `immich-api` beyond the mount's own. No code is copied.
+- **[Mimick](https://github.com/nicx17/mimick)** by nicx17 (GPL-3.0), an Immich client for GNOME in Rust: read for
+  the further endpoints a Linux client uses (OCR, statistics, places). Nothing is copied: its license differs from
+  ours.
 - **[Sparkle](https://sparkle-project.org)** (MIT): the macOS app's updates. Its notice, with those of the parts it
   includes, is in [THIRD-PARTY-NOTICES.md](THIRD-PARTY-NOTICES.md), which the app carries.
 - **The Rust crates we depend on** are listed with their licenses in `THIRD-PARTY-LICENSES.md`, which every

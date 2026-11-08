@@ -46,6 +46,35 @@ pub(crate) fn optional_utc(text: Option<&str>) -> Option<DateTime<Utc>> {
     text.and_then(parse_utc)
 }
 
+/// Serde helpers for model fields, so the lenient parsers above apply wherever a model holds a date.
+///
+/// Models decode with a struct-level `#[serde(default)]`, so a missing or unreadable date falls back to the
+/// field's default (the Unix epoch for an instant, `None` for an optional one) instead of failing the answer.
+pub(crate) mod serde_dates {
+    use chrono::{DateTime, NaiveDateTime, Utc};
+    use serde::{Deserialize, Deserializer};
+
+    /// An instant; an unreadable one decodes as the Unix epoch.
+    pub(crate) fn utc<'de, D: Deserializer<'de>>(deserializer: D) -> Result<DateTime<Utc>, D::Error> {
+        let text = Option::<String>::deserialize(deserializer)?;
+        Ok(text.as_deref().and_then(super::parse_utc).unwrap_or_default())
+    }
+
+    /// An optional instant; an unreadable one decodes as `None`.
+    pub(crate) fn optional_utc<'de, D: Deserializer<'de>>(deserializer: D) -> Result<Option<DateTime<Utc>>, D::Error> {
+        let text = Option::<String>::deserialize(deserializer)?;
+        Ok(text.as_deref().and_then(super::parse_utc))
+    }
+
+    /// An optional wall-clock time (Immich's `localDateTime`, with its fake `Z` dropped).
+    pub(crate) fn optional_wall_clock<'de, D: Deserializer<'de>>(
+        deserializer: D,
+    ) -> Result<Option<NaiveDateTime>, D::Error> {
+        let text = Option::<String>::deserialize(deserializer)?;
+        Ok(text.as_deref().and_then(super::parse_wall_clock))
+    }
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;

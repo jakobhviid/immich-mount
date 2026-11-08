@@ -38,6 +38,13 @@ impl From<String> for AssetKind {
     }
 }
 
+impl Default for AssetKind {
+    /// A kind the server did not say.
+    fn default() -> Self {
+        AssetKind::Other(String::new())
+    }
+}
+
 impl<'de> Deserialize<'de> for AssetKind {
     fn deserialize<D: serde::Deserializer<'de>>(deserializer: D) -> Result<Self, D::Error> {
         String::deserialize(deserializer).map(AssetKind::from)
@@ -89,6 +96,18 @@ impl<'de> Deserialize<'de> for Visibility {
     fn deserialize<D: serde::Deserializer<'de>>(deserializer: D) -> Result<Self, D::Error> {
         String::deserialize(deserializer).map(Visibility::from)
     }
+}
+
+impl serde::Serialize for Visibility {
+    fn serialize<S: serde::Serializer>(&self, serializer: S) -> Result<S::Ok, S::Error> {
+        serializer.serialize_str(self.as_str())
+    }
+}
+
+/// A model field holding a duration, in either spelling ([`DurationWire`]), as milliseconds.
+pub(crate) fn duration_ms<'de, D: serde::Deserializer<'de>>(deserializer: D) -> Result<Option<u64>, D::Error> {
+    let wire = Option::<DurationWire>::deserialize(deserializer)?;
+    Ok(wire.as_ref().and_then(DurationWire::to_milliseconds))
 }
 
 /// One photo or video.
@@ -251,6 +270,10 @@ impl AssetWire {
         })
     }
 }
+
+pub(crate) const ENDPOINTS: &[crate::wire::Endpoint] = crate::wire::endpoints![
+    GET "/assets/{id}" "asset.read",
+];
 
 impl Client {
     /// One Asset by id (`GET /assets/{id}`).

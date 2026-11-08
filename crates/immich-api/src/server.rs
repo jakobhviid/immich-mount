@@ -67,6 +67,14 @@ struct MediaTypesWire {
     video: Vec<String>,
 }
 
+pub(crate) const ENDPOINTS: &[crate::wire::Endpoint] = crate::wire::endpoints![
+    GET "/server/version" -,
+    GET "/server/features" -,
+    GET "/server/config" -,
+    GET "/server/media-types" -,
+    GET "/api-keys/me" -,
+];
+
 impl Client {
     /// The server's version (`GET /server/version`). Needs no credential.
     pub async fn server_version(&self) -> Result<ServerVersion, ApiError> {

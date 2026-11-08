@@ -253,6 +253,11 @@ fn into_bucket_assets(columns: BucketColumns) -> Result<Vec<BucketAsset>, ApiErr
         .collect()
 }
 
+pub(crate) const ENDPOINTS: &[crate::wire::Endpoint] = crate::wire::endpoints![
+    GET "/timeline/buckets" "asset.read",
+    GET "/timeline/bucket" "asset.read",
+];
+
 impl Client {
     /// The months of a timeline and how many Assets each holds, newest first (`GET /timeline/buckets`).
     pub async fn time_buckets(&self, scope: &TimelineScope) -> Result<Vec<TimeBucket>, ApiError> {

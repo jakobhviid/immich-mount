@@ -315,6 +315,65 @@ impl Client {
     }
 }
 
+impl Client {
+    /// A request to an endpoint, refusing an empty path segment: an id that decoded empty must never turn
+    /// `/albums/{id}` into `/albums/`, which is another endpoint. No timeout is set; the caller sets one.
+    pub(crate) fn checked_request(&self, method: Method, segments: &[&str]) -> Result<RequestBuilder, ApiError> {
+        if let Some(position) = segments.iter().position(|segment| segment.trim().is_empty()) {
+            return Err(ApiError::Protocol(format!(
+                "internal: an empty path segment {position} for {}",
+                segments.join("/")
+            )));
+        }
+        Ok(self.request(method, segments))
+    }
+
+    /// Call an endpoint without a body and decode its JSON answer.
+    pub(crate) async fn call<T: DeserializeOwned>(
+        &self,
+        method: Method,
+        segments: &[&str],
+        query: &[(&str, &str)],
+    ) -> Result<T, ApiError> {
+        let builder = self.checked_request(method, segments)?.timeout(REQUEST_TIMEOUT).query(query);
+        let response = check(self.execute(builder).await?, RequestShape::Plain).await?;
+        read_json(response, &segments.join("/")).await
+    }
+
+    /// Call an endpoint with a JSON body and decode its JSON answer.
+    pub(crate) async fn call_with<Body: Serialize + ?Sized, T: DeserializeOwned>(
+        &self,
+        method: Method,
+        segments: &[&str],
+        query: &[(&str, &str)],
+        body: &Body,
+    ) -> Result<T, ApiError> {
+        let builder = self.checked_request(method, segments)?.timeout(REQUEST_TIMEOUT).query(query).json(body);
+        let response = check(self.execute(builder).await?, RequestShape::Plain).await?;
+        read_json(response, &segments.join("/")).await
+    }
+
+    /// Call an endpoint without a body and ignore the answer's body.
+    pub(crate) async fn call_unit(&self, method: Method, segments: &[&str], query: &[(&str, &str)]) -> Result<(), ApiError> {
+        let builder = self.checked_request(method, segments)?.timeout(REQUEST_TIMEOUT).query(query);
+        check(self.execute(builder).await?, RequestShape::Plain).await?;
+        Ok(())
+    }
+
+    /// Call an endpoint with a JSON body and ignore the answer's body.
+    pub(crate) async fn call_unit_with<Body: Serialize + ?Sized>(
+        &self,
+        method: Method,
+        segments: &[&str],
+        query: &[(&str, &str)],
+        body: &Body,
+    ) -> Result<(), ApiError> {
+        let builder = self.checked_request(method, segments)?.timeout(REQUEST_TIMEOUT).query(query).json(body);
+        check(self.execute(builder).await?, RequestShape::Plain).await?;
+        Ok(())
+    }
+}
+
 /// Turn a non-success response into its [`ApiError`]; pass a success through.
 pub(crate) async fn check(response: Response, shape: RequestShape) -> Result<Response, ApiError> {
     let status = response.status();
@@ -338,7 +397,15 @@ pub(crate) async fn check(response: Response, shape: RequestShape) -> Result<Res
 /// Read and decode a JSON body, naming the endpoint in the error.
 pub(crate) async fn read_json<T: DeserializeOwned>(response: Response, endpoint: &str) -> Result<T, ApiError> {
     let body = response.bytes().await.map_err(|error| from_transport(&error))?;
-    serde_json::from_slice(&body).map_err(|error| ApiError::Protocol(format!("decoding the answer of {endpoint}: {error}")))
+    decode_json(&body, endpoint)
+}
+
+/// Decode a JSON answer leniently: `null` members count as missing ([`crate::wire::strip_nulls`]).
+pub(crate) fn decode_json<T: DeserializeOwned>(body: &[u8], endpoint: &str) -> Result<T, ApiError> {
+    let protocol = |error: serde_json::Error| ApiError::Protocol(format!("decoding the answer of {endpoint}: {error}"));
+    let mut value: serde_json::Value = serde_json::from_slice(body).map_err(protocol)?;
+    crate::wire::strip_nulls(&mut value);
+    serde_json::from_value(value).map_err(protocol)
 }
 
 /// A response header as text, if present and readable.

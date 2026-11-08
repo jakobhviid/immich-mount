@@ -125,6 +125,10 @@ fn into_page(wire: SearchAnswerWire) -> Result<AssetPage, ApiError> {
     Ok(AssetPage { assets, next_cursor })
 }
 
+pub(crate) const ENDPOINTS: &[crate::wire::Endpoint] = crate::wire::endpoints![
+    POST "/search/metadata" "asset.read",
+];
+
 impl Client {
     /// One page of Assets matching `query` (`POST /search/metadata`). `page_size` is clamped to 1..=1000.
     pub async fn search_assets(

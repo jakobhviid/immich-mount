@@ -6,7 +6,7 @@
 //!
 //! v3.3.5 sends `updatedAt` but no `createdAt` for a person; `created_at` is kept for servers that send it.
 
-use chrono::{DateTime, Utc};
+use chrono::{DateTime, NaiveDate, Utc};
 use serde::Deserialize;
 
 use crate::asset::non_blank;
@@ -21,13 +21,19 @@ const PEOPLE_PAGE_SIZE: &str = "1000";
 const MAX_PEOPLE_PAGES: u32 = 1000;
 
 /// A person, as recognised by face detection or created by hand.
-#[derive(Debug, Clone, PartialEq, Eq)]
+#[derive(Debug, Clone, PartialEq, Eq, Deserialize)]
+#[serde(try_from = "PersonWire")]
 pub struct Person {
     pub id: String,
     /// Empty for a person nobody has named.
     pub name: String,
     pub is_hidden: bool,
     pub is_favorite: bool,
+    pub birth_date: Option<NaiveDate>,
+    /// The face crop's path on the server; fetch the picture with [`Client::person_thumbnail`].
+    pub thumbnail_path: String,
+    /// A colour chosen for the person, as CSS text (`#d3a4f7`), when one was.
+    pub color: Option<String>,
     /// Not sent by v3.3.5.
     pub created_at: Option<DateTime<Utc>>,
     pub updated_at: Option<DateTime<Utc>>,
@@ -47,8 +53,19 @@ struct PersonWire {
     name: Option<String>,
     is_hidden: Option<bool>,
     is_favorite: Option<bool>,
+    birth_date: Option<String>,
+    thumbnail_path: Option<String>,
+    color: Option<String>,
     created_at: Option<String>,
     updated_at: Option<String>,
+}
+
+impl TryFrom<PersonWire> for Person {
+    type Error = ApiError;
+
+    fn try_from(wire: PersonWire) -> Result<Person, ApiError> {
+        wire.into_person()
+    }
 }
 
 impl PersonWire {
@@ -59,11 +76,21 @@ impl PersonWire {
             name: self.name.unwrap_or_default(),
             is_hidden: self.is_hidden.unwrap_or(false),
             is_favorite: self.is_favorite.unwrap_or(false),
+            birth_date: self
+                .birth_date
+                .as_deref()
+                .and_then(|text| NaiveDate::parse_from_str(text.get(..10).unwrap_or(text), "%Y-%m-%d").ok()),
+            thumbnail_path: self.thumbnail_path.unwrap_or_default(),
+            color: non_blank(self.color),
             created_at: optional_utc(self.created_at.as_deref()),
             updated_at: optional_utc(self.updated_at.as_deref()),
         })
     }
 }
+
+pub(crate) const ENDPOINTS: &[crate::wire::Endpoint] = crate::wire::endpoints![
+    GET "/people" "person.read",
+];
 
 impl Client {
     /// Every person, hidden ones included (`GET /people?withHidden=true`, all pages).
@@ -106,6 +133,9 @@ mod tests {
                 name: "Lab Person".to_owned(),
                 is_hidden: false,
                 is_favorite: false,
+                birth_date: None,
+                thumbnail_path: person.thumbnail_path.clone(),
+                color: person.color.clone(),
                 created_at: None,
                 updated_at: parse_utc("2026-11-01T21:02:04.237574+00:00"),
             }

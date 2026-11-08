@@ -241,6 +241,23 @@ Open:
 - **A command line on macOS** (`status`, `doctor`), or none: the sandbox keeps the store and the credential out of
   reach of a plain program.
 
+## The full Immich API
+
+`immich-api` grows from the mount's endpoints to the API a full Immich client needs, so later apps (a gallery, or
+more of the mount) build on one tested layer (ARCHITECTURE.md, "The Immich API layer"). In phases, each with its
+contract tests against the lab server on the current version and the floor:
+1. **Albums, changing Assets, the trash, edits, metadata, tags, the map, video playback.** Built; contract tests
+   and the spec check pass on v3.3.6.
+2. **People and faces, stacks, duplicates, memories, search (smart, explore, suggestions, places, random,
+   statistics), folders, downloads.**
+3. **Sharing:** shared links, partners, album comments and likes.
+4. **The account:** the user and their preferences, profile picture, password, sessions, API keys, PIN code and
+   the locked folder, notifications.
+5. **Administration:** users, queues and jobs, external libraries, server statistics, storage and version
+   history.
+6. **Around it:** the contract tests on v3.2.0, a lab server with machine learning (`up.sh --ml`) for smart
+   search, faces, OCR and duplicates, and a CI job that runs the contract tests against Immich in Docker.
+
 ## Package repositories
 
 The real fix for updates on Linux (ARCHITECTURE.md, "Updates on Linux"): with a repository behind the packages, GNOME

@@ -820,9 +820,39 @@ The core holds the Immich side of sign-in. Catching the redirect is per platform
 
 ## The Immich API layer
 
-`immich-api` holds the client and models for the endpoints we use. They are copied from
-[immich-rs](https://github.com/boul2gom/immich-rs) (MIT, generated from the Immich v3.3.5 OpenAPI spec, commit
-`60d1eb3`) and adapted. From then on they are our own code.
+`immich-api` holds the client and models for Immich's API: the endpoints the mount uses, and the rest of the API a
+full client needs (albums and their members, changing Assets, the trash, edits, people and faces, tags, stacks,
+duplicates, memories, the map, search, folders, downloads, sharing, the account, and administration). The mount
+calls only its own part; the rest is there so other apps can be built on the same tested layer (the maintainer's
+choice, 2026-11). The mount's endpoints are copied from [immich-rs](https://github.com/boul2gom/immich-rs) (MIT,
+generated from the Immich v3.3.5 OpenAPI spec, commit `60d1eb3`) and adapted; the rest are written here from the
+OpenAPI spec, with the choice of endpoints and their request shapes learned from two clients: ImmichGallery (MIT) and
+Mimick (GPL-3.0, read, never copied). From then on all of it is our own code.
+
+**How the whole API is kept honest:**
+- **One table** (`immich_api::endpoints()`) lists every endpoint the crate calls with the API-key permission Immich
+  requires, and each method's documentation names the same permission.
+- **The spec check** (`tests/contract_spec.rs`) reads the server's own `/api/spec.json` and fails when an endpoint is
+  missing or needs another permission. It runs against each supported version, so a renamed or removed endpoint
+  shows up before a user meets it, and it prints the deprecated endpoints still in use.
+- **A contract test per endpoint** against the lab server (`tests/contract*.rs`). Tests that change the library put
+  it back before they end, and the lab restores its seeded snapshot before each session.
+- **The read-only key** is refused every change, and the test checks that the server names the permission the table
+  names.
+- **Deprecated endpoints** are used where v3.2 has nothing else (`PUT /assets/{id}`, `PUT /tags/{id}`, and others);
+  the spec check lists them, and they move when the floor does.
+- **New models** decode with a struct-level `serde(default)`, and `null` counts as missing, so a field absent on one
+  version or `null` on another never breaks an answer. An enum keeps a value it does not know. A model's id may
+  decode empty, so the client refuses an empty path segment before sending: `/albums/{id}` can never become
+  `/albums/`.
+
+**Left out on purpose,** until something needs them: cluster groups, workflows, plugins, database backups,
+maintenance mode, the system configuration, licenses, onboarding, admin email templates, asset files, and the HLS
+video stream (`/video/playback` serves players that read ranges). Each is a module and a contract test away.
+
+**Not chosen: a client generated from the OpenAPI spec.** It would cover every endpoint at once, but the spec marks
+fields required that older servers leave out, has no notion of the quirks below, and would give every caller
+generated types instead of the error kinds and models the mount branches on.
 
 **What is copied:**
 - the models for the timeline buckets (with album and person filters), search, people, albums and suggestions

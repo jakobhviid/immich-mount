@@ -92,19 +92,43 @@ fn validate_partial(
     Ok(total)
 }
 
+pub(crate) const ENDPOINTS: &[crate::wire::Endpoint] = crate::wire::endpoints![
+    GET "/assets/{id}/original" "asset.download",
+    GET "/assets/{id}/thumbnail" "asset.view",
+    GET "/assets/{id}/video/playback" "asset.view",
+];
+
 impl Client {
     /// Bytes `start..=end_inclusive` of an Asset's original (`GET /assets/{id}/original` with `Range`).
     ///
     /// Errors: [`ApiError::RangeNotSatisfiable`] when `start` is past the end (refetch the size), and
     /// [`ApiError::NotFound`] when the Asset is gone.
     pub async fn original_range(&self, id: &str, start: u64, end_inclusive: u64) -> Result<RangeResponse, ApiError> {
+        self.fetch_range(&["assets", id, "original"], start, end_inclusive).await
+    }
+
+    /// Bytes `start..=end_inclusive` of a video as Immich plays it (`GET /assets/{id}/video/playback` with
+    /// `Range`): the transcoded version when the server made one, else the original. For a player that reads
+    /// ranges. Needs `asset.view`.
+    pub async fn video_playback_range(&self, id: &str, start: u64, end_inclusive: u64) -> Result<RangeResponse, ApiError> {
+        self.fetch_range(&["assets", id, "video", "playback"], start, end_inclusive).await
+    }
+
+    /// A video as Immich plays it, written whole to `destination` (`GET /assets/{id}/video/playback`); returns the
+    /// bytes written. Failures as for [`Client::download_original`]. Needs `asset.view`.
+    pub async fn download_video_playback(&self, id: &str, destination: &Path) -> Result<u64, ApiError> {
+        let builder = self.checked_request(Method::GET, &["assets", id, "video", "playback"])?;
+        self.download_to(builder, destination).await
+    }
+
+    async fn fetch_range(&self, segments: &[&str], start: u64, end_inclusive: u64) -> Result<RangeResponse, ApiError> {
         if start > end_inclusive {
             return Err(ApiError::Protocol(format!(
                 "an empty range was asked for: {start}-{end_inclusive}"
             )));
         }
         let builder = self
-            .request(Method::GET, &["assets", id, "original"])
+            .checked_request(Method::GET, segments)?
             .header(RANGE, format!("bytes={start}-{end_inclusive}"))
             .timeout(REQUEST_TIMEOUT);
         let response = check(self.execute(builder).await?, RequestShape::Ranged).await?;
@@ -144,6 +168,11 @@ impl Client {
     /// part of the original, and the caller removes it.
     pub async fn download_original(&self, id: &str, destination: &Path) -> Result<u64, ApiError> {
         let builder = self.request(Method::GET, &["assets", id, "original"]);
+        self.download_to(builder, destination).await
+    }
+
+    /// Send a request whose answer is a file, and write the file to `destination` as it arrives.
+    pub(crate) async fn download_to(&self, builder: reqwest::RequestBuilder, destination: &Path) -> Result<u64, ApiError> {
         let answer = tokio::time::timeout(DOWNLOAD_STALL_LIMIT, self.execute(builder))
             .await
             .map_err(|_| ApiError::Offline("the server did not answer the download".to_owned()))??;

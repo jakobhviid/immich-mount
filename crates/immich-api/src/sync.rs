@@ -242,6 +242,11 @@ impl SyncStream {
     }
 }
 
+pub(crate) const ENDPOINTS: &[crate::wire::Endpoint] = crate::wire::endpoints![
+    POST "/sync/stream" "sync.stream",
+    POST "/sync/ack" "syncCheckpoint.update",
+];
+
 impl Client {
     /// Open the sync stream for `types` (wire names such as `"AssetsV2"`). `reset` starts over from scratch.
     ///
