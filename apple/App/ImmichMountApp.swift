@@ -317,7 +317,7 @@ final class SettingsTabController: NSTabViewController {
         tabStyle = .toolbar
         let settings = SettingsModel()
         for pane in SettingsPane.allCases {
-            let refit = { [weak self] in self?.refitShownPane() }
+            let refit: () -> Void = { [weak self] in self?.refitShownPane() }
             let hosting = NSHostingController(rootView: pane.view(model: model, settings: settings, refit: refit))
             hosting.sizingOptions = []
             hosting.title = pane.title
