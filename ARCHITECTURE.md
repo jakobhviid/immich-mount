@@ -1366,8 +1366,8 @@ when opened, eviction under storage pressure, the Finder sidebar and every file 
     again without end as the content changes, which stopped the app (macOS 27). Settings, whose form scrolls, has a
     size of its own.
   - **Opened by someone** (from Finder, Launchpad or Spotlight), it shows what is left to do, or Settings once
-    nothing is; started at login, or again by Sparkle after an update (it marks that as the update begins), it only
-    takes its place in the menu bar. Settings is a window of its own, which
+    nothing is; started at login, or for the first time after an update (its build differs from the one it last
+    ran, which it keeps), it only takes its place in the menu bar. Settings is a window of its own, which
     the menu, the app menu's Command-comma and reopening all reach; "Open at login" is there, under General.
   - **While a window is open** (the sign-in, Settings, About) it has a Dock icon and its menus, so Command-Q and
     pasting work as anywhere; with the last one closed it is in the menu bar only.
