@@ -8,8 +8,8 @@ mod common;
 use common::{assert_refused, client_with, env, full, readonly, timeline_ids};
 use immich_api::{
     ActivityFilter, ActivityKind, AlbumFilter, AlbumRole, ApiError, Client, Credential, LibrarySettings, LinkAddress,
-    ManualJob, NewAlbum, NewMember, NewSharedLink, NewUser, NotificationFilter, PartnerDirection, Proof, QueueName,
-    SharedLinkChanges, ThumbnailSize, UserChanges,
+    ManualJob, NewAlbum, NewMember, NewSharedLink, NewUser, NotificationFilter, PartnerDirection, Proof, QueueCommand,
+    QueueName, SharedLinkChanges, ThumbnailSize, UserChanges,
 };
 
 /// A throwaway second user, signed in with a password session.
@@ -387,6 +387,14 @@ async fn queues_libraries_and_the_server() {
     admin.queued_jobs(&QueueName::ThumbnailGeneration).await.unwrap();
     admin.clear_queue(&QueueName::Library, false).await.unwrap();
     admin.start_job(&ManualJob::TagCleanup).await.unwrap();
+    // Starting a queue without force queues only what is missing; on the seeded library that is nothing much.
+    let counts = admin.command_queue(&QueueName::ThumbnailGeneration, &QueueCommand::Start, false).await.unwrap();
+    assert_eq!(counts.failed, 0, "{counts:?}");
+    admin.command_queue(&QueueName::Library, &QueueCommand::Pause, false).await.unwrap();
+    assert!(admin.queue(&QueueName::Library).await.unwrap().is_paused);
+    admin.command_queue(&QueueName::Library, &QueueCommand::Resume, false).await.unwrap();
+    assert!(!admin.queue(&QueueName::Library).await.unwrap().is_paused);
+    common::wait_for_idle_queues(&admin).await;
 
     let owner = admin.me().await.unwrap().id;
     let library = admin
@@ -453,6 +461,7 @@ async fn a_read_only_key_is_refused_sharing_account_and_admin_calls() {
     assert_refused(client.server_statistics().await, "GET", "/server/statistics");
     assert_refused(client.server_storage().await, "GET", "/server/storage");
     assert_refused(client.start_job(&ManualJob::TagCleanup).await, "POST", "/jobs");
+    assert_refused(client.command_queue(&QueueName::Library, &QueueCommand::Pause, false).await, "PUT", "/jobs/{name}");
     let unknown = common::UNKNOWN_ID;
     let unknown_ids = vec![unknown.to_owned()];
     assert_refused(client.update_shared_link(unknown, &SharedLinkChanges::default()).await, "PATCH", "/shared-links/{id}");

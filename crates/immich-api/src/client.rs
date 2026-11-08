@@ -428,6 +428,20 @@ impl Client {
         self.call_unit_with_resending(method, segments, query, body, Resend::OnlyUnsent).await
     }
 
+    /// [`Client::call_with`] for a PUT that must not be sent twice: resent only when the first attempt cannot have
+    /// taken effect.
+    pub(crate) async fn call_with_once<Body: Serialize + ?Sized, T: DeserializeOwned>(
+        &self,
+        method: Method,
+        segments: &[&str],
+        query: &[(&str, &str)],
+        body: &Body,
+    ) -> Result<T, ApiError> {
+        let builder = self.checked_request(method, segments)?.timeout(REQUEST_TIMEOUT).query(query).json(body);
+        let response = check(self.execute_resending(builder, Resend::OnlyUnsent).await?, RequestShape::Plain).await?;
+        read_json(response, &segments.join("/")).await
+    }
+
     async fn call_unit_with_resending<Body: Serialize + ?Sized>(
         &self,
         method: Method,

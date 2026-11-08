@@ -37,6 +37,7 @@ pub(crate) const ENDPOINTS: &[Endpoint] = endpoints![
     GET "/queues/{name}/jobs" "queueJob.read",
     DELETE "/queues/{name}/jobs" "queueJob.delete",
     POST "/jobs" "job.create",
+    PUT "/jobs/{name}" "job.create",
     GET "/libraries" "library.read",
     GET "/libraries/{id}" "library.read",
     POST "/libraries" "library.create",
@@ -144,6 +145,19 @@ pub struct QueueStatistics {
     pub paused: u64,
     pub completed: u64,
     pub failed: u64,
+}
+
+wire_enum! {
+    /// What [`Client::command_queue`] tells a queue to do.
+    pub enum QueueCommand {
+        /// Queue the work for the Assets that lack it, or with `force` for every Asset.
+        Start = "start",
+        Pause = "pause",
+        Resume = "resume",
+        /// Drop the waiting jobs.
+        Empty = "empty",
+        ClearFailed = "clear-failed",
+    }
 }
 
 /// A job in a queue (`QueueJobResponseDto`).
@@ -302,6 +316,21 @@ impl Client {
     pub async fn clear_queue(&self, name: &QueueName, failed: bool) -> Result<(), ApiError> {
         self.call_unit_with(Method::DELETE, &["queues", name.as_str(), "jobs"], &[], &serde_json::json!({ "failed": failed }))
             .await
+    }
+
+    /// Tell a queue to start its work for every Asset that lacks it (with `force`, for every Asset), or to pause,
+    /// resume, empty or clear its failed jobs (`PUT /jobs/{name}`), as the web app's job page does. Deprecated in
+    /// v3.3.6 with no replacement for starting yet; answers the queue's counts. Needs `job.create`.
+    pub async fn command_queue(&self, name: &QueueName, command: &QueueCommand, force: bool) -> Result<QueueStatistics, ApiError> {
+        #[derive(Deserialize, Default)]
+        #[serde(default, rename_all = "camelCase")]
+        struct Answer {
+            job_counts: QueueStatistics,
+        }
+        let body = serde_json::json!({ "command": command, "force": force });
+        // Starting twice would queue the work twice: sent once.
+        let answer: Answer = self.call_with_once(Method::PUT, &["jobs", name.as_str()], &[], &body).await?;
+        Ok(answer.job_counts)
     }
 
     /// Start a maintenance job (`POST /jobs`). Needs `job.create`.

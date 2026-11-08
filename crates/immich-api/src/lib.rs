@@ -71,7 +71,8 @@ pub use account::{
 };
 pub use activity::{Activity, ActivityFilter, ActivityKind, ActivityStatistics};
 pub use admin::{
-    ImportPathCheck, Library, LibrarySettings, LibraryStatistics, ManualJob, NewUser, Queue, QueueName, QueueStatistics,
+    ImportPathCheck, Library, LibrarySettings, LibraryStatistics, ManualJob, NewUser, Queue, QueueCommand, QueueName,
+    QueueStatistics,
     QueuedJob, UserChanges,
 };
 pub use album::{Album, AlbumChanges, AlbumFilter, AlbumMember, AlbumRole, AlbumStatistics, AssetOrder, BulkAlbumOutcome, NewAlbum, NewMember};

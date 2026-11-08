@@ -245,7 +245,7 @@ Open:
 
 `immich-api` grows from the mount's endpoints to the API a full Immich client needs, so later apps (a gallery, or
 more of the mount) build on one tested layer (ARCHITECTURE.md, "The Immich API layer"). Built on the branch
-`feat/full-immich-api`, not yet merged: 189 endpoints, each in the spec check, with contract tests that pass on the
+`feat/full-immich-api`, not yet merged: 190 endpoints, each in the spec check, with contract tests that pass on the
 lab server on v3.3.6 and v3.2.0, and the machine-learning tests on a server built with `up.sh --ml`.
 1. **Albums, changing Assets, the trash, edits, metadata, tags, the map, video playback.** Built.
 2. **People and faces, stacks, duplicates, memories, search (smart, explore, suggestions, places, random,
