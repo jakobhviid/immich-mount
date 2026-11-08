@@ -273,13 +273,13 @@ async fn albums_people_and_places() {
     assert_eq!(people[0].name, "Lab Person");
     assert!(!people[0].is_hidden);
 
+    // The server's reverse-geocoding data names the United States "United States of America" on v3.2.0.
     let countries = client.countries().await.unwrap();
-    assert_eq!(
-        countries,
-        ["Australia", "Denmark", "France", "Germany", "Iceland", "Japan", "United States"]
-    );
+    let united_states = countries.last().cloned().unwrap();
+    assert!(["United States", "United States of America"].contains(&united_states.as_str()), "{united_states}");
+    assert_eq!(countries[..6], ["Australia", "Denmark", "France", "Germany", "Iceland", "Japan"]);
     assert_eq!(client.cities("Denmark").await.unwrap(), ["Århus", "Copenhagen", "Odense"]);
-    assert_eq!(client.cities("United States").await.unwrap(), ["Weehawken"]);
+    assert_eq!(client.cities(&united_states).await.unwrap(), ["Weehawken"]);
 }
 
 #[tokio::test]

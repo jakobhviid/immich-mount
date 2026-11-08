@@ -28,6 +28,17 @@ pub enum AssetKind {
     Other(String),
 }
 
+impl AssetKind {
+    /// The wire value, as sent in filters.
+    pub fn as_str(&self) -> &str {
+        match self {
+            AssetKind::Image => "IMAGE",
+            AssetKind::Video => "VIDEO",
+            AssetKind::Other(value) => value,
+        }
+    }
+}
+
 impl From<String> for AssetKind {
     fn from(wire: String) -> Self {
         match wire.to_ascii_uppercase().as_str() {

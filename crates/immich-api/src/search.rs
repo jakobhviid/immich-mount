@@ -1,4 +1,5 @@
-//! Metadata search: the Assets of an album, a person, a place or a time range, with names and sizes.
+//! Metadata search: the Assets of an album, a person, a place, a camera, a tag or a time range, with names and
+//! sizes. [`AssetQuery`] is also the filter of smart, random and counting search ([`crate::search_more`]).
 //!
 //! Only the v3.2 dialect is spoken: `filter`, `orderBy` and `cursor` (ARCHITECTURE.md, "Version policy"). The
 //! deprecated fields (`page`, `visibility`, `takenAfter`, `withDeleted`, ...) are never sent, because mixing the
@@ -17,7 +18,7 @@ use chrono::{DateTime, Utc};
 use serde::Deserialize;
 use serde_json::{json, Map, Value};
 
-use crate::asset::{Asset, AssetWire, Visibility};
+use crate::asset::{Asset, AssetKind, AssetWire, Visibility};
 use crate::client::Client;
 use crate::dates::format_utc;
 use crate::error::ApiError;
@@ -45,11 +46,37 @@ pub struct AssetQuery {
     pub visibility: Option<Visibility>,
     /// Only the Assets marked as favorites.
     pub favorites_only: bool,
+    /// In this state or region (reverse-geocoded name, exact).
+    pub state: Option<String>,
+    /// Tagged with any of these tags.
+    pub tag_ids: Option<Vec<String>>,
+    /// Only images, or only videos.
+    pub kind: Option<AssetKind>,
+    /// Taken with a camera of this make (as [`Client::suggestions`] lists them, exact).
+    pub camera_make: Option<String>,
+    /// Taken with this camera model (exact).
+    pub camera_model: Option<String>,
+    /// Taken with this lens (exact).
+    pub lens_model: Option<String>,
 }
 
 impl AssetQuery {
     /// The request body for one page.
     pub(crate) fn to_body(&self, page_size: u32, cursor: Option<&str>) -> Value {
+        let mut body = json!({
+            "filter": self.to_filter(),
+            "orderBy": { "field": "fileCreatedAt", "direction": "desc" },
+            "size": page_size.clamp(1, MAX_PAGE_SIZE),
+            "withExif": true,
+        });
+        if let Some(cursor) = cursor {
+            body["cursor"] = Value::String(cursor.to_owned());
+        }
+        body
+    }
+
+    /// The `filter` object of the v3.2 dialect, which smart, random and statistics searches take too.
+    pub(crate) fn to_filter(&self) -> Map<String, Value> {
         let mut filter = Map::new();
         filter.insert("trashedAt".to_owned(), json!({ "eq": null }));
         if let Some(album_ids) = &self.album_ids {
@@ -79,17 +106,25 @@ impl AssetQuery {
         if self.favorites_only {
             filter.insert("isFavorite".to_owned(), json!({ "eq": true }));
         }
-
-        let mut body = json!({
-            "filter": filter,
-            "orderBy": { "field": "fileCreatedAt", "direction": "desc" },
-            "size": page_size.clamp(1, MAX_PAGE_SIZE),
-            "withExif": true,
-        });
-        if let Some(cursor) = cursor {
-            body["cursor"] = Value::String(cursor.to_owned());
+        if let Some(state) = &self.state {
+            filter.insert("state".to_owned(), json!({ "eq": state }));
         }
-        body
+        if let Some(tag_ids) = &self.tag_ids {
+            filter.insert("tagIds".to_owned(), json!({ "any": tag_ids }));
+        }
+        if let Some(kind) = &self.kind {
+            filter.insert("type".to_owned(), json!({ "eq": kind.as_str() }));
+        }
+        if let Some(make) = &self.camera_make {
+            filter.insert("make".to_owned(), json!({ "eq": make }));
+        }
+        if let Some(model) = &self.camera_model {
+            filter.insert("model".to_owned(), json!({ "eq": model }));
+        }
+        if let Some(lens) = &self.lens_model {
+            filter.insert("lensModel".to_owned(), json!({ "eq": lens }));
+        }
+        filter
     }
 }
 
@@ -203,6 +238,12 @@ mod tests {
             updated_after: Some(parse_utc("2026-01-01T00:00:00Z").unwrap()),
             visibility: Some(Visibility::Archive),
             favorites_only: true,
+            state: Some("Auvergne-Rhône-Alpes".into()),
+            tag_ids: Some(vec!["tag-1".into()]),
+            kind: Some(AssetKind::Video),
+            camera_make: Some("Apple".into()),
+            camera_model: Some("iPhone 6".into()),
+            lens_model: Some("iPhone 6 back camera".into()),
         };
         let body = query.to_body(5000, Some("eyJvZmZzZXQiOjJ9"));
         assert_eq!(
@@ -217,6 +258,12 @@ mod tests {
                 "updatedAt": { "gt": "2026-01-01T00:00:00.000Z" },
                 "visibility": { "eq": "archive" },
                 "isFavorite": { "eq": true },
+                "state": { "eq": "Auvergne-Rhône-Alpes" },
+                "tagIds": { "any": ["tag-1"] },
+                "type": { "eq": "VIDEO" },
+                "make": { "eq": "Apple" },
+                "model": { "eq": "iPhone 6" },
+                "lensModel": { "eq": "iPhone 6 back camera" },
             })
         );
         assert_eq!(body["size"], json!(1000), "clamped to the server's maximum");

@@ -7,7 +7,7 @@ use crate::client::Client;
 use crate::error::ApiError;
 
 /// Drop the `null` and blank entries a suggestion list can hold.
-fn names(suggestions: Vec<Option<String>>) -> Vec<String> {
+pub(crate) fn names(suggestions: Vec<Option<String>>) -> Vec<String> {
     suggestions
         .into_iter()
         .flatten()

@@ -872,7 +872,10 @@ use (the whole API, WASM, OpenTelemetry, Socket.IO). Our contract tests on Erebu
 - a reasonable compile time
 
 **Version policy:** the current and previous Immich minor release, with the floor moving forward deliberately.
-- Only the current search dialect is implemented: `filter`, `orderBy`, `cursor`.
+- Only the current search dialect is implemented: `filter`, `orderBy`, `cursor`. Smart, random and counting
+  searches take the same `filter`. In this dialect smart search has no paging (`page` is deprecated and cannot sit
+  beside `filter`, and there is no cursor), so it returns its best matches, up to 1000. The one exception is the
+  deprecated `POST /search/large-assets`, which takes its few filters in the query string.
 - Every search sets `filter.trashedAt: {eq: null}`, because that dialect includes trashed Assets by default.
 - `/server/version` is read once per connection, and version-specific behaviour lives in one place.
 - **Checked on v3.2.0:** the parts of the OpenAPI spec the client uses are identical to v3.3.5's, and the server

@@ -26,13 +26,20 @@ pub mod auth; // password and OIDC sign-in, sign-out
 pub mod client; // the client: URL, credential, request plumbing
 pub mod content; // ranged originals, HEAD, thumbnails
 mod dates; // lenient date parsing (fake `Z`, no zone) and the format we send
+pub mod download; // ZIP archives of many Assets: the plan, then each archive
+pub mod duplicate; // groups of look-alike Assets, dismissing and resolving them
 pub mod error; // `ApiError` and how HTTP outcomes map onto it
-pub mod person; // people, hidden ones included
+pub mod face; // the faces on an Asset, drawn by hand or detected
+pub mod folder; // Assets by the server folder their original is in
+pub mod memory; // on-this-day memories and their Assets
+pub mod person; // people, hidden ones included: naming, merging, faces moved between them
 pub mod place; // countries and cities from search suggestions
 pub mod retry; // bounded retries honouring `Retry-After`
 pub mod map; // map markers and reverse geocoding
 pub mod search; // metadata search in the v3.2 dialect, with cursor paging
+pub mod search_more; // smart, random and counting search, explore, suggestions, place names
 pub mod server; // version, features, public config, API key permissions
+pub mod stack; // stacks of Assets behind a primary
 pub mod sync; // the session-only sync stream and acks
 pub mod tag; // tags and tagging Assets
 pub mod timeline; // timeline buckets: month counts and one month's ids
@@ -52,13 +59,19 @@ pub use asset::{Asset, AssetKind, Visibility};
 pub use asset_change::{AssetChanges, AssetEdit, AssetJob, CopyOptions, MirrorAxis};
 pub use asset_info::{AssetDetails, AssetStatistics, Exif, MetadataEntry, OcrText, StackSummary, StatisticsFilter};
 pub use auth::LoginResponse;
-pub use client::{Client, Credential, Fetched};
+pub use client::{Client, Credential, Fetched, Media};
 pub use content::{RangeResponse, ThumbnailSize};
+pub use download::{DownloadPlan, DownloadSource, PlannedArchive};
+pub use duplicate::{DuplicateGroup, DuplicateResolution};
 pub use error::ApiError;
-pub use person::Person;
+pub use face::{Face, FaceSource, NewFace};
+pub use memory::{Memory, MemoryChanges, MemoryData, MemoryFilter, MemoryKind, MemoryOrder, NewMemory};
+pub use person::{NewPerson, Person, PersonChanges, PersonOnAsset};
 pub use retry::RetryPolicy;
 pub use search::{AssetPage, AssetQuery};
+pub use search_more::{ExploreGroup, ExploreItem, PlaceMatch, SmartQuery, SuggestionKind, SuggestionQuery};
 pub use server::{ServerConfig, ServerFeatures};
+pub use stack::Stack;
 pub use sync::{SyncAsset, SyncAssetExif, SyncLine, SyncRecord, SyncStream};
 pub use tag::{NewTag, Tag, TagChanges};
 pub use timeline::{BucketAsset, TimeBucket, TimelineScope, YearMonth};
@@ -78,11 +91,18 @@ pub fn endpoints() -> Vec<Endpoint> {
         asset_info::ENDPOINTS,
         auth::ENDPOINTS,
         content::ENDPOINTS,
+        download::ENDPOINTS,
+        duplicate::ENDPOINTS,
+        face::ENDPOINTS,
+        folder::ENDPOINTS,
         map::ENDPOINTS,
+        memory::ENDPOINTS,
         person::ENDPOINTS,
         place::ENDPOINTS,
         search::ENDPOINTS,
+        search_more::ENDPOINTS,
         server::ENDPOINTS,
+        stack::ENDPOINTS,
         sync::ENDPOINTS,
         tag::ENDPOINTS,
         timeline::ENDPOINTS,

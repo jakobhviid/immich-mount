@@ -348,7 +348,9 @@ async fn tags_nest_and_go_on_assets() {
     assert!(untagged[0].success, "{untagged:?}");
 
     client.untag_assets(&sibling.id, std::slice::from_ref(&id)).await.unwrap();
-    assert!(client.asset_details(&id).await.unwrap().tags.is_empty());
+    // On v3.2.0 the Asset shows a removed tag until its sidecar job has run (tag.rs).
+    let untagged_everywhere = wait_until(|| async { client.asset_details(&id).await.unwrap().tags.is_empty() }).await;
+    assert!(untagged_everywhere, "the tags came off the Asset");
 
     client.delete_tag(&parent.id).await.unwrap();
     let contract_tags = || async {

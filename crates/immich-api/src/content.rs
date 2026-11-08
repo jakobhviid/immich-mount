@@ -21,7 +21,7 @@ use std::path::Path;
 use std::time::Duration;
 
 use bytes::Bytes;
-use reqwest::header::{CONTENT_LENGTH, CONTENT_RANGE, CONTENT_TYPE, ETAG, RANGE};
+use reqwest::header::{CONTENT_LENGTH, CONTENT_RANGE, ETAG, RANGE};
 use reqwest::{Method, StatusCode};
 use tokio::io::AsyncWriteExt;
 
@@ -199,14 +199,8 @@ impl Client {
 
     /// A server-made thumbnail and its content type (`GET /assets/{id}/thumbnail?size=...`).
     pub async fn thumbnail(&self, id: &str, size: ThumbnailSize) -> Result<(Bytes, String), ApiError> {
-        let builder = self
-            .request(Method::GET, &["assets", id, "thumbnail"])
-            .query(&[("size", size.as_str())])
-            .timeout(REQUEST_TIMEOUT);
-        let response = check(self.execute(builder).await?, RequestShape::Plain).await?;
-        let content_type = header_text(&response, CONTENT_TYPE).unwrap_or_else(|| "application/octet-stream".to_owned());
-        let bytes = response.bytes().await.map_err(|error| from_transport(&error))?;
-        Ok((bytes, content_type))
+        let media = self.get_media(&["assets", id, "thumbnail"], &[("size", size.as_str())]).await?;
+        Ok((media.bytes, media.content_type))
     }
 }
 

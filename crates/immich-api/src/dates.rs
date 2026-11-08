@@ -8,7 +8,7 @@
 //!
 //! So instants accept all three (no zone means UTC), and wall-clock times drop whatever zone is attached.
 
-use chrono::{DateTime, NaiveDateTime, SecondsFormat, Utc};
+use chrono::{DateTime, NaiveDate, NaiveDateTime, SecondsFormat, Utc};
 
 const NAIVE_FORMATS: [&str; 2] = ["%Y-%m-%dT%H:%M:%S%.f", "%Y-%m-%d %H:%M:%S%.f"];
 
@@ -51,8 +51,8 @@ pub(crate) fn optional_utc(text: Option<&str>) -> Option<DateTime<Utc>> {
 /// Models decode with a struct-level `#[serde(default)]`, so a missing or unreadable date falls back to the
 /// field's default (the Unix epoch for an instant, `None` for an optional one) instead of failing the answer.
 pub(crate) mod serde_dates {
-    use chrono::{DateTime, NaiveDateTime, Utc};
-    use serde::{Deserialize, Deserializer};
+    use chrono::{DateTime, NaiveDate, NaiveDateTime, Utc};
+    use serde::{Deserialize, Deserializer, Serializer};
 
     /// An instant; an unreadable one decodes as the Unix epoch.
     pub(crate) fn utc<'de, D: Deserializer<'de>>(deserializer: D) -> Result<DateTime<Utc>, D::Error> {
@@ -73,12 +73,47 @@ pub(crate) mod serde_dates {
         let text = Option::<String>::deserialize(deserializer)?;
         Ok(text.as_deref().and_then(super::parse_wall_clock))
     }
+
+    /// Send an instant in [`super::format_utc`]'s format.
+    pub(crate) fn send_instant<S: Serializer>(instant: &DateTime<Utc>, serializer: S) -> Result<S::Ok, S::Error> {
+        serializer.serialize_str(&super::format_utc(instant))
+    }
+
+    /// Send an optional instant in [`super::format_utc`]'s format; `None` is sent as `null` (fields that may be left out
+    /// pair this with `skip_serializing_if`).
+    pub(crate) fn send_utc<S: Serializer>(value: &Option<DateTime<Utc>>, serializer: S) -> Result<S::Ok, S::Error> {
+        match value {
+            Some(instant) => serializer.serialize_str(&super::format_utc(instant)),
+            None => serializer.serialize_none(),
+        }
+    }
+
+    /// Send a calendar date as `YYYY-MM-DD`; `None` is sent as `null`.
+    pub(crate) fn send_date<S: Serializer>(value: &Option<NaiveDate>, serializer: S) -> Result<S::Ok, S::Error> {
+        match value {
+            Some(date) => serializer.serialize_str(&date.format("%Y-%m-%d").to_string()),
+            None => serializer.serialize_none(),
+        }
+    }
+
+    /// Send a date that may be cleared: `Some(None)` is sent as `null`, which removes it.
+    pub(crate) fn send_clearable_date<S: Serializer>(
+        value: &Option<Option<NaiveDate>>,
+        serializer: S,
+    ) -> Result<S::Ok, S::Error> {
+        send_date(&value.flatten(), serializer)
+    }
+}
+
+/// A calendar date: `1990-05-17`, or the date part of a longer timestamp.
+pub(crate) fn parse_date(text: &str) -> Option<NaiveDate> {
+    let text = text.trim();
+    NaiveDate::parse_from_str(text.get(..10).unwrap_or(text), "%Y-%m-%d").ok()
 }
 
 #[cfg(test)]
 mod tests {
     use super::*;
-    use chrono::NaiveDate;
 
     fn wall(year: i32, month: u32, day: u32, hour: u32, minute: u32, second: u32) -> NaiveDateTime {
         NaiveDate::from_ymd_opt(year, month, day)

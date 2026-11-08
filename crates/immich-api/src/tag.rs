@@ -4,11 +4,12 @@
 //! `PUT /tags` ("upsert") takes full paths and creates every missing level, so it is the way to make a nested tag
 //! in one call; `POST /tags` makes one tag under an existing parent.
 //!
-//! Quirks, seen on v3.3.6:
+//! Quirks:
 //! - deleting a tag deletes the tags below it, and takes all of them off their Assets
-//! - tagging an Asset queues a background job that writes its tags into its sidecar and reads them back; a tag
-//!   deleted while that job is pending comes back a moment later (as a new tag, on no Asset). Delete tags once the
-//!   server's queues are idle ([`Client::queues`]), or delete again
+//! - tagging an Asset queues a background job that writes its tags into its sidecar and reads them back. A change
+//!   made while that job is pending is undone when it runs: on v3.2.0 a tag taken off the Asset comes back on it, on
+//!   v3.3.6 a deleted tag comes back as a new tag on no Asset. Change an Asset's tags again once the server's
+//!   queues are idle ([`Client::queues`])
 
 use chrono::{DateTime, Utc};
 use reqwest::Method;

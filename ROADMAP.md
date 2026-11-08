@@ -249,7 +249,8 @@ contract tests against the lab server on the current version and the floor:
 1. **Albums, changing Assets, the trash, edits, metadata, tags, the map, video playback.** Built; contract tests
    and the spec check pass on v3.3.6.
 2. **People and faces, stacks, duplicates, memories, search (smart, explore, suggestions, places, random,
-   statistics), folders, downloads.**
+   statistics), folders, downloads.** Built; contract tests and the spec check pass on v3.3.6. Without machine
+   learning in the lab, faces and a duplicate group are made by hand, and smart search is checked for its refusal.
 3. **Sharing:** shared links, partners, album comments and likes.
 4. **The account:** the user and their preferences, profile picture, password, sessions, API keys, PIN code and
    the locked folder, notifications.

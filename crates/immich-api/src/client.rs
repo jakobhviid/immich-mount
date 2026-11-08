@@ -14,7 +14,8 @@ use std::future::Future;
 use std::sync::Arc;
 use std::time::Duration;
 
-use reqwest::header::{HeaderName, HeaderValue, AUTHORIZATION, CONTENT_RANGE, ETAG, IF_NONE_MATCH};
+use bytes::Bytes;
+use reqwest::header::{HeaderName, HeaderValue, AUTHORIZATION, CONTENT_RANGE, CONTENT_TYPE, ETAG, IF_NONE_MATCH};
 use reqwest::{Method, Request, RequestBuilder, Response, StatusCode};
 use serde::de::DeserializeOwned;
 use serde::Serialize;
@@ -71,6 +72,14 @@ pub enum Fetched<T> {
     NotModified,
     /// The current value, and its ETag for the next poll.
     Changed { value: T, etag: Option<String> },
+}
+
+/// A file the server made (a face crop, a profile picture), with its content type.
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub struct Media {
+    pub bytes: Bytes,
+    /// As the server sent it (`image/jpeg`); `application/octet-stream` when it sent none.
+    pub content_type: String,
 }
 
 /// An async client for one Immich server and one credential.
@@ -358,6 +367,15 @@ impl Client {
         let builder = self.checked_request(method, segments)?.timeout(REQUEST_TIMEOUT).query(query);
         check(self.execute(builder).await?, RequestShape::Plain).await?;
         Ok(())
+    }
+
+    /// GET an endpoint whose answer is a file, and read it whole with its content type.
+    pub(crate) async fn get_media(&self, segments: &[&str], query: &[(&str, &str)]) -> Result<Media, ApiError> {
+        let builder = self.checked_request(Method::GET, segments)?.timeout(REQUEST_TIMEOUT).query(query);
+        let response = check(self.execute(builder).await?, RequestShape::Plain).await?;
+        let content_type = header_text(&response, CONTENT_TYPE).unwrap_or_else(|| "application/octet-stream".to_owned());
+        let bytes = response.bytes().await.map_err(|error| from_transport(&error))?;
+        Ok(Media { bytes, content_type })
     }
 
     /// Call an endpoint with a JSON body and ignore the answer's body.
