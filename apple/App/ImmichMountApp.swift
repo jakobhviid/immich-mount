@@ -115,6 +115,11 @@ final class AppDelegate: NSObject, NSApplicationDelegate, SPUUpdaterDelegate,
         }
         #if DEBUG
         Task { await model.followLaunchArguments() }
+        // `-settingsPane <0, 1 or 2>`: open Settings on that pane, to check its layout without clicking.
+        if let pane = UserDefaults.standard.string(forKey: "settingsPane").flatMap(Int.init) {
+            UserDefaults.standard.set(pane, forKey: "SettingsPane")
+            showSettings()
+        }
         #endif
     }
 
