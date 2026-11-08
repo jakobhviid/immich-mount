@@ -1482,11 +1482,14 @@ set what changed since a sync anchor (Apple's documentation):
 **Settings.** The app's Settings window is laid out as Apple's Human Interface Guidelines ask of one, and as the
 Mac's own apps and its sync apps (Dropbox, OneDrive) lay theirs out:
 - **A toolbar of panes:** General, Folders and Account. The window is titled by the pane shown, opens on the pane last
-  used, and takes each pane's height (measured as the pane is chosen), so it neither resizes nor minimises.
-- **General:** opening at login, checking for updates, and the Upload folder (`uploads.enabled`): a behaviour, not a
-  folder layout.
+  used, and takes each pane's height, so it neither resizes nor minimises. A grouped form scrolls, so it takes any
+  height it is offered and has none of its own to ask; each pane tells the height of its laid-out content instead
+  (its scroll geometry, macOS 15 and later; fixed heights on macOS 14), and the window follows once the height has
+  settled, since a pane first laid out at a narrow width tells passing heights of thousands of points (macOS 27).
+- **General:** opening at login and checking for updates.
 - **Folders:** one row per section, its switch beside its date folders (greyed out while the section is hidden), then
-  the album layout and file naming, so a section and its date folders are set in one place.
+  the album layout and file naming, so a section and its date folders are set in one place. Upload is a section too:
+  its switch shows or hides the folder, and what is copied into it is uploaded; it has no date folders.
 - **Account:** the connection, as the menu bar menu tells it, then Open in Finder (or Switch On in System
   Settings…) and Sign Out…, which asks first; with nobody signed in, Sign In…. It repeats the menu, and is where
   Mac users look for signing out.
