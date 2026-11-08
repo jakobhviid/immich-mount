@@ -244,9 +244,9 @@ Open:
 ## The full Immich API
 
 `immich-api` grows from the mount's endpoints to the API a full Immich client needs, so later apps (a gallery, or
-more of the mount) build on one tested layer (ARCHITECTURE.md, "The Immich API layer"). Built on the branch
-`feat/full-immich-api`, not yet merged: 190 endpoints, each in the spec check, with contract tests that pass on the
-lab server on v3.3.6 and v3.2.0, and the machine-learning tests on a server built with `up.sh --ml`.
+more of the mount) build on one tested layer (ARCHITECTURE.md, "The Immich API layer"). Built: 190 endpoints, each
+in the spec check, with contract tests that pass on the lab server on v3.3.6 and v3.2.0, and the machine-learning
+tests on a server built with `up.sh --ml`.
 1. **Albums, changing Assets, the trash, edits, metadata, tags, the map, video playback.** Built.
 2. **People and faces, stacks, duplicates, memories, search (smart, explore, suggestions, places, random,
    statistics), folders, downloads.** Built. On the plain lab server faces and a duplicate group are made by hand
@@ -258,12 +258,12 @@ lab server on v3.3.6 and v3.2.0, and the machine-learning tests on a server buil
 5. **Administration:** users, queues and jobs, external libraries, server statistics, storage and version
    history. Built.
 6. **Around it:** the lab server with machine learning (`up.sh --ml`) and the v3.2.0 runs are done. The CI job
-   that runs the contract tests against Immich in Docker (`contract` in `.github/workflows/ci.yml`) is checked in
-   an Ubuntu 24.04 container set up as a GitHub runner: `ci.sh` seeded v3.3.6 from an empty fixture cache in four
-   minutes, and every contract test passed against it. It has not run on GitHub yet.
+   that runs the contract tests against Immich in Docker (`contract` in `.github/workflows/ci.yml`) runs on every
+   branch push, and passes on v3.2.0 and v3.3.6.
 7. **The mount on the grown crate:** the daemon built from the branch mounted the lab server (v3.3.6) on the
    development host: 50 photos, both albums, Lab Person and the seven countries listed as before, an album's five
-   originals byte-identical to Immich's checksums, and a copy into Upload uploaded before `cp` returned.
+   originals byte-identical to Immich's checksums, and a copy into Upload uploaded before `cp` returned. The release
+   check on Fedora GNOME (`lab/check/run.sh gnome --binary`) passed every line with the branch's daemon and CLI.
 
 ## Package repositories
 
