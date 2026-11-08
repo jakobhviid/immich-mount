@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 # Runs INSIDE the Immich container; seed.sh pushes and calls it, one phase at a time:
-#   setup      tools, admin sign-up + login, ML off, two API keys
+#   setup      tools, admin sign-up + login, ML off (unless up.sh --ml), two API keys
 #   upload     every manifest entry (renamed / stripped where its roles say so) + a generated MP4
 #   idle       exit 0 when Immich's job queues are empty (polled by seed.sh via wait_for)
 #   organize   albums, archive, trash, a manual person + face
@@ -46,14 +46,20 @@ setup)
     --data "{\"email\":\"$email\",\"password\":\"$pass\",\"name\":\"Lab Admin\"}" >/dev/null
   curl -sS --fail-with-body -X POST "$API/auth/login" -H 'Content-Type: application/json' \
     --data "{\"email\":\"$email\",\"password\":\"$pass\"}" | jq -r .accessToken > "$S/token"
-  # No ML container: switch ML off so no smart-search/face jobs try to reach it.
-  api GET /system-config | jq -c '.machineLearning.enabled = false' > "$S/config.json"
-  api PUT /system-config "$(cat "$S/config.json")" >/dev/null
+  # No ML container: switch ML off so no smart-search/face jobs try to reach it. With up.sh --ml it stays on.
+  if [ -f /opt/immich/ml-enabled ]; then
+    ml=on
+  else
+    ml=off
+    api GET /system-config | jq -c '.machineLearning.enabled = false' > "$S/config.json"
+    api PUT /system-config "$(cat "$S/config.json")" >/dev/null
+  fi
   full=$(api POST /api-keys '{"name":"lab-full","permissions":["all"]}' | jq -r .secret)
   ro=$(api POST /api-keys '{"name":"lab-readonly","permissions":["album.read","asset.read","asset.view","asset.download","person.read"]}' | jq -r .secret)
   printf 'IMMICH_ADMIN_EMAIL=%s\nIMMICH_ADMIN_PASSWORD=%s\nIMMICH_API_KEY_FULL=%s\nIMMICH_API_KEY_READONLY=%s\n' \
     "$email" "$pass" "$full" "$ro" > "$S/keys.env"
-  echo "admin $email, ML disabled, keys lab-full + lab-readonly"
+  if [ "$ml" = on ]; then echo "IMMICH_ML=1" >> "$S/keys.env"; fi
+  echo "admin $email, machine learning $ml, keys lab-full + lab-readonly"
   ;;
 
 upload)

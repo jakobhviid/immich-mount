@@ -2,7 +2,8 @@
 # Seed a fresh server from ./up.sh: admin, two API keys, Commons fixtures, albums,
 # an archived and a trashed asset, a manual person. Writes .env.local (URL + keys).
 #
-#   ./seed.sh
+#   ./seed.sh          the server up.sh built
+#   ./seed.sh --ml     the server up.sh --ml built: machine learning stays on, and seeding waits for its jobs
 #
 # Env overrides: IMMICH_INSTANCE (default ind-immich-srv), EREBUS_DIR,
 #   WIKIMEDIA_UA  User-Agent for Commons downloads (their policy asks for a descriptive one)
@@ -16,6 +17,8 @@ set -euo pipefail
 HERE=$(cd "$(dirname "$0")" && pwd)
 EREBUS_DIR=${EREBUS_DIR:-$(cd "$(dirname "$0")/../../.." && pwd)/erebus}
 NAME=${IMMICH_INSTANCE:-ind-immich-srv}
+# --ml: the server up.sh --ml built (ind-immich-ml unless IMMICH_INSTANCE names another).
+[ "${1:-}" = --ml ] && [ -z "${IMMICH_INSTANCE:-}" ] && NAME=ind-immich-ml
 UA=${WIKIMEDIA_UA:-"ImmichDesktopNautilus-lab-fixtures/0.1 (test fixtures for a development lab; low volume)"}
 P=lab
 # shellcheck source=/dev/null
@@ -34,25 +37,7 @@ IP=$(inc list --project "$P" "^$NAME\$" -f json </dev/null |
      jq -r '.[0].state.network.eth0.addresses[] | select(.family=="inet") | .address' | head -1)
 
 step "fixtures: download missing files into fixtures/cache and verify sha1"
-mkdir -p "$HERE/fixtures/cache"
-jq -r '.files[] | [.url, .cacheName, .sha1, .optional] | @tsv' "$HERE/fixtures/manifest.json" |
-while IFS=$'\t' read -r url file sha1 optional; do
-  f="$HERE/fixtures/cache/$file"
-  if [ -f "$f" ] && [ "$(sha1sum < "$f" | cut -d' ' -f1)" = "$sha1" ]; then continue; fi
-  if [ "$optional" = true ]; then
-    # Originals (the two WebM videos) come from upload.wikimedia.org, which answers bulk
-    # clients with 429 + Retry-After: 600. One try; skip on failure, a later run fetches them.
-    curl -fsSL -A "$UA" -o "$f.part" "$url" </dev/null ||
-      { rm -f "$f.part"; echo "         skipped optional $file (Commons refused; retry later)"; continue; }
-  else
-    # thumb.wikimedia.org; --retry without --retry-delay honours Retry-After
-    curl -fsSL --retry 3 -A "$UA" -o "$f.part" "$url" </dev/null
-  fi
-  got=$(sha1sum < "$f.part" | cut -d' ' -f1)
-  [ "$got" = "$sha1" ] || die "sha1 mismatch for $url: $got (manifest $sha1)"
-  mv "$f.part" "$f"; echo "         fetched $file"
-  sleep 1   # be gentle with Commons
-done
+WIKIMEDIA_UA=$UA "$HERE/fixtures.sh"
 
 step "copy fixtures and seed-container.sh into $NAME"
 in_ct mkdir -p /opt/fixtures

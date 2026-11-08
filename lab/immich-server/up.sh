@@ -4,6 +4,8 @@
 #   ./up.sh            NAT network (incusbr0): reachable from Erebus and its other instances only
 #   ./up.sh --lan      --profile default --profile lan: a real LAN address, reachable from this host
 #   ./up.sh --fresh    build it again, even when it is warm
+#   ./up.sh --ml       with machine learning (smart search, faces, OCR, duplicates), as ind-immich-ml unless
+#                      IMMICH_INSTANCE names another; slower to seed (models download, CPU inference)
 #
 # Warm in NAT mode: once seed.sh has run, it takes a snapshot of the seeded server, and later starts restore it (the
 # credentials in .env.local stay valid). A server other than ind-immich-srv writes .env.<name>.local instead.
@@ -27,18 +29,20 @@ P=lab
 
 HERE=$(cd "$(dirname "$0")" && pwd)
 . "$HERE/../warm.sh"
-# Each instance its own credentials, so two servers can run side by side.
-ENV_FILE=$HERE/.env.local ASSETS_FILE=$HERE/.assets.tsv
-[ "$NAME" = ind-immich-srv ] || { ENV_FILE=$HERE/.env.$NAME.local ASSETS_FILE=$HERE/.assets.$NAME.tsv; }
 PROFILES=()
 build=false
+ML=false
 for argument in "$@"; do
   case $argument in
     --lan) PROFILES=(--profile default --profile lan) ;;
     --fresh) build=true ;;
-    *) die "usage: $0 [--lan] [--fresh]" ;;
+    --ml) ML=true; [ -n "${IMMICH_INSTANCE:-}" ] || NAME=ind-immich-ml ;;
+    *) die "usage: $0 [--lan] [--fresh] [--ml]" ;;
   esac
 done
+# Each instance its own credentials, so two servers can run side by side.
+ENV_FILE=$HERE/.env.local ASSETS_FILE=$HERE/.assets.tsv
+[ "$NAME" = ind-immich-srv ] || { ENV_FILE=$HERE/.env.$NAME.local ASSETS_FILE=$HERE/.assets.$NAME.tsv; }
 sweep_expired
 # Warm, in NAT mode only (a LAN-mode server shows its throwaway login to the whole LAN): back to the snapshot seed.sh
 # took, seeded, with the credentials it wrote.
@@ -85,8 +89,8 @@ inc exec --project "$P" "$NAME" -- bash -euo pipefail -c '
 wait_for "$P" "$NAME" "docker daemon" docker info
 inc exec --project "$P" "$NAME" -- docker info --format 'docker {{.ServerVersion}}, storage driver {{.Driver}}' </dev/null
 
-step "fetch docker-compose.yml and example.env of $IMMICH_VERSION"
-inc exec --project "$P" "$NAME" --env V="$IMMICH_VERSION" -- bash -euo pipefail -c '
+step "fetch docker-compose.yml and example.env of $IMMICH_VERSION (machine learning: $ML)"
+inc exec --project "$P" "$NAME" --env V="$IMMICH_VERSION" --env ML="$ML" -- bash -euo pipefail -c '
   mkdir -p /opt/immich && cd /opt/immich
   base=https://github.com/immich-app/immich/releases/download/$V
   curl -fsSL -o docker-compose.yml "$base/docker-compose.yml"
@@ -95,14 +99,18 @@ inc exec --project "$P" "$NAME" --env V="$IMMICH_VERSION" -- bash -euo pipefail 
   sed -e "s/^IMMICH_VERSION=.*/IMMICH_VERSION=$V/" \
       -e "s/^DB_PASSWORD=.*/DB_PASSWORD=$(tr -dc A-Za-z0-9 </dev/urandom | head -c 24)/" \
       -e "s|^# TZ=Etc/UTC|TZ=Etc/UTC|" example.env > .env
-  # Drop machine learning without editing the upstream file: an override puts the
+  # Without --ml, drop machine learning without editing the upstream file: an override puts the
   # service behind a profile that is never activated. (seed.sh also disables ML
-  # in the server config, so jobs do not try to reach it.)
-  cat > docker-compose.override.yml <<EOF
+  # in the server config, so jobs do not try to reach it.) With --ml, a marker tells seed-container.sh to keep it.
+  if [ "$ML" = true ]; then
+    touch ml-enabled
+  else
+    cat > docker-compose.override.yml <<EOF
 services:
   immich-machine-learning:
     profiles: [ml]
 EOF
+  fi
   docker compose config --services | sort | tr "\n" " "; echo
 ' </dev/null
 

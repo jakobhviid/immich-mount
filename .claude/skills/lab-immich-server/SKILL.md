@@ -16,6 +16,16 @@ lab/immich-server/seed.sh         # admin, two API keys, 50 fixture photos and t
 lab/immich-server/oidc.sh         # optional: Dex as the OIDC provider, for browser sign-in
 ```
 
+- **With machine learning:** `lab/immich-server/up.sh --ml` and `seed.sh --ml` build `ind-immich-ml` beside the
+  plain server (its credentials in `.env.ind-immich-ml.local`, with `IMMICH_ML=1`). Smart search, face detection,
+  OCR and duplicate detection then work; seeding waits for their jobs, and the first build downloads the models.
+  Faces are detected, so its people differ from the plain seed: the general contract tests expect the plain
+  server, and the tests that need machine learning run only where `IMMICH_ML=1`.
+- **The version floor beside the current one:** `IMMICH_INSTANCE=ind-immich-32 IMMICH_VERSION=v3.2.0 up.sh`, then
+  `seed.sh` with the same `IMMICH_INSTANCE`. Each server needs its own tunnel port from this host.
+- **In CI:** `lab/immich-server/ci.sh <version>` runs the same seed in a runner's own Docker (the `contract` job in
+  `.github/workflows/ci.yml`); `fixtures.sh` downloads the fixtures for both.
+
 - `up.sh` takes about 90 s; `seed.sh` about 90 s with cached fixtures, about 160 s from an empty cache.
 - **Warm in NAT mode** (AGENTS.md, "Testing on Erebus"): `seed.sh` ends by taking a snapshot of the seeded server,
   and every later `up.sh` restores it, so each check starts from the same seed, uploads of earlier checks gone;
@@ -39,7 +49,9 @@ daemon; NAT mode when only lab VMs talk to the server.
 
 ## What is in it
 
-Contract tests (`crates/immich-api/tests/contract.rs`) assert these numbers, so a change to the seed changes them:
+Contract tests (`crates/immich-api/tests/contract*.rs`; run them with `cargo test -p immich-api --tests -- --ignored
+--test-threads=1` after sourcing `.env.local`) assert these numbers, so a change to the seed changes them. Tests that
+change the library put it back before they end:
 - **52 uploads:** 51 not trashed (47 images, 4 videos), 50 on the timeline; 40 month buckets across 1970 and
   2008-2025; 7 countries and 11 cities; 10 photos with a date but no GPS.
 - **One archived** ("Gargoyle water spouts 2") and **one trashed** ("Besættelsesmuseet - Dagligstue").
@@ -50,7 +62,7 @@ Contract tests (`crates/immich-api/tests/contract.rs`) assert these numbers, so 
 - **Cities are GeoNames' nearest place,** not the obvious one: Times Square is Weehawken, Tokyo Station Hatchōbori.
 
 Machine learning is off (a compose override keeps its container out, and `seed.sh` turns it off in the system
-config), so faces are never detected and smart search is unavailable.
+config), so faces are never detected and smart search is unavailable, unless the server was built with `--ml`.
 
 ## A large library
 

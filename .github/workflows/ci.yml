@@ -29,6 +29,29 @@ jobs:
         run: |
           site/build-latest.sh _site
 
+  contract:
+    # immich-api against a real Immich server: the lab's seed in the runner's Docker (lab/immich-server/ci.sh), then
+    # every contract test, the spec check included, on the oldest supported version and the current one.
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        immich: [v3.2.0, v3.3.6]
+    steps:
+      - uses: actions/checkout@v5
+      - uses: dtolnay/rust-toolchain@stable
+      - name: Fixture cache (Commons photos, pinned by sha1)
+        uses: actions/cache@v4
+        with:
+          path: lab/immich-server/fixtures/cache
+          key: fixtures-${{ hashFiles('lab/immich-server/fixtures/manifest.json') }}
+      - name: Immich ${{ matrix.immich }}, seeded
+        run: lab/immich-server/ci.sh ${{ matrix.immich }}
+      - name: Contract tests
+        run: |
+          set -a; . lab/immich-server/.env.local; set +a
+          cargo test -p immich-api --tests -- --ignored --test-threads=1
+
   fedora-apps:
     # The desktop apps need newer libraries than Ubuntu's (GTK 4.18, libadwaita 1.8 and blueprint-compiler for GNOME;
     # Qt 6 for KDE), so they are checked in the distribution they are developed against.
