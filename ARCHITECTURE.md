@@ -1369,8 +1369,10 @@ when opened, eviction under storage pressure, the Finder sidebar and every file 
     nothing is; started at login, or for the first time after an update (its build differs from the one it last
     ran, which it keeps), it only takes its place in the menu bar. Settings is a window of its own, which
     the menu, the app menu's Command-comma and reopening all reach; "Open at login" is there, under General.
-  - **While a window is open** (the sign-in, Settings, About) it has a Dock icon and its menus, so Command-Q and
-    pasting work as anywhere; with the last one closed it is in the menu bar only.
+  - **While a window is open** (the sign-in, Settings, About, an update's) it has a Dock icon and its menus, so
+    Command-Q and pasting work as anywhere; with the last one closed it is in the menu bar only. During an update
+    it keeps them until Sparkle's session ends: Sparkle closes each of its windows before it opens the next, and an
+    app that leaves the Dock loses its place in front, so the next window opened behind other apps' ones.
   - Quitting it stops only the change signals; the extension serves Finder on its own.
 - **Only the extension opens the metadata store.** redb allows one process, and the extension is the one that needs
   it.

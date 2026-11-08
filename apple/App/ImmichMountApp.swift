@@ -49,13 +49,14 @@ struct ImmichMountApp: App {
 /// Sparkle calls its user driver's delegate on the main thread, which its protocol does not declare: hence
 /// `@preconcurrency`.
 @MainActor
-final class AppDelegate: NSObject, NSApplicationDelegate, @preconcurrency SPUStandardUserDriverDelegate {
+final class AppDelegate: NSObject, NSApplicationDelegate, SPUUpdaterDelegate,
+                         @preconcurrency SPUStandardUserDriverDelegate {
     private(set) static weak var shared: AppDelegate?
     let model = AppModel()
     /// Sparkle, which reads the download page's appcast and replaces the app in place, so it stays in Applications,
     /// where Finder's location runs it from. It starts only there: a copy anywhere else has nothing to update.
     private(set) lazy var updater = SPUStandardUpdaterController(startingUpdater: Installation.isInApplications,
-                                                                  updaterDelegate: nil, userDriverDelegate: self)
+                                                                  updaterDelegate: self, userDriverDelegate: self)
     private var window: NSWindow?
     private var settingsWindow: NSWindow?
     private var setUp: AnyCancellable?
@@ -120,6 +121,11 @@ final class AppDelegate: NSObject, NSApplicationDelegate, @preconcurrency SPUSta
     /// Sparkle's scheduled update alerts come without a window of the app's in front: they bring the app forward, so
     /// they are not left behind other apps, as a menu bar app's would be.
     var supportsGentleScheduledUpdateReminders: Bool { true }
+
+    /// The update's windows are gone: the menu bar alone, unless one of the app's own is open (`leaveDockIfAlone`).
+    func updater(_ updater: SPUUpdater, didFinishUpdateCycleFor updateCheck: SPUUpdateCheck, error: Error?) {
+        leaveDockIfAlone()
+    }
 
     func standardUserDriverWillHandleShowingUpdate(_ handleShowingUpdate: Bool, forUpdate update: SUAppcastItem,
                                                    state: SPUUserUpdateState) {
@@ -269,21 +275,28 @@ final class AppDelegate: NSObject, NSApplicationDelegate, @preconcurrency SPUSta
         }
     }
 
-    /// The Dock icon and the menus while any titled window (this one, Settings, About) is open, none after the last.
+    /// The Dock icon and the menus while any titled window (this one, Settings, About, Sparkle's) is open, none after
+    /// the last.
     private func followWindows() {
         let center = NotificationCenter.default
         center.addObserver(forName: NSWindow.didBecomeKeyNotification, object: nil, queue: .main) { notification in
             guard let window = notification.object as? NSWindow, window.styleMask.contains(.titled) else { return }
             MainActor.assumeIsolated { _ = NSApp.setActivationPolicy(.regular) }
         }
-        center.addObserver(forName: NSWindow.willCloseNotification, object: nil, queue: .main) { notification in
+        center.addObserver(forName: NSWindow.willCloseNotification, object: nil, queue: .main) { [weak self] notification in
             guard let closing = notification.object as? NSWindow, closing.styleMask.contains(.titled) else { return }
-            MainActor.assumeIsolated {
-                let others = NSApp.windows.filter { $0 !== closing && $0.isVisible && $0.styleMask.contains(.titled) }
-                if others.isEmpty && Installation.isInApplications {
-                    _ = NSApp.setActivationPolicy(.accessory)
-                }
-            }
+            MainActor.assumeIsolated { self?.leaveDockIfAlone(closing: closing) }
+        }
+    }
+
+    /// The menu bar alone once no titled window is left, but not while Sparkle updates: it closes each of its windows
+    /// before it opens the next, and the app, gone from the Dock in between, lost its place in front, so the next
+    /// window (the download's, "Ready to Install") opened behind other apps' ones. The update's end asks again.
+    private func leaveDockIfAlone(closing: NSWindow? = nil) {
+        guard Installation.isInApplications, !updater.updater.sessionInProgress else { return }
+        let others = NSApp.windows.filter { $0 !== closing && $0.isVisible && $0.styleMask.contains(.titled) }
+        if others.isEmpty {
+            NSApp.setActivationPolicy(.accessory)
         }
     }
 }
