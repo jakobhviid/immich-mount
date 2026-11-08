@@ -5,7 +5,7 @@
 	<key>CFBundleDevelopmentRegion</key>
 	<string>en</string>
 	<key>CFBundleDisplayName</key>
-	<string>Immich Mount</string>
+	<string>$(APP_DISPLAY_NAME)</string>
 	<key>CFBundleExecutable</key>
 	<string>$(EXECUTABLE_NAME)</string>
 	<key>CFBundleIdentifier</key>
@@ -28,7 +28,7 @@
 		<key>CFBundlePrimaryIcon</key>
 		<dict>
 			<key>CFBundleSymbolName</key>
-			<string>SidebarSymbol</string>
+			<string>$(SIDEBAR_SYMBOL)</string>
 		</dict>
 	</dict>
 	<key>NSExtension</key>
@@ -38,13 +38,13 @@
 		<key>NSExtensionPrincipalClass</key>
 		<string>$(PRODUCT_MODULE_NAME).FileProviderExtension</string>
 		<key>NSExtensionFileProviderDocumentGroup</key>
-		<string>$(TeamIdentifierPrefix)dev.hviid.ImmichMount</string>
+		<string>$(TeamIdentifierPrefix)$(IMMICH_IDENTITY)</string>
 		<key>NSExtensionFileProviderSupportsEnumeration</key>
 		<true/>
 	</dict>
 	<key>ImmichMountAppGroup</key>
-	<string>$(TeamIdentifierPrefix)dev.hviid.ImmichMount</string>
+	<string>$(TeamIdentifierPrefix)$(IMMICH_IDENTITY)</string>
 	<key>ImmichMountKeychainGroup</key>
-	<string>$(AppIdentifierPrefix)dev.hviid.ImmichMount</string>
+	<string>$(AppIdentifierPrefix)$(IMMICH_IDENTITY)</string>
 </dict>
 </plist>

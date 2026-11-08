@@ -123,10 +123,12 @@ struct GeneralPane: View {
             OutsideApplications()
             Section {
                 Toggle("Open at login", isOn: Binding(get: { model.opensAtLogin }, set: { model.setOpensAtLogin($0) }))
-                Toggle("Check for updates automatically", isOn: $checksForUpdates)
-                    .onChange(of: checksForUpdates) { _, checks in
-                        AppDelegate.shared?.updater.updater.automaticallyChecksForUpdates = checks
-                    }
+                if Installation.updates {
+                    Toggle("Check for updates automatically", isOn: $checksForUpdates)
+                        .onChange(of: checksForUpdates) { _, checks in
+                            AppDelegate.shared?.updater.updater.automaticallyChecksForUpdates = checks
+                        }
+                }
             } footer: {
                 Text("While Immich Mount runs, in the menu bar, changes in Immich reach Finder within seconds. Updates come from jakob.hviid.phd, signed by the project and notarized by Apple.")
                     .foregroundStyle(.secondary)

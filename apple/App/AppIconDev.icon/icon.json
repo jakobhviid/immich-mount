@@ -1,0 +1,108 @@
+{
+  "fill-specializations": [
+    {
+      "value": {
+        "linear-gradient": [
+          "srgb:0.55686,0.77255,1.00000,1.00000",
+          "srgb:0.24706,0.54902,0.94118,1.00000"
+        ],
+        "orientation": {
+          "start": {
+            "x": 0.5,
+            "y": 0
+          },
+          "stop": {
+            "x": 0.5,
+            "y": 0.8
+          }
+        }
+      }
+    },
+    {
+      "appearance": "dark",
+      "value": {
+        "linear-gradient": [
+          "srgb:0.12157,0.30980,0.60000,1.00000",
+          "srgb:0.07843,0.20784,0.41961,1.00000"
+        ],
+        "orientation": {
+          "start": {
+            "x": 0.5,
+            "y": 0
+          },
+          "stop": {
+            "x": 0.5,
+            "y": 0.8
+          }
+        }
+      }
+    }
+  ],
+  "groups": [
+    {
+      "name": "Lens",
+      "layers": [
+        {
+          "name": "Glass",
+          "image-name": "lens-glass.svg",
+          "glass": true
+        },
+        {
+          "name": "Ring",
+          "image-name": "lens-ring.svg",
+          "glass": false
+        }
+      ],
+      "lighting": "individual",
+      "shadow": {
+        "kind": "neutral",
+        "opacity": 0.5
+      },
+      "translucency": {
+        "enabled": false,
+        "value": 0.5
+      }
+    },
+    {
+      "name": "Base",
+      "layers": [
+        {
+          "name": "Badge",
+          "image-name": "badge.svg",
+          "glass": false
+        },
+        {
+          "name": "Light",
+          "image-name": "light.svg",
+          "glass": false
+        },
+        {
+          "name": "Base",
+          "image-name-specializations": [
+            {
+              "value": "base.svg"
+            },
+            {
+              "appearance": "dark",
+              "value": "base-dark.svg"
+            }
+          ],
+          "glass": false
+        }
+      ],
+      "shadow": {
+        "kind": "none",
+        "opacity": 0.5
+      },
+      "translucency": {
+        "enabled": false,
+        "value": 0.5
+      }
+    }
+  ],
+  "supported-platforms": {
+    "squares": [
+      "macOS"
+    ]
+  }
+}

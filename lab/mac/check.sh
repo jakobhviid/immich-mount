@@ -1,8 +1,9 @@
 #!/usr/bin/env bash
 # The macOS edition's check, from this machine: Finder's view of the lab server on the maintainer's Mac, one PASS or
-# FAIL line per claim (the mac-dev skill). It needs, already in place: a signed Debug build of the app in the Mac's
-# checkout, pulled to this commit, the tunnels to the lab server, and the extension switched on. It starts fresh: the
-# app signs out (the location, the credential and the store go) and in again with the lab's full key. It reads a few
+# FAIL line per claim (the mac-dev skill). It needs, already in place: Immich Mount Dev, built from this commit and
+# installed by apple/dev-app.sh, the tunnels to the lab server, and its extension switched on. It starts fresh: the
+# Dev app signs out (its location, credential and store go) and in again with the lab's full key. The installed
+# release, with an identity of its own, is never touched. It reads a few
 # originals, adds one photo on the server and one through Upload, and deletes both from the server again.
 #
 #   lab/mac/check.sh
@@ -20,9 +21,9 @@ env_file="$here/../immich-server/.env${IMMICH_INSTANCE:+.$IMMICH_INSTANCE}.local
 . "$env_file"
 # Relative to the home folder, where ssh starts: the File Provider location, whose folder carries the drive's name
 # (mount.name) and which the Mac's shell finds by the pattern, and the checkout.
-root='Library/CloudStorage/ImmichMount-*'
+root='Library/CloudStorage/ImmichMountDev-*'
 checkout='Developer/Private/immich-mount'
-app="$checkout/apple/build/DerivedData/Build/Products/Debug/Immich Mount.app"
+app="/Applications/Immich Mount Dev.app"
 
 # shellcheck disable=SC2086
 mac() { ssh ${MAC_SSH_OPTIONS:-} -o BatchMode=yes -o ConnectTimeout=10 "$MAC_HOST" "$1" </dev/null; }
@@ -61,14 +62,14 @@ curl -sS -m 10 "$server/api/server/version" >/dev/null || { echo "the lab server
 started=$(date +%s)
 
 since=$(mac "date '+%Y-%m-%d %H:%M:%S'")
-mac "pkill -x 'Immich Mount'; sleep 1; open -n '$app' --args -signOut YES -signInServer $server \
+mac "pkill -x 'Immich Mount Dev'; sleep 1; open -n '$app' --args -signOut YES -signInServer $server \
   -signInAPIKey $IMMICH_API_KEY_FULL"
 # The app logs its sign-in once the location is back; the old folder may still answer until then.
 wait_for_mac "a fresh sign-in" "/usr/bin/log show --start '$since' --style compact \
   --predicate 'subsystem == \"dev.hviid.ImmichMount\"' | grep -c 'signed in; the Finder location is added'" "1"
 wait_for_mac "the sections" "ls $root 2>/dev/null | sort | tr '\n' ' '" "Albums People Photos Places Upload "
 verdict "the extension's status: reachable, with the server's version" \
-  "$(mac "cat Library/Group\\ Containers/*.dev.hviid.ImmichMount/status.json" | jq -r '"\(.online) \(.version)"')" "true v3.3.5"
+  "$(mac "cat Library/Group\\ Containers/*.dev.hviid.ImmichMount.Dev/status.json" | jq -r '"\(.online) \(.version)"')" "true v3.3.5"
 verdict "every timeline photo" "$(mac "find $root/Photos -type f | wc -l | tr -d ' '")" "50"
 verdict "listing downloads no original" "$(mac "ls -lOR $root/Photos | grep -c dataless")" "50"
 
@@ -105,7 +106,7 @@ wait_for_mac "and goes when taken out" "$in_album" "5"
 # A photo of January 2001, a year the library has none of, so a year and a month appear with it, added while the
 # extension is stopped: the app wakes it, and its kept poll sees the change. Bytes appended to a fixture make the
 # photo unique, so Immich does not take it for a duplicate.
-mac "pkill -x ImmichMountFileProvider" || true
+mac "pkill -x ImmichMountDevFileProvider" || true
 photo=$(mktemp --suffix=.jpg)
 cat "$here/../immich-server/fixtures/cache/001.jpg" >"$photo"
 head -c 64 /dev/urandom >>"$photo"

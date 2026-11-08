@@ -7,18 +7,43 @@
 # changes.
 #
 #   apple/make-icons.sh
+#   apple/make-icons.sh dev    the development build's icon (blue, DEV on its base) into AppIconDev.appiconset only
 set -euo pipefail
 cd "$(dirname "$0")/.."
 source_svg=packaging/icons/dev.hviid.ImmichMount.svg
 set_dir=apple/App/Assets.xcassets/AppIcon.appiconset
+variant=${1:-}
 work=$(mktemp -d)
 trap 'rm -rf "$work"' EXIT
+if [ "$variant" = dev ]; then
+  set_dir=apple/App/Assets.xcassets/AppIconDev.appiconset
+fi
 
 # The drive is the whole icon on macOS: its face and base fill the rounded square on Apple's 1024 grid (824 square at
 # 100, 100), the base along the bottom edge, and the lens, the light and the gradients are the drawing's own, scaled.
-python3 - "$source_svg" "$work/macos.svg" <<'PYTHON'
+python3 - "$source_svg" "$work/macos.svg" "$variant" <<'PYTHON'
 import re, sys
+
+
+def dev_badge(x, centre_y, height):
+    """DEV in white strokes, letters drawn rather than set in a font, so every SVG renderer draws them alike."""
+    scale = height / 100
+    letters = "M0 0 V100 H38 A50 50 0 0 0 38 0 Z M150 0 H100 V100 H150 M100 50 H140 M175 0 L205 100 L235 0"
+    return (f'<g transform="translate({x:.1f} {centre_y - height / 2:.1f}) scale({scale:.4f})" fill="none" '
+            f'stroke="#ffffff" stroke-width="16" stroke-linejoin="round" stroke-linecap="round">'
+            f'<path d="{letters}"/></g>')
+
+
 source = open(sys.argv[1]).read()
+dev = sys.argv[3] == "dev"
+if dev:
+    # The development build is blue, as Mac development builds tend to be, so the two can be told apart at a glance.
+    source = re.sub(r'(<linearGradient id="face".*?</linearGradient>)',
+                    lambda match: match.group(1).replace("#ffffff", "#8ec5ff").replace("#deddda", "#3f8cf0"),
+                    source, flags=re.S)
+    source = re.sub(r'(<linearGradient id="base".*?</linearGradient>)',
+                    lambda match: match.group(1).replace("#c0bfbc", "#2563c9").replace("#9a9996", "#173f8a"),
+                    source, flags=re.S)
 defs = re.search(r"<defs>(.*?)</defs>", source, flags=re.S).group(1)
 lens = source[source.index('<circle cx="64" cy="58" r="30"'): source.rindex("</svg>")]
 light = re.search(r'<rect x="96"[^>]*fill="(#[0-9A-Fa-f]+)"', source).group(1)
@@ -51,6 +76,7 @@ open(sys.argv[2], "w").write(f"""<svg xmlns="http://www.w3.org/2000/svg" width="
   </g>
   <rect x="{left + 1}" y="{top + 1}" width="{size - 2}" height="{size - 2}" rx="{radius - 1}" fill="none" stroke="#000000" stroke-opacity="0.12" stroke-width="2"/>
   <g transform="translate({cx - 64 * scale:.2f} {cy - 58 * scale:.2f}) scale({scale:.4f})">{lens}</g>
+{dev_badge(left + 92, face_bottom + base / 2, 74) if dev else ""}
 </svg>
 """)
 PYTHON
@@ -70,6 +96,20 @@ for size in 16 32 128 256 512; do
 done
 printf '{\n  "images" : [%s\n  ],\n  "info" : { "author" : "xcode", "version" : 1 }\n}\n' "$images" >"$set_dir/Contents.json"
 printf '{\n  "info" : { "author" : "xcode", "version" : 1 }\n}\n' >apple/App/Assets.xcassets/Contents.json
+if [ "$variant" = dev ]; then
+  # Finder's sidebar symbol, the same shape asking for blue (apple/make-symbol.py --blue).
+  dev_symbol_dir=apple/App/Assets.xcassets/SidebarSymbolDev.symbolset
+  mkdir -p "$dev_symbol_dir"
+  python3 apple/make-symbol.py "$dev_symbol_dir/SidebarSymbolDev.svg" --square --blue
+  cat >"$dev_symbol_dir/Contents.json" <<'JSON'
+{
+  "info" : { "author" : "xcode", "version" : 1 },
+  "symbols" : [ { "filename" : "SidebarSymbolDev.svg", "idiom" : "universal" } ]
+}
+JSON
+  echo "wrote $set_dir and $dev_symbol_dir"
+  exit 0
+fi
 
 # The drawing itself, as the README and the GNOME app's pages show it, for the app window's header: Xcode keeps an
 # SVG in an image set as a vector.

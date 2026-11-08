@@ -28,13 +28,22 @@ struct ImmichMountApp: App {
             MenuBarMenu()
                 .environmentObject(delegate.model)
         } label: {
-            // The app icon as one solid shape, its lens and base cut out, as menu bar icons are drawn.
+            // The app icon as one solid shape, its lens and base cut out, as menu bar icons are drawn; blue in the
+            // Dev build, so it stands apart from the release's beside it.
+            #if DEBUG
+            Image(nsImage: devMenuBarIcon)
+            #else
             Image("MenuBarIcon")
+            #endif
         }
         .commands {
             CommandGroup(replacing: .appInfo) {
                 Button("About Immich Mount") { showAbout() }
-                Button("Check for Updates…") { AppDelegate.shared?.updater.checkForUpdates(nil) }
+                if Installation.updates {
+                    if Installation.updates {
+            Button("Check for Updates…") { AppDelegate.shared?.updater.checkForUpdates(nil) }
+        }
+                }
             }
             CommandGroup(replacing: .appSettings) {
                 Button("Settings…") { AppDelegate.shared?.showSettings() }
@@ -54,8 +63,8 @@ final class AppDelegate: NSObject, NSApplicationDelegate, SPUUpdaterDelegate,
     private(set) static weak var shared: AppDelegate?
     let model = AppModel()
     /// Sparkle, which reads the download page's appcast and replaces the app in place, so it stays in Applications,
-    /// where Finder's location runs it from. It starts only there: a copy anywhere else has nothing to update.
-    private(set) lazy var updater = SPUStandardUpdaterController(startingUpdater: Installation.isInApplications,
+    /// where Finder's location runs it from. It starts only there, and never in the Dev build (`Installation.updates`).
+    private(set) lazy var updater = SPUStandardUpdaterController(startingUpdater: Installation.updates,
                                                                   updaterDelegate: self, userDriverDelegate: self)
     private var window: NSWindow?
     private var settingsWindow: NSWindow?
@@ -444,6 +453,23 @@ private func showAbout() {
 /// Provider service runs (verified on macOS 27): an app opened from its disk image, or moved out of Downloads by
 /// Gatekeeper's translocation, would leave Finder a location whose extension is gone once the image is ejected. So a
 /// release build serves Finder only from an Applications folder; a development build runs where Xcode put it.
+#if DEBUG
+/// The Dev build's menu bar icon: the release's shape in blue, drawn as it is rather than as a template, which macOS
+/// would draw in the menu bar's own black or white.
+@MainActor
+let devMenuBarIcon: NSImage = {
+    guard let shape = NSImage(named: "MenuBarIcon") else { return NSImage() }
+    let blue = NSImage(size: shape.size, flipped: false) { rect in
+        shape.draw(in: rect)
+        NSColor.systemBlue.set()
+        rect.fill(using: .sourceAtop)
+        return true
+    }
+    blue.isTemplate = false
+    return blue
+}()
+#endif
+
 enum Installation {
     static var isInApplications: Bool {
         #if DEBUG
@@ -452,6 +478,16 @@ enum Installation {
         let path = Bundle.main.bundleURL.resolvingSymlinksInPath().path
         return path.hasPrefix("/Applications/")
             || path.range(of: "^/Users/[^/]+/Applications/", options: .regularExpression) != nil
+        #endif
+    }
+
+    /// Whether this copy updates itself: the release, run from Applications. Immich Mount Dev, the Debug build, never
+    /// does, so no release replaces it.
+    static var updates: Bool {
+        #if DEBUG
+        return false
+        #else
+        return isInApplications
         #endif
     }
 }

@@ -8,7 +8,7 @@
 	<true/>
 	<key>com.apple.security.application-groups</key>
 	<array>
-		<string>$(TeamIdentifierPrefix)dev.hviid.ImmichMount</string>
+		<string>$(TeamIdentifierPrefix)$(IMMICH_IDENTITY)</string>
 	</array>
 	<key>com.apple.security.temporary-exception.mach-lookup.global-name</key>
 	<array>
@@ -17,7 +17,7 @@
 	</array>
 	<key>keychain-access-groups</key>
 	<array>
-		<string>$(AppIdentifierPrefix)dev.hviid.ImmichMount</string>
+		<string>$(AppIdentifierPrefix)$(IMMICH_IDENTITY)</string>
 	</array>
 </dict>
 </plist>

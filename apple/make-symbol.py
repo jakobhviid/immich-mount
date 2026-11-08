@@ -120,7 +120,7 @@ def glyph(width, square):
     return paths, body_w + 2 * SIDE
 
 
-def template(square):
+def template(square, blue=False):
     which = "Finder sidebar symbol, the drive filling a rounded square" if square else "Finder sidebar symbol, the drive"
     lines = [
         '<?xml version="1.0" encoding="UTF-8"?>',
@@ -144,7 +144,10 @@ def template(square):
         lines.append(f'  <line id="left-margin-{name}" {margin} x1="{fmt(margin_left)}" x2="{fmt(margin_left)}" y1="600.785" y2="720.121"/>')
         lines.append(f'  <line id="right-margin-{name}" {margin} x1="{fmt(margin_left + advance)}" x2="{fmt(margin_left + advance)}" y1="600.785" y2="720.121"/>')
         glyphs.append(f'  <g id="{name}" transform="matrix(1 0 0 1 {fmt(margin_left)} 696)">')
-        glyphs.append(f'   <path d="{" ".join(paths)}"/>')
+        # The Dev build's symbol asks for blue where a renderer draws in colour (multicolor), and stays the same shape
+        # in one colour where it does not.
+        layer = ' class="monochrome-0 multicolor-0:systemBlueColor hierarchical-0:primary"' if blue else ""
+        glyphs.append(f'   <path{layer} d="{" ".join(paths)}"/>')
         glyphs.append("  </g>")
     lines.append(" </g>")
     lines.append(' <g id="Symbols">')
@@ -155,6 +158,7 @@ def template(square):
 
 
 if __name__ == "__main__":
-    if len(sys.argv) not in (2, 3) or sys.argv[2:] not in ([], ["--square"]):
+    flags = sys.argv[2:]
+    if len(sys.argv) < 2 or not set(flags) <= {"--square", "--blue"}:
         sys.exit(__doc__)
-    open(sys.argv[1], "w").write(template(sys.argv[2:] == ["--square"]))
+    open(sys.argv[1], "w").write(template("--square" in flags, blue="--blue" in flags))

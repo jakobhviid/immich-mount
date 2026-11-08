@@ -19,8 +19,9 @@ The Mac is a personal laptop the maintainer carries and uses every day, not a la
   job builds the Swift side on every branch push. The Mac is for Xcode builds, running the app and the extension,
   Finder and logs.
 - **It may be asleep or away:** start with a short SSH command, and never assume it is there.
-- **Ask before a check when the app is signed in to the maintainer's own server:** `lab/mac/check.sh` signs the app
-  out and in again with the lab's key, which signs the maintainer out of theirs.
+- **Test with Immich Mount Dev, never the release:** the Debug build has an identity of its own (AGENTS.md,
+  "Development environment"), so signing it out and in, its settings and its Finder location leave the maintainer's
+  installed release and its sign-in alone. Quit only `Immich Mount Dev` and `ImmichMountDevFileProvider`.
 - **Clean up what a check leaves:** sign out with the launch argument below (it removes the Finder location, the
   account and the extension's store), unless the maintainer keeps using it. Close the tunnels.
 
@@ -59,8 +60,8 @@ Traps (verified on macOS 27.0.1 with Xcode 27.2):
 - **No `osascript` over SSH, ever.** Apple events from an SSH session (to System Events, or `tell application … to
   quit`) make macOS ask the maintainer whether `sshd-keygen-wrapper`, the program that starts SSH sessions, may
   control that app, and accepting widens what every SSH session may do: a laptop setting this skill must not touch.
-  Quit the app with `pkill -x "Immich Mount"` (a signal needs no permission), and ask the maintainer what is on
-  screen.
+  Quit the Dev app with `pkill -x "Immich Mount Dev"` (a signal needs no permission), and ask the maintainer what
+  is on screen.
 - **zsh aborts a command whose glob matches nothing** ("no matches found"), and the rest of an SSH command line with
   it. Run cleanup scripts through `bash -s`.
 
@@ -70,6 +71,10 @@ Traps (verified on macOS 27.0.1 with Xcode 27.2):
 apple/build-rust.sh debug        # the bridge for both architectures, its Swift bindings, the xcframework (45 s)
 cd apple && xcodegen             # ImmichMount.xcodeproj, git-ignored
 ```
+
+**Immich Mount Dev, the usual build:** `open -a Terminal apple/dev-app.command` from SSH builds it signed in the
+maintainer's session, installs it as `/Applications/Immich Mount Dev.app` and starts it; `apple/build/dev-app.log`
+has its output. Its sign-in, settings and Finder location stay from one install to the next.
 
 **Unsigned, over SSH,** to see that it compiles. `-derivedDataPath` keeps the build inside the checkout, and a path
 of its own keeps it from replacing the signed app in `build/DerivedData`:
@@ -137,10 +142,11 @@ A development build takes launch arguments (`AppModel.followLaunchArguments`, DE
 without typing into the window:
 
 ```sh
-app="apple/build/DerivedData/Build/Products/Debug/Immich Mount.app"
+app="/Applications/Immich Mount Dev.app"
 open -n "$app" --args -signInServer http://127.0.0.1:2283 -signInAPIKey <key>
-open -n "$app" --args -signOut YES       # the Finder location, the account and the store go
-pkill -x "Immich Mount"                  # quit it; no Apple events, so no Automation prompt
+open -n "$app" --args -signOut YES       # its Finder location, account and store go; the release's stay
+open -n "$app" --args -settingsPane 1    # Settings, on a pane (0 General, 1 Folders, 2 Account)
+pkill -x "Immich Mount Dev"              # quit it; no Apple events, so no Automation prompt
 ```
 
 `open` from SSH starts the app in the maintainer's session, where the Keychain and File Provider work (verified:

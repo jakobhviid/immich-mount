@@ -1,0 +1,10 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1024" height="1024" viewBox="0 0 1024 1024">
+<defs><radialGradient id="glass" cx="0.42" cy="0.38" r="0.75">
+      <stop offset="0" stop-color="#2d5c9e"/><stop offset="0.6" stop-color="#18294a"/><stop offset="1" stop-color="#0f0d16"/>
+    </radialGradient></defs>
+<g transform="translate(-117.33 -160.83) scale(9.8333)"><circle cx="64" cy="58" r="18.00" fill="url(#glass)"/>
+  <circle cx="64" cy="58" r="11.16" fill="none" stroke="#ffffff" stroke-opacity="0.16" stroke-width="1.44"/>
+  <ellipse cx="58.24" cy="51.52" rx="5.40" ry="3.24"
+           transform="rotate(-35 58.24 51.52)" fill="#ffffff" opacity="0.75"/>
+  <circle cx="70.84" cy="63.40" r="1.44" fill="#ffffff" opacity="0.45"/></g>
+</svg>

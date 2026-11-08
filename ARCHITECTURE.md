@@ -1536,6 +1536,13 @@ nothing: the prompt is for local addresses only, so it is still to be seen with 
   bridge's tests there. A Rust change is checked against the Swift side without a Mac at hand. It also builds the
   release's disk image there, unsigned, so the release script is checked without the signing secrets.
 
+**The development build** is Immich Mount Dev (`apple/dev-app.sh`; AGENTS.md, "Development environment"): the
+Debug configuration gives it an identity of its own (`dev.hviid.ImmichMount.Dev`, with its App Group, Keychain group,
+settings and Finder location), a blue app icon, menu bar icon and sidebar symbol, and no updates. It runs beside the
+installed release, so testing never signs the maintainer out, and a release never replaces it. Both answer the
+browser sign-in's `app.immich://` address, which Immich fixes, so browser sign-in may reach the other one; the Dev
+app signs in with a password or an API key.
+
 **Distribution:** a notarized disk image on the GitHub release (`immich-mount-<version>.dmg`) and the Homebrew cask,
 signed with the maintainer's paid Apple Developer Program team. `apple/release.sh` builds it, the same way on the maintainer's
 Mac and in the release workflow's `macos` job:

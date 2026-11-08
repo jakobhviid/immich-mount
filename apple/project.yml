@@ -24,6 +24,20 @@ settings:
     CODE_SIGN_STYLE: Automatic
     ENABLE_HARDENED_RUNTIME: YES
     DEAD_CODE_STRIPPING: YES
+    # The app's identity: its bundle identifier, App Group and Keychain group, and the name Finder and System
+    # Settings show. A Debug build is Immich Mount Dev, with an identity of its own, so it signs in, keeps settings
+    # and adds a Finder location apart from the installed release (AGENTS.md, "Development environment").
+    IMMICH_IDENTITY: dev.hviid.ImmichMount
+    APP_DISPLAY_NAME: Immich Mount
+    APP_ICON: AppIcon
+    SIDEBAR_SYMBOL: SidebarSymbol
+  configs:
+    # Blue where the release is white or grey: the app icon, Finder's sidebar symbol and the menu bar icon.
+    Debug:
+      IMMICH_IDENTITY: dev.hviid.ImmichMount.Dev
+      APP_DISPLAY_NAME: Immich Mount Dev
+      APP_ICON: AppIconDev
+      SIDEBAR_SYMBOL: SidebarSymbolDev
 
 targets:
   ImmichMount:
@@ -31,10 +45,13 @@ targets:
     platform: macOS
     sources:
       - path: App
-        excludes: [AppIcon.icon]
+        excludes: [AppIcon.icon, AppIconDev.icon]
       # The Icon Composer icon is one document, not a folder of resources; macOS 26 and later show it, and the asset
-      # catalog's AppIcon set stays for macOS 14 and 15 (ARCHITECTURE.md, "The icon").
+      # catalog's AppIcon set stays for macOS 14 and 15 (ARCHITECTURE.md, "The icon"). AppIconDev is the Dev build's.
       - path: App/AppIcon.icon
+        type: file
+        buildPhase: resources
+      - path: App/AppIconDev.icon
         type: file
         buildPhase: resources
       # Sparkle's license asks for its notice to travel with the app.
@@ -47,14 +64,14 @@ targets:
         buildPhase: resources
     settings:
       base:
-        PRODUCT_BUNDLE_IDENTIFIER: dev.hviid.ImmichMount
-        PRODUCT_NAME: Immich Mount
+        PRODUCT_BUNDLE_IDENTIFIER: $(IMMICH_IDENTITY)
+        PRODUCT_NAME: $(APP_DISPLAY_NAME)
         INFOPLIST_FILE: App/Info.plist
         GENERATE_INFOPLIST_FILE: NO
         CODE_SIGN_ENTITLEMENTS: App/ImmichMount.entitlements
         # Empty in a development build, signed automatically; apple/release.sh names the Developer ID profile.
         PROVISIONING_PROFILE_SPECIFIER: $(APP_PROFILE)
-        ASSETCATALOG_COMPILER_APPICON_NAME: AppIcon
+        ASSETCATALOG_COMPILER_APPICON_NAME: $(APP_ICON)
     dependencies:
       - target: FileProvider
         embed: true
@@ -74,13 +91,17 @@ targets:
       - App/Assets.xcassets
     settings:
       base:
-        PRODUCT_BUNDLE_IDENTIFIER: dev.hviid.ImmichMount.FileProvider
+        PRODUCT_BUNDLE_IDENTIFIER: $(IMMICH_IDENTITY).FileProvider
         PRODUCT_NAME: ImmichMountFileProvider
         INFOPLIST_FILE: FileProvider/Info.plist
         GENERATE_INFOPLIST_FILE: NO
         CODE_SIGN_ENTITLEMENTS: FileProvider/FileProvider.entitlements
         PROVISIONING_PROFILE_SPECIFIER: $(EXTENSION_PROFILE)
-        ASSETCATALOG_COMPILER_APPICON_NAME: AppIcon
+        ASSETCATALOG_COMPILER_APPICON_NAME: $(APP_ICON)
+      configs:
+        # Its process name, apart from the release's, so stopping one never stops the other.
+        Debug:
+          PRODUCT_NAME: ImmichMountDevFileProvider
     dependencies:
       - framework: build/ImmichMountCore.xcframework
         embed: false
