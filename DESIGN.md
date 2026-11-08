@@ -114,8 +114,10 @@ Measured contrast on the website (WCAG AA asks 4.5:1 for text):
 
 ## Screenshots
 
-- **Test data only:** the lab server's credited fixtures, never a personal library (AGENTS.md, "Testing on
-  Erebus").
+- **Lab data only:** the lab server's credited fixtures, never a personal library (AGENTS.md, "Testing on Erebus").
+  One exception, until the lab has a Mac: the Mac's pictures come from the maintainer's own library, with photos
+  chosen without people and everything else personal pixelated (the server, the account, other locations in the
+  sidebar). They are taken again against the lab server once a Mac build server is there (ROADMAP.md).
 - **Linux** in the lab VMs, cut to the boxes the `lab-desktop-vm` skill lists. **The Mac** on the maintainer's Mac
   against the lab server, each window taken with ⌘⇧4 and Space, which keeps macOS's own shadow.
 - **Names** say what they show: `files-album.png`, `kde-status.png`, `gnome-tray.png`, and `mac-` for the Mac's (`mac-finder.png`,

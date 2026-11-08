@@ -303,6 +303,7 @@ These are the options for when that is not enough on a real server, with what ea
 | **Several servers or accounts** | The cache already separates accounts, so this is additive |
 | **"Move to Trash" mapped to Immich's trash** | It makes a library-wide change one keystroke away in a file manager. Needs careful thought first |
 | **Folder names in the user's language** | The interface is translated (ARCHITECTURE, "Translations"), the folders are not: a section's or a month's name is part of the mount's contract (SPEC, "Names"), and a path that changes with the desktop's language breaks scripts, links and bookmarks |
+| **A Mac in the lab** | A Mac build server would run the Mac's checks unattended, as the Linux VMs do, and take its README pictures against the lab server, which come from the maintainer's own library until then (DESIGN.md, "Screenshots") |
 | **More languages** | Next by reach: Persian, Swahili, Tagalog, Punjabi and Hausa, once someone asks or offers to check them |
 | **The websocket for `all` API keys** | Every credential is polled every 10 seconds, so changes show within seconds already; the websocket would shave those seconds for one kind of key, at the price of a socket.io client and a second connection |
 | **fanotify pre-content events** | Real placeholder files, the closest Linux match to macOS and Windows. They need root today |

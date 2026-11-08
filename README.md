@@ -102,7 +102,10 @@ and open it from there. Sign in,
 then switch Immich Mount on in System Settings, under General, Login Items & Extensions, File Providers, once: the
 app shows the way. It lives in the menu bar, and your library in Finder's sidebar. It updates itself.
 
-<img src="docs/screenshots/mac-finder.png" width="640" alt="Immich Mount in Finder's sidebar, with Albums, People, Photos, Places and Upload">
+<table><tr>
+<td><img src="docs/screenshots/mac-finder.png" alt="Immich Mount in Finder's sidebar, with Albums, People, Photos, Places and Upload"></td>
+<td><img src="docs/screenshots/mac-places.png" alt="A town under Places in Finder, its photo named by when it was taken"></td>
+</tr></table>
 
 <table><tr>
 <td><img src="docs/screenshots/mac-menu.png" width="277" alt="The menu bar item's menu: connected to the server, its version, the account and when it last checked, then Open in Finder, Settings, Check for Updates, Sign Out, About and Quit"></td>
