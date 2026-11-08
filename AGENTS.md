@@ -69,8 +69,16 @@ The first commit is 1.0.0, and every later one bumps from there:
 | `type!: ...` (breaking) | major |
 | `feat: ...` | minor |
 | anything else (`fix:`, `docs:`, `chore:`, ...) | patch |
+| `!no-release` anywhere in the subject (`docs: fix a README typo !no-release`) | none, and no release |
 
 A `BREAKING CHANGE` footer is not scanned. Mark breaking changes with `!` in the subject.
+
+`!no-release` is for changes that need no new version: the download page (`site/`), docs that need not reach users
+right away, CI tweaks. When every commit in a push carries it, the release workflow's `gate` job skips the whole
+release (no packages, no Mac build, no tap update), and `ci/version.sh` skips marked commits, so version numbers stay
+contiguous. A push that mixes marked and unmarked commits releases as usual, counting only the unmarked ones. It is
+not the breaking-change bang, which sits right before the colon (`feat!:`). The download page rebuilds by itself when
+`site/` changes on `main` (the `pages` workflow), with or without a release.
 
 ## The green gate
 
