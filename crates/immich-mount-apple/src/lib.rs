@@ -47,7 +47,8 @@ const RELIST_BUDGET: Duration = Duration::from_secs(20);
 /// What the extension's items carry (their capabilities and fields). The system keeps an item's details until its
 /// version changes, so the format is part of every version: raising it, with the app's reimport, has the system take
 /// every item again (ARCHITECTURE.md, "The macOS edition", "Content").
-const ITEM_FORMAT: u32 = 3;
+/// 4: folders carry the time the location was set up, where they carried none (Finder showed 1 January 1970).
+const ITEM_FORMAT: u32 = 4;
 /// How long the server check keeps trying a connection that fails: macOS may refuse sockets while its Local Network
 /// prompt waits for an answer (Apple's TN3179).
 const LOCAL_NETWORK_PATIENCE: Duration = Duration::from_secs(30);
@@ -132,7 +133,8 @@ impl Item {
     }
 }
 
-fn root_item() -> Item {
+/// The root, whose time is the folders' (`Answers::set_up`).
+fn root_item(set_up: SystemTime) -> Item {
     let root = NodeKey::Root.storage_key();
     Item {
         identifier: root.clone(),
@@ -141,16 +143,18 @@ fn root_item() -> Item {
         is_folder: true,
         accepts_new_files: false,
         size: None,
-        taken: None,
+        taken: Some(set_up),
         content_version: "folder".to_owned(),
         version: String::new(),
     }
     .versioned()
 }
 
-fn item_for(entry: &Entry, folder: &NodeKey) -> Item {
+/// An entry as the system sees it. A file has its capture time; a folder the time the location was set up, as on
+/// Linux a folder has the mount's (SPEC.md, "Attributes").
+fn item_for(entry: &Entry, folder: &NodeKey, set_up: SystemTime) -> Item {
     let (size, taken, content_version) = match &entry.kind {
-        EntryKind::Folder => (None, None, "folder".to_owned()),
+        EntryKind::Folder => (None, Some(set_up), "folder".to_owned()),
         EntryKind::File { asset_id, size, modified } => (*size, Some(SystemTime::from(*modified)), asset_id.clone()),
     };
     Item {
@@ -165,6 +169,12 @@ fn item_for(entry: &Entry, folder: &NodeKey) -> Item {
         version: String::new(),
     }
     .versioned()
+}
+
+/// When the location was set up: the store's creation, which signing in makes and signing out removes. Its
+/// modification time where the file system keeps no creation time.
+fn set_up_time(store: &Path) -> SystemTime {
+    std::fs::metadata(store).and_then(|metadata| metadata.created().or_else(|_| metadata.modified())).unwrap_or_else(|_| SystemTime::now())
 }
 
 fn node_for(identifier: &str) -> Result<NodeKey, BridgeError> {
@@ -214,6 +224,9 @@ struct Answers<Source, Names> {
     deadline: Duration,
     /// The change poll's memory from an earlier run, recalled at the first poll.
     kept_poll: Mutex<Option<String>>,
+    /// When the location was set up: every folder's time, stable from run to run, since it is part of the folders'
+    /// versions.
+    set_up: SystemTime,
 }
 
 /// An uploaded file waiting to leave the Upload folder, which no listing shows: the system may still ask about it,
@@ -279,20 +292,31 @@ where
     Names: NameMemory + Uploads + 'static,
 {
     fn new(source: Arc<Source>, names: Names, config: Config) -> Self {
-        Answers { tree: Tree::new(source.clone(), names, config), source, deadline: LISTING_DEADLINE, kept_poll: Mutex::new(None) }
+        Answers {
+            tree: Tree::new(source.clone(), names, config),
+            source,
+            deadline: LISTING_DEADLINE,
+            kept_poll: Mutex::new(None),
+            set_up: SystemTime::UNIX_EPOCH,
+        }
+    }
+
+    fn set_up_at(mut self, set_up: SystemTime) -> Self {
+        self.set_up = set_up;
+        self
     }
 
     async fn item(&self, identifier: &str) -> Result<Item, BridgeError> {
         let node = node_for(identifier)?;
         if node == NodeKey::Root {
-            return Ok(root_item());
+            return Ok(root_item(self.set_up));
         }
         if matches!(&node, NodeKey::Asset { parent, .. } if **parent == NodeKey::Upload) {
             return self.tree.names().uploaded(identifier).ok_or(BridgeError::NoSuchItem);
         }
         let found = tokio::time::timeout(self.deadline, self.tree.entry_of(&node)).await.map_err(|_| too_slow())??;
         let (folder, entry) = found.ok_or(BridgeError::NoSuchItem)?;
-        Ok(item_for(&entry, &folder))
+        Ok(item_for(&entry, &folder, self.set_up))
     }
 
     async fn list(&self, identifier: &str) -> Result<Vec<Item>, BridgeError> {
@@ -301,7 +325,7 @@ where
             Ok(listed) => listed?,
             Err(_) => self.tree.stale_listing(&folder).ok_or_else(too_slow)?,
         };
-        Ok(entries.iter().map(|entry| item_for(entry, &folder)).collect())
+        Ok(entries.iter().map(|entry| item_for(entry, &folder, self.set_up)).collect())
     }
 
     async fn fetch(&self, identifier: &str, destination: &Path) -> Result<Item, BridgeError> {
@@ -456,7 +480,7 @@ where
         let mut latest: Vec<(String, Option<Item>)> = Vec::new();
         for change in changes {
             let (identifier, item) = match change {
-                Change::Updated { folder, entry } => (entry.node.storage_key(), Some(item_for(&entry, &folder))),
+                Change::Updated { folder, entry } => (entry.node.storage_key(), Some(item_for(&entry, &folder, self.set_up))),
                 Change::Deleted(node) => (node.storage_key(), None),
             };
             latest.retain(|(earlier, _)| *earlier != identifier);
@@ -478,7 +502,7 @@ where
         store
             .kept_folders()
             .into_iter()
-            .flat_map(|folder| store.kept_listing(&folder).unwrap_or_default().iter().map(|entry| item_for(entry, &folder)).collect::<Vec<_>>())
+            .flat_map(|folder| store.kept_listing(&folder).unwrap_or_default().iter().map(|entry| item_for(entry, &folder, self.set_up)).collect::<Vec<_>>())
             .collect()
     }
 }
@@ -501,6 +525,8 @@ pub struct Library {
     store: Arc<MetadataStore>,
     /// The text of `config.toml` the answers follow.
     config: Mutex<String>,
+    /// When the location was set up (`Answers::set_up`).
+    set_up: SystemTime,
 }
 
 /// The settings in `config.toml`, as the macOS edition follows them.
@@ -570,10 +596,11 @@ impl Library {
         std::fs::create_dir_all(&directory).map_err(|error| failed(format!("{}: {error}", directory.display())))?;
         let store = MetadataStore::open(&directory.join("metadata.redb")).map_err(failed)?.with_journal(JOURNAL_LIMIT).map_err(failed)?;
         let store = Arc::new(store);
+        let set_up = set_up_time(&directory.join("metadata.redb"));
         let source = Arc::new(ImmichSource::new(client));
-        let answers = Answers::new(source.clone(), store.clone(), parsed);
+        let answers = Answers::new(source.clone(), store.clone(), parsed).set_up_at(set_up);
         *answers.kept_poll.lock().expect("kept poll lock") = store.kept_state(POLL_MEMORY);
-        let library = Arc::new(Library { answers: RwLock::new(Arc::new(answers)), source, store, config: Mutex::new(config) });
+        let library = Arc::new(Library { answers: RwLock::new(Arc::new(answers)), source, store, config: Mutex::new(config), set_up });
         open.insert(key, Arc::downgrade(&library));
         Ok(library)
     }
@@ -661,7 +688,7 @@ impl Library {
         if *current == config {
             return Ok(false);
         }
-        let answers = Answers::new(self.source.clone(), self.store.clone(), parse_config(&config)?);
+        let answers = Answers::new(self.source.clone(), self.store.clone(), parse_config(&config)?).set_up_at(self.set_up);
         *self.answers.write().expect("answers lock") = Arc::new(answers);
         *current = config;
         Ok(true)
@@ -1151,6 +1178,17 @@ mod tests {
     }
 
     #[tokio::test]
+    async fn folders_carry_the_time_the_location_was_set_up() {
+        let set_up = SystemTime::UNIX_EPOCH + Duration::from_secs(1_762_560_000);
+        let answers = answers().set_up_at(set_up);
+        assert_eq!(answers.item("root").await.unwrap().taken, Some(set_up));
+        let sections = answers.list("root").await.unwrap();
+        assert!(sections.iter().all(|folder| folder.taken == Some(set_up)), "not 1 January 1970 in Finder");
+        let photos = answers.list("section|Photos").await.unwrap();
+        assert!(photos.iter().all(|year| year.taken == Some(set_up)));
+    }
+
+    #[tokio::test]
     async fn a_photo_is_the_same_item_whether_listed_or_asked_for() {
         let answers = answers();
         let years = answers.list(&NodeKey::Section(SectionKey::Photos).storage_key()).await.unwrap();
@@ -1339,10 +1377,10 @@ mod tests {
 
     #[test]
     fn a_version_changes_with_what_is_shown() {
-        let item = root_item();
+        let item = root_item(SystemTime::UNIX_EPOCH);
         let renamed = Item { name: "Other".into(), ..item.clone() }.versioned();
         assert_ne!(item.version, renamed.version);
-        assert_eq!(item.version, root_item().version, "and only then");
+        assert_eq!(item.version, root_item(SystemTime::UNIX_EPOCH).version, "and only then");
     }
 
     #[tokio::test]

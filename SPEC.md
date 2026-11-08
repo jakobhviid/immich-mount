@@ -462,6 +462,8 @@ macOS edition"). Where Finder's way differs:
   what was downloaded. A file in Upload that has not reached Immich is kept: the confirmation counts them, the
   system preserves them, and Finder opens the folder they are kept in. When the location cannot be removed, the app
   stays signed in and says why.
+- **Dates:** a file has its capture time, as on Linux; a folder the time the location was set up (signing in),
+  where on Linux it has the mount's.
 - **Settings:** the settings table less the Linux-only ones (`mount.*`, `cache.limit`, `thumbnails.*`), in the
   app's Settings window. A change has the system list every folder again.
 - **Updates:** the app checks `https://jakob.hviid.phd/immich-mount/appcast.xml` once a day, unless switched off in
