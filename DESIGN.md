@@ -28,7 +28,7 @@ and how it is built; the platforms' own guidelines (GNOME's, KDE's, Apple's) gov
 | Mac: Finder's sidebar | The app icon in outline | `SidebarSymbol.symbolset` (`apple/make-symbol.py --square`) |
 | Mac: the sign-in window | The drawing itself, over the title | `Drive.imageset` |
 | The project as a whole: the website's bar and footer, the favicon | The mark: the lens alone, cut from the Linux icon's drawing | `site/mark.svg` |
-| A shared link to the repository: GitHub's social preview | The mark in its ring on the hero's glass, the name, the tagline, both platforms with their icons, and the non-affiliation line | `site/social-preview.html`, rendered at 1280 by 640 and uploaded in the repository's Settings |
+| A shared link to the repository: GitHub's social preview | The mark in its ring on the hero's glass, the name, the tagline, both platforms with their icons, and the non-affiliation line | `site/social-preview.html`, rendered at 1280 by 640 as `site/social-preview.png` and uploaded in the repository's Settings |
 
 **Why the Finder sidebar's symbol looks different:** Finder draws every location in its sidebar as a one-colour
 outline that follows the sidebar's text colour, as iCloud Drive's, OneDrive's and Nextcloud's are. A coloured icon
