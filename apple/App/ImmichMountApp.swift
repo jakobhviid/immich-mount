@@ -349,8 +349,9 @@ final class SettingsTabController: NSTabViewController {
 
     /// Keep a pane's height, and give the window that height when the pane is the one shown. After the layout pass
     /// that measured it, never during it.
-    private func pane(_ pane: SettingsPane, measures height: CGFloat) {
-        let height = min(max(height.rounded(.up), 120), Self.tallest)
+    private func pane(_ pane: SettingsPane, measures measured: CGFloat) {
+        logger.debug("settings pane \(pane.rawValue, privacy: .public) measures \(Double(measured), privacy: .public)")
+        let height = min(max(measured.rounded(.up), 120), Self.tallest)
         guard heights[pane] != height else { return }
         heights[pane] = height
         tabViewItems[pane.rawValue].viewController?.preferredContentSize = NSSize(width: Self.width, height: height)
