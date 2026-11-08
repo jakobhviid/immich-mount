@@ -695,31 +695,32 @@ impl Library {
     }
 }
 
-/// The sections, in the order the Folders pane lists them, each with the folder name it shows in Finder (never
-/// translated: the drive's folders keep their names in every language, SPEC.md, "Names").
-const SECTIONS: &[(&str, &str)] = &[
-    ("photos", "Photos"),
-    ("albums", "Albums"),
-    ("people", "People"),
-    ("places", "Places"),
-    ("favorites", "Favorites"),
-    ("archive", "Archive"),
+/// The sections, in the order the Folders pane lists them: the key of the switch that shows each, the key of its
+/// date folders where it has them, and the folder name it shows in Finder (never translated: the drive's folders
+/// keep their names in every language, SPEC.md, "Names"). Upload is one of them: its switch shows or hides the
+/// folder, and with it what is copied there being uploaded; it has no date folders.
+const SECTIONS: &[(&str, Option<&str>, &str)] = &[
+    ("sections.photos", Some("grouping.photos"), "Photos"),
+    ("sections.albums", Some("grouping.albums"), "Albums"),
+    ("sections.people", Some("grouping.people"), "People"),
+    ("sections.places", Some("grouping.places"), "Places"),
+    ("sections.favorites", Some("grouping.favorites"), "Favorites"),
+    ("sections.archive", Some("grouping.archive"), "Archive"),
+    ("uploads.enabled", None, "Upload"),
 ];
 
-/// What the Settings window shows (ARCHITECTURE.md, "The macOS edition", "Settings"): the settings table's entries
-/// that mean something on macOS, laid out as its panes are. The mount's group is Linux's: on macOS Finder's sidebar
+/// What the Settings window's Folders pane shows (ARCHITECTURE.md, "The macOS edition", "Settings"): the settings
+/// table's entries that mean something on macOS. The mount's group is Linux's: on macOS Finder's sidebar
 /// shows the app's name for a provider's only location, so its name (`mount.name`) would change nothing there, and
 /// its path and mounting at login are Linux's too; so are the cache and thumbnail seeding.
 #[derive(Debug, Clone, PartialEq, Eq, uniffi::Record)]
 pub struct SettingsPanes {
-    /// The Folders pane: each section's switch beside its date folders.
+    /// Each section's switch beside its date folders, Upload last.
     pub sections: Vec<SectionSettings>,
-    /// The Folders pane: how album folders are named and grouped (`albums.layout`).
+    /// How album folders are named and grouped (`albums.layout`).
     pub album_layout: Preference,
-    /// The Folders pane: how files are named (`files.naming`).
+    /// How files are named (`files.naming`).
     pub file_naming: Preference,
-    /// The General pane: the Upload folder (`uploads.enabled`).
-    pub uploads: Preference,
 }
 
 /// One section of the drive, as a row of the Folders pane.
@@ -727,11 +728,11 @@ pub struct SettingsPanes {
 pub struct SectionSettings {
     /// The section's folder name in Finder, untranslated.
     pub name: String,
-    /// Whether Finder shows it (`sections.<section>`).
+    /// Whether Finder shows it (`sections.<section>`, or `uploads.enabled`).
     pub shown: Preference,
     /// Its date folders (`grouping.<section>`): day folders inside months for Photos, year and month folders for
-    /// the others.
-    pub date_folders: Preference,
+    /// the others; none for Upload.
+    pub date_folders: Option<Preference>,
 }
 
 /// One setting of the core's settings table (SPEC.md, "Configuration"), with its value.
@@ -785,20 +786,15 @@ pub fn settings_panes(config: String) -> Result<SettingsPanes, BridgeError> {
     };
     let sections = SECTIONS
         .iter()
-        .map(|(section, name)| {
+        .map(|(shown, date_folders, name)| {
             Ok(SectionSettings {
                 name: (*name).to_owned(),
-                shown: preference(&format!("sections.{section}"))?,
-                date_folders: preference(&format!("grouping.{section}"))?,
+                shown: preference(shown)?,
+                date_folders: date_folders.map(preference).transpose()?,
             })
         })
         .collect::<Result<Vec<_>, BridgeError>>()?;
-    Ok(SettingsPanes {
-        sections,
-        album_layout: preference("albums.layout")?,
-        file_naming: preference("files.naming")?,
-        uploads: preference("uploads.enabled")?,
-    })
+    Ok(SettingsPanes { sections, album_layout: preference("albums.layout")?, file_naming: preference("files.naming")? })
 }
 
 /// The Finder location's name in the sidebar (`mount.name`), the default when `config` does not say or cannot be read.
@@ -1320,15 +1316,17 @@ mod tests {
     fn the_settings_panes_are_the_settings_that_mean_something_on_macos() {
         let panes = settings_panes("[sections]\npeople = false\n".into()).unwrap();
         let names: Vec<&str> = panes.sections.iter().map(|section| section.name.as_str()).collect();
-        assert_eq!(names, ["Photos", "Albums", "People", "Places", "Favorites", "Archive"]);
+        assert_eq!(names, ["Photos", "Albums", "People", "Places", "Favorites", "Archive", "Upload"]);
         let people = &panes.sections[2];
         assert_eq!((people.shown.key.as_str(), &people.shown.kind, people.shown.value.as_str()), ("sections.people", &PreferenceKind::Toggle, "false"));
-        assert_eq!((people.date_folders.key.as_str(), people.date_folders.value.as_str()), ("grouping.people", "atLeast500"));
+        let people_dates = people.date_folders.as_ref().unwrap();
+        assert_eq!((people_dates.key.as_str(), people_dates.value.as_str()), ("grouping.people", "atLeast500"));
+        let upload = &panes.sections[6];
+        assert_eq!((upload.shown.key.as_str(), upload.shown.value.as_str(), &upload.date_folders), ("uploads.enabled", "true", &None));
         assert_eq!(panes.sections[4].shown.value, "false", "Favorites is off by default");
         assert_eq!((panes.album_layout.key.as_str(), panes.album_layout.value.as_str()), ("albums.layout", "year-prefix"));
         assert!(matches!(&panes.album_layout.kind, PreferenceKind::Choice { options } if options[1].label == "Year Folders (2023/Trip)"));
         assert_eq!(panes.file_naming.key, "files.naming");
-        assert_eq!((panes.uploads.key.as_str(), panes.uploads.value.as_str()), ("uploads.enabled", "true"));
         let changed = set_preference("# mine\n".into(), "albums.layout".into(), "flat".into()).unwrap();
         assert!(changed.contains("# mine") && settings_panes(changed).unwrap().album_layout.value == "flat");
         assert!(set_preference(String::new(), "albums.layout".into(), "sideways".into()).is_err());

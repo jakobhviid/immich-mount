@@ -80,27 +80,27 @@ msgid "Immich takes photos and videos only."
 msgstr "Immich 仅接受照片和视频。"
 
 #: crates/immich-mount-linux/src/tray.rs:68
-#: apple/App/ImmichMountApp.swift:538
+#: apple/App/ImmichMountApp.swift:560
 msgid "Connected to {server}"
 msgstr "已连接到 {server}"
 
 #: crates/immich-mount-linux/src/tray.rs:69
-#: apple/App/ImmichMountApp.swift:538
+#: apple/App/ImmichMountApp.swift:560
 msgid "{server} is not reachable"
 msgstr "无法访问 {server}"
 
 #: crates/immich-mount-linux/src/tray.rs:71
-#: apple/App/ImmichMountApp.swift:537
+#: apple/App/ImmichMountApp.swift:559
 msgid "Signed in to {server}"
 msgstr "已登录到 {server}"
 
 #: crates/immich-mount-linux/src/tray.rs:79
-#: apple/App/ImmichMountApp.swift:546
+#: apple/App/ImmichMountApp.swift:568
 msgid "Server version: Immich {version}"
 msgstr "服务器版本：Immich {version}"
 
 #: crates/immich-mount-linux/src/tray.rs:82
-#: apple/App/ImmichMountApp.swift:549
+#: apple/App/ImmichMountApp.swift:571
 msgid "Signed in as: {account}"
 msgstr "登录身份：{account}"
 
@@ -137,17 +137,17 @@ msgstr "驱动器"
 #: crates/immich-mount-desktop/src/preferences.rs:13
 #: crates/immich-mount-gnome/src/window.blp:144
 #: crates/immich-mount-kde/qml/Main.qml:364
-#: apple/App/SettingsView.swift:142
+#: apple/App/SettingsView.swift:158
 msgid "Sections"
 msgstr "版块"
 
 #: crates/immich-mount-desktop/src/preferences.rs:14
-#: apple/App/SettingsView.swift:144
+#: apple/App/SettingsView.swift:160
 msgid "Date Folders"
 msgstr "日期文件夹"
 
 #: crates/immich-mount-desktop/src/preferences.rs:16
-#: apple/App/SettingsView.swift:156
+#: apple/App/SettingsView.swift:175
 msgid "Files"
 msgstr "文件"
 
@@ -251,7 +251,7 @@ msgstr "AI 使用声明"
 
 #: crates/immich-mount-gnome/src/main.rs:117
 #: crates/immich-mount-kde/qml/Main.qml:175
-#: apple/App/ImmichMountApp.swift:421
+#: apple/App/ImmichMountApp.swift:443
 msgid "Parts of this project were written with the assistance of AI coding agents. All changes are reviewed by the maintainer."
 msgstr "本项目的部分内容借助 AI 编程智能体编写。所有更改均经维护者审阅。"
 
@@ -516,7 +516,7 @@ msgid "The Immich API layer: {project}"
 msgstr "Immich API 层：{project}"
 
 #: crates/immich-mount-kde/qml/Main.qml:171
-#: apple/App/ImmichMountApp.swift:420
+#: apple/App/ImmichMountApp.swift:442
 msgid "AI disclosure"
 msgstr "AI 使用声明"
 
@@ -803,12 +803,12 @@ msgid "Original File Names"
 msgstr "原始文件名"
 
 #: apple/App/ContentView.swift:19
-#: apple/App/SettingsView.swift:237
+#: apple/App/SettingsView.swift:261
 msgid "Move Immich Mount to Applications"
 msgstr "将 Immich Mount 移到“应用程序”文件夹"
 
 #: apple/App/ContentView.swift:20
-#: apple/App/SettingsView.swift:238
+#: apple/App/SettingsView.swift:262
 msgid "Finder's location runs from the Applications folder. Quit Immich Mount, drag it into Applications, then open it from there."
 msgstr "访达 中的位置需要从“应用程序”文件夹运行。请退出 Immich Mount，将其拖到“应用程序”中，然后从那里打开。"
 
@@ -848,114 +848,114 @@ msgstr "在 Immich 的“账户设置”>“API 密钥”中创建一个；只�
 msgid "Open System Settings"
 msgstr "打开系统设置"
 
-#: apple/App/ImmichMountApp.swift:153
+#: apple/App/ImmichMountApp.swift:158
 msgid "Sign out of Immich Mount?"
 msgstr "要从 Immich Mount 退出登录吗？"
 
-#: apple/App/ImmichMountApp.swift:154
+#: apple/App/ImmichMountApp.swift:159
 msgid "Immich Mount leaves Finder, together with the photos and videos downloaded to this Mac. Your library on the server stays as it is."
 msgstr "Immich Mount 将从 访达 中移除，已下载到这台 Mac 的照片和视频也会一并移除。服务器上的图库保持不变。"
 
-#: apple/App/ImmichMountApp.swift:156
+#: apple/App/ImmichMountApp.swift:161
 msgid "Files in Upload that have not reached Immich: {count}. They stay on this Mac, and Finder shows where once you have signed out."
 msgstr "Upload 中尚未送达 Immich 的文件：{count}。这些文件会保留在这台 Mac 上，退出登录后 访达 会显示它们的位置。"
 
-#: apple/App/ImmichMountApp.swift:160
+#: apple/App/ImmichMountApp.swift:165
 msgid "Sign Out"
 msgstr "退出登录"
 
-#: apple/App/ImmichMountApp.swift:161
+#: apple/App/ImmichMountApp.swift:166
 msgid "Cancel"
 msgstr "取消"
 
-#: apple/App/ImmichMountApp.swift:176
+#: apple/App/ImmichMountApp.swift:181
 msgid "Still signed in"
 msgstr "仍处于登录状态"
 
-#: apple/App/ImmichMountApp.swift:177
+#: apple/App/ImmichMountApp.swift:182
 msgid "Finder's location could not be removed, so Immich Mount stays signed in: {error}"
 msgstr "无法移除 访达 中的位置，因此 Immich Mount 仍保持登录：{error}"
 
-#: apple/App/ImmichMountApp.swift:410
+#: apple/App/ImmichMountApp.swift:432
 msgid "Your Immich photos and videos as a drive in Finder. By Jakob Hviid, under the MIT license."
 msgstr "将您的 Immich 照片和视频显示为 访达 中的驱动器。作者 Jakob Hviid，采用 MIT 许可证。"
 
-#: apple/App/ImmichMountApp.swift:411
+#: apple/App/ImmichMountApp.swift:433
 msgid "Website"
 msgstr "网站"
 
-#: apple/App/ImmichMountApp.swift:413
+#: apple/App/ImmichMountApp.swift:435
 msgid "Source code"
 msgstr "源代码"
 
-#: apple/App/ImmichMountApp.swift:416
+#: apple/App/ImmichMountApp.swift:438
 msgid "Inspired by"
 msgstr "灵感来源"
 
-#: apple/App/ImmichMountApp.swift:418
+#: apple/App/ImmichMountApp.swift:440
 msgid "The Immich API layer"
 msgstr "Immich API 层"
 
-#: apple/App/ImmichMountApp.swift:554
+#: apple/App/ImmichMountApp.swift:576
 msgid "Last checked: {time}"
 msgstr "上次检查：{time}"
 
-#: apple/App/ImmichMountApp.swift:556
+#: apple/App/ImmichMountApp.swift:578
 msgid "Reason: {reason}"
 msgstr "原因：{reason}"
 
-#: apple/App/ImmichMountApp.swift:556
+#: apple/App/ImmichMountApp.swift:578
 msgid "none given"
 msgstr "未说明"
 
-#: apple/App/ImmichMountApp.swift:642
+#: apple/App/ImmichMountApp.swift:664
 msgid "The login item could not be changed: {error}"
 msgstr "无法更改登录项：{error}"
 
-#: apple/App/ImmichMountApp.swift:676
+#: apple/App/ImmichMountApp.swift:698
 msgid "The server sent an address that cannot be opened."
 msgstr "服务器发送了一个无法打开的地址。"
 
-#: apple/App/ImmichMountApp.swift:761
+#: apple/App/ImmichMountApp.swift:783
 msgid "Finder does not show Immich yet. Is the extension switched on in System Settings? ({error})"
 msgstr "访达 尚未显示 Immich。是否已在“系统设置”中启用该扩展？（{error}）"
 
 #: apple/App/ImmichMountApp.swift:36
-#: apple/App/ImmichMountApp.swift:390
+#: apple/App/ImmichMountApp.swift:412
 msgid "About Immich Mount"
 msgstr "关于 Immich Mount"
 
 #: apple/App/ImmichMountApp.swift:37
-#: apple/App/ImmichMountApp.swift:383
+#: apple/App/ImmichMountApp.swift:405
 msgid "Check for Updates…"
 msgstr "检查更新…"
 
 #: apple/App/ImmichMountApp.swift:40
-#: apple/App/ImmichMountApp.swift:381
+#: apple/App/ImmichMountApp.swift:403
 msgid "Settings…"
 msgstr "设置…"
 
-#: apple/App/ImmichMountApp.swift:367
-#: apple/App/SettingsView.swift:196
+#: apple/App/ImmichMountApp.swift:389
+#: apple/App/SettingsView.swift:218
 msgid "Sign In…"
 msgstr "登录…"
 
-#: apple/App/ImmichMountApp.swift:369
-#: apple/App/SettingsView.swift:216
+#: apple/App/ImmichMountApp.swift:391
+#: apple/App/SettingsView.swift:238
 msgid "Switch On in System Settings…"
 msgstr "在“系统设置”中启用…"
 
-#: apple/App/ImmichMountApp.swift:378
-#: apple/App/SettingsView.swift:218
+#: apple/App/ImmichMountApp.swift:400
+#: apple/App/SettingsView.swift:240
 msgid "Open in Finder"
 msgstr "在 访达 中打开"
 
-#: apple/App/ImmichMountApp.swift:386
-#: apple/App/SettingsView.swift:221
+#: apple/App/ImmichMountApp.swift:408
+#: apple/App/SettingsView.swift:243
 msgid "Sign Out…"
 msgstr "退出登录…"
 
-#: apple/App/ImmichMountApp.swift:391
+#: apple/App/ImmichMountApp.swift:413
 msgid "Quit Immich Mount"
 msgstr "退出 Immich Mount"
 
@@ -967,27 +967,39 @@ msgstr "通用"
 msgid "Folders"
 msgstr "文件夹"
 
-#: apple/App/SettingsView.swift:195
+#: apple/App/SettingsView.swift:170
+msgid "Folder names"
+msgstr "文件夹名称"
+
+#: apple/App/SettingsView.swift:173
+msgid "File names"
+msgstr "文件名称"
+
+#: apple/App/SettingsView.swift:217
 msgid "Not signed in"
 msgstr "未登录"
 
-#: apple/App/SettingsView.swift:97
+#: apple/App/SettingsView.swift:117
 msgid "Open at login"
 msgstr "登录时打开"
 
-#: apple/App/SettingsView.swift:98
+#: apple/App/SettingsView.swift:118
 msgid "Check for updates automatically"
 msgstr "自动检查更新"
 
-#: apple/App/SettingsView.swift:103
+#: apple/App/SettingsView.swift:123
 msgid "While Immich Mount runs, in the menu bar, changes in Immich reach Finder within seconds. Updates come from jakob.hviid.phd, signed by the project and notarized by Apple."
 msgstr "Immich Mount 在菜单栏中运行时，Immich 中的更改会在几秒内同步到 访达。更新来自 jakob.hviid.phd，由本项目签名并经 Apple 公证。"
 
-#: apple/App/SettingsView.swift:147
+#: apple/App/SettingsView.swift:164
 msgid "Date folders are day folders inside each month in Photos, and year and month folders in the other sections."
 msgstr "日期文件夹在 Photos 中是每个月里的按日文件夹，在其他版块中是按年和月的文件夹。"
 
-#: apple/App/SettingsView.swift:158
+#: apple/App/SettingsView.swift:165
+msgid "Photos and videos copied into Upload are added to Immich."
+msgstr "复制到 Upload 中的照片和视频会添加到 Immich。"
+
+#: apple/App/SettingsView.swift:177
 msgid "Finder lists Immich again after each change."
 msgstr "每次更改后，Finder 都会重新列出 Immich。"
 

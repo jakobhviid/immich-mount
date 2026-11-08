@@ -317,7 +317,8 @@ final class SettingsTabController: NSTabViewController {
         tabStyle = .toolbar
         let settings = SettingsModel()
         for pane in SettingsPane.allCases {
-            let hosting = NSHostingController(rootView: pane.view(model: model, settings: settings))
+            let refit = { [weak self] in self?.refitShownPane() }
+            let hosting = NSHostingController(rootView: pane.view(model: model, settings: settings, refit: refit))
             hosting.sizingOptions = []
             hosting.title = pane.title
             let item = NSTabViewItem(viewController: hosting)
@@ -345,12 +346,28 @@ final class SettingsTabController: NSTabViewController {
         UserDefaults.standard.set(selectedTabViewItemIndex, forKey: Self.lastPaneKey)
     }
 
-    /// The pane's height for the window's width, between bounds that keep a short pane a window and a long one on
-    /// screen (it scrolls beyond).
+    /// The pane's own height for the window's width (its view is fixed at its ideal height), up to what keeps a long
+    /// one on screen.
     private func fit(_ item: NSTabViewItem) {
         guard let hosting = item.viewController as? NSHostingController<AnyView> else { return }
         let ideal = hosting.sizeThatFits(in: NSSize(width: Self.width, height: 10_000))
-        hosting.preferredContentSize = NSSize(width: Self.width, height: min(max(ideal.height, 200), 680))
+        hosting.preferredContentSize = NSSize(width: Self.width, height: min(max(ideal.height, 120), 680))
+    }
+
+    /// Measure the pane shown again, after a change that makes it taller or shorter (signing in or out, a refusal),
+    /// and give the window that height, keeping its top edge. Run after the change's layout pass, never during it.
+    func refitShownPane() {
+        DispatchQueue.main.async { [weak self] in
+            guard let self, tabViewItems.indices.contains(selectedTabViewItemIndex) else { return }
+            let item = tabViewItems[selectedTabViewItemIndex]
+            fit(item)
+            guard let window = view.window, let height = item.viewController?.preferredContentSize.height else { return }
+            let content = window.contentRect(forFrameRect: window.frame)
+            guard abs(content.height - height) > 0.5 else { return }
+            var frame = window.frameRect(forContentRect: NSRect(x: content.minX, y: content.minY, width: content.width, height: height))
+            frame.origin.y = window.frame.maxY - frame.height
+            window.setFrame(frame, display: true, animate: window.isVisible)
+        }
     }
 }
 

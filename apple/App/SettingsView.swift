@@ -25,14 +25,34 @@ enum SettingsPane: Int, CaseIterable {
         }
     }
 
+    /// The pane, at its ideal height rather than any it is offered: a grouped form scrolls, so it takes whatever
+    /// height it is given, and the window could not tell how tall the pane wants to be.
     @MainActor
-    func view(model: AppModel, settings: SettingsModel) -> AnyView {
+    func view(model: AppModel, settings: SettingsModel, refit: @escaping () -> Void) -> AnyView {
         let pane: AnyView = switch self {
         case .general: AnyView(GeneralPane())
         case .folders: AnyView(FoldersPane())
         case .account: AnyView(AccountPane())
         }
-        return AnyView(pane.environmentObject(model).environmentObject(settings))
+        return AnyView(
+            pane
+                .fixedSize(horizontal: false, vertical: true)
+                .environment(\.refitSettings, refit)
+                .environmentObject(model)
+                .environmentObject(settings)
+        )
+    }
+}
+
+/// Asks the Settings window to measure the pane shown again, after a change that makes it taller or shorter.
+private struct RefitSettingsKey: EnvironmentKey {
+    static let defaultValue: () -> Void = {}
+}
+
+extension EnvironmentValues {
+    var refitSettings: () -> Void {
+        get { self[RefitSettingsKey.self] }
+        set { self[RefitSettingsKey.self] = newValue }
     }
 }
 
@@ -103,12 +123,6 @@ struct GeneralPane: View {
                 Text("While Immich Mount runs, in the menu bar, changes in Immich reach Finder within seconds. Updates come from jakob.hviid.phd, signed by the project and notarized by Apple.")
                     .foregroundStyle(.secondary)
             }
-            if let uploads = settings.panes?.uploads {
-                Section {
-                    Toggle(tr(uploads.title), isOn: settings.isOn(uploads))
-                        .disabled(!Installation.isInApplications)
-                }
-            }
             Refusal()
         }
         .formStyle(.grouped)
@@ -126,11 +140,13 @@ struct FoldersPane: View {
                 Section {
                     ForEach(panes.sections, id: \.name) { section in
                         // The section's folder name, never translated (SPEC.md, "Names"); its date folders, which
-                        // mean nothing while it is hidden; and whether Finder shows it.
+                        // mean nothing while it is hidden (Upload has none); and whether Finder shows it.
                         LabeledContent(section.name) {
                             HStack(spacing: 12) {
-                                choices(section.dateFolders)
-                                    .disabled(section.shown.value != "true")
+                                if let dateFolders = section.dateFolders {
+                                    choices(dateFolders)
+                                        .disabled(section.shown.value != "true")
+                                }
                                 Toggle(tr(section.shown.title), isOn: settings.isOn(section.shown))
                                     .labelsHidden()
                                     .toggleStyle(.switch)
@@ -144,14 +160,17 @@ struct FoldersPane: View {
                         Text(tr("Date Folders"))
                     }
                 } footer: {
-                    Text("Date folders are day folders inside each month in Photos, and year and month folders in the other sections.")
-                        .foregroundStyle(.secondary)
+                    VStack(alignment: .leading, spacing: 4) {
+                        Text("Date folders are day folders inside each month in Photos, and year and month folders in the other sections.")
+                        Text("Photos and videos copied into Upload are added to Immich.")
+                    }
+                    .foregroundStyle(.secondary)
                 }
                 Section(tr("Albums")) {
-                    choices(panes.albumLayout, labelled: true)
+                    choices(panes.albumLayout, label: tr("Folder names"))
                 }
                 Section {
-                    choices(panes.fileNaming, labelled: true)
+                    choices(panes.fileNaming, label: tr("File names"))
                 } header: {
                     Text(tr("Files"))
                 } footer: {
@@ -166,15 +185,17 @@ struct FoldersPane: View {
         .disabled(!Installation.isInApplications)
     }
 
+    /// A choice: with a short label of its own in a row, or with none beside a section's switch, where the
+    /// setting's full title (Linux's) is still what VoiceOver reads.
     @ViewBuilder
-    private func choices(_ preference: Preference, labelled: Bool = false) -> some View {
+    private func choices(_ preference: Preference, label: String? = nil) -> some View {
         if case .choice(let options) = preference.kind {
-            let picker = Picker(tr(preference.title), selection: settings.choice(preference)) {
+            let picker = Picker(label ?? tr(preference.title), selection: settings.choice(preference)) {
                 ForEach(options, id: \.value) { option in
                     Text(tr(option.label)).tag(option.value)
                 }
             }
-            if labelled {
+            if label != nil {
                 picker
             } else {
                 picker.labelsHidden().fixedSize()
@@ -186,6 +207,7 @@ struct FoldersPane: View {
 /// The account: the connection as the menu bar menu tells it, the location, and signing out, or in.
 struct AccountPane: View {
     @EnvironmentObject private var model: AppModel
+    @Environment(\.refitSettings) private var refit
 
     var body: some View {
         Form {
@@ -225,6 +247,8 @@ struct AccountPane: View {
             }
         }
         .formStyle(.grouped)
+        .onChange(of: model.step) { refit() }
+        .onChange(of: model.details) { refit() }
     }
 }
 
@@ -245,12 +269,16 @@ private struct OutsideApplications: View {
 /// Why the last change was refused, in the pane it was made in.
 private struct Refusal: View {
     @EnvironmentObject private var settings: SettingsModel
+    @Environment(\.refitSettings) private var refit
 
     var body: some View {
-        if let message = settings.message {
-            Section {
-                Text(message).foregroundStyle(.red)
+        Group {
+            if let message = settings.message {
+                Section {
+                    Text(message).foregroundStyle(.red)
+                }
             }
         }
+        .onChange(of: settings.message) { refit() }
     }
 }
