@@ -1504,6 +1504,12 @@ Mac and in the release workflow's `macos` job:
   repository. In the sandbox Sparkle installs through its installer service (`SUEnableInstallerLauncherService`,
   with two mach-lookup exceptions); the app's network entitlement covers the download. A check sends a request for
   the feed to jakob.hviid.phd (GitHub Pages), with the app's version in its user agent, and no system profile.
+- **The update window's notes** are in the feed itself: each release's "New" and "Fixed" lists, made from the
+  `feat:` and `fix:` commit subjects since the release before (`ci/release-notes.sh`, also the GitHub release's
+  text), the latest six releases that changed anything for users, newest first, as a small page Sparkle shows as it
+  is. A release with nothing for users adds none, and with no notes at all the window shows none, only that a new
+  version is out. **Not chosen:** a link to the GitHub release page, which Sparkle embeds whole, so the notes were
+  a scroll away inside GitHub's page.
 - **One version with Linux:** `apple/build-rust.sh` hands Xcode the release line's version (`ci/version.sh`) and the
   commit count as the build number, which grows with every release; development builds show the same.
 

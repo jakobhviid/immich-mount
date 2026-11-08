@@ -4,7 +4,7 @@ site/style.css, the mark, the icons and the screenshots, written into an output 
 "The download page"). Standard library only.
 
     gh release view [TAG] --json tagName,publishedAt,url,assets > release.json
-    site/build.py release.json OUTPUT [--macos MAC_RELEASE_JSON [--update DMG.update]]
+    site/build.py release.json OUTPUT [--macos MAC_RELEASE_JSON [--update DMG.update] [--notes RELEASES_JSON]]
 
 site/build-latest.sh gathers these for the latest release. The Mac download comes from MAC_RELEASE_JSON, the newest
 release with a disk image and its update file (ci/latest-mac-release.sh), which is the latest release unless its Mac
@@ -41,13 +41,53 @@ def link(url, text):
     return f'<a href="{html.escape(url)}">{html.escape(text)}</a>'
 
 
-def appcast(mac_release, dmg, update_file):
+def version_key(tag):
+    return tuple(int(part) for part in re.findall(r"\d+", tag)[:3])
+
+
+def release_notes(releases, up_to, most=6):
+    """The update window's notes: the newest releases' "New" and "Fixed" lists (ci/release-notes.sh) up to `up_to`,
+    newest first, as one small HTML page for Sparkle to show as it is. Empty when none of them changed anything for
+    users, and the window then shows no notes."""
+    sections = []
+    for release in sorted(releases, key=lambda release: version_key(release["tag_name"]), reverse=True):
+        if release.get("draft") or version_key(release["tag_name"]) > version_key(up_to):
+            continue
+        parts, items = [], []
+        for line in (release.get("body") or "").splitlines():
+            line = line.strip()
+            if line.startswith("### "):
+                if items:
+                    parts.append("<ul>" + "".join(items) + "</ul>")
+                    items = []
+                parts.append(f"<h3>{html.escape(line[4:])}</h3>")
+            elif line.startswith("- ") and parts:
+                items.append(f"<li>{html.escape(line[2:])}</li>")
+        if items:
+            parts.append("<ul>" + "".join(items) + "</ul>")
+        if parts:
+            sections.append(f"<h2>{html.escape(release['tag_name'].lstrip('v'))}</h2>" + "".join(parts))
+        if len(sections) == most:
+            break
+    if not sections:
+        return ""
+    style = ("<style>:root{color-scheme:light dark}body{font:13px -apple-system,sans-serif;margin:0 4px}"
+             "h2{font-size:13px;margin:14px 0 2px}h2:first-of-type{margin-top:4px}"
+             "h3{font-size:12px;font-weight:600;opacity:.65;margin:6px 0 2px}ul{margin:0;padding-left:18px}"
+             "li{margin:2px 0}</style>")
+    return style + "".join(sections)
+
+
+def appcast(mac_release, dmg, update_file, notes=""):
     """Sparkle's feed with the one update: the version Sparkle compares is the build number, the disk image's size
-    and signature are what the app checks before installing it."""
+    and signature are what the app checks before installing it. The notes go in as they are, so the update window
+    shows them and nothing else; without notes it shows none."""
     update = dict(line.split("=", 1) for line in Path(update_file).read_text().split() if "=" in line)
     asset = next(asset for asset in mac_release["assets"] if asset["url"] == dmg)
     version = mac_release["tagName"].lstrip("v")
     published = datetime.fromisoformat(mac_release["publishedAt"].replace("Z", "+00:00"))
+    # CDATA keeps the notes' HTML as it is; their text is escaped, so "]]>" cannot occur in it.
+    description = f"      <description><![CDATA[{notes}]]></description>\n" if notes else ""
     return f"""<?xml version="1.0" encoding="utf-8"?>
 <rss version="2.0" xmlns:sparkle="http://www.andymatuschak.org/xml-namespaces/sparkle">
   <channel>
@@ -59,8 +99,7 @@ def appcast(mac_release, dmg, update_file):
       <sparkle:version>{html.escape(update["build"])}</sparkle:version>
       <sparkle:shortVersionString>{html.escape(version)}</sparkle:shortVersionString>
       <sparkle:minimumSystemVersion>14.0</sparkle:minimumSystemVersion>
-      <sparkle:releaseNotesLink>{html.escape(mac_release["url"])}</sparkle:releaseNotesLink>
-      <enclosure url="{html.escape(dmg)}" length="{asset["size"]}" type="application/octet-stream"
+{description}      <enclosure url="{html.escape(dmg)}" length="{asset["size"]}" type="application/octet-stream"
                  sparkle:edSignature="{html.escape(update["signature"])}"/>
     </item>
   </channel>
@@ -68,7 +107,7 @@ def appcast(mac_release, dmg, update_file):
 """
 
 
-def main(release_file, output, mac_release_file=None, update_file=None):
+def main(release_file, output, mac_release_file=None, update_file=None, notes_file=None):
     release = json.loads(Path(release_file).read_text())
     assets = release["assets"]
     version = release["tagName"].lstrip("v")
@@ -133,7 +172,9 @@ def main(release_file, output, mac_release_file=None, update_file=None):
     # on Linux").
     (output / "latest.json").write_text(json.dumps({"version": version, "page": PAGE}) + "\n")
     if update_file and files["dmg"]:
-        (output / "appcast.xml").write_text(appcast(mac_release, files["dmg"], update_file))
+        releases = json.loads(Path(notes_file).read_text()) if notes_file else []
+        notes = release_notes(releases, mac_release["tagName"])
+        (output / "appcast.xml").write_text(appcast(mac_release, files["dmg"], update_file, notes))
     shutil.copy(ROOT / "site" / "style.css", output / "style.css")
     # The mark for the project, and each platform's own icon for that platform (DESIGN.md, "The website").
     shutil.copy(ROOT / "site" / "mark.svg", output / "mark.svg")
@@ -155,7 +196,8 @@ if __name__ == "__main__":
     parser.add_argument("output")
     parser.add_argument("--macos", help="the newest release with a disk image, as gh release view writes it")
     parser.add_argument("--update", help="that disk image's update file, from ci/sign-mac-update.sh")
+    parser.add_argument("--notes", help="the latest releases with their notes, as gh api repos/{owner}/{repo}/releases writes them")
     arguments = parser.parse_args()
     if arguments.update and not arguments.macos:
         parser.error("--update goes with --macos")
-    main(arguments.release, arguments.output, arguments.macos, arguments.update)
+    main(arguments.release, arguments.output, arguments.macos, arguments.update, arguments.notes)

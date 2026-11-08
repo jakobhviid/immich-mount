@@ -16,4 +16,7 @@ if [ -z "$mac" ]; then
 fi
 gh release view "$mac" --json tagName,publishedAt,url,assets > "$work/macos.json"
 gh release download "$mac" --pattern '*.dmg.update' --dir "$work"
-python3 site/build.py "$work/release.json" "$output" --macos "$work/macos.json" --update "$work"/*.dmg.update
+# The latest releases' notes, for the Mac update window (ci/release-notes.sh).
+gh api 'repos/{owner}/{repo}/releases?per_page=20' > "$work/releases.json"
+python3 site/build.py "$work/release.json" "$output" --macos "$work/macos.json" --update "$work"/*.dmg.update \
+  --notes "$work/releases.json"

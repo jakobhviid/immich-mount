@@ -375,8 +375,12 @@ jobs:
           # The disk image and its update file only when the Mac job ran.
           shopt -s nullglob
           files=(art/*.tar.gz art/*.deb art/*.rpm art/*.dmg art/*.dmg.update)
+          # What changed for users since the previous release; the Mac's update window shows these notes.
+          previous=$(git describe --tags --abbrev=0 --match 'v*' --exclude "v$VERSION" HEAD 2>/dev/null || true)
+          ci/release-notes.sh "$previous" > "$RUNNER_TEMP/notes.md"
+          [ -s "$RUNNER_TEMP/notes.md" ] || echo "Nothing new for users: documentation, tests and builds." > "$RUNNER_TEMP/notes.md"
           gh release create "v$VERSION" "${files[@]}" \
-            --title "v$VERSION" --notes "Automated build from ${GITHUB_SHA:0:7}" \
+            --title "v$VERSION" --notes-file "$RUNNER_TEMP/notes.md" \
             || gh release upload "v$VERSION" "${files[@]}" --clobber
       - name: Prune old releases (keep the latest 10, and the newest with a Mac disk image)
         env:
