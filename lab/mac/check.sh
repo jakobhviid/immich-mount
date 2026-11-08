@@ -62,7 +62,7 @@ curl -sS -m 10 "$server/api/server/version" >/dev/null || { echo "the lab server
 started=$(date +%s)
 
 since=$(mac "date '+%Y-%m-%d %H:%M:%S'")
-mac "pkill -x 'Immich Mount Dev'; sleep 1; open -n '$app' --args -signOut YES -signInServer $server \
+mac "pkill -f 'Immich Mount Dev.app/Contents/MacOS'; sleep 1; open -n '$app' --args -signOut YES -signInServer $server \
   -signInAPIKey $IMMICH_API_KEY_FULL"
 # The app logs its sign-in once the location is back; the old folder may still answer until then.
 wait_for_mac "a fresh sign-in" "/usr/bin/log show --start '$since' --style compact \
@@ -106,7 +106,7 @@ wait_for_mac "and goes when taken out" "$in_album" "5"
 # A photo of January 2001, a year the library has none of, so a year and a month appear with it, added while the
 # extension is stopped: the app wakes it, and its kept poll sees the change. Bytes appended to a fixture make the
 # photo unique, so Immich does not take it for a duplicate.
-mac "pkill -x ImmichMountDevFileProvider" || true
+mac "pkill -f 'Immich Mount Dev.app/Contents/PlugIns'" || true
 photo=$(mktemp --suffix=.jpg)
 cat "$here/../immich-server/fixtures/cache/001.jpg" >"$photo"
 head -c 64 /dev/urandom >>"$photo"

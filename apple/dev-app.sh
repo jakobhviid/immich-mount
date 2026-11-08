@@ -21,9 +21,9 @@ xcodegen -q
 xcodebuild -project ImmichMount.xcodeproj -scheme ImmichMount -configuration Debug -destination platform=macOS \
   -derivedDataPath build/DevData -allowProvisioningUpdates build -quiet
 
-# Only the Dev app and its extension stop; the release keeps running.
-pkill -x "Immich Mount Dev" || true
-pkill -x ImmichMountDevFileProvider || true
+# Only the Dev app and its extension stop, matched by their path (the extension shares the release's name); the
+# release keeps running.
+pkill -f "Immich Mount Dev.app/Contents/" || true
 ditto "$built" "$installed.new"
 rm -rf "$installed"
 mv "$installed.new" "$installed"

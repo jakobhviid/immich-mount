@@ -97,11 +97,9 @@ targets:
         GENERATE_INFOPLIST_FILE: NO
         CODE_SIGN_ENTITLEMENTS: FileProvider/FileProvider.entitlements
         PROVISIONING_PROFILE_SPECIFIER: $(EXTENSION_PROFILE)
+        # The same in both configurations: the app embeds the extension by the file name the project fixes when it
+        # is generated, so a Debug-only name broke the Release build. Stop the Dev one by its path, never its name.
         ASSETCATALOG_COMPILER_APPICON_NAME: $(APP_ICON)
-      configs:
-        # Its process name, apart from the release's, so stopping one never stops the other.
-        Debug:
-          PRODUCT_NAME: ImmichMountDevFileProvider
     dependencies:
       - framework: build/ImmichMountCore.xcframework
         embed: false

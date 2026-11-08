@@ -21,7 +21,8 @@ The Mac is a personal laptop the maintainer carries and uses every day, not a la
 - **It may be asleep or away:** start with a short SSH command, and never assume it is there.
 - **Test with Immich Mount Dev, never the release:** the Debug build has an identity of its own (AGENTS.md,
   "Development environment"), so signing it out and in, its settings and its Finder location leave the maintainer's
-  installed release and its sign-in alone. Quit only `Immich Mount Dev` and `ImmichMountDevFileProvider`.
+  installed release and its sign-in alone. Quit only what runs from `Immich Mount Dev.app`, by its path (`pkill -f
+  "Immich Mount Dev.app/Contents/"`): its extension's process has the release's name.
 - **Clean up what a check leaves:** sign out with the launch argument below (it removes the Finder location, the
   account and the extension's store), unless the maintainer keeps using it. Close the tunnels.
 
@@ -60,8 +61,8 @@ Traps (verified on macOS 27.0.1 with Xcode 27.2):
 - **No `osascript` over SSH, ever.** Apple events from an SSH session (to System Events, or `tell application … to
   quit`) make macOS ask the maintainer whether `sshd-keygen-wrapper`, the program that starts SSH sessions, may
   control that app, and accepting widens what every SSH session may do: a laptop setting this skill must not touch.
-  Quit the Dev app with `pkill -x "Immich Mount Dev"` (a signal needs no permission), and ask the maintainer what
-  is on screen.
+  Quit the Dev app with `pkill -f "Immich Mount Dev.app/Contents/MacOS"` (a signal needs no permission; macOS cuts
+  process names at 15 characters, so `pkill -x` misses it), and ask the maintainer what is on screen.
 - **zsh aborts a command whose glob matches nothing** ("no matches found"), and the rest of an SSH command line with
   it. Run cleanup scripts through `bash -s`.
 
@@ -146,7 +147,7 @@ app="/Applications/Immich Mount Dev.app"
 open -n "$app" --args -signInServer http://127.0.0.1:2283 -signInAPIKey <key>
 open -n "$app" --args -signOut YES       # its Finder location, account and store go; the release's stay
 open -n "$app" --args -settingsPane 1    # Settings, on a pane (0 General, 1 Folders, 2 Account)
-pkill -x "Immich Mount Dev"              # quit it; no Apple events, so no Automation prompt
+pkill -f "Immich Mount Dev.app/Contents/MacOS"   # quit it; no Apple events, so no Automation prompt
 ```
 
 `open` from SSH starts the app in the maintainer's session, where the Keychain and File Provider work (verified:
