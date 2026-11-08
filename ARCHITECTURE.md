@@ -1255,7 +1255,7 @@ release, and run by hand to build the page again without releasing.
   platforms' icons and the README's screenshots (`docs/screenshots/`) are copied in, and the build fails if a local
   link has no file.
 - **Its look follows DESIGN.md:** the icon's palette, the lens as the hero, and each platform's own icon where that
-  platform is meant, the visitor's in the hero.
+  platform is meant.
 - **Python's standard library, one template and one script,** rather than a static site generator: there is one
   page, and nothing to install in CI. CI builds it against the latest release on every branch, so a template change
   that breaks it fails before it reaches `main`.

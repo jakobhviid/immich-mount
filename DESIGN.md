@@ -98,16 +98,15 @@ Measured contrast on the website (WCAG AA asks 4.5:1 for text):
 ## The website
 
 `site/` (ARCHITECTURE.md, "The download page"):
-- **The hero is the lens:** its glass as the ground in both appearances, the ring large around the app icon at the
-  centre.
+- **The hero is the lens:** its glass as the ground in both appearances, and the mark large in the ring, for every
+  visitor, as on the social preview. A platform's app icon in the ring was tried; a tile in a circle looked cramped
+  beside the mark's round lens.
 - **A section for each platform,** right after the opening: GNOME, KDE Plasma and macOS, each with its icon, one
   line on what is native there and three of its pictures, the visitor's platform first. Being native on each is the
   point, so the pictures are never one mixed gallery.
-- **The visitor's platform decides the icon:** a Mac visitor sees the Mac's icon in the hero, everyone else the
-  Linux drive. Both platforms show side by side only where both are listed: the supported platforms under the
-  title, each with its own icon, and the install section, each card headed by its platform's icon. The visitor's
-  card comes first, outlined in the status light, with "for your system".
-- **The mark** in the bar, the footer and the favicon.
+- **Each platform's icon beside its name:** the supported platforms under the title, the platform sections and the
+  install cards. The visitor's card comes first, outlined in the status light, with "for your system".
+- **The mark** in the hero's ring, the bar, the footer and the favicon.
 - **Cards** are white (lens in dark) with a soft shadow; each feature card carries one segment of the ring, in the
   ring's order.
 - **Screenshots** are rounded with a soft border, in their platform's section; the Mac's keep macOS's own window
