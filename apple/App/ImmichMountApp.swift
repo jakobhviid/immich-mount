@@ -326,6 +326,9 @@ final class SettingsTabController: NSTabViewController {
 
     /// Each pane's content height, as it last told it.
     private var heights: [SettingsPane: CGFloat] = [:]
+    /// The window's resize, waiting for the pane's height to settle: as a pane is first laid out, at a narrow width,
+    /// it tells passing heights of thousands of points before its own (seen on macOS 27).
+    private var pendingResize: DispatchWorkItem?
 
     init(model: AppModel) {
         super.init(nibName: nil, bundle: nil)
@@ -364,7 +367,8 @@ final class SettingsTabController: NSTabViewController {
         guard heights[pane] != height else { return }
         heights[pane] = height
         tabViewItems[pane.rawValue].viewController?.preferredContentSize = NSSize(width: Self.width, height: height)
-        DispatchQueue.main.async { [weak self] in
+        pendingResize?.cancel()
+        let resize = DispatchWorkItem { [weak self] in
             guard let self, selectedTabViewItemIndex == pane.rawValue, let window = view.window else { return }
             let content = window.contentRect(forFrameRect: window.frame)
             guard abs(content.height - height) > 0.5 else { return }
@@ -372,6 +376,8 @@ final class SettingsTabController: NSTabViewController {
             frame.origin.y = window.frame.maxY - frame.height
             window.setFrame(frame, display: true, animate: window.isVisible)
         }
+        pendingResize = resize
+        DispatchQueue.main.asyncAfter(deadline: .now() + 0.05, execute: resize)
     }
 }
 
