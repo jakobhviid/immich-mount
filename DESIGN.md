@@ -28,6 +28,7 @@ and how it is built; the platforms' own guidelines (GNOME's, KDE's, Apple's) gov
 | Mac: Finder's sidebar | The app icon in outline | `SidebarSymbol.symbolset` (`apple/make-symbol.py --square`) |
 | Mac: the sign-in window | The drawing itself, over the title | `Drive.imageset` |
 | The project as a whole: the website's bar and footer, the favicon | The mark: the lens alone, cut from the Linux icon's drawing | `site/mark.svg` |
+| A shared link to the repository: GitHub's social preview | The mark in its ring on the hero's glass, the name, the tagline, both platforms with their icons, and the non-affiliation line | `site/social-preview.html`, rendered at 1280 by 640 and uploaded in the repository's Settings |
 
 **Why the Finder sidebar's symbol looks different:** Finder draws every location in its sidebar as a one-colour
 outline that follows the sidebar's text colour, as iCloud Drive's, OneDrive's and Nextcloud's are. A coloured icon
@@ -39,6 +40,9 @@ square, the face's edge, the light, and the lens as a ring of five segments.
 Rules:
 - **A platform's icon only where that platform is meant:** its download, its screenshots, its entry in a list of
   platforms. **The mark** where the project as a whole is meant.
+- **Both platforms' icons side by side** where the whole project stands for both platforms' apps, as at the top
+  of the README: Linux's drive, then the Mac's (right-aligned in the README, which floats the first one rightmost,
+  so the Mac's comes first in its source). The Mac's carries Apple's margin, so it is drawn a little larger.
 - **Never one platform's icon on another's desktop:** no rounded square on Linux, no wide drive as the Mac's app
   icon.
 - **Change an icon at its source** and run its generator (`apple/make-icons.sh`); never edit exported PNGs.

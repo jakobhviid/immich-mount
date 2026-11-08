@@ -1,0 +1,54 @@
+<!doctype html>
+<!-- GitHub's social preview for the repository, the card a shared link shows (DESIGN.md, "The icon family"): render at
+     1280 by 640 (a headless browser's screenshot of this page, from site/) and upload it in the repository's
+     Settings, General, Social preview. Not part of the download page. -->
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <style>
+    html, body { margin: 0; width: 1280px; height: 640px; overflow: hidden; }
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Cantarell, "Noto Sans", Ubuntu, sans-serif;
+      background: radial-gradient(ellipse 75% 95% at 30% 45%, #2d5c9e 0%, #18294a 55%, #0f0d16 100%);
+      color: #f6f5f4;
+      display: flex;
+      align-items: center;
+      gap: 64px;
+      padding: 0 96px;
+      box-sizing: border-box;
+    }
+    .stage { position: relative; width: 400px; height: 400px; flex: none; }
+    .ring { position: absolute; inset: 0; width: 100%; height: 100%; }
+    .ring path { fill: none; stroke-width: 4.5; }
+    .mark { position: absolute; inset: 90px; width: 220px; height: 220px; filter: drop-shadow(0 16px 32px rgb(0 0 0 / 0.4)); }
+    h1 { font-size: 84px; line-height: 1; margin: 0 0 22px; letter-spacing: -0.03em; color: #ffffff; }
+    p { font-size: 34px; line-height: 1.3; margin: 0 0 40px; color: #deddda; max-width: 640px; }
+    ul { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 14px; }
+    li { display: flex; align-items: center; gap: 14px; font-size: 26px; color: #deddda; }
+    li img { width: 44px; height: 44px; }
+    li strong { color: #ffffff; }
+    footer { position: absolute; left: 96px; right: 96px; bottom: 30px; font-size: 19px; color: #9a9996; }
+  </style>
+</head>
+<body>
+  <div class="stage">
+    <svg class="ring" viewBox="0 0 300 300" aria-hidden="true">
+      <path d="M 156.11 10.13 A 140 140 0 0 1 281.13 100.97" stroke="#FA2921"/>
+      <path d="M 284.91 112.59 A 140 140 0 0 1 237.15 259.57" stroke="#ED79B5"/>
+      <path d="M 227.27 266.74 A 140 140 0 0 1 72.73 266.74" stroke="#FFB400"/>
+      <path d="M 62.85 259.57 A 140 140 0 0 1 15.09 112.59" stroke="#1E83F7"/>
+      <path d="M 18.87 100.97 A 140 140 0 0 1 143.89 10.13" stroke="#18C249"/>
+    </svg>
+    <img class="mark" src="mark.svg" alt="">
+  </div>
+  <div>
+    <h1>Immich Mount</h1>
+    <p>Your Immich photos and videos as a drive in your file manager.</p>
+    <ul>
+      <li><img src="../packaging/icons/dev.hviid.ImmichMount.svg" alt=""><span><strong>Linux</strong> on GNOME and KDE Plasma</span></li>
+      <li><img src="../apple/App/Assets.xcassets/AppIcon.appiconset/icon_128x128@2x.png" alt=""><span><strong>macOS</strong> 14 or later</span></li>
+    </ul>
+  </div>
+  <footer>An independent, unofficial project, not affiliated with the Immich project or FUTO.</footer>
+</body>
+</html>

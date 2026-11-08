@@ -1,4 +1,5 @@
-<img src="packaging/icons/dev.hviid.ImmichMount.svg" alt="" width="112" align="right">
+<img src="apple/App/Assets.xcassets/AppIcon.appiconset/icon_128x128@2x.png" alt="" width="116" align="right">
+<img src="packaging/icons/dev.hviid.ImmichMount.svg" alt="" width="108" align="right">
 
 # Immich Mount
 
