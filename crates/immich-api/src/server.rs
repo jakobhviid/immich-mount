@@ -98,6 +98,7 @@ impl Client {
 
     /// The file extensions the server accepts (`GET /server/media-types`), as `.jpg` and the like, lower case.
     /// Images and videos only; sidecars are left out, because the mount does not upload them.
+    /// Needs no credential.
     pub async fn server_media_types(&self) -> Result<Vec<String>, ApiError> {
         let wire: MediaTypesWire = self.get_json(&["server", "media-types"], &[]).await?;
         Ok(wire.image.into_iter().chain(wire.video).map(|extension| extension.to_ascii_lowercase()).collect())
@@ -106,6 +107,7 @@ impl Client {
     /// The permissions of the API key in use (`GET /api-keys/me`), such as `["all"]` or `["asset.read", ...]`.
     ///
     /// Works for API keys only; a session gets [`ApiError::Forbidden`].
+    /// Needs an API key; a session is refused.
     pub async fn api_key_permissions(&self) -> Result<Vec<String>, ApiError> {
         let wire: ApiKeyWire = self.get_json(&["api-keys", "me"], &[]).await?;
         Ok(wire.permissions)

@@ -168,6 +168,7 @@ pub struct PersonOnAsset {
 
 impl Client {
     /// Every person, hidden ones included (`GET /people?withHidden=true`, all pages).
+    /// Needs `person.read`.
     pub async fn people(&self) -> Result<Vec<Person>, ApiError> {
         let mut people = Vec::new();
         for page_number in 1..=MAX_PEOPLE_PAGES {

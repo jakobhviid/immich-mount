@@ -5,6 +5,7 @@
 mod common;
 
 use chrono::DateTime;
+use futures_util::FutureExt;
 use common::{album_id, assert_refused, asset_named, full, readonly, timeline_ids};
 use immich_api::{
     AlbumChanges, AlbumFilter, ApiError, AssetChanges, AssetEdit, AssetJob, AssetKind, AssetOrder, AssetQuery,
@@ -137,58 +138,77 @@ async fn an_asset_is_edited_one_at_a_time_and_in_bulk_then_put_back() {
     let original = client.asset_details(&id).await.unwrap();
     let original_exif = original.exif.clone().unwrap_or_default();
 
-    let changed = client
-        .update_asset(
-            &id,
-            &AssetChanges {
-                description: Some("contract description".to_owned()),
-                rating: Some(Some(4)),
-                favorite: Some(true),
-                latitude: Some(55.6761),
-                longitude: Some(12.5683),
-                ..AssetChanges::default()
-            },
-        )
-        .await
-        .unwrap();
-    assert!(changed.is_favorite);
-    let exif = changed.exif.unwrap();
-    assert_eq!(exif.description.as_deref(), Some("contract description"));
-    assert_eq!(exif.rating, Some(4));
-    assert!((exif.latitude.unwrap() - 55.6761).abs() < 1e-4);
+    // The edits run to completion or to their first failed assertion; either way the Asset is put back after.
+    let edits = std::panic::AssertUnwindSafe(async {
 
-    let taken = DateTime::parse_from_rfc3339("2001-02-03T04:05:06+02:00").unwrap();
-    client
-        .update_assets(
-            std::slice::from_ref(&id),
-            &AssetChanges {
-                date_time_original: Some(taken),
-                rating: Some(None),
-                favorite: Some(false),
-                description: Some(String::new()),
-                ..AssetChanges::default()
-            },
-        )
-        .await
-        .unwrap();
-    let read = client.asset_details(&id).await.unwrap();
-    assert!(!read.is_favorite);
-    assert_eq!(read.exif.as_ref().and_then(|exif| exif.rating), None, "null clears the rating");
-    assert_eq!(read.exif.as_ref().and_then(|exif| exif.date_time_original), Some(taken.to_utc()));
+        let changed = client
+            .update_asset(
+                &id,
+                &AssetChanges {
+                    description: Some("contract description".to_owned()),
+                    rating: Some(Some(4)),
+                    favorite: Some(true),
+                    latitude: Some(55.6761),
+                    longitude: Some(12.5683),
+                    ..AssetChanges::default()
+                },
+            )
+            .await
+            .unwrap();
+        assert!(changed.is_favorite);
+        let exif = changed.exif.unwrap();
+        assert_eq!(exif.description.as_deref(), Some("contract description"));
+        assert_eq!(exif.rating, Some(4));
+        assert!((exif.latitude.unwrap() - 55.6761).abs() < 1e-4);
 
-    client
-        .update_assets(std::slice::from_ref(&id), &AssetChanges { date_time_relative: Some(60), ..AssetChanges::default() })
-        .await
-        .unwrap();
-    let shifted = client.asset_details(&id).await.unwrap();
-    assert_eq!(
-        shifted.exif.as_ref().and_then(|exif| exif.date_time_original),
-        Some(taken.to_utc() + chrono::Duration::minutes(60))
-    );
+        let taken = DateTime::parse_from_rfc3339("2001-02-03T04:05:06+02:00").unwrap();
+        client
+            .update_assets(
+                std::slice::from_ref(&id),
+                &AssetChanges {
+                    date_time_original: Some(taken),
+                    rating: Some(None),
+                    favorite: Some(false),
+                    description: Some(String::new()),
+                    ..AssetChanges::default()
+                },
+            )
+            .await
+            .unwrap();
+        let read = client.asset_details(&id).await.unwrap();
+        assert!(!read.is_favorite);
+        assert_eq!(read.exif.as_ref().and_then(|exif| exif.rating), None, "null clears the rating");
+        assert_eq!(read.exif.as_ref().and_then(|exif| exif.date_time_original), Some(taken.to_utc()));
 
-    // Back as it was. A date and place from the file are put back as they were read.
+        client
+            .update_assets(std::slice::from_ref(&id), &AssetChanges { date_time_relative: Some(60), ..AssetChanges::default() })
+            .await
+            .unwrap();
+        let shifted = client.asset_details(&id).await.unwrap();
+        assert_eq!(
+            shifted.exif.as_ref().and_then(|exif| exif.date_time_original),
+            Some(taken.to_utc() + chrono::Duration::minutes(60))
+        );
+    })
+    .catch_unwind()
+    .await;
+    // The edits queued sidecar jobs; restoring before they run would be undone by them (asset_change.rs).
+    common::wait_for_idle_queues(&client).await;
+
+    // Back as it was: the instant, sent with the offset of its wall-clock time (the server takes the local time
+    // from the offset sent), and the time zone.
+    let original_offset = match (original_exif.date_time_original, original.local_date_time) {
+        (Some(instant), Some(wall_clock)) => {
+            chrono::FixedOffset::east_opt((wall_clock - instant.naive_utc()).num_seconds() as i32)
+        }
+        _ => None,
+    };
     let restore = AssetChanges {
-        date_time_original: original_exif.date_time_original.map(|instant| instant.fixed_offset()),
+        date_time_original: original_exif
+            .date_time_original
+            .zip(original_offset)
+            .map(|(instant, offset)| instant.with_timezone(&offset)),
+        time_zone: original_exif.time_zone.clone(),
         latitude: original_exif.latitude,
         longitude: original_exif.longitude,
         description: Some(original_exif.description.clone().unwrap_or_default()),
@@ -197,10 +217,19 @@ async fn an_asset_is_edited_one_at_a_time_and_in_bulk_then_put_back() {
         ..AssetChanges::default()
     };
     client.update_assets(std::slice::from_ref(&id), &restore).await.unwrap();
+    if let Err(failure) = edits {
+        std::panic::resume_unwind(failure);
+    }
+    // The local time is worked out again by a background job after a date or time zone change.
+    common::wait_for_idle_queues(&client).await;
     let back = client.asset_details(&id).await.unwrap();
+    let back_exif = back.exif.clone().unwrap_or_default();
     assert_eq!(back.is_favorite, original.is_favorite);
-    assert_eq!(back.exif.as_ref().and_then(|exif| exif.date_time_original), original_exif.date_time_original);
-    assert_eq!(back.exif.as_ref().and_then(|exif| exif.rating), original_exif.rating);
+    assert_eq!(back_exif.date_time_original, original_exif.date_time_original);
+    assert_eq!(back_exif.time_zone, original_exif.time_zone);
+    assert_eq!(back.local_date_time, original.local_date_time, "the wall-clock time is back");
+    assert_eq!(back_exif.rating, original_exif.rating);
+    assert_eq!(back_exif.city, original_exif.city);
 }
 
 #[tokio::test]
@@ -421,8 +450,10 @@ async fn video_playback_by_range_and_whole() {
 #[ignore = "needs the lab server; see tests/common/mod.rs"]
 async fn a_read_only_key_is_refused_each_change_with_the_permission_named() {
     let client = readonly();
-    let id = timeline_ids(&client).await.remove(0);
-    let album = album_id(&client, "Holiday Mix").await;
+    common::assert_read_only(&client).await;
+    // Changes aim at ids no server holds; the reads at the end use real ones.
+    let id = common::UNKNOWN_ID.to_owned();
+    let album = common::UNKNOWN_ID.to_owned();
     let ids = vec![id.clone()];
 
     assert_refused(client.create_album(&NewAlbum { name: "x".to_owned(), ..NewAlbum::default() }).await, "POST", "/albums");
@@ -450,10 +481,19 @@ async fn a_read_only_key_is_refused_each_change_with_the_permission_named() {
     assert_refused(client.empty_trash().await, "POST", "/trash/empty");
     assert_refused(client.tags().await, "GET", "/tags");
     assert_refused(client.upsert_tags(&["x".to_owned()]).await, "PUT", "/tags");
+    assert_refused(client.create_tag(&NewTag { name: "x".to_owned(), ..NewTag::default() }).await, "POST", "/tags");
+    assert_refused(client.update_tag(&id, &TagChanges::default()).await, "PUT", "/tags/{id}");
+    assert_refused(client.delete_tag(&id).await, "DELETE", "/tags/{id}");
+    assert_refused(client.tag_assets(&id, &ids).await, "PUT", "/tags/{id}/assets");
+    assert_refused(client.untag_assets(&id, &ids).await, "DELETE", "/tags/{id}/assets");
+    assert_refused(client.tag_assets_with(&ids, &ids).await, "PUT", "/tags/assets");
+    assert_refused(client.restore_trash().await, "POST", "/trash/restore");
     assert_refused(client.map_markers(&MapQuery::default()).await, "GET", "/map/markers");
     assert_refused(client.reverse_geocode(0.0, 0.0).await, "GET", "/map/reverse-geocode");
     // What the key may do still works.
-    client.asset_details(&id).await.unwrap();
-    client.album(&album).await.unwrap();
-    client.album_map_markers(&album).await.unwrap();
+    let real_id = timeline_ids(&client).await.remove(0);
+    let real_album = album_id(&client, "Holiday Mix").await;
+    client.asset_details(&real_id).await.unwrap();
+    client.album(&real_album).await.unwrap();
+    client.album_map_markers(&real_album).await.unwrap();
 }

@@ -128,6 +128,42 @@ pub(crate) struct BulkIds<'a> {
     pub ids: &'a [String],
 }
 
+/// A secret the server sends or is sent: an API key's value, a session token, a password, a PIN code, a shared
+/// link's key. Its `Debug` output is redacted, so a model printed in a log never shows it; read it with
+/// [`Secret::expose`].
+#[derive(Clone, PartialEq, Eq, Default, Deserialize, serde::Serialize)]
+#[serde(transparent)]
+pub struct Secret(String);
+
+impl Secret {
+    pub fn new(text: impl Into<String>) -> Secret {
+        Secret(text.into())
+    }
+
+    /// The secret itself.
+    pub fn expose(&self) -> &str {
+        &self.0
+    }
+}
+
+impl std::fmt::Debug for Secret {
+    fn fmt(&self, formatter: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        formatter.write_str("<redacted>")
+    }
+}
+
+impl From<String> for Secret {
+    fn from(text: String) -> Secret {
+        Secret(text)
+    }
+}
+
+impl From<&str> for Secret {
+    fn from(text: &str) -> Secret {
+        Secret(text.to_owned())
+    }
+}
+
 /// One endpoint the crate calls, with the API-key permission Immich requires for it.
 ///
 /// The table ([`crate::endpoints`]) is what the spec-conformance contract test checks against the server's
@@ -166,6 +202,14 @@ mod tests {
         let mut value = serde_json::json!({"a": null, "b": {"c": null, "d": 1}, "e": [null, {"f": null}]});
         strip_nulls(&mut value);
         assert_eq!(value, serde_json::json!({"b": {"d": 1}, "e": [null, {}]}));
+    }
+
+    #[test]
+    fn a_secret_is_redacted_in_debug_output_and_sent_as_is() {
+        let secret = Secret::from("s3cret");
+        assert_eq!(format!("{secret:?}"), "<redacted>");
+        assert_eq!(serde_json::to_string(&secret).unwrap(), "\"s3cret\"");
+        assert_eq!(secret.expose(), "s3cret");
     }
 
     #[test]

@@ -103,6 +103,7 @@ impl Client {
     ///
     /// Errors: [`ApiError::RangeNotSatisfiable`] when `start` is past the end (refetch the size), and
     /// [`ApiError::NotFound`] when the Asset is gone.
+    /// Needs `asset.download`.
     pub async fn original_range(&self, id: &str, start: u64, end_inclusive: u64) -> Result<RangeResponse, ApiError> {
         self.fetch_range(&["assets", id, "original"], start, end_inclusive).await
     }
@@ -151,6 +152,7 @@ impl Client {
     }
 
     /// The size and (weak) ETag of an Asset's original, without downloading it (`HEAD /assets/{id}/original`).
+    /// Needs `asset.download`.
     pub async fn original_head(&self, id: &str) -> Result<(u64, Option<String>), ApiError> {
         let builder = self
             .request(Method::HEAD, &["assets", id, "original"])
@@ -166,6 +168,7 @@ impl Client {
     /// number of bytes written. A minute without an answer is [`ApiError::Offline`]; a minute without bytes, or fewer
     /// bytes than announced, is [`ApiError::Transient`], since the server did answer. On any failure the file may hold
     /// part of the original, and the caller removes it.
+    /// Needs `asset.download`.
     pub async fn download_original(&self, id: &str, destination: &Path) -> Result<u64, ApiError> {
         let builder = self.request(Method::GET, &["assets", id, "original"]);
         self.download_to(builder, destination).await
@@ -198,6 +201,7 @@ impl Client {
     }
 
     /// A server-made thumbnail and its content type (`GET /assets/{id}/thumbnail?size=...`).
+    /// Needs `asset.view`.
     pub async fn thumbnail(&self, id: &str, size: ThumbnailSize) -> Result<(Bytes, String), ApiError> {
         let media = self.get_media(&["assets", id, "thumbnail"], &[("size", size.as_str())]).await?;
         Ok((media.bytes, media.content_type))

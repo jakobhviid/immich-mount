@@ -6,7 +6,9 @@
 //!
 //! Rules every call follows:
 //! - the credential goes in a header, never in the URL (`?apiKey=` also authenticates, but leaks into logs)
-//! - path segments are percent-encoded one by one, so an id can never change which endpoint is called
+//! - path segments are percent-encoded one by one, and the generic calls refuse an empty, `.` or `..` segment, so an
+//!   id can never change which endpoint is called
+//! - a call is resent after a lost answer only when that is harmless ([`crate::retry`])
 //! - ordinary calls have a 60 s request timeout; uploads and the sync stream have none, and their callers bound
 //!   them (ARCHITECTURE.md, "Never hang")
 
@@ -22,7 +24,7 @@ use serde::Serialize;
 use url::Url;
 
 use crate::error::{classify, from_transport, ApiError, ErrorResponse, RequestShape};
-use crate::retry::{is_retryable_status, is_retryable_transport, parse_retry_after, RetryPolicy};
+use crate::retry::{parse_retry_after, Resend, RetryPolicy};
 
 /// How long an ordinary call may take, end to end.
 pub(crate) const REQUEST_TIMEOUT: Duration = Duration::from_secs(60);
@@ -207,8 +209,13 @@ impl Client {
 
     /// Send a request with retries. Returns the final response whatever its status; see [`check`].
     pub(crate) async fn execute(&self, builder: RequestBuilder) -> Result<Response, ApiError> {
+        self.execute_resending(builder, Resend::Freely).await
+    }
+
+    /// [`Client::execute`], resending only as `resend` allows.
+    pub(crate) async fn execute_resending(&self, builder: RequestBuilder, resend: Resend) -> Result<Response, ApiError> {
         let request = builder.build().map_err(|error| from_transport(&error))?;
-        self.execute_with(|| {
+        self.execute_with_resending(resend, || {
             let attempt = request.try_clone();
             async move {
                 attempt.ok_or_else(|| ApiError::Protocol("internal: a request body could not be replayed".to_owned()))
@@ -221,7 +228,20 @@ impl Client {
     ///
     /// Retryable statuses are retried while attempts remain and the wait fits in [`RetryPolicy::max_wait`]; the
     /// last response is returned as is, so the caller maps it (to `Transient`, usually) with [`check`].
-    pub(crate) async fn execute_with<MakeRequest, Pending>(&self, mut make_request: MakeRequest) -> Result<Response, ApiError>
+    pub(crate) async fn execute_with<MakeRequest, Pending>(&self, make_request: MakeRequest) -> Result<Response, ApiError>
+    where
+        MakeRequest: FnMut() -> Pending,
+        Pending: Future<Output = Result<Request, ApiError>>,
+    {
+        self.execute_with_resending(Resend::Freely, make_request).await
+    }
+
+    /// [`Client::execute_with`], resending only as `resend` allows.
+    pub(crate) async fn execute_with_resending<MakeRequest, Pending>(
+        &self,
+        resend: Resend,
+        mut make_request: MakeRequest,
+    ) -> Result<Response, ApiError>
     where
         MakeRequest: FnMut() -> Pending,
         Pending: Future<Output = Result<Request, ApiError>>,
@@ -234,7 +254,7 @@ impl Client {
             let may_retry = retries_done < policy.max_retries;
             match self.inner.http.execute(request).await {
                 Ok(response) => {
-                    if may_retry && is_retryable_status(response.status(), &method) {
+                    if may_retry && resend.retries_status(response.status(), &method) {
                         let wait = parse_retry_after(response.headers())
                             .unwrap_or_else(|| policy.backoff(retries_done + 1));
                         if wait <= policy.max_wait {
@@ -246,7 +266,7 @@ impl Client {
                     return Ok(response);
                 }
                 Err(error) => {
-                    if may_retry && is_retryable_transport(&error) {
+                    if may_retry && resend.retries_transport(&error) {
                         retries_done += 1;
                         tokio::time::sleep(policy.backoff(retries_done)).await;
                         continue;
@@ -325,12 +345,15 @@ impl Client {
 }
 
 impl Client {
-    /// A request to an endpoint, refusing an empty path segment: an id that decoded empty must never turn
-    /// `/albums/{id}` into `/albums/`, which is another endpoint. No timeout is set; the caller sets one.
+    /// A request to an endpoint, refusing an empty, `.` or `..` path segment: an id that decoded empty (or a caller's
+    /// `..`) must never turn `/sessions/{id}` into `/sessions`, which is another endpoint. No timeout is set; the
+    /// caller sets one.
     pub(crate) fn checked_request(&self, method: Method, segments: &[&str]) -> Result<RequestBuilder, ApiError> {
-        if let Some(position) = segments.iter().position(|segment| segment.trim().is_empty()) {
+        // `url` drops `.` and `..` segments, so they would change the endpoint just as an empty one does.
+        let unusable = |segment: &&str| segment.trim().is_empty() || matches!(*segment, "." | "..");
+        if let Some(position) = segments.iter().position(unusable) {
             return Err(ApiError::Protocol(format!(
-                "internal: an empty path segment {position} for {}",
+                "internal: an unusable path segment {position} for {}",
                 segments.join("/")
             )));
         }
@@ -344,8 +367,9 @@ impl Client {
         segments: &[&str],
         query: &[(&str, &str)],
     ) -> Result<T, ApiError> {
+        let resend = Resend::by_method(&method);
         let builder = self.checked_request(method, segments)?.timeout(REQUEST_TIMEOUT).query(query);
-        let response = check(self.execute(builder).await?, RequestShape::Plain).await?;
+        let response = check(self.execute_resending(builder, resend).await?, RequestShape::Plain).await?;
         read_json(response, &segments.join("/")).await
     }
 
@@ -357,15 +381,17 @@ impl Client {
         query: &[(&str, &str)],
         body: &Body,
     ) -> Result<T, ApiError> {
+        let resend = Resend::by_method(&method);
         let builder = self.checked_request(method, segments)?.timeout(REQUEST_TIMEOUT).query(query).json(body);
-        let response = check(self.execute(builder).await?, RequestShape::Plain).await?;
+        let response = check(self.execute_resending(builder, resend).await?, RequestShape::Plain).await?;
         read_json(response, &segments.join("/")).await
     }
 
     /// Call an endpoint without a body and ignore the answer's body.
     pub(crate) async fn call_unit(&self, method: Method, segments: &[&str], query: &[(&str, &str)]) -> Result<(), ApiError> {
+        let resend = Resend::by_method(&method);
         let builder = self.checked_request(method, segments)?.timeout(REQUEST_TIMEOUT).query(query);
-        check(self.execute(builder).await?, RequestShape::Plain).await?;
+        check(self.execute_resending(builder, resend).await?, RequestShape::Plain).await?;
         Ok(())
     }
 
@@ -386,8 +412,32 @@ impl Client {
         query: &[(&str, &str)],
         body: &Body,
     ) -> Result<(), ApiError> {
+        let resend = Resend::by_method(&method);
+        self.call_unit_with_resending(method, segments, query, body, resend).await
+    }
+
+    /// [`Client::call_unit_with`] for a PUT or DELETE that must not be sent twice (a PIN code change, a relative
+    /// date shift): resent only when the first attempt cannot have taken effect.
+    pub(crate) async fn call_unit_with_once<Body: Serialize + ?Sized>(
+        &self,
+        method: Method,
+        segments: &[&str],
+        query: &[(&str, &str)],
+        body: &Body,
+    ) -> Result<(), ApiError> {
+        self.call_unit_with_resending(method, segments, query, body, Resend::OnlyUnsent).await
+    }
+
+    async fn call_unit_with_resending<Body: Serialize + ?Sized>(
+        &self,
+        method: Method,
+        segments: &[&str],
+        query: &[(&str, &str)],
+        body: &Body,
+        resend: Resend,
+    ) -> Result<(), ApiError> {
         let builder = self.checked_request(method, segments)?.timeout(REQUEST_TIMEOUT).query(query).json(body);
-        check(self.execute(builder).await?, RequestShape::Plain).await?;
+        check(self.execute_resending(builder, resend).await?, RequestShape::Plain).await?;
         Ok(())
     }
 }

@@ -144,11 +144,25 @@ fn missing_permission(message: &str) -> Option<String> {
 
 /// Map a transport failure (no HTTP response at all) to an [`ApiError`].
 pub(crate) fn from_transport(error: &reqwest::Error) -> ApiError {
+    let text = without_query(error, describe(error));
     if error.is_builder() || error.is_decode() {
-        return ApiError::Protocol(describe(error));
+        return ApiError::Protocol(text);
     }
     // Connect, timeout, request and body errors all mean the conversation with the server broke off.
-    ApiError::Offline(describe(error))
+    ApiError::Offline(text)
+}
+
+/// reqwest's message names the URL, query included; a query can hold a secret (a shared link's key), so it is
+/// cut from the message.
+fn without_query(error: &reqwest::Error, text: String) -> String {
+    match error.url() {
+        Some(url) if url.query().is_some() => {
+            let mut shown = url.clone();
+            shown.set_query(None);
+            text.replace(url.as_str(), &format!("{shown}?<query>"))
+        }
+        _ => text,
+    }
 }
 
 /// An error with its whole source chain, because reqwest's own message alone ("error sending request") hides

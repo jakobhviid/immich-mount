@@ -19,7 +19,7 @@ use crate::dates::serde_dates;
 use crate::error::ApiError;
 use crate::session::Session;
 use crate::user::{AvatarColor, UserDetails};
-use crate::wire::{endpoints, wire_enum, Endpoint};
+use crate::wire::{endpoints, wire_enum, Endpoint, Secret};
 
 pub(crate) const ENDPOINTS: &[Endpoint] = endpoints![
     GET "/admin/users" "adminUser.read",
@@ -53,7 +53,7 @@ pub(crate) const ENDPOINTS: &[Endpoint] = endpoints![
 pub struct NewUser {
     pub email: String,
     pub name: String,
-    pub password: String,
+    pub password: Secret,
     #[serde(skip_serializing_if = "std::ops::Not::not")]
     pub is_admin: bool,
     /// Ask for a new password at the first sign-in.
@@ -79,7 +79,7 @@ pub struct UserChanges {
     #[serde(skip_serializing_if = "Option::is_none")]
     pub name: Option<String>,
     #[serde(skip_serializing_if = "Option::is_none")]
-    pub password: Option<String>,
+    pub password: Option<Secret>,
     #[serde(skip_serializing_if = "Option::is_none")]
     pub is_admin: Option<bool>,
     #[serde(skip_serializing_if = "Option::is_none")]
@@ -92,7 +92,7 @@ pub struct UserChanges {
     pub storage_label: Option<Option<String>>,
     /// `Some(None)` removes the user's PIN code.
     #[serde(skip_serializing_if = "Option::is_none")]
-    pub pin_code: Option<Option<String>>,
+    pub pin_code: Option<Option<Secret>>,
     #[serde(skip_serializing_if = "Option::is_none")]
     pub avatar_color: Option<AvatarColor>,
 }
@@ -370,7 +370,7 @@ mod tests {
         let user = NewUser {
             email: "a@example.com".to_owned(),
             name: "A".to_owned(),
-            password: "secret".to_owned(),
+            password: "secret".into(),
             ..NewUser::default()
         };
         assert_eq!(

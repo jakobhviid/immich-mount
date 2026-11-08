@@ -12,8 +12,10 @@
 //!   (`wire`). The conversion to our types insists only on what a caller cannot do without.
 //! - Every failure is one [`ApiError`], whose variants are the kinds callers branch on.
 //! - Dates are `chrono`: `DateTime<Utc>` for instants, `NaiveDateTime` for wall-clock times.
-//! - Concurrency limits and deadlines are the caller's; the client only retries briefly (`retry`), and never
-//!   retries a 500 on a call that is not idempotent.
+//! - Concurrency limits and deadlines are the caller's; the client only retries briefly (`retry`), and resends a
+//!   call whose second sending would do something else (a create, a password change) only when its first attempt
+//!   cannot have taken effect.
+//! - Secrets (key values, tokens, passwords, PIN codes, link keys) are [`Secret`]s, redacted in `Debug` output.
 //! - A method's documentation names the API-key permission it needs.
 //!
 //! Every endpoint is a method on [`Client`]; the modules hold its types, one module per area of the API.
@@ -102,7 +104,7 @@ pub use timeline::{BucketAsset, TimeBucket, TimelineScope, YearMonth};
 pub use upload::{Sha1Checksum, UploadCheck, UploadOutcome};
 pub use user::{AvatarColor, User, UserDetails, UserStatus};
 pub use version::ServerVersion;
-pub use wire::{BulkIdError, BulkIdResult, Endpoint};
+pub use wire::{BulkIdError, BulkIdResult, Endpoint, Secret};
 
 /// Every endpoint this crate calls, with the permission Immich requires for it. The spec-conformance contract test
 /// checks the list against the server's own `/api/spec.json`.

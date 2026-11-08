@@ -36,7 +36,7 @@ async fn other_user(label: &str) -> OtherUser {
         .create_user(&NewUser {
             email: email.clone(),
             name: format!("Contract {label}"),
-            password: password.clone(),
+            password: password.clone().into(),
             ..NewUser::default()
         })
         .await
@@ -59,6 +59,9 @@ async fn remove(user: OtherUser) {
 #[ignore = "needs the lab server; see tests/common/mod.rs"]
 async fn an_album_is_shared_commented_and_left() {
     let admin = full();
+    for stale in admin.albums().await.unwrap().into_iter().filter(|album| album.name.starts_with("Contract shared")) {
+        admin.delete_album(&stale.id).await.unwrap();
+    }
     let user = other_user("album").await;
     let ids = timeline_ids(&admin).await;
     let album = admin
@@ -102,8 +105,25 @@ async fn an_album_is_shared_commented_and_left() {
     admin.delete_activity(&like.id).await.unwrap();
     assert!(admin.activities(&album.id, &ActivityFilter::default()).await.unwrap().is_empty());
 
-    // The invitation reached the user as a notification.
-    let notifications = user.client.notifications(&NotificationFilter::default()).await.unwrap();
+    // Each invitation reaches the user as a notification; a second album makes a second one.
+    let second_album = admin
+        .create_album(&NewAlbum {
+            name: "Contract shared 2".to_owned(),
+            members: vec![NewMember { user_id: user.id.clone(), role: AlbumRole::Viewer }],
+            ..NewAlbum::default()
+        })
+        .await
+        .unwrap();
+    // The server makes notifications in a background job.
+    let mut notifications = Vec::new();
+    for _ in 0..40 {
+        notifications = user.client.notifications(&NotificationFilter::default()).await.unwrap();
+        if notifications.len() >= 2 {
+            break;
+        }
+        tokio::time::sleep(std::time::Duration::from_millis(500)).await;
+    }
+    assert!(notifications.len() >= 2, "{notifications:?}");
     if let Some(invite) = notifications.first() {
         let read = user.client.mark_notification(&invite.id, Some(common::now())).await.unwrap();
         assert!(read.read_at.is_some());
@@ -115,9 +135,12 @@ async fn an_album_is_shared_commented_and_left() {
             .unwrap();
         assert!(!unread.iter().any(|candidate| candidate.id == invite.id));
         user.client.mark_notifications(std::slice::from_ref(&invite.id), None).await.unwrap();
-        user.client.delete_notifications(std::slice::from_ref(&invite.id)).await.unwrap();
+        user.client.delete_notification(&invite.id).await.unwrap();
+        let rest: Vec<String> = notifications.iter().skip(1).map(|other| other.id.clone()).collect();
+        user.client.delete_notifications(&rest).await.unwrap();
+        assert!(user.client.notifications(&NotificationFilter::default()).await.unwrap().is_empty());
     }
-    println!("notifications seen by the invited user: {}", notifications.len());
+    admin.delete_album(&second_album.id).await.unwrap();
 
     user.client.remove_album_member(&album.id, "me").await.unwrap();
     assert!(!admin.album(&album.id).await.unwrap().members.iter().any(|member| member.user.id == user.id));
@@ -155,7 +178,7 @@ async fn shared_links_open_by_key_and_password() {
     assert_eq!(admin.shared_link(&link.id).await.unwrap().key, link.key);
 
     let anonymous = client_with(None);
-    let opened = anonymous.shared_link_by_key(&LinkAddress::Key(link.key.clone())).await.unwrap();
+    let opened = anonymous.shared_link_by_key(&LinkAddress::Key(link.key.expose().to_owned())).await.unwrap();
     assert_eq!(opened.id, link.id);
 
     let added = admin.add_assets_to_shared_link(&link.id, &ids[2..3]).await.unwrap();
@@ -168,7 +191,7 @@ async fn shared_links_open_by_key_and_password() {
         .update_shared_link(
             &link.id,
             &SharedLinkChanges {
-                password: Some(Some("contract".to_owned())),
+                password: Some(Some("contract".into())),
                 description: Some(Some("for the contract".to_owned())),
                 slug: Some(Some(format!("contract-{}", common::now().timestamp_micros()))),
                 allow_download: Some(false),
@@ -185,7 +208,7 @@ async fn shared_links_open_by_key_and_password() {
         ApiError::Unauthorized,
         "a link with a password needs it"
     );
-    let unlocked = anonymous.shared_link_login(&LinkAddress::Key(link.key.clone()), "contract").await.unwrap();
+    let unlocked = anonymous.shared_link_login(&LinkAddress::Key(link.key.expose().to_owned()), "contract").await.unwrap();
     assert_eq!(unlocked.id, link.id);
 
     let holiday = common::album_id(&admin, "Holiday Mix").await;
@@ -196,7 +219,7 @@ async fn shared_links_open_by_key_and_password() {
     admin.delete_shared_link(&link.id).await.unwrap();
     admin.delete_shared_link(&album_link.id).await.unwrap();
     assert_eq!(
-        anonymous.shared_link_by_key(&LinkAddress::Key(link.key)).await.unwrap_err(),
+        anonymous.shared_link_by_key(&LinkAddress::Key(link.key.expose().to_owned())).await.unwrap_err(),
         ApiError::Unauthorized
     );
 }
@@ -267,8 +290,8 @@ async fn sessions_and_api_keys() {
     assert!(sessions.iter().any(|session| session.current));
 
     let device = user.client.create_session("Contract", "Linux", Some(3600)).await.unwrap();
-    assert!(!device.token.is_empty());
-    let device_client = client_with(Some(Credential::Session(device.token.clone())));
+    assert!(!device.token.expose().is_empty());
+    let device_client = client_with(Some(Credential::Session(device.token.expose().to_owned())));
     assert_eq!(device_client.me().await.unwrap().id, user.id);
     user.client.lock_other_session(&device.session.id).await.unwrap();
     user.client.delete_session(&device.session.id).await.unwrap();
@@ -276,13 +299,13 @@ async fn sessions_and_api_keys() {
     let second = user.client.create_session("Contract", "Linux", None).await.unwrap();
     user.client.delete_other_sessions().await.unwrap();
     assert_eq!(
-        client_with(Some(Credential::Session(second.token))).me().await.unwrap_err(),
+        client_with(Some(Credential::Session(second.token.expose().to_owned()))).me().await.unwrap_err(),
         ApiError::Unauthorized
     );
     assert!(full().user_sessions(&user.id).await.unwrap().len() == 1);
 
     let created = user.client.create_api_key("contract", &["asset.read".to_owned()]).await.unwrap();
-    let key_client = client_with(Some(Credential::ApiKey(created.secret.clone())));
+    let key_client = client_with(Some(Credential::ApiKey(created.secret.expose().to_owned())));
     assert_eq!(key_client.api_key_permissions().await.unwrap(), ["asset.read"]);
     let renamed = user
         .client
@@ -395,6 +418,8 @@ async fn queues_libraries_and_the_server() {
     admin.delete_library(&library.id).await.unwrap();
 
     admin.ping().await.unwrap();
+    let extensions = client_with(None).server_media_types().await.unwrap();
+    assert!(extensions.iter().any(|extension| extension == ".jpg") && extensions.iter().any(|extension| extension == ".mp4"));
     let version = admin.server_version().await.unwrap();
     let about = admin.server_about().await.unwrap();
     assert_eq!(about.version, version.to_string());
@@ -409,6 +434,7 @@ async fn queues_libraries_and_the_server() {
 #[ignore = "needs the lab server; see tests/common/mod.rs"]
 async fn a_read_only_key_is_refused_sharing_account_and_admin_calls() {
     let client = readonly();
+    common::assert_read_only(&client).await;
     let album = common::album_id(&client, "Holiday Mix").await;
     assert_refused(client.shared_links(None).await, "GET", "/shared-links");
     assert_refused(client.create_shared_link(&NewSharedLink::to_album(&album)).await, "POST", "/shared-links");
@@ -427,6 +453,38 @@ async fn a_read_only_key_is_refused_sharing_account_and_admin_calls() {
     assert_refused(client.server_statistics().await, "GET", "/server/statistics");
     assert_refused(client.server_storage().await, "GET", "/server/storage");
     assert_refused(client.start_job(&ManualJob::TagCleanup).await, "POST", "/jobs");
+    let unknown = common::UNKNOWN_ID;
+    let unknown_ids = vec![unknown.to_owned()];
+    assert_refused(client.update_shared_link(unknown, &SharedLinkChanges::default()).await, "PATCH", "/shared-links/{id}");
+    assert_refused(client.delete_shared_link(unknown).await, "DELETE", "/shared-links/{id}");
+    assert_refused(client.add_assets_to_shared_link(unknown, &unknown_ids).await, "PUT", "/shared-links/{id}/assets");
+    assert_refused(client.add_partner(unknown).await, "POST", "/partners");
+    assert_refused(client.set_partner_in_timeline(unknown, true).await, "PUT", "/partners/{id}");
+    assert_refused(client.remove_partner(unknown).await, "DELETE", "/partners/{id}");
+    assert_refused(client.delete_activity(unknown).await, "DELETE", "/activities/{id}");
+    assert_refused(client.update_me(&immich_api::AccountChanges::default()).await, "PUT", "/users/me");
+    assert_refused(client.update_preferences(&serde_json::json!({})).await, "PUT", "/users/me/preferences");
+    assert_refused(client.delete_profile_image().await, "DELETE", "/users/profile-image");
+    assert_refused(client.change_password("x", "y", false).await, "POST", "/auth/change-password");
+    assert_refused(client.set_pin_code("135790").await, "POST", "/auth/pin-code");
+    assert_refused(client.remove_pin_code(&Proof::PinCode("135790".to_owned())).await, "DELETE", "/auth/pin-code");
+    assert_refused(client.create_session("x", "y", None).await, "POST", "/sessions");
+    assert_refused(client.delete_session(unknown).await, "DELETE", "/sessions/{id}");
+    assert_refused(client.delete_other_sessions().await, "DELETE", "/sessions");
+    assert_refused(client.create_api_key("x", &[]).await, "POST", "/api-keys");
+    assert_refused(client.rotate_api_key(unknown).await, "POST", "/api-keys/{id}/rotate");
+    assert_refused(client.delete_api_key(unknown).await, "DELETE", "/api-keys/{id}");
+    assert_refused(client.mark_notifications(&unknown_ids, None).await, "PUT", "/notifications");
+    assert_refused(client.delete_notification(unknown).await, "DELETE", "/notifications/{id}");
+    let user = NewUser { email: "x@example.com".to_owned(), name: "x".to_owned(), password: "x".into(), ..NewUser::default() };
+    assert_refused(client.create_user(&user).await, "POST", "/admin/users");
+    assert_refused(client.update_user(unknown, &UserChanges::default()).await, "PUT", "/admin/users/{id}");
+    assert_refused(client.delete_user(unknown, true).await, "DELETE", "/admin/users/{id}");
+    assert_refused(client.set_queue_paused(&QueueName::Library, true).await, "PUT", "/queues/{name}");
+    assert_refused(client.clear_queue(&QueueName::Library, true).await, "DELETE", "/queues/{name}/jobs");
+    assert_refused(client.create_library(unknown, &LibrarySettings::default()).await, "POST", "/libraries");
+    assert_refused(client.delete_library(unknown).await, "DELETE", "/libraries/{id}");
+    assert_refused(client.scan_library(unknown).await, "POST", "/libraries/{id}/scan");
     // What needs no permission still answers.
     client.ping().await.unwrap();
     client.version_history().await.unwrap();

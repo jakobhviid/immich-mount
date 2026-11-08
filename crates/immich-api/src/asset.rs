@@ -291,6 +291,7 @@ impl Client {
     ///
     /// An unknown, deleted or invisible id is [`ApiError::NotFound`] (Immich answers 400 there). Note that this
     /// endpoint does not take `withExif`, but its answer includes `exifInfo`, so `file_size` is filled in.
+    /// Needs `asset.read`.
     pub async fn asset(&self, id: &str) -> Result<Asset, ApiError> {
         let wire: AssetWire = self.get_json(&["assets", id], &[]).await?;
         wire.into_asset()

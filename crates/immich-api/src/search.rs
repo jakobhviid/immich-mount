@@ -166,6 +166,7 @@ pub(crate) const ENDPOINTS: &[crate::wire::Endpoint] = crate::wire::endpoints![
 
 impl Client {
     /// One page of Assets matching `query` (`POST /search/metadata`). `page_size` is clamped to 1..=1000.
+    /// Needs `asset.read`.
     pub async fn search_assets(
         &self,
         query: &AssetQuery,
@@ -181,6 +182,7 @@ impl Client {
     ///
     /// FUSE listings must be complete, so this fetches all pages before returning. An Asset seen twice (the
     /// library changed between pages) is kept once; a cursor that repeats is a protocol error rather than a loop.
+    /// Needs `asset.read`.
     pub async fn search_all_assets(&self, query: &AssetQuery, page_size: u32) -> Result<Vec<Asset>, ApiError> {
         let mut assets = Vec::new();
         let mut seen_ids = HashSet::new();

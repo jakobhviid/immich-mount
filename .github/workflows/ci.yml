@@ -40,8 +40,18 @@ jobs:
     steps:
       - uses: actions/checkout@v5
       - uses: dtolnay/rust-toolchain@stable
+      # Restored and saved apart, so the downloads are kept even when a later step fails.
       - name: Fixture cache (Commons photos, pinned by sha1)
-        uses: actions/cache@v4
+        id: fixtures
+        uses: actions/cache/restore@v4
+        with:
+          path: lab/immich-server/fixtures/cache
+          key: fixtures-${{ hashFiles('lab/immich-server/fixtures/manifest.json') }}
+      - name: Fixtures, every one (the contract tests count both videos)
+        run: FIXTURES_ALL=1 lab/immich-server/fixtures.sh
+      - name: Save the fixture cache
+        if: steps.fixtures.outputs.cache-hit != 'true'
+        uses: actions/cache/save@v4
         with:
           path: lab/immich-server/fixtures/cache
           key: fixtures-${{ hashFiles('lab/immich-server/fixtures/manifest.json') }}

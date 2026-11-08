@@ -19,7 +19,7 @@ use crate::asset_info::AssetDetails;
 use crate::client::Client;
 use crate::dates::serde_dates;
 use crate::error::ApiError;
-use crate::wire::{endpoints, wire_enum, BulkIdError, Endpoint};
+use crate::wire::{endpoints, wire_enum, BulkIdError, Endpoint, Secret};
 
 pub(crate) const ENDPOINTS: &[Endpoint] = endpoints![
     GET "/shared-links" "sharedLink.read",
@@ -49,7 +49,7 @@ wire_enum! {
 pub struct SharedLink {
     pub id: String,
     /// The secret part of the link's URL (`/share/<key>`).
-    pub key: String,
+    pub key: Secret,
     /// A readable alternative to the key (`/s/<slug>`), when one was chosen.
     pub slug: Option<String>,
     #[serde(rename = "type")]
@@ -58,7 +58,7 @@ pub struct SharedLink {
     pub user_id: String,
     pub description: Option<String>,
     /// Sent to the owner only.
-    pub password: Option<String>,
+    pub password: Option<Secret>,
     #[serde(deserialize_with = "serde_dates::optional_utc")]
     pub expires_at: Option<DateTime<Utc>>,
     #[serde(deserialize_with = "serde_dates::utc")]
@@ -86,7 +86,7 @@ pub struct NewSharedLink {
     #[serde(skip_serializing_if = "Option::is_none")]
     pub description: Option<String>,
     #[serde(skip_serializing_if = "Option::is_none")]
-    pub password: Option<String>,
+    pub password: Option<Secret>,
     #[serde(skip_serializing_if = "Option::is_none")]
     pub slug: Option<String>,
     #[serde(serialize_with = "serde_dates::send_utc", skip_serializing_if = "Option::is_none")]
@@ -133,7 +133,7 @@ pub struct SharedLinkChanges {
     pub description: Option<Option<String>>,
     /// `Some(None)` removes the password.
     #[serde(skip_serializing_if = "Option::is_none")]
-    pub password: Option<Option<String>>,
+    pub password: Option<Option<Secret>>,
     /// `Some(None)` removes the slug.
     #[serde(skip_serializing_if = "Option::is_none")]
     pub slug: Option<Option<String>>,

@@ -1,10 +1,17 @@
 //! The retry policy: bounded attempts, exponential backoff with jitter, honouring `Retry-After`.
 //!
-//! Adapted from immich-rs (`core/retry.rs`). What is retried:
+//! Adapted from immich-rs (`core/retry.rs`). A call that may be sent twice (`Resend::Freely`) is retried on:
 //! - 429, 502, 503 and 504 on every method
 //! - 408 and 500 only on idempotent methods (GET, HEAD, PUT, DELETE), because a POST may have taken effect
-//! - connection failures and timeouts on every method: our POSTs are searches, sign-in, sync acks and uploads,
-//!   and an upload repeated after a lost response becomes a duplicate, not a second Asset
+//! - connection failures and timeouts on every method: the mount's POSTs are searches, sign-in, sync acks and
+//!   uploads, and an upload repeated after a lost response becomes a duplicate, not a second Asset
+//!
+//! A call whose second sending would do something else (`Resend::OnlyUnsent`: creating something, rotating a
+//! key, changing a password or PIN code, shifting dates by an amount) is retried only when its first attempt
+//! cannot have taken effect: the connection failed before anything was sent, or the server answered 429.
+//! Otherwise a lost answer would turn into a second album, or into a wrong-password error for a change that
+//! succeeded. The client's generic calls use it for POST and PATCH, and the methods that need it for PUT or
+//! DELETE ask for it.
 //!
 //! The client waits at most [`RetryPolicy::max_wait`] before one retry. A longer `Retry-After` is not slept on:
 //! the call returns [`ApiError::Transient`](crate::ApiError::Transient) at once with the requested delay, because
@@ -74,6 +81,40 @@ pub(crate) fn is_retryable_status(status: StatusCode, method: &Method) -> bool {
 /// Whether a transport failure (no response at all) is worth retrying.
 pub(crate) fn is_retryable_transport(error: &reqwest::Error) -> bool {
     error.is_connect() || error.is_timeout()
+}
+
+/// Whether a request may be sent again after an attempt that may have reached the server.
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub(crate) enum Resend {
+    /// Sending it twice does no harm: the policy for statuses and transport failures above.
+    Freely,
+    /// Sending it twice would do something else: only when the first attempt cannot have taken effect.
+    OnlyUnsent,
+}
+
+impl Resend {
+    /// What the generic calls use: freely for idempotent methods, only unsent for POST and PATCH.
+    pub(crate) fn by_method(method: &Method) -> Resend {
+        if is_idempotent(method) {
+            Resend::Freely
+        } else {
+            Resend::OnlyUnsent
+        }
+    }
+
+    pub(crate) fn retries_status(self, status: StatusCode, method: &Method) -> bool {
+        match self {
+            Resend::Freely => is_retryable_status(status, method),
+            Resend::OnlyUnsent => status == StatusCode::TOO_MANY_REQUESTS,
+        }
+    }
+
+    pub(crate) fn retries_transport(self, error: &reqwest::Error) -> bool {
+        match self {
+            Resend::Freely => is_retryable_transport(error),
+            Resend::OnlyUnsent => error.is_connect(),
+        }
+    }
 }
 
 /// Parse `Retry-After`, given either as delta-seconds or as an HTTP date (RFC 9110).

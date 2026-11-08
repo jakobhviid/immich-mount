@@ -487,6 +487,7 @@ async fn folders_and_downloads() {
 #[ignore = "needs the lab server; see tests/common/mod.rs"]
 async fn a_read_only_key_is_refused_people_faces_stacks_duplicates_memories_and_folders() {
     let client = readonly();
+    common::assert_read_only(&client).await;
     let id = timeline_ids(&client).await.remove(0);
     let ids = vec![id.clone()];
     let unknown = vec![UNKNOWN_ID.to_owned()];

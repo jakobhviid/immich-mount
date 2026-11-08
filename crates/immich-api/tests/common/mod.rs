@@ -113,3 +113,16 @@ pub async fn wait_for_idle_queues(admin: &Client) {
     }
     panic!("the job queues did not go idle within a minute");
 }
+
+/// An id no server holds, for the refusal tests: the permission is checked before the id, so a refusal needs no
+/// real target, and a key that were wrongly allowed could change nothing.
+pub const UNKNOWN_ID: &str = "00000000-0000-4000-8000-000000000000";
+
+/// Make sure the read-only key is what its name says before a test aims changes at it.
+pub async fn assert_read_only(client: &Client) {
+    assert_eq!(
+        client.api_key_permissions().await.unwrap(),
+        ["album.read", "asset.read", "asset.view", "asset.download", "person.read"],
+        "IMMICH_API_KEY_READONLY is not the read-only key"
+    );
+}

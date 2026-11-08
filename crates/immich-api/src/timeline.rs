@@ -260,12 +260,14 @@ pub(crate) const ENDPOINTS: &[crate::wire::Endpoint] = crate::wire::endpoints![
 
 impl Client {
     /// The months of a timeline and how many Assets each holds, newest first (`GET /timeline/buckets`).
+    /// Needs `asset.read`.
     pub async fn time_buckets(&self, scope: &TimelineScope) -> Result<Vec<TimeBucket>, ApiError> {
         let wire: Vec<TimeBucketWire> = self.get_json(&["timeline", "buckets"], &scope.query()).await?;
         into_time_buckets(wire)
     }
 
     /// [`Client::time_buckets`], unless nothing changed since `etag` (Immich answers 304 then).
+    /// Needs `asset.read`.
     pub async fn time_buckets_if_changed(
         &self,
         scope: &TimelineScope,
@@ -284,6 +286,7 @@ impl Client {
     }
 
     /// The Assets of one month of a timeline (`GET /timeline/bucket`): ids and dates only.
+    /// Needs `asset.read`.
     pub async fn time_bucket(&self, scope: &TimelineScope, month: YearMonth) -> Result<Vec<BucketAsset>, ApiError> {
         let key = month.bucket_key();
         let mut query = scope.query();
@@ -293,6 +296,7 @@ impl Client {
     }
 
     /// [`Client::time_bucket`], unless nothing changed since `etag`.
+    /// Needs `asset.read`.
     pub async fn time_bucket_if_changed(
         &self,
         scope: &TimelineScope,

@@ -258,8 +258,9 @@ lab server on v3.3.6 and v3.2.0, and the machine-learning tests on a server buil
 5. **Administration:** users, queues and jobs, external libraries, server statistics, storage and version
    history. Built.
 6. **Around it:** the lab server with machine learning (`up.sh --ml`) and the v3.2.0 runs are done. The CI job
-   that runs the contract tests against Immich in Docker (`contract` in `.github/workflows/ci.yml`) is written
-   and has not run on GitHub yet.
+   that runs the contract tests against Immich in Docker (`contract` in `.github/workflows/ci.yml`) is checked in
+   an Ubuntu 24.04 container set up as a GitHub runner: `ci.sh` seeded v3.3.6 from an empty fixture cache in four
+   minutes, and every contract test passed against it. It has not run on GitHub yet.
 
 ## Package repositories
 

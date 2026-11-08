@@ -835,10 +835,15 @@ Mimick (GPL-3.0, read, never copied). From then on all of it is our own code.
 - **The spec check** (`tests/contract_spec.rs`) reads the server's own `/api/spec.json` and fails when an endpoint is
   missing or needs another permission. It runs against each supported version, so a renamed or removed endpoint
   shows up before a user meets it, and it prints the deprecated endpoints still in use.
-- **A contract test per endpoint** against the lab server (`tests/contract*.rs`). Tests that change the library put
-  it back before they end, and the lab restores its seeded snapshot before each session.
-- **The read-only key** is refused every change, and the test checks that the server names the permission the table
-  names.
+- **A contract test per endpoint** against the lab server (`tests/contract*.rs`), except the OIDC callback, which
+  `lab/immich-server/oidc-sign-in.py` checks with Dex. Tests that change the library put it back before they end,
+  even when an assertion fails halfway, and the lab restores its seeded snapshot before each session.
+- **The read-only key** is refused the changes of every area, aimed at ids no server holds, and the test checks
+  that the server names the permission the table names. The tests first check that the key is the read-only one.
+- **A lost answer is not a second change.** Creating, rotating a key, changing a password or PIN code, and shifting
+  dates by an amount are resent only when the first attempt cannot have taken effect (`retry.rs`).
+- **Secrets stay out of logs:** API key values, session tokens, passwords, PIN codes and shared link keys are
+  `Secret`s, whose `Debug` output is redacted, and a transport error's message has its URL's query cut.
 - **Deprecated endpoints** are used where v3.2 has nothing else (`PUT /assets/{id}`, `PUT /tags/{id}`, and others);
   the spec check lists them, and they move when the floor does.
 - **New models** decode with a struct-level `serde(default)`, and `null` counts as missing, so a field absent on one

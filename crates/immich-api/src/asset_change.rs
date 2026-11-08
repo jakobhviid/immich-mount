@@ -7,6 +7,10 @@
 //!   time zone; `PUT /assets/{id}` refuses those fields, so [`Client::update_asset`] leaves them out
 //! - both update endpoints are marked deprecated in v3.3.6 with no replacement yet; they are the only way on v3.2
 //! - `rating: null` clears a rating; leaving the field out keeps it
+//! - a change of date, time zone or place is written to the Asset's sidecar by a background job, which reads it
+//!   back: read right after the call, `localDateTime` can still be an hour off, and a second change made before
+//!   that job has run is undone by it. Change the same Asset again once the server's queues are idle
+//!   ([`Client::queues`])
 //! - `DELETE /assets` moves to the trash unless `force` is set; with the trash switched off on the server it deletes
 //!   at once
 //! - an edit list replaces the whole list: `PUT /assets/{id}/edits` with one rotation removes an earlier crop
@@ -223,6 +227,10 @@ impl Client {
     pub async fn update_assets(&self, ids: &[String], changes: &AssetChanges) -> Result<(), ApiError> {
         let mut body = changes_body(changes, &SINGLE_ONLY)?;
         body.insert("ids".to_owned(), serde_json::json!(ids));
+        if changes.date_time_relative.is_some() {
+            // A relative shift sent twice shifts twice.
+            return self.call_unit_with_once(Method::PUT, &["assets"], &[], &body).await;
+        }
         self.call_unit_with(Method::PUT, &["assets"], &[], &body).await
     }
 

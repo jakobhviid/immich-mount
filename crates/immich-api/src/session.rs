@@ -13,7 +13,7 @@ use serde::{Deserialize, Serialize};
 use crate::client::Client;
 use crate::dates::serde_dates;
 use crate::error::ApiError;
-use crate::wire::{endpoints, Endpoint};
+use crate::wire::{endpoints, Endpoint, Secret};
 
 pub(crate) const ENDPOINTS: &[Endpoint] = endpoints![
     GET "/sessions" "session.read",
@@ -59,7 +59,7 @@ pub struct NewSession {
     #[serde(flatten)]
     pub session: Session,
     /// The bearer token; shown only now.
-    pub token: String,
+    pub token: Secret,
 }
 
 /// An API key (`ApiKeyResponseDto`); its secret is never shown again after creation.
@@ -83,7 +83,7 @@ pub struct NewApiKey {
     #[serde(rename = "apiKey")]
     pub key: ApiKey,
     /// The value to send as `x-api-key`; shown only now.
-    pub secret: String,
+    pub secret: Secret,
 }
 
 impl Client {
@@ -177,7 +177,7 @@ mod tests {
         let json = br#"{"apiKey":{"id":"k","name":"lab","permissions":["all"],"createdAt":"2026-11-08T10:00:00Z",
             "updatedAt":"2026-11-08T10:00:00Z"},"secret":"s3cret"}"#;
         let created: NewApiKey = crate::client::decode_json(json, "api-keys").unwrap();
-        assert_eq!(created.secret, "s3cret");
+        assert_eq!(created.secret.expose(), "s3cret");
         assert_eq!(created.key.permissions, ["all"]);
     }
 }

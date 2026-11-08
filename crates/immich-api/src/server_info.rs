@@ -108,6 +108,7 @@ impl Client {
     }
 
     /// Every version the server has run (`GET /server/version-history`).
+    /// Needs no credential.
     pub async fn version_history(&self) -> Result<Vec<VersionHistoryEntry>, ApiError> {
         self.call(Method::GET, &["server", "version-history"], &[]).await
     }

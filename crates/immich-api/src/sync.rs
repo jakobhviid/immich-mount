@@ -262,6 +262,7 @@ impl Client {
     }
 
     /// Confirm records up to these acks (`POST /sync/ack`), so the next stream starts after them.
+    /// Needs a session with `syncCheckpoint.update`.
     pub async fn sync_ack(&self, acks: &[String]) -> Result<(), ApiError> {
         self.post_without_answer(&["sync", "ack"], Some(&json!({ "acks": acks })))
             .await

@@ -240,6 +240,7 @@ impl Client {
     }
 
     /// [`Client::albums`], unless nothing changed since `etag` (Immich answers 304 then).
+    /// Needs `album.read`.
     pub async fn albums_if_changed(&self, etag: Option<&str>) -> Result<Fetched<Vec<Album>>, ApiError> {
         let fetched: Fetched<Vec<AlbumWire>> = self.get_json_if_changed(&["albums"], &[], etag).await?;
         match fetched {
@@ -425,6 +426,33 @@ mod tests {
         let request = &server.requests()[0];
         assert_eq!((request.method.as_str(), request.target.as_str()), ("PUT", "/api/albums/album-1/assets"));
         assert_eq!(request.body_text(), r#"{"ids":["a","b"]}"#);
+    }
+
+    #[tokio::test]
+    async fn a_create_is_not_resent_after_a_bad_gateway_but_is_after_429() {
+        let created = r#"{"id":"a","albumName":"New","createdAt":"2026-11-08T10:00:00.000Z"}"#;
+        let server = FakeServer::start(vec![
+            CannedResponse::json(502, ""),
+            CannedResponse::json(429, "").with_header("retry-after", "0"),
+            CannedResponse::json(201, created),
+        ])
+        .await;
+        let client = Client::new(&server.url, None, "test").unwrap();
+        let album = NewAlbum { name: "New".to_owned(), ..NewAlbum::default() };
+        assert_eq!(client.create_album(&album).await.unwrap_err(), ApiError::Transient { retry_after: None });
+        assert_eq!(server.requests().len(), 1, "a 502 may come after the album was made");
+        assert_eq!(client.create_album(&album).await.unwrap().id, "a");
+        assert_eq!(server.requests().len(), 3, "a 429 means it was not made");
+    }
+
+    #[tokio::test]
+    async fn dot_segments_are_refused_before_sending() {
+        let server = FakeServer::start(vec![]).await;
+        let client = Client::new(&server.url, None, "test").unwrap();
+        for id in [".", ".."] {
+            assert!(matches!(client.delete_album(id).await, Err(ApiError::Protocol(_))), "{id}");
+        }
+        assert!(server.requests().is_empty());
     }
 
     #[tokio::test]

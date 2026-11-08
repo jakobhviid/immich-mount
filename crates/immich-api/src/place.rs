@@ -21,6 +21,7 @@ pub(crate) const ENDPOINTS: &[crate::wire::Endpoint] = crate::wire::endpoints![
 
 impl Client {
     /// Every country with at least one Asset, sorted by the server.
+    /// Needs `asset.read`.
     pub async fn countries(&self) -> Result<Vec<String>, ApiError> {
         let suggestions: Vec<Option<String>> = self
             .get_json(&["search", "suggestions"], &[("type", "country")])
@@ -29,6 +30,7 @@ impl Client {
     }
 
     /// Every city in `country` with at least one Asset.
+    /// Needs `asset.read`.
     pub async fn cities(&self, country: &str) -> Result<Vec<String>, ApiError> {
         let suggestions: Vec<Option<String>> = self
             .get_json(&["search", "suggestions"], &[("type", "city"), ("country", country)])

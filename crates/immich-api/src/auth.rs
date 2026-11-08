@@ -87,6 +87,7 @@ pub(crate) const ENDPOINTS: &[crate::wire::Endpoint] = crate::wire::endpoints![
 
 impl Client {
     /// Sign in with email and password (`POST /auth/login`). Immich has no second factor on this path.
+    /// Needs no credential.
     pub async fn login_password(&self, email: &str, password: &str) -> Result<LoginResponse, ApiError> {
         let wire: LoginWire = self
             .post_json(&["auth", "login"], &json!({ "email": email, "password": password }))
@@ -97,6 +98,7 @@ impl Client {
     /// Start browser sign-in (`POST /oauth/authorize`): the identity provider URL to open.
     ///
     /// `redirect_uri` is usually `app.immich:///oauth-callback`; `code_challenge` is the PKCE S256 challenge.
+    /// Needs no credential.
     pub async fn oauth_authorize(&self, redirect_uri: &str, state: &str, code_challenge: &str) -> Result<String, ApiError> {
         let body = json!({ "redirectUri": redirect_uri, "state": state, "codeChallenge": code_challenge });
         let wire: AuthorizeWire = self.post_json(&["oauth", "authorize"], &body).await?;
@@ -104,6 +106,7 @@ impl Client {
     }
 
     /// Finish browser sign-in (`POST /oauth/callback`) with the full redirect URL the browser was sent to.
+    /// Needs no credential.
     pub async fn oauth_callback(&self, url: &str, state: &str, code_verifier: &str) -> Result<LoginResponse, ApiError> {
         let body = json!({ "url": url, "state": state, "codeVerifier": code_verifier });
         let wire: LoginWire = self.post_json(&["oauth", "callback"], &body).await?;
@@ -111,12 +114,14 @@ impl Client {
     }
 
     /// The signed-in account's email (`GET /users/me`). An API key needs `user.read` for it, and is refused without.
+    /// Needs `user.read`, which scoped API keys often lack.
     pub async fn my_email(&self) -> Result<String, ApiError> {
         let me: MeWire = self.get_json(&["users", "me"], &[]).await?;
         Ok(me.email)
     }
 
     /// End the session this client holds (`POST /auth/logout`), so it disappears from "Authorized devices".
+    /// Needs a session.
     pub async fn logout(&self) -> Result<(), ApiError> {
         self.post_without_answer::<()>(&["auth", "logout"], None).await
     }

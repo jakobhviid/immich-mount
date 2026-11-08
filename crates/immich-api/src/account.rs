@@ -19,6 +19,7 @@ use serde::{Deserialize, Serialize};
 use crate::album::AssetOrder;
 use crate::client::{check, read_json, Client, Media, REQUEST_TIMEOUT};
 use crate::error::{from_transport, ApiError, RequestShape};
+use crate::retry::Resend;
 use crate::user::{AvatarColor, User, UserDetails};
 use crate::wire::{endpoints, Endpoint};
 
@@ -133,11 +134,20 @@ pub struct AuthStatus {
     pub pin_expires_at: Option<DateTime<Utc>>,
 }
 
-/// What proves the user when unlocking, or changing or removing the PIN code.
-#[derive(Debug, Clone, PartialEq, Eq)]
+/// What proves the user when unlocking, or changing or removing the PIN code. Its `Debug` output is redacted.
+#[derive(Clone, PartialEq, Eq)]
 pub enum Proof {
     PinCode(String),
     Password(String),
+}
+
+impl std::fmt::Debug for Proof {
+    fn fmt(&self, formatter: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        match self {
+            Proof::PinCode(_) => formatter.write_str("PinCode(<redacted>)"),
+            Proof::Password(_) => formatter.write_str("Password(<redacted>)"),
+        }
+    }
 }
 
 impl Proof {
@@ -204,7 +214,7 @@ impl Client {
         }
         // The form is built afresh for each attempt: a multipart body cannot be replayed.
         let response = self
-            .execute_with(|| {
+            .execute_with_resending(Resend::OnlyUnsent, || {
                 let part = Part::bytes(image.to_vec()).file_name(file_name.to_owned()).mime_str(mime_type);
                 let builder = self.checked_request(Method::POST, &["users", "profile-image"]);
                 async move {
@@ -256,6 +266,7 @@ impl Client {
     }
 
     /// Whether the credential is valid (`POST /auth/validateToken`).
+    /// Any valid credential may ask, a scoped API key included.
     pub async fn validate_credential(&self) -> Result<bool, ApiError> {
         #[derive(Deserialize, Default)]
         #[serde(default, rename_all = "camelCase")]
@@ -276,20 +287,23 @@ impl Client {
     pub async fn change_pin_code(&self, proof: &Proof, new_pin_code: &str) -> Result<(), ApiError> {
         let mut body = proof.body();
         body.insert("newPinCode".to_owned(), new_pin_code.into());
-        self.call_unit_with(Method::PUT, &["auth", "pin-code"], &[], &body).await
+        // Sent twice, the second attempt would prove itself with the old PIN code and fail.
+        self.call_unit_with_once(Method::PUT, &["auth", "pin-code"], &[], &body).await
     }
 
     /// Remove the PIN code, proven with it or the password (`DELETE /auth/pin-code`). Needs `pinCode.delete`.
     pub async fn remove_pin_code(&self, proof: &Proof) -> Result<(), ApiError> {
-        self.call_unit_with(Method::DELETE, &["auth", "pin-code"], &[], &proof.body()).await
+        self.call_unit_with_once(Method::DELETE, &["auth", "pin-code"], &[], &proof.body()).await
     }
 
     /// Unlock this session for the locked folder (`POST /auth/session/unlock`). A session only; an API key cannot.
+    /// Needs a session; an API key without `all` is refused.
     pub async fn unlock_session(&self, proof: &Proof) -> Result<(), ApiError> {
         self.call_unit_with(Method::POST, &["auth", "session", "unlock"], &[], &proof.body()).await
     }
 
     /// Lock this session again (`POST /auth/session/lock`).
+    /// Needs a session; an API key without `all` is refused.
     pub async fn lock_session(&self) -> Result<(), ApiError> {
         self.call_unit(Method::POST, &["auth", "session", "lock"], &[]).await
     }

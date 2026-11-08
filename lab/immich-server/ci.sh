@@ -40,7 +40,7 @@ wait_until 300 sh -c 'curl -fsS --max-time 3 http://127.0.0.1:2283/api/server/pi
 step "Immich answers: $(curl -fsS http://127.0.0.1:2283/api/server/version)"
 
 step "fixtures"
-"$HERE/fixtures.sh"
+FIXTURES_ALL=1 "$HERE/fixtures.sh"
 sudo mkdir -p /opt/fixtures /opt/immich
 sudo cp -r "$HERE/fixtures/manifest.json" "$HERE/fixtures/cache" /opt/fixtures/
 

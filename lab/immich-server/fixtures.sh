@@ -5,6 +5,8 @@
 #   ./fixtures.sh
 #
 # Env: WIKIMEDIA_UA, the User-Agent for Commons downloads (their policy asks for a descriptive one).
+#      FIXTURES_ALL=1 makes the optional files required too, waiting out Commons' Retry-After (CI: the contract
+#      tests count both videos).
 set -euo pipefail
 
 HERE=$(cd "$(dirname "$0")" && pwd)
@@ -15,7 +17,10 @@ jq -r '.files[] | [.url, .cacheName, .sha1, .optional] | @tsv' "$HERE/fixtures/m
 while IFS=$'\t' read -r url file sha1 optional; do
   f="$HERE/fixtures/cache/$file"
   if [ -f "$f" ] && [ "$(sha1sum < "$f" | cut -d' ' -f1)" = "$sha1" ]; then continue; fi
-  if [ "$optional" = true ]; then
+  if [ "$optional" = true ] && [ "${FIXTURES_ALL:-}" = 1 ]; then
+    # --retry honours Retry-After (up to ten minutes from upload.wikimedia.org); bounded overall.
+    curl -fsSL --retry 4 --retry-max-time 1800 -A "$UA" -o "$f.part" "$url" </dev/null
+  elif [ "$optional" = true ]; then
     # Originals (the two WebM videos) come from upload.wikimedia.org, which answers bulk
     # clients with 429 + Retry-After: 600. One try; skip on failure, a later run fetches them.
     curl -fsSL -A "$UA" -o "$f.part" "$url" </dev/null ||
