@@ -53,9 +53,58 @@
       upload dialog, as a drive called <strong>Immich Mount</strong>. Attach your holiday photos to an email, open a
       video in your editor, or drop new pictures in to upload them, without downloading the library first.</p>
 
-    <figure class="shot wide">
-      <img src="screenshots/files-album.png" alt="An Immich album in GNOME Files, with thumbnails from the server">
-    </figure>
+    <section id="native">
+      <h2>At home on your desktop</h2>
+      <p class="section-lead">The same drive everywhere, and on each platform an app that looks and works like the
+        platform's own: no foreign toolkit and no theme of its own.</p>
+      <div class="natives">
+        <div class="native" id="on-gnome">
+          <div class="native-head">
+            <img src="icon.svg" alt="" width="44" height="44">
+            <div>
+              <h3>GNOME</h3>
+              <p>A libadwaita app, the drive in Files' sidebar with its eject button, the credential in GNOME Keyring,
+                and a tray icon where the AppIndicator extension is on.</p>
+            </div>
+          </div>
+          <div class="native-shots">
+            <img src="screenshots/files-album.png" alt="An Immich album in GNOME Files, with thumbnails from the server" loading="lazy">
+            <img src="screenshots/app-status.png" alt="The GNOME app's status page: the library is in Files, with Open in Files and Unmount" loading="lazy">
+            <img src="screenshots/gnome-tray.png" alt="The tray icon's menu in GNOME's top bar: connected to the server, its version and the account, then Open in Files and Open Immich Mount" loading="lazy">
+          </div>
+        </div>
+        <div class="native" id="on-kde">
+          <div class="native-head">
+            <img src="icon.svg" alt="" width="44" height="44">
+            <div>
+              <h3>KDE Plasma</h3>
+              <p>A Kirigami app, the drive in Dolphin's Places with thumbnails from the server, the credential in
+                KWallet, and a tray icon in Plasma's system tray.</p>
+            </div>
+          </div>
+          <div class="native-shots">
+            <img src="screenshots/dolphin-album.png" alt="An Immich album in Dolphin, with thumbnails from the server and Immich Mount in Places" loading="lazy">
+            <img src="screenshots/kde-status.png" alt="The KDE app's status page: the library is in Dolphin, with Unmount and Disconnect" loading="lazy">
+            <img src="screenshots/kde-setup.png" alt="The KDE app's first run: the sections, the folder, and Show thumbnails for Dolphin" loading="lazy">
+          </div>
+        </div>
+        <div class="native" id="on-mac">
+          <div class="native-head">
+            <img src="icon-macos.png" alt="" width="44" height="44">
+            <div>
+              <h3>macOS</h3>
+              <p>A menu bar app, the library in Finder's sidebar through Apple's File Provider, as iCloud Drive's is,
+                the credential in the Keychain, and updates signed by the project and notarized by Apple.</p>
+            </div>
+          </div>
+          <div class="native-shots">
+            <img class="own-frame" src="screenshots/mac-finder.png" alt="Immich Mount in Finder's sidebar, with Albums, People, Photos, Places and Upload" loading="lazy">
+            <img class="own-frame" src="screenshots/mac-menu.png" alt="The menu bar item's menu: connected to the server, its version, the account and when it last checked, then Open in Finder, Settings and the rest" loading="lazy">
+            <img class="own-frame" src="screenshots/mac-settings.png" alt="The Mac app's Settings: open at login, automatic updates, the sections and the date folders" loading="lazy">
+          </div>
+        </div>
+      </div>
+    </section>
 
     <section>
       <h2>What it does</h2>
@@ -73,18 +122,6 @@
           more languages.</p></div>
       </div>
     </section>
-
-    <div class="gallery">
-      <figure class="shot"><img src="screenshots/files-root.png" alt="Immich Mount in the Files sidebar, with Albums, People, Photos, Places and Upload" loading="lazy"></figure>
-      <figure class="shot"><img src="screenshots/files-places.png" alt="A city under Places, with photos named by when they were taken" loading="lazy"></figure>
-      <figure class="shot"><img src="screenshots/dolphin-album.png" alt="An Immich album in Dolphin, with thumbnails from the server and Immich Mount in Places" loading="lazy"></figure>
-      <figure class="shot"><img src="screenshots/app-sign-in.png" alt="Sign-in methods the server offers: single sign-on, email and password, API key" loading="lazy"></figure>
-      <figure class="shot"><img src="screenshots/app-status.png" alt="The app's status page: the library is in Files" loading="lazy"></figure>
-      <figure class="shot"><img src="screenshots/kde-status.png" alt="The KDE app's status page: the library is in Dolphin" loading="lazy"></figure>
-      <figure class="shot"><img src="screenshots/mac-menu.png" alt="The Mac's menu bar item: connected to the server, its version, the account and when it last checked, then Open in Finder, Settings and the rest" loading="lazy"></figure>
-      <figure class="shot"><img src="screenshots/mac-settings.png" alt="The Mac app's Settings: open at login, automatic updates, the sections and the date folders" loading="lazy"></figure>
-      <figure class="shot"><img src="screenshots/gnome-tray.png" alt="The tray icon's menu in GNOME's top bar: connected to the server, its version and the account, then Open in Files and Open Immich Mount" loading="lazy"></figure>
-    </div>
 
     <section>
       <h2>What it does not do</h2>

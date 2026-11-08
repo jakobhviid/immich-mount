@@ -190,10 +190,19 @@ h3 { font-size: 1.05rem; margin: 0 0 6px; }
 .features > div:nth-child(5n + 5)::before { background: var(--ring-green); }
 .features p { margin: 0; color: var(--muted); }
 
-.shot { margin: 40px 0 0; }
-.shot img { display: block; width: 100%; height: auto; border-radius: 12px; border: 1px solid var(--line); box-shadow: var(--shadow); }
-.gallery { display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 18px; margin-top: 18px; }
-.gallery .shot { margin: 0; }
+/* One section for each platform, the visitor's first: what is native there, and three pictures of it. */
+.section-lead { color: var(--muted); max-width: 760px; margin: -8px 0 24px; }
+.natives { display: flex; flex-direction: column; gap: 24px; }
+.native { background: var(--surface); border: 1px solid var(--line); border-radius: 16px; padding: 22px 24px; box-shadow: var(--shadow); }
+.native-head { display: flex; gap: 14px; align-items: flex-start; margin-bottom: 18px; }
+.native-head img { flex: none; }
+.native-head h3 { font-size: 1.3rem; margin: 4px 0 4px; }
+.native-head p { margin: 0; color: var(--muted); }
+.native-shots { display: grid; grid-template-columns: 2fr 1fr 1fr; gap: 16px; align-items: start; }
+.native-shots img { display: block; width: 100%; height: auto; border-radius: 10px; border: 1px solid var(--line); }
+/* The Mac's pictures carry macOS's own window shadow and margin. */
+.native-shots img.own-frame { border: 0; border-radius: 0; }
+body[data-os="macos"][data-macos="ready"] #on-mac { order: -1; }
 
 .platforms { display: flex; flex-direction: column; gap: 20px; }
 .platform {
@@ -246,6 +255,11 @@ code { font-family: ui-monospace, "SF Mono", Menlo, "Cascadia Mono", "DejaVu San
 
 footer { border-top: 1px solid var(--line); padding-top: 24px; padding-bottom: 48px; margin-top: 72px; font-size: 0.85rem; color: var(--muted); }
 footer .brand { color: var(--text); font-size: 1rem; }
+
+@media (max-width: 720px) {
+  .native-shots { grid-template-columns: 1fr 1fr; }
+  .native-shots img:first-child { grid-column: 1 / -1; }
+}
 
 @media (max-width: 560px) {
   h1 { font-size: 2.3rem; }

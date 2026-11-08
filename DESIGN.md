@@ -96,6 +96,9 @@ Measured contrast on the website (WCAG AA asks 4.5:1 for text):
 `site/` (ARCHITECTURE.md, "The download page"):
 - **The hero is the lens:** its glass as the ground in both appearances, the ring large around the app icon at the
   centre.
+- **A section for each platform,** right after the opening: GNOME, KDE Plasma and macOS, each with its icon, one
+  line on what is native there and three of its pictures, the visitor's platform first. Being native on each is the
+  point, so the pictures are never one mixed gallery.
 - **The visitor's platform decides the icon:** a Mac visitor sees the Mac's icon in the hero, everyone else the
   Linux drive. Both platforms show side by side only where both are listed: the supported platforms under the
   title, each with its own icon, and the install section, each card headed by its platform's icon. The visitor's
@@ -103,7 +106,8 @@ Measured contrast on the website (WCAG AA asks 4.5:1 for text):
 - **The mark** in the bar, the footer and the favicon.
 - **Cards** are white (lens in dark) with a soft shadow; each feature card carries one segment of the ring, in the
   ring's order.
-- **Screenshots** are rounded with a soft shadow, each one beside the platform it shows.
+- **Screenshots** are rounded with a soft border, in their platform's section; the Mac's keep macOS's own window
+  shadow and margin.
 - **Nothing is loaded from elsewhere:** no web fonts, analytics or third-party scripts.
 - **Before a change ships,** look at it built (`site/build-latest.sh`) in a browser at 1280 and 390 pixels wide, in
   light and dark, and as a Mac and a Linux visitor.
