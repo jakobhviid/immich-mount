@@ -49,18 +49,22 @@ struct ImmichMountApp: App {
 /// Sparkle calls its user driver's delegate on the main thread, which its protocol does not declare: hence
 /// `@preconcurrency`.
 @MainActor
-final class AppDelegate: NSObject, NSApplicationDelegate, @preconcurrency SPUStandardUserDriverDelegate {
+final class AppDelegate: NSObject, NSApplicationDelegate, @preconcurrency SPUStandardUserDriverDelegate,
+                         @preconcurrency SPUUpdaterDelegate {
     private(set) static weak var shared: AppDelegate?
     let model = AppModel()
     /// Sparkle, which reads the download page's appcast and replaces the app in place, so it stays in Applications,
     /// where Finder's location runs it from. It starts only there: a copy anywhere else has nothing to update.
     private(set) lazy var updater = SPUStandardUpdaterController(startingUpdater: Installation.isInApplications,
-                                                                  updaterDelegate: nil, userDriverDelegate: self)
+                                                                  updaterDelegate: self, userDriverDelegate: self)
     private var window: NSWindow?
     private var settingsWindow: NSWindow?
     private var setUp: AnyCancellable?
     /// Whether macOS started the app as a login item, read from the launch event before it is gone.
     private var launchedAtLogin = false
+    /// Whether Sparkle started this run, to finish an update: the app comes back as it was, in the menu bar alone.
+    private var launchedAfterUpdate = false
+    private static let updatingKey = "updating"
 
     override init() {
         super.init()
@@ -69,6 +73,8 @@ final class AppDelegate: NSObject, NSApplicationDelegate, @preconcurrency SPUSta
 
     func applicationWillFinishLaunching(_ notification: Notification) {
         let launch = NSAppleEventManager.shared().currentAppleEvent
+        launchedAfterUpdate = UserDefaults.standard.bool(forKey: Self.updatingKey)
+        UserDefaults.standard.removeObject(forKey: Self.updatingKey)
         launchedAtLogin = launch?.eventID == kAEOpenApplication
             && launch?.paramDescriptor(forKeyword: keyAEPropData)?.enumCodeValue == keyAELaunchedAsLogInItem
     }
@@ -94,19 +100,25 @@ final class AppDelegate: NSObject, NSApplicationDelegate, @preconcurrency SPUSta
                     self?.window?.close()
                 }
             }
-        // At login the app only takes its place in the menu bar. Opened by someone, it shows what is left to do, or
-        // Settings.
+        // At login, and back from an update, the app only takes its place in the menu bar. Opened by someone, it shows
+        // what is left to do, or Settings.
         Task {
             await model.refreshState()
             if !Installation.isInApplications || model.server == nil || model.locationSwitchedOff {
                 if !launchedAtLogin || model.server == nil { showWindow() }
-            } else if !launchedAtLogin {
+            } else if !launchedAtLogin && !launchedAfterUpdate {
                 showSettings()
             }
         }
         #if DEBUG
         Task { await model.followLaunchArguments() }
         #endif
+    }
+
+    /// Sparkle is about to start the new version: it comes back in the menu bar alone, not with Settings open, which a
+    /// launch by hand opens (seen after an update, macOS 27).
+    func updaterWillRelaunchApplication(_ updater: SPUUpdater) {
+        UserDefaults.standard.set(true, forKey: Self.updatingKey)
     }
 
     /// Sparkle's scheduled update alerts come without a window of the app's in front: they bring the app forward, so
