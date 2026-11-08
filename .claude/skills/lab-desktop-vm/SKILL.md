@@ -13,7 +13,7 @@ server (the `lab-immich-server` skill).
 | What you get | GNOME Shell 50 and Files, with the tracing tools | Plasma 6 (KWin, plasmashell, Dolphin), nothing of ours |
 | Instance | `GNOME_VM` (default `ind-gnome-1`) | `PLASMA_VM` (default `ind-plasma-1`) |
 | Session | `session.sh [WxH]`, 1280x800 | `session.sh [WxH]`, 1440x900 |
-| Input | `exp/input.sh` (synthetic clicks and keys, by coordinates) | `act.py` (by the names on screen, through accessibility) |
+| Input | `exp/input.sh` (synthetic clicks and keys, by coordinates) | `act.py` (by the names on screen, through accessibility), `click.py` (a click by coordinates) |
 
 ## The loop
 
@@ -120,11 +120,13 @@ JPEGs: `fixtures`, then `open <name> <dir>` (cold cache, settle, screenshot, who
   ship it: `dnf install -y gnome-shell-extension-appindicator` as root, then in the session `gsettings set
   org.gnome.shell enabled-extensions "['appindicatorsupport@rgcjonas.gmail.com']"` and `session.sh` again; the
   daemon registers once the watcher appears. `exp/input.sh click` on the top bar's icon opens its menu. Plasma's
-  system tray shows the icon at once, but nothing here opens its menu: the accessibility bus offers the item only
-  "Press", which does not, and the headless KWin reads no input device, so a uinput touchscreen's taps never arrive.
-  Read the menu from D-Bus instead (`gdbus call --session --dest dev.hviid.ImmichMount.Daemon --object-path
-  /MenuBar --method com.canonical.dbusmenu.GetLayout -- 0 -1 "[]"`), and click its lines with `Event` (`-- 4
-  clicked "<int32 0>" 0`).
+  system tray shows the icon at once, and `in-session click.py 1247 869` opens its menu (the icon's place on the
+  1440 by 900 screen, left of the clock). The accessibility bus cannot: it offers the item only "Press", which does
+  not open it. The headless KWin reads no input device either (a uinput touchscreen's taps never arrive, and KWin
+  6.8's `--virtual` has no `--libinput`), so `click.py`, pushed from `lab/plasma-vm/`, clicks through KWin's own
+  fake input protocol, as KDE Connect does; any other click on the screen closes the menu. Its lines are also on
+  D-Bus (`gdbus call --session --dest dev.hviid.ImmichMount.Daemon --object-path /MenuBar --method
+  com.canonical.dbusmenu.GetLayout -- 0 -1 "[]"`), and `Event` clicks one (`-- 4 clicked "<int32 0>" 0`).
 - **Harmless noise:** "Error registering session with GDM", and `xdg-desktop-portal` failing because
   `graphical-session.target` is inactive.
 
@@ -144,6 +146,7 @@ x, y, width, height)"`); on Plasma they open where these boxes expect them:
 | GNOME app, `app-connect`, `app-sign-in`, `app-setup`, `app-preferences` (with 10 px of desktop) | 360 66 560 700 | 350 56 930 776 |
 | GNOME app, `app-status` (the window only) | 360 66 560 700 | 360 66 920 766 |
 | The tray's menu in GNOME's top bar, `gnome-tray` | | 840 0 1280 280 |
+| The tray's menu in Plasma's system tray, `kde-tray` | | 1100 660 1440 900 |
 | KDE app, `kde-*` | | 449 52 991 801 |
 | Dolphin, `dolphin-album` | | 340 138 1101 717 |
 

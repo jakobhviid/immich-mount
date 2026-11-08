@@ -12,10 +12,35 @@ here=$(cd "$(dirname "$0")" && pwd)
 . "$here/common.sh"
 . "$here/../warm.sh"
 build=false; [ "${1:-}" = --fresh ] && build=true
+# Packages, weak dependencies on, as a Fedora KDE install would pull them in:
+#   plasma-workspace, kwin, plasma-breeze, kde-settings-plasma   the session, its look and Fedora's KDE defaults
+#   dolphin, kio-extras                                           the file manager under test, and its thumbnailer
+#   kf6-kwallet                                                   ksecretd, KWallet's Secret Service
+#   spectacle                                                     screenshots (shot.sh)
+#   python3-gobject, at-spi2-core, python3-pyatspi                driving Qt apps through accessibility (act.py)
+#   python3-pywayland, plasma-wayland-protocols-devel, wayland-devel   clicks through KWin's fake input (click.py)
+#   mesa-dri-drivers, google-noto-sans-fonts                      software rendering, and text in screenshots
+#   fuse3, xdg-utils, dbus-tools                                  what the mount and the apps rely on
+PKGS=(plasma-workspace kwin plasma-breeze kde-settings-plasma breeze-icon-theme dolphin kio-extras kf6-kwallet
+      spectacle python3-gobject at-spi2-core python3-pyatspi mesa-dri-drivers google-noto-sans-fonts
+      python3-pywayland plasma-wayland-protocols-devel wayland-devel fuse3 xdg-utils dbus-tools)
+install_packages() {
+  step "dnf install (${#PKGS[@]} packages + deps)"
+  vm sh -c 'dnf -y install "$@" >/var/log/plasma-vm-dnf.log 2>&1 || { tail -20 /var/log/plasma-vm-dnf.log; exit 1; }' _ "${PKGS[@]}" \
+    || die "dnf install failed (log: /var/log/plasma-vm-dnf.log in the VM)"
+  step "packages installed"
+}
 sweep_expired
 if ! $build && has_fresh "$VM"; then
   step "restoring $VM to its fresh snapshot"
   restore_fresh "$VM"
+  # A snapshot taken before a package joined the list gets it here, and is taken again.
+  wait_for "$P" "$VM" "the VM agent" true
+  if ! vm rpm -q --quiet "${PKGS[@]}"; then
+    install_packages
+    step "taking its fresh snapshot again"
+    snapshot_fresh "$VM"
+  fi
 else
 if [ -n "$(state "$P" "$VM")" ]; then
   step "deleting $VM to build it again"
@@ -35,21 +60,7 @@ inc launch images:fedora/44/cloud "$VM" --vm --project "$P" -c user.expires="$(e
 wait_cloud_init "$P" "$VM"
 vm sh -c 'grep -q "root=UUID=" /etc/kernel/cmdline && ! grep -rq loop0p2 /etc/kernel/cmdline /boot/loader/entries' \
   || die "the root= trap fix did not apply (see /etc/kernel/cmdline)"
-# Packages, weak dependencies on, as a Fedora KDE install would pull them in:
-#   plasma-workspace, kwin, plasma-breeze, kde-settings-plasma   the session, its look and Fedora's KDE defaults
-#   dolphin, kio-extras                                           the file manager under test, and its thumbnailer
-#   kf6-kwallet                                                   ksecretd, KWallet's Secret Service
-#   spectacle                                                     screenshots (shot.sh)
-#   python3-gobject, at-spi2-core, python3-pyatspi                driving Qt apps through accessibility (act.py)
-#   mesa-dri-drivers, google-noto-sans-fonts                      software rendering, and text in screenshots
-#   fuse3, xdg-utils, dbus-tools                                  what the mount and the apps rely on
-PKGS=(plasma-workspace kwin plasma-breeze kde-settings-plasma breeze-icon-theme dolphin kio-extras kf6-kwallet
-      spectacle python3-gobject at-spi2-core python3-pyatspi mesa-dri-drivers google-noto-sans-fonts
-      fuse3 xdg-utils dbus-tools)
-step "dnf install (${#PKGS[@]} packages + deps)"
-vm sh -c 'dnf -y install "$@" >/var/log/plasma-vm-dnf.log 2>&1 || { tail -20 /var/log/plasma-vm-dnf.log; exit 1; }' _ "${PKGS[@]}" \
-  || die "dnf install failed (log: /var/log/plasma-vm-dnf.log in the VM)"
-step "packages installed"
+install_packages
 vm sh -c "id $TESTER >/dev/null 2>&1 || useradd -m $TESTER; loginctl enable-linger $TESTER"
 step "taking its fresh snapshot"
 snapshot_fresh "$VM"
@@ -61,4 +72,5 @@ wait_for "$P" "$VM" "tester's session bus" test -S "/run/user/$uid/bus"
 # Pushed on every start, so a warm VM never runs old copies.
 inc file push --project "$P" "$here/in-session" "$VM/usr/local/bin/in-session" --mode 0755 </dev/null
 inc file push --project "$P" "$here/act.py" "$VM/usr/local/bin/act.py" --mode 0755 </dev/null
+inc file push --project "$P" "$here/click.py" "$VM/usr/local/bin/click.py" --mode 0755 </dev/null
 step "ready: $VM ($(vm sh -c '. /etc/os-release; echo $PRETTY_NAME') $(vm uname -r))"

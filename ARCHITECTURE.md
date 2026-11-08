@@ -1075,11 +1075,11 @@ drive and the app, without opening a window. **The daemon serves it,** as a Stat
   translated once.
 - **The icon** is the symbolic one, the wide drive with the five-segment ring (DESIGN.md, "The icon family"), which
   both trays recolour to the panel's text.
-- **Verified** (Fedora 44 VMs, 2026-11-07): in Plasma 6's system tray beside its own icons, the menu's layout as
-  Plasma reads it, and both actions (Activate opens the app, Open in Dolphin opens Dolphin); in GNOME 50's top bar
-  with the AppIndicator extension, the menu drawn with its five lines, connected to the lab server; and on Bazzite's
-  GNOME as it ships (the extension on), installed from Homebrew's cask, with nothing set up (2.21.0). Plasma drawing
-  the menu was not seen: the lab's headless Plasma takes no pointer input.
+- **Verified** (Fedora 44 VMs, 2026-11-07 and 2026-11-08): in Plasma 6's system tray beside its own icons, the menu
+  drawn with its five lines on a click (2.21.17), and both actions (Activate opens the app, Open in Dolphin opens
+  Dolphin); in GNOME 50's top bar with the AppIndicator extension, the menu drawn with its five lines, connected to
+  the lab server; and on Bazzite's GNOME as it ships (the extension on), installed from Homebrew's cask, with
+  nothing set up (2.21.0).
 - **Flatpak impact:** the sandbox needs `--talk-name=org.kde.StatusNotifierWatcher` to register; the item itself is
   served on the app's own connection, by object path.
 - **Not chosen:** the GTK or Qt app holding the icon (the app would have to run at every login, a second process
