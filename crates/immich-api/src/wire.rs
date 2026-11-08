@@ -42,14 +42,18 @@ pub(crate) fn strip_nulls(value: &mut serde_json::Value) {
 macro_rules! wire_enum {
     (
         $(#[$meta:meta])*
-        pub enum $name:ident { $first:ident = $first_wire:literal $(, $variant:ident = $wire:literal)* $(,)? }
+        pub enum $name:ident {
+            $(#[$first_meta:meta])* $first:ident = $first_wire:literal
+            $(, $(#[$variant_meta:meta])* $variant:ident = $wire:literal)* $(,)?
+        }
     ) => {
         $(#[$meta])*
         #[derive(Debug, Clone, PartialEq, Eq, Hash, Default)]
         pub enum $name {
+            $(#[$first_meta])*
             #[default]
             $first,
-            $($variant,)*
+            $($(#[$variant_meta])* $variant,)*
             /// A value this client does not know, verbatim.
             Other(String),
         }
@@ -134,7 +138,8 @@ pub struct Endpoint {
     pub method: &'static str,
     /// The path below `/api`, as in the spec: `/albums/{id}/assets`.
     pub path: &'static str,
-    /// The `x-immich-permission` of the operation; `None` where the server requires none.
+    /// The `x-immich-permission` of the operation; `None` where the spec names none. Such an endpoint is public
+    /// (`/server/ping`), or for an API key needs `all` (`/auth/status`).
     pub permission: Option<&'static str>,
 }
 

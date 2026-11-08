@@ -65,7 +65,8 @@ pub struct AlbumMember {
 }
 
 /// An album.
-#[derive(Debug, Clone, PartialEq, Eq)]
+#[derive(Debug, Clone, PartialEq, Eq, Deserialize)]
+#[serde(try_from = "AlbumWire")]
 pub struct Album {
     pub id: String,
     pub name: String,
@@ -146,6 +147,14 @@ impl AlbumWire {
             order: self.order,
             id,
         })
+    }
+}
+
+impl TryFrom<AlbumWire> for Album {
+    type Error = ApiError;
+
+    fn try_from(wire: AlbumWire) -> Result<Album, ApiError> {
+        wire.into_album()
     }
 }
 

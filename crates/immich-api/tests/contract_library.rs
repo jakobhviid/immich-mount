@@ -344,11 +344,12 @@ async fn tags_nest_and_go_on_assets() {
     assert!(tagged[0].success, "{tagged:?}");
     assert!(client.asset_details(&id).await.unwrap().tags.iter().any(|tag| tag.id == nested.id));
     assert_eq!(client.tag_assets_with(std::slice::from_ref(&sibling.id), std::slice::from_ref(&id)).await.unwrap(), 1);
+    // Tagging queues a sidecar job that undoes changes made before it runs (tag.rs).
+    common::wait_for_idle_queues(&client).await;
     let untagged = client.untag_assets(&nested.id, std::slice::from_ref(&id)).await.unwrap();
     assert!(untagged[0].success, "{untagged:?}");
 
     client.untag_assets(&sibling.id, std::slice::from_ref(&id)).await.unwrap();
-    // On v3.2.0 the Asset shows a removed tag until its sidecar job has run (tag.rs).
     let untagged_everywhere = wait_until(|| async { client.asset_details(&id).await.unwrap().tags.is_empty() }).await;
     assert!(untagged_everywhere, "the tags came off the Asset");
 

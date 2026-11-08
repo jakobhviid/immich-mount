@@ -880,7 +880,10 @@ use (the whole API, WASM, OpenTelemetry, Socket.IO). Our contract tests on Erebu
 - `/server/version` is read once per connection, and version-specific behaviour lives in one place.
 - **Checked on v3.2.0:** the parts of the OpenAPI spec the client uses are identical to v3.3.5's, and the server
   answered the same. (One difference: a video's `fullsize` thumbnail redirects to its preview, and `fullsize` is
-  never used.)
+  never used.) The whole API's contract tests pass on v3.2.0 too, with three differences the code and tests know:
+  its reverse-geocoding data names the United States "United States of America", merging people made by hand
+  merges nothing (that version merges by person group), and a tag taken off an Asset while its sidecar job is
+  pending comes back on it (`tag.rs`).
 - **Not chosen:** a floor as old as v1.135.0, with the deprecated search dialect. It would mean two dialects, older
   upload fields, and a larger test matrix, for a new app whose users tend to upgrade Immich often.
 

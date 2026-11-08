@@ -3,7 +3,8 @@
 //! The variants are the kinds the mount must branch on (SPEC.md, "Errors seen by programs using the mount"):
 //! offline, signed out, missing permission, gone, a stale size, busy, and everything else. The mapping encodes
 //! what the lab server answered on Immich v3.3.5:
-//! - an unknown or deleted Asset answers 400 `Not found or no asset.read access`, not 404, on most endpoints
+//! - an unknown or deleted Asset answers 400 `Not found or no asset.read access`, not 404, on most endpoints, and
+//!   other kinds of thing answer 400 `<Kind> not found` (seen on v3.3.6)
 //! - `/assets/{id}/original` answers 404 for an unknown Asset, and also 404 (not 416) for a range past the end;
 //!   only the second carries `Content-Range: bytes */<size>`, which is how the two are told apart
 //! - a missing scope answers 403 `Missing required permission: <permission>`
@@ -91,7 +92,7 @@ pub(crate) fn classify(response: &ErrorResponse<'_>, shape: RequestShape) -> Api
         404 if shape == RequestShape::Ranged && response.has_content_range => ApiError::RangeNotSatisfiable,
         416 => ApiError::RangeNotSatisfiable,
         404 => ApiError::NotFound,
-        400 if message.to_ascii_lowercase().starts_with("not found") => ApiError::NotFound,
+        400 if is_not_found(&message) => ApiError::NotFound,
         408 | 429 | 500..=599 => ApiError::Transient {
             retry_after: response.retry_after,
         },
@@ -128,6 +129,12 @@ pub(crate) fn server_message(body: &str) -> String {
         }) => lines.join("; "),
         _ => body.trim().chars().take(200).collect(),
     }
+}
+
+/// A 400 that means "not found": `Not found or no asset.read access`, or `Notification not found`.
+fn is_not_found(message: &str) -> bool {
+    let lower = message.to_ascii_lowercase();
+    lower.starts_with("not found") || lower.ends_with(" not found")
 }
 
 fn missing_permission(message: &str) -> Option<String> {

@@ -101,3 +101,15 @@ pub fn assert_refused<T: std::fmt::Debug>(result: Result<T, ApiError>, method: &
         other => panic!("{method} {path}: expected a refusal for `{expected}`, got {other:?}"),
     }
 }
+
+/// Wait, up to a minute, until the server's job queues are idle: changes that queue background work (tagging,
+/// edits, uploads) are settled then.
+pub async fn wait_for_idle_queues(admin: &Client) {
+    for _ in 0..120 {
+        if admin.queues().await.unwrap().iter().all(immich_api::Queue::is_idle) {
+            return;
+        }
+        tokio::time::sleep(std::time::Duration::from_millis(500)).await;
+    }
+    panic!("the job queues did not go idle within a minute");
+}

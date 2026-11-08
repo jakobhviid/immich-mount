@@ -244,20 +244,22 @@ Open:
 ## The full Immich API
 
 `immich-api` grows from the mount's endpoints to the API a full Immich client needs, so later apps (a gallery, or
-more of the mount) build on one tested layer (ARCHITECTURE.md, "The Immich API layer"). In phases, each with its
-contract tests against the lab server on the current version and the floor:
-1. **Albums, changing Assets, the trash, edits, metadata, tags, the map, video playback.** Built; contract tests
-   and the spec check pass on v3.3.6.
+more of the mount) build on one tested layer (ARCHITECTURE.md, "The Immich API layer"). Built on the branch
+`feat/full-immich-api`, not yet merged: 189 endpoints, each in the spec check, with contract tests that pass on the
+lab server on v3.3.6 and v3.2.0, and the machine-learning tests on a server built with `up.sh --ml`.
+1. **Albums, changing Assets, the trash, edits, metadata, tags, the map, video playback.** Built.
 2. **People and faces, stacks, duplicates, memories, search (smart, explore, suggestions, places, random,
-   statistics), folders, downloads.** Built; contract tests and the spec check pass on v3.3.6. Without machine
-   learning in the lab, faces and a duplicate group are made by hand, and smart search is checked for its refusal.
-3. **Sharing:** shared links, partners, album comments and likes.
+   statistics), folders, downloads.** Built. On the plain lab server faces and a duplicate group are made by hand
+   and smart search is checked for its refusal; the server with machine learning checks the real results.
+3. **Sharing:** shared links, partners, album comments and likes. Built, tested with a second user made for each
+   test.
 4. **The account:** the user and their preferences, profile picture, password, sessions, API keys, PIN code and
-   the locked folder, notifications.
+   the locked folder, notifications. Built.
 5. **Administration:** users, queues and jobs, external libraries, server statistics, storage and version
-   history.
-6. **Around it:** the contract tests on v3.2.0, a lab server with machine learning (`up.sh --ml`) for smart
-   search, faces, OCR and duplicates, and a CI job that runs the contract tests against Immich in Docker.
+   history. Built.
+6. **Around it:** the lab server with machine learning (`up.sh --ml`) and the v3.2.0 runs are done. The CI job
+   that runs the contract tests against Immich in Docker (`contract` in `.github/workflows/ci.yml`) is written
+   and has not run on GitHub yet.
 
 ## Package repositories
 

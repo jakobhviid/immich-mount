@@ -15,6 +15,8 @@
 //! - merging answers one outcome per id **plus one for the person merged into**, first; an unknown id fails with
 //!   `no_permission`, and merging a person into themselves is a 400 for the whole call. `POST /people/{id}/merge` is
 //!   used because v3.2.0 has no `POST /people/merge`
+//! - on v3.2.0 merging people made by hand answers `[]` and merges nothing: that version looks the merged people up
+//!   by their person group, which such people do not match (seen on the lab; v3.3.6 merges them)
 //! - `PUT /people/{id}/reassign` moves the face of one person on one Asset (each `(person, Asset)` pair) to the
 //!   person in the path, and answers with that person
 //! - a bulk update answers `unknown`, not `not_found`, for an id that does not exist

@@ -18,6 +18,10 @@
 //!
 //! Every endpoint is a method on [`Client`]; the modules hold its types, one module per area of the API.
 
+
+pub mod account; // the signed-in account: details, preferences, profile picture, password, PIN code, locked folder
+pub mod activity; // comments and likes in shared albums
+pub mod admin; // administration: users, job queues, external libraries
 pub mod album; // albums: listing, editing, Assets and members
 pub mod asset; // the Asset model, `GET /assets/{id}`
 pub mod asset_change; // changing Assets: dates, place, rating, visibility, trash, edits, metadata, jobs
@@ -31,14 +35,19 @@ pub mod duplicate; // groups of look-alike Assets, dismissing and resolving them
 pub mod error; // `ApiError` and how HTTP outcomes map onto it
 pub mod face; // the faces on an Asset, drawn by hand or detected
 pub mod folder; // Assets by the server folder their original is in
+pub mod map; // map markers and reverse geocoding
 pub mod memory; // on-this-day memories and their Assets
+pub mod notification; // the web app's notifications
+pub mod partner; // partners who share their libraries
 pub mod person; // people, hidden ones included: naming, merging, faces moved between them
 pub mod place; // countries and cities from search suggestions
 pub mod retry; // bounded retries honouring `Retry-After`
-pub mod map; // map markers and reverse geocoding
 pub mod search; // metadata search in the v3.2 dialect, with cursor paging
 pub mod search_more; // smart, random and counting search, explore, suggestions, place names
 pub mod server; // version, features, public config, API key permissions
+pub mod server_info; // ping, build, version history, statistics and storage
+pub mod session; // sessions on devices, and API keys
+pub mod shared_link; // public links to albums and Assets
 pub mod stack; // stacks of Assets behind a primary
 pub mod sync; // the session-only sync stream and acks
 pub mod tag; // tags and tagging Assets
@@ -54,6 +63,15 @@ mod fixtures; // JSON captured from the lab server, for unit tests
 #[cfg(test)]
 mod test_server; // a canned-response HTTP server for unit tests
 
+pub use account::{
+    AccountChanges, AlbumPreferences, AuthStatus, DownloadPreferences, EmailPreferences, FeaturePreference, MemoryPreferences,
+    PeoplePreferences, Preferences, ProfileImage, Proof,
+};
+pub use activity::{Activity, ActivityFilter, ActivityKind, ActivityStatistics};
+pub use admin::{
+    ImportPathCheck, Library, LibrarySettings, LibraryStatistics, ManualJob, NewUser, Queue, QueueName, QueueStatistics,
+    QueuedJob, UserChanges,
+};
 pub use album::{Album, AlbumChanges, AlbumFilter, AlbumMember, AlbumRole, AlbumStatistics, AssetOrder, BulkAlbumOutcome, NewAlbum, NewMember};
 pub use asset::{Asset, AssetKind, Visibility};
 pub use asset_change::{AssetChanges, AssetEdit, AssetJob, CopyOptions, MirrorAxis};
@@ -65,19 +83,24 @@ pub use download::{DownloadPlan, DownloadSource, PlannedArchive};
 pub use duplicate::{DuplicateGroup, DuplicateResolution};
 pub use error::ApiError;
 pub use face::{Face, FaceSource, NewFace};
+pub use map::{MapMarker, MapQuery, Place};
 pub use memory::{Memory, MemoryChanges, MemoryData, MemoryFilter, MemoryKind, MemoryOrder, NewMemory};
+pub use notification::{Notification, NotificationFilter, NotificationKind, NotificationLevel};
+pub use partner::{Partner, PartnerDirection};
 pub use person::{NewPerson, Person, PersonChanges, PersonOnAsset};
 pub use retry::RetryPolicy;
 pub use search::{AssetPage, AssetQuery};
 pub use search_more::{ExploreGroup, ExploreItem, PlaceMatch, SmartQuery, SuggestionKind, SuggestionQuery};
 pub use server::{ServerConfig, ServerFeatures};
+pub use server_info::{ServerAbout, ServerStatistics, ServerStorage, UserUsage, VersionHistoryEntry};
+pub use session::{ApiKey, NewApiKey, NewSession, Session};
+pub use shared_link::{AssetIdResult, LinkAddress, NewSharedLink, SharedLink, SharedLinkChanges, SharedLinkKind};
 pub use stack::Stack;
 pub use sync::{SyncAsset, SyncAssetExif, SyncLine, SyncRecord, SyncStream};
 pub use tag::{NewTag, Tag, TagChanges};
 pub use timeline::{BucketAsset, TimeBucket, TimelineScope, YearMonth};
 pub use upload::{Sha1Checksum, UploadCheck, UploadOutcome};
-pub use map::{MapMarker, MapQuery, Place};
-pub use user::{AvatarColor, User};
+pub use user::{AvatarColor, User, UserDetails, UserStatus};
 pub use version::ServerVersion;
 pub use wire::{BulkIdError, BulkIdResult, Endpoint};
 
@@ -85,6 +108,9 @@ pub use wire::{BulkIdError, BulkIdResult, Endpoint};
 /// checks the list against the server's own `/api/spec.json`.
 pub fn endpoints() -> Vec<Endpoint> {
     [
+        account::ENDPOINTS,
+        activity::ENDPOINTS,
+        admin::ENDPOINTS,
         album::ENDPOINTS,
         asset::ENDPOINTS,
         asset_change::ENDPOINTS,
@@ -97,11 +123,16 @@ pub fn endpoints() -> Vec<Endpoint> {
         folder::ENDPOINTS,
         map::ENDPOINTS,
         memory::ENDPOINTS,
+        notification::ENDPOINTS,
+        partner::ENDPOINTS,
         person::ENDPOINTS,
         place::ENDPOINTS,
         search::ENDPOINTS,
         search_more::ENDPOINTS,
         server::ENDPOINTS,
+        server_info::ENDPOINTS,
+        session::ENDPOINTS,
+        shared_link::ENDPOINTS,
         stack::ENDPOINTS,
         sync::ENDPOINTS,
         tag::ENDPOINTS,
