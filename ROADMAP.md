@@ -172,7 +172,8 @@ checked by CI's macOS job; the maintainer's Mac is needed only to run and debug 
    **Built, and nearly met (2026-11-06)** on the maintainer's Mac (macOS 27.0.1, Xcode 27.2), against the lab
    server through a loopback tunnel (`lab/mac/check.sh`; ARCHITECTURE, "The macOS edition", "Built so far"): every
    section browses in Finder, originals read back with the server's checksums, and thumbnails show with no
-   original downloaded; videos too. Not yet: the lab server in LAN mode, which brings the Local Network prompt.
+   original downloaded; videos too. Not yet: the lab server in LAN mode, which brings the Local Network prompt;
+   with the maintainer's own server, whose address resolves outside the local network, macOS asks nothing.
    Exit: on the maintainer's Mac, against the lab server in LAN mode, every section browses in Finder, photos and
    videos open, copied-out files match the server's checksums, and thumbnails show with no original downloaded.
 2. **Live changes.** The change journal in the store, the poll's state kept in the store, and the app as a login
@@ -185,10 +186,11 @@ checked by CI's macOS job; the maintainer's Mac is needed only to run and debug 
    table, status from the extension, the app's icon. The desktop crate's server check and sign-in move into the
    core, so both editions share them.
    **Built:** the shared sign-in, and the app's single sign-on, password and API key sign-in; on the maintainer's
-   Mac, key and password sign-in add the location (single sign-on not yet tried there). The Settings window, which the extension
+   Mac, key and password sign-in add the location, and so does single sign-on (verified by the maintainer,
+   2026-11-08). The Settings window, which the extension
    follows. Status from the extension, through a file. The icon, the same drive on macOS's rounded square
    (ARCHITECTURE, "The icon"). Finder's sidebar shows the location under the app's name, with the drive symbol
-   (ARCHITECTURE, "The macOS edition", "Settings"). Not yet: single sign-on on a Mac.
+   (ARCHITECTURE, "The macOS edition", "Settings").
 4. **Uploads** into the Upload folder, through the core's upload sequence.
    **Built and verified in Finder:** a photo copied or moved into Upload reaches the server byte for byte and leaves
    Upload; a moved photo's source is gone; a file Immich does not take stays in Upload, refused with its reason.

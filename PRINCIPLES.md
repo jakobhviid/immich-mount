@@ -47,9 +47,16 @@ first, and ARCHITECTURE.md is updated with the reason.
 10. **Measure, don't guess.** Behaviour that depends on Files, GLib, the kernel or the Immich server is verified on
     real machines (Erebus) before a design rests on it. Unverified claims are marked as such.
 
-11. **Immich comes first.** This is a feature for Immich, not a brand. The file manager says "Immich", and our own
-    interface says "Immich Mount". It never pretends to be official: the non-affiliation notice is always shown.
+11. **Immich comes first.** This is a feature for Immich, not a brand. The drive is "Immich Mount" (or the name the
+    user chose, `mount.name`), and so is our own interface. It never pretends to be official: the non-affiliation
+    notice is always shown.
 
 12. **Credit where credit is due.** Immich Mount is inspired by
     [Kartax/immich-desktop-app](https://github.com/Kartax/immich-desktop-app), and its API layer started from
     [immich-rs](https://github.com/boul2gom/immich-rs). The README's credits section and CREDITS.md stay true.
+
+13. **Compatibility before size.** A package installs and runs the same on every distribution and version it is
+    offered for, and there are many beyond Fedora and Ubuntu. It declares what it needs rather than counting on
+    what a desktop happens to ship, even when that makes it larger: one package with both interfaces and both
+    toolkits, about 100 MB more where the other toolkit is missing, beats a smaller one that fails to start
+    somewhere (the maintainer's choice, 2026-11; ROADMAP.md, "Package repositories").

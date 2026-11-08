@@ -1462,7 +1462,9 @@ and later, for a server on the LAN) names the app, and the extension shares the 
 socket may be refused while that prompt is open, so the first check retries. Then the app offers what the server
 does, as on Linux: single sign-on in a web authentication session that ends at the `app.immich` callback, a
 password, or an API key. The steps live in the core's `sign_in`, which both editions call; a session is ended on the
-server at sign-out.
+server at sign-out. *Verified* on the maintainer's Mac (2026-11-08): single sign-on through the server's OIDC
+provider adds the location. With that server's address, which resolves outside the local network, macOS asked
+nothing: the prompt is for local addresses only, so it is still to be seen with a server on the LAN.
 
 **Build.** Nothing generated is committed:
 - `apple/build-rust.sh` builds the bridge as a static library for both Mac architectures, joins them with `lipo`,
