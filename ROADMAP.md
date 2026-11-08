@@ -236,6 +236,12 @@ Software and Discover offer each release like any other update, and the daemon's
    sources. Needs the maintainer's Fedora account and a COPR project.
 2. **An apt repository for Ubuntu,** signed, served beside the download page.
 3. **Then:** packages from a repository carry a marker the daemon reads, and do not look for releases themselves.
+4. **One package, `immich-mount`, on every distribution,** with both interfaces and both toolkits (GTK 4 and
+   libadwaita, Qt 6 and Kirigami) as real dependencies, in place of `immich-mount-gnome` and `immich-mount-kde`;
+   the launcher already picks the interface at startup, as the cask does. Compatibility comes before size: it
+   must install and run the same on every distribution and version, never relying on what a desktop happens to
+   ship, and about 100 MB more where the other toolkit is missing is accepted. The old package names become
+   transitional (rpm `Obsoletes`, deb `Replaces`), so an upgrade moves to the one package.
 
 ## Watch upstream
 
