@@ -24,25 +24,27 @@ without downloading the library first.
   archive if you switch them on, named the way Immich names them.
 - **Thumbnails from the server,** so browsing a folder never downloads the photos in it.
 - **Originals on demand:** a file is fetched only when a program opens it, and only the parts it reads. A video
-  seeks without downloading the whole file. Folders you have visited stay browsable offline.
+  seeks without downloading the whole file. On the Mac a file is downloaded whole when opened, and Finder's Remove
+  Download frees it again. Folders you have visited stay browsable offline.
 - **Uploads by copy and move:** drop photos and videos into **Upload** and they are uploaded unchanged, then show
-  in Photos by their own date. Every other folder is a read-only view of the library. A move
-  never loses a photo: Files keeps the source until Immich has the file, and anything that fails to upload is kept
-  in a folder of its own.
+  in Photos by their own date. Every other folder is a read-only view of the library. A move never loses a photo:
+  the file manager keeps the source until Immich has the file, and anything that fails to upload is kept.
 - **Changes in Immich show within seconds,** in an open folder after a refresh.
 - **One app, native on each desktop:** it opens in GTK and libadwaita on GNOME and in Kirigami on KDE Plasma, to sign
-  in, choose what to show, and see the status. A tray icon shows how it is connected, in KDE Plasma's system tray and in
-  GNOME's top bar where the AppIndicator extension is on. On the Mac it is a menu bar app, with the library in
-  Finder's sidebar through Apple's File Provider, as iCloud Drive's is. Sign in with your server's single sign-on in your own browser (passkeys
-  and password managers work as usual), with email and password, or with an API key. The credential stays in your
-  keyring (GNOME Keyring or KWallet).
+  in, choose what to show, and see the status. A tray icon shows how it is connected, in KDE Plasma's system tray and
+  in GNOME's top bar where the AppIndicator extension is on.
+- **Native on the Mac:** a menu bar app, with the library in Finder's sidebar through Apple's File Provider, as
+  iCloud Drive's is.
+- **Sign in your way:** with your server's single sign-on in your own browser (passkeys and password managers work as
+  usual), with email and password, or with an API key. The credential stays in your keyring (GNOME Keyring or
+  KWallet) or the Mac's Keychain.
 - **In your language:** the apps speak English and 20 more of the world's most spoken languages, Danish among
   them.
-- **A command line and a background service** (`immich-mount`, a FUSE filesystem written in Rust), which also run
-  headless, without a desktop.
+- **On Linux, a command line and a background service** (`immich-mount`, a FUSE filesystem written in Rust), which
+  also run headless, without a desktop.
 
 ```text
-~/Immich/
+~/Immich/                       (on the Mac: Immich Mount in Finder's sidebar)
 ├─ Photos/2024/03 March/2024-03-15 14.32.07.jpg
 ├─ Albums/2023 - Summer trip/
 ├─ People/<Name>/
@@ -117,7 +119,7 @@ app shows the way. It lives in the menu bar, and your library in Finder's sideba
 
 ## Getting started
 
-**On the desktop,** open **Immich Mount** from the app grid, enter your server's address and sign in. Choose the
+**On a Linux desktop,** open **Immich Mount** from the app grid, enter your server's address and sign in. Choose the
 sections you want, and the library opens in Files or Dolphin. The app starts the mount itself, and it mounts again
 at every login.
 
@@ -161,7 +163,7 @@ settings to troubleshooting and uninstalling: [WORKFLOWS.md](WORKFLOWS.md).
 
 ## Status
 
-New. Both desktops are tested from a fresh install in Fedora 44 VMs (GNOME 50 and Plasma 6.8) against a real
+New. Both Linux desktops are tested from a fresh install in Fedora 44 VMs (GNOME 50 and Plasma 6.8) against a real
 Immich server, and the packages install and remove cleanly on Fedora 43 and 44, Ubuntu 24.04 and 26.04, and
 Debian 13. Releases follow semantic versioning: a change that breaks settings or behaviour bumps the major
 version.
