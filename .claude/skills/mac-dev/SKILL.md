@@ -36,6 +36,10 @@ ssh "$MAC_HOST" 'zsh -lc "cd ~/Developer/Private/immich-mount && git pull -q && 
 ```
 
 Traps (verified on macOS 27.0.1 with Xcode 27.2):
+- **GitHub may refuse the Mac's SSH key** ("Permission denied (publickey)" on `git pull`, seen on 2026-11-09). The
+  repository is public, so fetch over HTTPS, which needs no credentials: `git fetch -q
+  https://github.com/jakobhviid/immich-mount.git <branch>:<branch> && git switch -q <branch>`, or for `main`,
+  `git fetch -q https://github.com/jakobhviid/immich-mount.git main && git merge -q --ff-only FETCH_HEAD`.
 - **`xcode-select` may point at the Command Line Tools,** where `xcodebuild` refuses to run. Set
   `DEVELOPER_DIR=/Applications/Xcode.app/Contents/Developer` on our own commands; never change `xcode-select`.
 - **Homebrew's `rust` formula beside rustup** puts a cargo without the x86_64 standard library first on the PATH.
