@@ -111,8 +111,9 @@ question, its folder gone meanwhile, found the folder again and finished; a daem
 closed its question and asked again. **Verified in a Plasma 6.8 VM** with KDE's own copy (`kioclient copy`, which
 makes every folder first): every photo uploaded, the urgent question showed its buttons, and Make Albums made
 `River › Day 1` and `River › Day 2`. **On the maintainer's Mac** (macOS 27.2), Finder's folder copy, the app's
-dialog and the albums work; Upload takes a change of its times; and macOS answers the extension's
-question about its pending set, so a copied folder leaves soon after its copy. The adversarial review (2026-11-09)
+dialog and the albums work; Upload takes a change of its times; macOS answers the extension's question about
+its pending set, so a copied folder leaves soon after its copy; and a folder of photos that were in Immich's trash
+comes back from the trash and into its albums (also verified against the lab server, from the GNOME VM). The adversarial review (2026-11-09)
 found no way to lose a photo; it found a folder of a busy copy going too soon (Dolphin and rsync make every folder
 first), a lost answer making a second album, album work stranded by a cancelled poll on macOS, the desktop looked
 for only at login, a question lost to a daemon restart or to a click on its body, and Upload marked failing on the
