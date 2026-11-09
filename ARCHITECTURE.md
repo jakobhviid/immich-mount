@@ -1593,7 +1593,8 @@ Renaming the location moves the folder there, and keeps its items and downloads 
 **Switching the location on:** macOS keeps a new file provider off until someone switches it on, once per app and
 user account; the locations the app adds after that come up on. The app adds the location switched off (verified:
 `fileproviderctl dump` shows it `enabled: no` until then), and asks for the switch as the step after signing in.
-Not yet seen on the maintainer's Mac (ROADMAP, M7).
+Verified on the maintainer's Mac (macOS 27.2): with the Dev build's location switched off, Open in Finder showed
+it with Finder's Enable button, and Enable switched it on and closed the app's window.
 - **Finder's Enable button is the main way.** Open in Finder shows the location, and while it is off Finder offers
   Enable at the top of the window: one click, where the user is going anyway, with no list to search. Proton
   Drive's setup ends the same way.
@@ -1602,7 +1603,8 @@ Not yet seen on the maintainer's Mac (ROADMAP, M7).
   (`x-apple.systempreferences:com.apple.ExtensionsPreferences?extensionPointIdentifier=com.apple.fileprovider-nonui`),
   where Immich Mount has a switch with its name and icon (the extension carries the app's). Login Items &
   Extensions alone (`x-apple.systempreferences:com.apple.LoginItems-Settings.extension`) opens above that list,
-  and is the address left should System Settings not take the first.
+  and is the address left should System Settings not take the first. That the first opens the list itself is not
+  yet seen (ROADMAP, M7).
 - **No program can switch it on,** so the install cannot either. The SDK has no call for it (`userEnabled` is
   read-only), and `pluginkit -e use`, adding the location again and starting the app through Launch Services
   change nothing (seen in a File Provider spike on macOS 27.0.1, valkyrianlabs/vaulthalla-desktop#2). The disk

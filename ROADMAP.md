@@ -222,9 +222,8 @@ install on a second Mac, which the maintainer dropped; what steps 1 and 4 left u
    Exit: a Mac that never had it installs from Homebrew, switches the extension on, and browses.
 
 Open:
-- **Switching the location on in Finder** (ARCHITECTURE, "The macOS edition", "Switching the location on"):
-  that Finder shows its Enable button at the top of a switched-off location's window, that the system tells where
-  that location is, and that System Settings opens at its list of file providers, on macOS 27.
+- **System Settings at its list of file providers** (ARCHITECTURE, "The macOS edition", "Switching the location
+  on"): that Use System Settings Instead opens the list itself, not the top of Login Items & Extensions.
 - **The Local Network prompt,** with a server on the LAN: macOS asks only before an app reaches a local address, so
   a server whose address is public never brings it (step 1).
 - **How Finder shows a refused upload,** and **signing out with a file waiting in Upload** (removed with
