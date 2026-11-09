@@ -9,7 +9,7 @@ Immich Mount is an independent, unofficial project. It is not affiliated with, e
 - **Your library as folders**: the timeline by year and month, albums, people and places, and favorites and archive if switched on, named the way Immich names them.
 - **Thumbnails from the server**, so browsing a folder never downloads the photos in it.
 - **Originals on demand**: a file is fetched only when a program opens it, and only the parts it reads. Folders already visited stay browsable offline.
-- **Uploads by copy and move**: photos and videos dropped into `Upload` are uploaded unchanged. Every other folder is a read-only view of the library.
+- **Uploads by copy and move**: photos and videos dropped into `Upload` are uploaded unchanged; a folder dropped there can also become albums, one per folder, named by its path. Every other folder is a read-only view of the library.
 - **Native on each desktop**: GTK and libadwaita on GNOME, Kirigami on KDE Plasma, a menu bar app with Finder's sidebar (File Provider) on the Mac. The credential stays in the system keyring.
 - **A command line and a background service** (`immich-mount`, a FUSE filesystem written in Rust), which also run headless.
 - **What it does not do**: sync or mirror the library, edit, rename or delete what is already in Immich, or replace Immich's own apps.

@@ -19,12 +19,13 @@ final class FileProviderItem: NSObject, NSFileProviderItem {
         return UTType(filenameExtension: (item.name as NSString).pathExtension) ?? .data
     }
 
-    /// Read-only, as on Linux; the Upload folder also takes new files.
+    /// Read-only, as on Linux; the Upload folder and the folders copied into it also take new files, and a copied
+    /// folder may be deleted, with a file in it that did not upload.
     var capabilities: NSFileProviderItemCapabilities {
         guard item.isFolder else { return [.allowsReading] }
-        return item.acceptsNewFiles
-            ? [.allowsReading, .allowsContentEnumerating, .allowsAddingSubItems]
-            : [.allowsReading, .allowsContentEnumerating]
+        guard item.acceptsNewFiles else { return [.allowsReading, .allowsContentEnumerating] }
+        let adding: NSFileProviderItemCapabilities = [.allowsReading, .allowsContentEnumerating, .allowsAddingSubItems]
+        return item.identifier.hasPrefix("upload-folder|") ? adding.union(.allowsDeleting) : adding
     }
 
     /// Downloaded when read, and evictable: Finder offers "Remove Download" on a file or a whole folder, which frees

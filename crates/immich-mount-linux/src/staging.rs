@@ -15,6 +15,10 @@
 //!   go to the not-uploaded folder under their own names: Dolphin's move (KIO) deletes its source although the close
 //!   failed. Only what the user dropped is deleted: a cancelled copy that ends short, an empty file, a file removed or
 //!   replaced in Upload, an uploaded file's receipt.
+//! - **Folders copied into Upload** hold their files here the same way, under the folder's path below Upload. A copy's
+//!   folders go together, soon after the copy is done and empty, and are remembered a while without being shown, so a
+//!   copy that only paused finds its folder again; a file kept because it did not upload keeps its path in the
+//!   not-uploaded folder.
 
 use std::collections::HashMap;
 use std::os::unix::fs::{DirBuilderExt, FileExt, OpenOptionsExt};
@@ -28,6 +32,13 @@ use tokio::sync::watch;
 /// How long an uploaded file stays in Upload after its upload, as a receipt: copy tools set its times right after
 /// closing it (GIO, KIO, rsync), and those must find it. Then it goes: Immich has it, in its date folder.
 pub const RECEIPT_LIFETIME: Duration = Duration::from_secs(10);
+/// How long a copy's folders stay shown once none holds a file and nothing arrived in any of them: as long as a copy
+/// takes to settle, so they go about as soon as their last file has.
+pub const FOLDER_LINGER: Duration = Duration::from_secs(immich_mount_core::folder_uploads::SETTLE_SECONDS);
+/// How long a copy's folders are remembered once gone, unseen: a copy that only paused (Files waiting on its question
+/// about a file Immich does not take, which can take minutes) looks its folder up again, and finds it. Gone for good,
+/// the rest of that copy failed with "No such file or directory" (seen in a GNOME 50 VM).
+pub const FOLDER_MEMORY: Duration = Duration::from_secs(immich_mount_core::folder_uploads::REMEMBER_SECONDS);
 
 /// An upload's outcome as the closing program sees it: success, or an error number.
 pub type UploadResult = Result<(), i32>;
@@ -99,6 +110,8 @@ pub enum CloseAction {
 /// What an upload needs, handed out by [`Staging::close`].
 pub struct PendingUpload {
     pub file: u64,
+    /// The folder it is uploaded from: Upload, or a folder copied into it.
+    pub folder: NodeKey,
     pub path: PathBuf,
     pub name: String,
     pub modified: SystemTime,
@@ -117,12 +130,67 @@ pub async fn wait_for(mut receiver: watch::Receiver<Option<UploadResult>>) -> Up
     }
 }
 
+/// A folder copied into Upload, by its key (`NodeKey::UploadFolder`).
+#[derive(Debug, Clone)]
+struct StagedFolder {
+    /// When it was made: its modification time.
+    made: SystemTime,
+    /// When something last arrived in it or below it.
+    touched: Instant,
+}
+
 #[derive(Default)]
 struct Inner {
     files: HashMap<u64, StagedFile>,
     handles: HashMap<u64, Handle>,
+    folders: HashMap<NodeKey, StagedFolder>,
+    /// Folders of copies that are done, unseen, by when they went: looked up again, they come back.
+    gone: HashMap<NodeKey, (StagedFolder, Instant)>,
     next_file: u64,
     next_handle: u64,
+}
+
+impl Inner {
+    /// Note that something arrived in `folder`: it, and every folder above it, stay. A folder that went meanwhile
+    /// (a copy that paused longer than `FOLDER_LINGER`) is there again.
+    fn touch(&mut self, folder: &NodeKey) {
+        let now = Instant::now();
+        let mut current = folder.upload_path().map(<[String]>::to_vec).unwrap_or_default();
+        while !current.is_empty() {
+            let key = NodeKey::UploadFolder(current.clone());
+            let made = self.gone.remove(&key).map_or_else(SystemTime::now, |(folder, _)| folder.made);
+            self.folders.entry(key).and_modify(|staged| staged.touched = now).or_insert(StagedFolder { made, touched: now });
+            current.pop();
+        }
+    }
+
+    /// Whether anything is in `folder`: a file (being written, uploaded, or a receipt) or a folder.
+    fn holds_anything(&self, folder: &NodeKey) -> bool {
+        self.files.values().any(|file| file.folder == *folder) || self.folders.keys().any(|key| is_inside(key, folder))
+    }
+}
+
+/// The copied folder a folder copied into Upload belongs to: the first part of its path.
+fn top_of(folder: &NodeKey) -> Option<&str> {
+    match folder {
+        NodeKey::UploadFolder(path) => path.first().map(String::as_str),
+        _ => None,
+    }
+}
+
+/// Whether `key` is a folder directly inside `folder`.
+fn is_inside(key: &NodeKey, folder: &NodeKey) -> bool {
+    match (key.upload_path(), folder.upload_path()) {
+        (Some(path), Some(parent)) => path.len() == parent.len() + 1 && path.starts_with(parent) && matches!(key, NodeKey::UploadFolder(_)),
+        _ => false,
+    }
+}
+
+/// A file's place below Upload, as the not-uploaded folder keeps it: `Trip/Day 1/IMG_1.JPG`.
+fn relative_name(folder: &NodeKey, name: &str) -> String {
+    let mut parts = folder.upload_path().map(<[String]>::to_vec).unwrap_or_default();
+    parts.push(name.to_owned());
+    parts.join("/")
 }
 
 /// The staging area of one account.
@@ -130,6 +198,8 @@ pub struct Staging {
     directory: PathBuf,
     /// Where files that were not uploaded are kept (`~/.local/share/immich-mount/not-uploaded`).
     kept: PathBuf,
+    /// `FOLDER_LINGER`, shorter in tests.
+    folder_linger: Duration,
     inner: Mutex<Inner>,
 }
 
@@ -138,18 +208,30 @@ fn name_file(staged: &Path) -> PathBuf {
     staged.with_extension("name")
 }
 
-/// Move `staged` into `kept` as `name`, numbered (`IMG_1 (2).JPG`) if the name is taken there. Never loses the bytes:
-/// when the move fails they stay where they are, and the next start tries again.
+/// Move `staged` into `kept` as `name`, numbered (`IMG_1 (2).JPG`) if the name is taken there. A file from a folder
+/// copied into Upload keeps its folders (`Trip/Day 1/IMG_1.JPG`). Never loses the bytes: when the move fails they stay
+/// where they are, and the next start tries again.
 fn keep(kept: &Path, staged: &Path, name: &str) {
-    let name = Path::new(name).file_name().map_or_else(|| "not-uploaded".to_owned(), |name| name.to_string_lossy().into_owned());
+    // Only plain names make the path: never `..` or an absolute one, whatever the name file says.
+    let mut parts: Vec<&str> = name.split('/').filter(|part| !matches!(*part, "" | "." | "..")).collect();
+    let name = parts.pop().map_or_else(|| "not-uploaded".to_owned(), str::to_owned);
     let (stem, extension) = match name.rsplit_once('.') {
         Some((stem, extension)) if !stem.is_empty() => (stem.to_owned(), format!(".{extension}")),
         _ => (name.clone(), String::new()),
     };
-    if let Err(error) = std::fs::DirBuilder::new().recursive(true).mode(0o700).create(kept) {
-        log::error!("could not keep {name} that was not uploaded: {}: {error}", kept.display());
-        return;
-    }
+    // Its folders, or the not-uploaded folder itself where one of them cannot be made (a kept file has its name).
+    let folders = parts.iter().fold(kept.to_path_buf(), |path, part| path.join(part));
+    let kept = match std::fs::DirBuilder::new().recursive(true).mode(0o700).create(&folders) {
+        Ok(()) => &folders,
+        Err(error) => {
+            log::warn!("could not keep {name} in {}: {error}", folders.display());
+            if let Err(error) = std::fs::DirBuilder::new().recursive(true).mode(0o700).create(kept) {
+                log::error!("could not keep {name} that was not uploaded: {}: {error}", kept.display());
+                return;
+            }
+            kept
+        }
+    };
     let Some(target) = (1..10_000)
         .map(|counter| if counter == 1 { kept.join(&name) } else { kept.join(format!("{stem} ({counter}){extension}")) })
         .find(|candidate| !candidate.exists())
@@ -193,6 +275,7 @@ impl Staging {
         Ok(Staging {
             directory: directory.to_path_buf(),
             kept: kept.to_path_buf(),
+            folder_linger: FOLDER_LINGER,
             inner: Mutex::new(Inner { next_file: 1, next_handle: 1, ..Inner::default() }),
         })
     }
@@ -205,7 +288,7 @@ impl Staging {
     /// Let a staged file go: kept if its upload failed (the user may have nothing else), deleted otherwise.
     fn dispose(&self, file: StagedFile) {
         if matches!(file.state, StagedState::Failed(_)) && !file.cut_short && file.size > 0 {
-            keep(&self.kept, &file.path, &file.name);
+            keep(&self.kept, &file.path, &relative_name(&file.folder, &file.name));
         } else {
             let _ = std::fs::remove_file(&file.path);
         }
@@ -227,6 +310,36 @@ impl Staging {
                 self.dispose(file);
             }
         }
+        // A copied folder goes with the rest of its copy, once no file is in any of them and nothing under the copied
+        // folder was touched for a while. Folder by folder, one waiting for its turn went while its copy was busy
+        // elsewhere: Dolphin and rsync make every folder of a copy before its first file.
+        let mut copies: HashMap<String, (Instant, bool)> = HashMap::new();
+        for (key, folder) in &inner.folders {
+            if let Some(top) = top_of(key) {
+                let copy = copies.entry(top.to_owned()).or_insert((folder.touched, false));
+                copy.0 = copy.0.max(folder.touched);
+            }
+        }
+        for file in inner.files.values() {
+            if let Some(copy) = top_of(&file.folder).and_then(|top| copies.get_mut(top)) {
+                copy.1 = true;
+            }
+        }
+        let gone: Vec<String> = copies
+            .into_iter()
+            .filter(|(_, (touched, holds_files))| !holds_files && now.duration_since(*touched) >= self.folder_linger)
+            .map(|(top, _)| top)
+            .collect();
+        if !gone.is_empty() {
+            let leaving: Vec<NodeKey> =
+                inner.folders.keys().filter(|key| top_of(key).is_some_and(|top| gone.iter().any(|copy| copy == top))).cloned().collect();
+            for key in leaving {
+                if let Some(folder) = inner.folders.remove(&key) {
+                    inner.gone.insert(key, (folder, now));
+                }
+            }
+        }
+        inner.gone.retain(|_, (_, went)| now.duration_since(*went) < FOLDER_MEMORY);
         inner
     }
 
@@ -238,7 +351,8 @@ impl Staging {
         inner.next_file += 1;
         let path = self.directory.join(format!("{id}.staged"));
         std::fs::OpenOptions::new().create(true).truncate(true).write(true).mode(0o600).open(&path)?;
-        std::fs::write(name_file(&path), name)?;
+        std::fs::write(name_file(&path), relative_name(folder, name))?;
+        inner.touch(folder);
         let replaced: Vec<u64> = inner.files.iter().filter(|(_, file)| file.folder == *folder && file.name == name).map(|(id, _)| *id).collect();
         for old in replaced {
             if let Some(file) = inner.files.remove(&old) {
@@ -436,7 +550,8 @@ impl Staging {
         staged.folder = folder.clone();
         staged.name = name.to_owned();
         staged.awaiting_rename = awaiting_rename;
-        let _ = std::fs::write(name_file(&staged.path), name);
+        let _ = std::fs::write(name_file(&staged.path), relative_name(folder, name));
+        inner.touch(folder);
         Ok(())
     }
 
@@ -479,7 +594,14 @@ impl Staging {
         let (sender, receiver) = watch::channel(None);
         staged.state = StagedState::Uploading(receiver);
         staged.dirty = false;
-        CloseAction::Upload(PendingUpload { file, path: staged.path.clone(), name: staged.name.clone(), modified: staged.modified, sender })
+        CloseAction::Upload(PendingUpload {
+            file,
+            folder: staged.folder.clone(),
+            path: staged.path.clone(),
+            name: staged.name.clone(),
+            modified: staged.modified,
+            sender,
+        })
     }
 
     /// Start the upload of a closed file just given its real name (rsync renames after closing). `None` if there is
@@ -502,7 +624,7 @@ impl Staging {
         let (sender, receiver) = watch::channel(None);
         staged.state = StagedState::Uploading(receiver);
         staged.dirty = false;
-        Some(PendingUpload { file, path: staged.path.clone(), name: staged.name.clone(), modified: staged.modified, sender })
+        Some(PendingUpload { file, folder: staged.folder.clone(), path: staged.path.clone(), name: staged.name.clone(), modified: staged.modified, sender })
     }
 
     /// End an upload that was refused because the file ends before its own structure does: a cancelled copy, whose
@@ -519,6 +641,7 @@ impl Staging {
     pub fn finish_upload(&self, pending: PendingUpload, result: UploadResult) {
         let mut inner = self.lock();
         let mut remove = false;
+        inner.touch(&pending.folder);
         if let Some(staged) = inner.files.get_mut(&pending.file) {
             match result {
                 Ok(()) => {
@@ -537,6 +660,76 @@ impl Staging {
             }
         }
         let _ = pending.sender.send(Some(result));
+    }
+
+    /// Make the folder `name` inside `parent` (Upload, or a folder copied into it), and return its key. A name that a
+    /// file or folder there has already is taken.
+    pub fn create_folder(&self, parent: &NodeKey, name: &str) -> Result<NodeKey, Refusal> {
+        let key = parent.upload_child(name).ok_or(libc::EPERM)?;
+        let mut inner = self.lock();
+        let file_named = inner.files.values().any(|file| file.folder == *parent && file.name == name && !matches!(file.state, StagedState::Failed(_)));
+        if file_named || inner.folders.contains_key(&key) {
+            return Err(libc::EEXIST);
+        }
+        // A folder of a copy that went comes back (keeping when it was made): made again, it is the same folder.
+        inner.touch(&key);
+        Ok(key)
+    }
+
+    /// The folder named `name` inside `parent`, if one is shown.
+    pub fn find_folder(&self, parent: &NodeKey, name: &str) -> Option<NodeKey> {
+        let key = parent.upload_child(name)?;
+        self.lock().folders.contains_key(&key).then_some(key)
+    }
+
+    /// The folder named `name` inside `parent`, as a path lookup finds it: one shown, or one of a copy that went, which
+    /// comes back for a copy that only paused.
+    pub fn look_up_folder(&self, parent: &NodeKey, name: &str) -> Option<NodeKey> {
+        let key = parent.upload_child(name)?;
+        let mut inner = self.lock();
+        if inner.gone.contains_key(&key) {
+            inner.touch(&key);
+        }
+        inner.folders.contains_key(&key).then_some(key)
+    }
+
+    /// The folders inside `parent`, by name, with when each was made.
+    pub fn folders_in(&self, parent: &NodeKey) -> Vec<(String, NodeKey, SystemTime)> {
+        let mut found: Vec<(String, NodeKey, SystemTime)> = self
+            .lock()
+            .folders
+            .iter()
+            .filter(|(key, _)| is_inside(key, parent))
+            .filter_map(|(key, folder)| Some((key.upload_path()?.last()?.clone(), key.clone(), folder.made)))
+            .collect();
+        found.sort_by(|first, second| first.0.cmp(&second.0));
+        found
+    }
+
+    /// When a folder copied into Upload was made, while it is there.
+    pub fn folder_made(&self, key: &NodeKey) -> Option<SystemTime> {
+        self.lock().folders.get(key).map(|folder| folder.made)
+    }
+
+    /// Remove an empty folder (a cancelled copy cleaning up, or someone tidying Upload).
+    pub fn remove_folder(&self, key: &NodeKey) -> Result<(), Refusal> {
+        let mut inner = self.lock();
+        if !inner.folders.contains_key(key) {
+            return Err(libc::ENOENT);
+        }
+        if inner.holds_anything(key) {
+            return Err(libc::ENOTEMPTY);
+        }
+        inner.folders.remove(key);
+        Ok(())
+    }
+
+    /// Whether anything under the copied folder `top` is being written or uploaded: its copy is not finished.
+    pub fn busy_under(&self, top: &str) -> bool {
+        self.lock().files.values().any(|file| {
+            matches!(&file.folder, NodeKey::UploadFolder(path) if path.first().is_some_and(|first| first == top))
+                && (file.open_handles > 0 || matches!(file.state, StagedState::Uploading(_)))
+        })
     }
 
     /// Files being written or uploaded: name, phase (`writing` or `uploading`) and bytes.
@@ -560,6 +753,28 @@ impl Staging {
     /// The directory the staged bytes live in, for free-space reporting.
     pub fn directory(&self) -> &Path {
         &self.directory
+    }
+}
+
+#[cfg(test)]
+impl Staging {
+    /// Folders go after `linger` instead: aging an `Instant` by `FOLDER_LINGER` fails on a machine up for less.
+    fn with_folder_linger(mut self, linger: Duration) -> Staging {
+        self.folder_linger = linger;
+        self
+    }
+
+    /// Make every receipt and folder older by `by`, as time passing would.
+    fn age(&self, by: Duration) {
+        let mut inner = self.inner.lock().expect("staging lock");
+        for folder in inner.folders.values_mut() {
+            folder.touched = folder.touched.checked_sub(by).unwrap_or(folder.touched);
+        }
+        for file in inner.files.values_mut() {
+            if let StagedState::Receipt(until) = &mut file.state {
+                *until = until.checked_sub(by).unwrap_or(*until);
+            }
+        }
     }
 }
 
@@ -728,5 +943,81 @@ mod tests {
         staging.finish_cut_short(upload(staging.close(cancelled)));
         staging.release(cancelled);
         assert!(!kept.join("IMG_0009.JPG").exists(), "a cancelled copy still has its source");
+    }
+
+    #[tokio::test]
+    async fn a_folder_holds_its_files_and_goes_once_empty_and_untouched() {
+        let directory = tempfile::tempdir().unwrap();
+        let linger = Duration::from_secs(1);
+        let staging = Staging::new(directory.path(), &directory.path().join("kept")).unwrap().with_folder_linger(linger);
+        let trip = staging.create_folder(&NodeKey::Upload, "Trip").unwrap();
+        assert_eq!(staging.create_folder(&NodeKey::Upload, "Trip"), Err(libc::EEXIST));
+        assert_eq!(staging.create_folder(&photos(), "Trip"), Err(libc::EPERM), "only below Upload");
+        let day = staging.create_folder(&trip, "Day 1").unwrap();
+        assert_eq!(staging.find_folder(&trip, "Day 1"), Some(day.clone()));
+        let names = |folder: &NodeKey| staging.folders_in(folder).into_iter().map(|(name, _, _)| name).collect::<Vec<_>>();
+        assert_eq!((names(&NodeKey::Upload), names(&trip)), (vec!["Trip".to_owned()], vec!["Day 1".to_owned()]));
+
+        let (_, writer) = staging.create(&day, "IMG_0001.JPG", false).unwrap();
+        staging.write(writer, 0, b"bytes").unwrap();
+        assert!(staging.busy_under("Trip") && !staging.busy_under("Day 1"), "a copy is known by its folder");
+        assert_eq!(staging.remove_folder(&day), Err(libc::ENOTEMPTY));
+        staging.age(linger * 2);
+        assert_eq!(names(&trip), ["Day 1"], "it holds a file: it stays");
+        staging.finish_upload(upload(staging.close(writer)), Ok(()));
+        staging.release(writer);
+        assert!(!staging.busy_under("Trip"));
+        assert_eq!(names(&trip), ["Day 1"], "the receipt is still there");
+        staging.age(RECEIPT_LIFETIME + linger);
+        assert!(names(&NodeKey::Upload).is_empty(), "empty and untouched: the copy's folders go");
+        assert_eq!(staging.find_folder(&NodeKey::Upload, "Trip"), None);
+        // A copy that only paused looks its folders up again, and they come back, from the top down.
+        assert_eq!(staging.look_up_folder(&NodeKey::Upload, "Trip"), Some(trip.clone()));
+        assert_eq!(staging.look_up_folder(&trip, "Day 1"), Some(day.clone()));
+        assert_eq!(names(&trip), ["Day 1"]);
+
+        let empty = staging.create_folder(&NodeKey::Upload, "Empty").unwrap();
+        assert_eq!(staging.remove_folder(&empty), Ok(()));
+        assert_eq!(staging.remove_folder(&empty), Err(libc::ENOENT));
+    }
+
+    #[tokio::test]
+    async fn a_folder_waiting_for_its_turn_stays_while_its_copy_is_busy() {
+        let directory = tempfile::tempdir().unwrap();
+        let linger = Duration::from_secs(1);
+        let staging = Staging::new(directory.path(), &directory.path().join("kept")).unwrap().with_folder_linger(linger);
+        // Dolphin makes every folder of a copy first, then copies the files.
+        let trip = staging.create_folder(&NodeKey::Upload, "Trip").unwrap();
+        let (one, two) = (staging.create_folder(&trip, "Day 1").unwrap(), staging.create_folder(&trip, "Day 2").unwrap());
+        let (_, writer) = staging.create(&one, "IMG_0001.JPG", false).unwrap();
+        staging.write(writer, 0, b"bytes").unwrap();
+        staging.age(linger * 2);
+        assert_eq!(staging.find_folder(&trip, "Day 2"), Some(two.clone()), "its copy is busy in Day 1, long past the linger");
+        staging.finish_upload(upload(staging.close(writer)), Ok(()));
+        staging.release(writer);
+        assert_eq!(staging.find_folder(&trip, "Day 2"), Some(two), "and Day 1 holds a receipt");
+        staging.age(RECEIPT_LIFETIME + linger);
+        assert!(staging.folders_in(&NodeKey::Upload).is_empty(), "the copy goes whole");
+    }
+
+    #[test]
+    fn a_file_that_did_not_upload_keeps_its_folders() {
+        let directory = tempfile::tempdir().unwrap();
+        let kept = directory.path().join("kept");
+        let staging = Staging::new(&directory.path().join("staging"), &kept).unwrap();
+        let day = staging.create_folder(&NodeKey::Upload, "Trip").and_then(|trip| staging.create_folder(&trip, "Day 1")).unwrap();
+        let (_, writer) = staging.create(&day, "IMG_0001.JPG", false).unwrap();
+        staging.write(writer, 0, b"bytes").unwrap();
+        staging.finish_upload(upload(staging.close(writer)), Err(libc::EIO));
+        staging.release(writer);
+        assert_eq!(std::fs::read(kept.join("Trip").join("Day 1").join("IMG_0001.JPG")).unwrap(), b"bytes");
+
+        // A name file never leads out of the not-uploaded folder.
+        let leftovers = directory.path().join("leftovers");
+        std::fs::create_dir(&leftovers).unwrap();
+        std::fs::write(leftovers.join("3.staged"), b"half").unwrap();
+        std::fs::write(leftovers.join("3.name"), "../../outside/IMG_0002.JPG").unwrap();
+        Staging::new(&leftovers, &kept).unwrap();
+        assert_eq!(std::fs::read(kept.join("outside").join("IMG_0002.JPG")).unwrap(), b"half");
     }
 }

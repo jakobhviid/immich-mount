@@ -9,6 +9,7 @@ pub mod credentials;
 pub mod daemon;
 pub mod dbus;
 pub mod doctor;
+pub mod folders;
 pub mod keyring;
 pub mod fuse;
 pub mod gnome;

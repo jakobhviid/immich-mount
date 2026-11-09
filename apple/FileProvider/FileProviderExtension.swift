@@ -68,7 +68,7 @@ final class FileProviderExtension: NSObject, NSFileProviderReplicatedExtension, 
                     request: NSFileProviderRequest) throws -> NSFileProviderEnumerator {
         guard let library else { throw NSFileProviderError(.notAuthenticated) }
         followConfig(library)
-        return Enumerator(container: containerItemIdentifier, library: library)
+        return Enumerator(container: containerItemIdentifier, library: library, domain: domain)
     }
 
     /// Follow config.toml once the app's Settings window changed it; the app then asks the system to list everything
@@ -153,9 +153,10 @@ final class FileProviderExtension: NSObject, NSFileProviderReplicatedExtension, 
 
     // MARK: Changes from Finder
 
-    // Only the Upload folder takes anything: new files, which are uploaded and leave it a little later. Every other
-    // folder is a read-only view, as on Linux (ARCHITECTURE.md, "The macOS edition", "Uploads"). The items'
-    // capabilities keep Finder from offering the rest; a request that comes anyway is refused.
+    // Only the Upload folder takes anything: new files, which are uploaded and leave it a little later, and folders,
+    // whose photos and videos are uploaded too and whose albums follow (ARCHITECTURE.md, "Folders copied into
+    // Upload"). Every other folder is a read-only view, as on Linux (ARCHITECTURE.md, "The macOS edition", "Uploads").
+    // The items' capabilities keep Finder from offering the rest; a request that comes anyway is refused.
 
     func createItem(basedOn itemTemplate: NSFileProviderItem, fields: NSFileProviderItemFields, contents url: URL?,
                     options: NSFileProviderCreateItemOptions = [], request: NSFileProviderRequest,
@@ -166,9 +167,16 @@ final class FileProviderExtension: NSObject, NSFileProviderReplicatedExtension, 
             return progress
         }
         let kind = itemTemplate.contentType ?? nil
+        let isFolder = kind?.conforms(to: .folder) ?? false
         let isFile = kind.map { !$0.conforms(to: .folder) && !$0.conforms(to: .symbolicLink) && !$0.conforms(to: .aliasFile) } ?? true
         let modified = (itemTemplate.contentModificationDate ?? nil) ?? Date()
         let (folder, name) = (itemTemplate.parentItemIdentifier.bridged, itemTemplate.filename)
+        // Finder's record of a folder's view is no photo: kept on this Mac only, and never pending, so it keeps no
+        // copied folder in Upload.
+        if name == ".DS_Store" {
+            completionHandler(nil, [], false, NSFileProviderError(.excludedFromSync))
+            return progress
+        }
         let reimported = options.contains(.mayAlreadyExist)
         let cancel = Cancel()
         let task = Task {
@@ -181,8 +189,15 @@ final class FileProviderExtension: NSObject, NSFileProviderReplicatedExtension, 
                     progress.completedUnitCount = 1
                     return
                 }
+                if isFolder {
+                    let item = try library.createFolder(parent: folder, name: name)
+                    logger.notice("a folder was copied into Upload")
+                    completionHandler(FileProviderItem(item), [], false, nil)
+                    progress.completedUnitCount = 1
+                    return
+                }
                 guard let url, isFile else {
-                    throw FileProviderExtension.refusal("Only photos and videos can be added; folders and links cannot.")
+                    throw FileProviderExtension.refusal("Only photos, videos and folders of them can be added; links cannot.")
                 }
                 let item = try await library.upload(folder: folder, name: name, path: url.path, modified: modified, cancel: cancel)
                 logger.notice("uploaded a file of \(item.size ?? 0) bytes")
@@ -203,18 +218,50 @@ final class FileProviderExtension: NSObject, NSFileProviderReplicatedExtension, 
                 userInfo: [NSLocalizedDescriptionKey: message])
     }
 
+    /// Upload and the folders copied into it change only their times and such on disk, as files come and go: those
+    /// are taken and kept as they are, as Linux takes a copied folder's times. Refused, the system marked Upload as
+    /// failing and tried again without end (seen on macOS 27.2, "diffs:mtime"). Anything else (a rename, a move, new
+    /// contents) is refused: every other folder is a view of the library.
     func modifyItem(_ item: NSFileProviderItem, baseVersion version: NSFileProviderItemVersion,
                     changedFields: NSFileProviderItemFields, contents newContents: URL?,
                     options: NSFileProviderModifyItemOptions = [], request: NSFileProviderRequest,
                     completionHandler: @escaping (NSFileProviderItem?, NSFileProviderItemFields, Bool, Error?) -> Void) -> Progress {
-        completionHandler(nil, [], false, CocoaError(.featureUnsupported))
-        return Progress()
+        let metadata: NSFileProviderItemFields = [.contentModificationDate, .creationDate, .extendedAttributes, .tagData,
+                                                  .lastUsedDate, .favoriteRank, .fileSystemFlags]
+        let identifier = item.itemIdentifier.bridged
+        let takesFiles = identifier == "upload" || identifier.hasPrefix("upload-folder|")
+        guard let library, takesFiles, changedFields.subtracting(metadata).isEmpty else {
+            completionHandler(nil, [], false, CocoaError(.featureUnsupported))
+            return Progress()
+        }
+        let progress = Progress(totalUnitCount: 1)
+        let task = Task {
+            do {
+                let current = try await library.item(identifier: identifier, cancel: nil)
+                completionHandler(FileProviderItem(current), [], false, nil)
+            } catch {
+                completionHandler(nil, [], false, error.forSystem)
+            }
+            progress.completedUnitCount = 1
+        }
+        progress.cancellationHandler = { task.cancel() }
+        return progress
     }
 
+    /// Only a folder copied into Upload may be deleted (with a file in it that did not upload); everything else is a
+    /// view of the library, which Finder never changes.
     func deleteItem(identifier: NSFileProviderItemIdentifier, baseVersion version: NSFileProviderItemVersion,
                     options: NSFileProviderDeleteItemOptions = [], request: NSFileProviderRequest,
                     completionHandler: @escaping (Error?) -> Void) -> Progress {
-        completionHandler(CocoaError(.featureUnsupported))
+        do {
+            guard let library else { throw NSFileProviderError(.notAuthenticated) }
+            try library.deleteFolder(identifier: identifier.bridged)
+            completionHandler(nil)
+        } catch BridgeError.NoSuchItem {
+            completionHandler(NSFileProviderError(.noSuchItem))
+        } catch {
+            completionHandler(CocoaError(.featureUnsupported))
+        }
         return Progress()
     }
 }

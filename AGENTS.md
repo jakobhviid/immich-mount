@@ -142,7 +142,9 @@ Build on Fedora 44, or in a Fedora 44 toolbox (the easy way on an immutable host
   Finder location), blue where the release is white or grey (the app icon, the menu bar icon, Finder's sidebar
   symbol), and no updates, so it runs beside the installed release and keeps its own sign-in from build to build.
   `apple/dev-app.sh` builds it, installs it as `/Applications/Immich Mount Dev.app` and starts it. On first run,
-  switch its extension on in System Settings (General, Login Items & Extensions) and allow the Local Network prompt.
+  switch it on (Enable at the top of its Finder location, as the app shows) and allow the Local Network prompt.
+  `apple/dev-app.sh --remove` signs it out and deletes it: deleting the app alone leaves its Finder location, which
+  macOS then serves from any copy it still knows of, the build output in `apple/build/` among them.
 - **No macOS virtual machines on Erebus:** Apple's license allows macOS VMs only on Apple hardware. The
   maintainer's Mac is a laptop in daily use, so Mac work comes in sessions; between them, CI's macOS job is the Mac.
   The `mac-dev` skill covers building, running and debugging on it over SSH, and the rules that keep it a laptop.

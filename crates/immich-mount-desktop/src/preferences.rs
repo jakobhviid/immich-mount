@@ -6,7 +6,7 @@ use immich_mount_linux::i18n::tr;
 use immich_mount_linux::paths::Paths;
 
 /// The groups the apps show, by the settings' key prefix, with their titles in English (`tr` translates them).
-/// Settings outside these (the server, set by signing in; the headless credential file; uploads) are left to
+/// Settings outside these (the server, set by signing in; the headless credential file) are left to
 /// `immich-mount configure`.
 pub const GROUPS: &[(&str, &str)] = &[
     ("mount", "Drive"),
@@ -14,6 +14,7 @@ pub const GROUPS: &[(&str, &str)] = &[
     ("grouping", "Date Folders"),
     ("albums", "Albums"),
     ("files", "Files"),
+    ("uploads", "Uploads"),
     ("thumbnails", "Thumbnails"),
     ("cache", "Cache"),
     ("updates", "Updates"),

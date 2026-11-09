@@ -15,6 +15,7 @@ use futures_util::StreamExt;
 use immich_api::{ApiError, AssetQuery, Client, Fetched, ThumbnailSize, TimelineScope, Visibility};
 
 use crate::content::{ContentSource, RangeBytes};
+use crate::folder_uploads::AlbumTarget;
 use crate::model::{Album, Asset, Person, YearMonth};
 use crate::source::{LibraryChanges, LibrarySource, SourceError, ThumbnailKind, ThumbnailSource, Watched};
 use crate::uploads::{MediaTypes, UploadError, UploadTarget, Uploaded};
@@ -569,13 +570,13 @@ impl UploadTarget for ImmichSource {
 
     /// The upload sequence (ARCHITECTURE.md, "Uploads"): the checksum, the bulk check, which settles duplicates
     /// without sending a byte, then the streamed upload. A lost answer is safe to retry: the checksum turns a second
-    /// upload into a duplicate of the first, not a second Asset.
+    /// upload into a duplicate of the first, not a second Asset. Bytes in the trash are restored, as they are.
     async fn upload(&self, path: &std::path::Path, file_name: &str, modified: DateTime<Utc>) -> Result<Uploaded, UploadError> {
         self.check_online()?;
         let checksum = immich_api::Sha1Checksum::of_file(path).await.map_err(|error| UploadError::LocalFile(error.to_string()))?;
         let checks = self.client.bulk_upload_check(&[checksum.to_base64()]).await.map_err(source_error)?;
         let outcome = match checks.into_iter().next() {
-            Some(immich_api::UploadCheck::Duplicate { trashed: true, .. }) => return Err(UploadError::TrashedDuplicate),
+            Some(immich_api::UploadCheck::Duplicate { asset_id, trashed: true }) => return self.restore(asset_id).await,
             Some(immich_api::UploadCheck::Duplicate { asset_id, trashed: false }) => return Ok(Uploaded::AlreadyInLibrary(asset_id)),
             Some(immich_api::UploadCheck::Reject { reason }) => return Err(UploadError::Rejected(reason)),
             _ => self.client.upload_asset(path, file_name, modified, modified).await,
@@ -584,7 +585,7 @@ impl UploadTarget for ImmichSource {
             Ok(immich_api::UploadOutcome::Created(asset_id)) => Ok(Uploaded::Created(asset_id)),
             // After an `Accept`, a duplicate is this upload's own earlier attempt, whose answer was lost.
             Ok(immich_api::UploadOutcome::Duplicate { id, trashed: false }) => Ok(Uploaded::AlreadyInLibrary(id)),
-            Ok(immich_api::UploadOutcome::Duplicate { trashed: true, .. }) => Err(UploadError::TrashedDuplicate),
+            Ok(immich_api::UploadOutcome::Duplicate { id, trashed: true }) => return self.restore(id).await,
             Err(ApiError::LocalFile(message)) => Err(UploadError::LocalFile(message)),
             Err(error) => Err(UploadError::Source(source_error(error))),
         };
@@ -592,6 +593,50 @@ impl UploadTarget for ImmichSource {
             self.note_outcome::<()>(&Err(error.clone()));
         }
         result
+    }
+}
+
+impl ImmichSource {
+    /// Restore an Asset whose bytes were copied into Upload while it was in the trash (`asset.delete`). Without that
+    /// permission it stays in the trash, and the upload fails, saying so.
+    async fn restore(&self, asset_id: String) -> Result<Uploaded, UploadError> {
+        match self.client.restore_assets(std::slice::from_ref(&asset_id)).await.map_err(source_error) {
+            Ok(_) => Ok(Uploaded::Restored(asset_id)),
+            Err(SourceError::MissingPermission(_)) => Err(UploadError::TrashedDuplicate),
+            Err(error) => {
+                self.note_outcome::<()>(&Err(error.clone()));
+                Err(UploadError::Source(error))
+            }
+        }
+    }
+}
+
+/// Albums of the folders copied into Upload (ARCHITECTURE.md, "Folders copied into Upload"). Making one needs
+/// `album.read` (for the names taken), `album.create` and `albumAsset.create`.
+impl AlbumTarget for ImmichSource {
+    async fn album_names(&self) -> Result<Vec<String>, SourceError> {
+        self.check_online()?;
+        let albums = self.client.albums().await.map_err(source_error)?;
+        Ok(albums.into_iter().map(|album| album.name).collect())
+    }
+
+    async fn create_album(&self, name: &str, asset_ids: &[String]) -> Result<String, SourceError> {
+        self.check_online()?;
+        let album = immich_api::NewAlbum { name: name.to_owned(), asset_ids: asset_ids.to_vec(), ..immich_api::NewAlbum::default() };
+        Ok(self.client.create_album(&album).await.map_err(source_error)?.id)
+    }
+
+    async fn add_to_album(&self, album_id: &str, asset_ids: &[String]) -> Result<(), SourceError> {
+        self.check_online()?;
+        self.client.add_assets_to_album(album_id, asset_ids).await.map_err(source_error)?;
+        Ok(())
+    }
+
+    async fn album_with(&self, name: &str, asset_id: &str) -> Result<Option<String>, SourceError> {
+        self.check_online()?;
+        let filter = immich_api::AlbumFilter { containing_asset: Some(asset_id.to_owned()), ..immich_api::AlbumFilter::default() };
+        let albums = self.client.albums_where(&filter).await.map_err(source_error)?;
+        Ok(albums.into_iter().find(|album| album.name == name).map(|album| album.id))
     }
 }
 

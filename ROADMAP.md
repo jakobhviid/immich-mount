@@ -98,6 +98,29 @@ refused by the file's own structure, and for killed writers), renames onto Asset
 files. Notifications for refused, failed and long uploads are built, and show on GNOME 50. M3's exit criteria are
 met; what remains is watching a Cancel in Files' progress popover by hand.
 
+**Folders copied into Upload (2026-11-09): built and tested.** A folder copied into Upload uploads everything in
+it, and once the copy has settled its folders may become albums named by their paths, asked with two buttons or set
+by `uploads.folders` (SPEC and ARCHITECTURE, "Folders copied into Upload"). Tested: the core's record and album
+work, the staging area's folders, a real FUSE mount taking folders inside folders, refusals and `rmdir`, and the Mac
+bridge's folder items, questions, answers, albums and departures. **Verified in a GNOME 50 VM** against the lab
+server, with Files' own copy: a folder with a subfolder and a text file (Files stops at the text file; after 40
+seconds on its question, Skip All copies the rest into the folders, which stayed); the urgent question stays on
+screen; Make Albums made `Trip` and `Trip › Day 1`, a taken name became `Holiday Mix - 2026-11-09`, and Timeline
+Only made none; the folders leave about 20 seconds after their copy, and a copy paused 40 seconds on Files'
+question, its folder gone meanwhile, found the folder again and finished; a daemon restarted before the answer
+closed its question and asked again. **Verified in a Plasma 6.8 VM** with KDE's own copy (`kioclient copy`, which
+makes every folder first): every photo uploaded, the urgent question showed its buttons, and Make Albums made
+`River › Day 1` and `River › Day 2`. **On the maintainer's Mac** (macOS 27.2), Finder's folder copy, the app's
+dialog and the albums work; Upload takes a change of its times; macOS answers the extension's question about
+its pending set, so a copied folder leaves soon after its copy; and a folder of photos that were in Immich's trash
+comes back from the trash and into its albums (also verified against the lab server, from the GNOME VM). The adversarial review (2026-11-09)
+found no way to lose a photo; it found a folder of a busy copy going too soon (Dolphin and rsync make every folder
+first), a lost answer making a second album, album work stranded by a cancelled poll on macOS, the desktop looked
+for only at login, a question lost to a daemon restart or to a click on its body, and Upload marked failing on the
+Mac by a change of its times. All are fixed, and covered by tests where they can be. Open:
+- What macOS does with a copied folder deleted by the extension while it still holds a file it has not handed over
+  (the pending set is read first to avoid it).
+
 ## M4. The GNOME app
 
 - First run, sign-in (all three methods), settings from the shared settings table, status, the About dialog with the

@@ -10,6 +10,7 @@ use std::time::{Duration, Instant};
 use immich_mount_core::content::{BlockCache, ContentSource};
 use immich_mount_core::settings::Config;
 use immich_mount_core::source::{LibrarySource, SourceError, ThumbnailSource};
+use immich_mount_core::folder_uploads::AlbumTarget;
 use immich_mount_core::uploads::UploadTarget;
 use immich_mount_core::store::MetadataStore;
 use immich_mount_core::tree::Tree;
@@ -137,7 +138,7 @@ pub fn serve<Source>(
     runtime: &tokio::runtime::Runtime,
 ) -> Result<StopReason, DaemonError>
 where
-    Source: LibrarySource + ContentSource + ThumbnailSource + UploadTarget + 'static,
+    Source: LibrarySource + ContentSource + ThumbnailSource + UploadTarget + AlbumTarget + 'static,
 {
     let prepare_error = |path: &Path, message: String| DaemonError::Prepare { path: path.to_path_buf(), message };
     match mount_state(mount_point) {
@@ -172,7 +173,7 @@ where
 
     let store = MetadataStore::open(&account_cache.join("metadata.redb")).map_err(|error| prepare_error(account_cache, error.to_string()))?;
     let (sharp_thumbnails, safety_net, cache_limit_bytes) = (config.sharp_thumbnails, config.thumbnail_safety_net, config.cache_limit_bytes);
-    let (uploads_enabled, drive_name) = (config.uploads_enabled, config.mount_name);
+    let (uploads_enabled, upload_folders, drive_name) = (config.uploads_enabled, config.upload_folders, config.mount_name);
     let tree = Arc::new(Tree::new(source.clone(), store, config));
     let content_directory = account_cache.join("content");
     let seeder = Seeder::new(Arc::new(source.clone()), thumbnail_directory, account_cache, sharp_thumbnails)
@@ -197,7 +198,12 @@ where
         let area = Arc::new(Staging::new(&staging_directory, not_uploaded_directory).map_err(|error| prepare_error(&staging_directory, error.to_string()))?);
         // The server's own list of media types; the built-in one when it cannot be asked yet.
         let media = runtime.block_on(async { tokio::time::timeout(Duration::from_secs(10), source.media_types()).await }).ok().and_then(Result::ok);
-        filesystem = filesystem.with_uploads(area.clone(), media.unwrap_or_default(), Arc::new(source.clone()));
+        // The folders copied into Upload, followed for their albums (ARCHITECTURE.md, "Folders copied into Upload"),
+        // and kept in the account's cache, so a restart asks again what was being asked.
+        let copies_file = account_cache.join("folder-copies.json");
+        let folders = Arc::new(std::sync::Mutex::new(crate::folders::kept_copies(&copies_file)));
+        filesystem = filesystem.with_uploads(area.clone(), media.unwrap_or_default(), Arc::new(source.clone()), folders.clone());
+        runtime.spawn(crate::folders::follow(folders, copies_file, area.clone(), Arc::new(source.clone()), upload_folders));
         staging = Some(area);
     }
     // The daemon leaves for an upgrade or an uninstall only when nothing is open or uploading.

@@ -176,6 +176,15 @@ struct FoldersPane: View {
                     }
                     .foregroundStyle(.secondary)
                 }
+                Section {
+                    choices(panes.uploadFolders, label: tr("Folders copied into Upload"))
+                        .disabled(!panes.sections.contains { $0.shown.key == "uploads.enabled" && $0.shown.value == "true" })
+                } header: {
+                    Text(tr("Uploads"))
+                } footer: {
+                    Text("Every photo and video in them is added to Immich. An album is named by its folder's path, such as Trip › Day 1.")
+                        .foregroundStyle(.secondary)
+                }
                 Section(tr("Albums")) {
                     choices(panes.albumLayout, label: tr("Folder names"))
                 }

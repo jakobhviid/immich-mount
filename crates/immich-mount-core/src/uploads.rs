@@ -96,6 +96,18 @@ pub enum Uploaded {
     Created(String),
     /// The library already had these bytes ("Already in library"): success, with the existing Asset's id.
     AlreadyInLibrary(String),
+    /// The library had these bytes in its trash, and they were restored: success, with the Asset's id. Copying a photo
+    /// into Upload is the plainest way to say it is wanted.
+    Restored(String),
+}
+
+impl Uploaded {
+    /// The Asset the upload ended in.
+    pub fn asset_id(&self) -> &str {
+        match self {
+            Uploaded::Created(asset_id) | Uploaded::AlreadyInLibrary(asset_id) | Uploaded::Restored(asset_id) => asset_id,
+        }
+    }
 }
 
 /// Why an upload failed. Each kind becomes an error the writing program sees on `close()`.
@@ -103,8 +115,8 @@ pub enum Uploaded {
 pub enum UploadError {
     #[error(transparent)]
     Source(#[from] SourceError),
-    /// The same bytes are in the trash. Not restored: the user decides (SPEC.md, "Uploads").
-    #[error("the library has this file in its trash; restore it there")]
+    /// The same bytes are in the trash, and the credential may not restore them (`asset.delete`).
+    #[error("the library has this file in its trash, and this account may not restore it (asset.delete); restore it in Immich")]
     TrashedDuplicate,
     /// The server refused the file, with its reason (`unsupported-format`).
     #[error("the server refused the file: {0}")]

@@ -18,89 +18,149 @@ msgstr "Immich не подключён"
 msgid "The keyring stayed locked. Open Immich Mount, or run “immich-mount mount”, to try again."
 msgstr "Связка ключей осталась заблокированной. Откройте Immich Mount или выполните «immich-mount mount», чтобы повторить попытку."
 
-#: crates/immich-mount-linux/src/daemon.rs:300
+#: crates/immich-mount-linux/src/daemon.rs:306
 msgid "Immich is unreachable"
 msgstr "Immich недоступен"
 
-#: crates/immich-mount-linux/src/daemon.rs:301
+#: crates/immich-mount-linux/src/daemon.rs:307
 msgid "The Immich server cannot be reached. Files you opened before stay available."
 msgstr "Сервер Immich недоступен. Ранее открытые файлы остаются доступными."
 
-#: crates/immich-mount-linux/src/daemon.rs:304
+#: crates/immich-mount-linux/src/daemon.rs:310
 #: crates/immich-mount-linux/src/tray.rs:70
 msgid "Signed out of Immich"
 msgstr "Выполнен выход из Immich"
 
-#: crates/immich-mount-linux/src/daemon.rs:305
+#: crates/immich-mount-linux/src/daemon.rs:311
 msgid "Immich no longer accepts this sign-in. Open Immich Mount to sign in again."
 msgstr "Immich больше не принимает этот вход. Откройте Immich Mount, чтобы войти снова."
 
-#: crates/immich-mount-linux/src/fuse.rs:621
-#: crates/immich-mount-linux/src/fuse.rs:662
-#: crates/immich-mount-linux/src/fuse.rs:668
-#: crates/immich-mount-linux/src/fuse.rs:678
-#: crates/immich-mount-linux/src/fuse.rs:1129
+#: crates/immich-mount-linux/src/folders.rs:204
+#: apple/App/FolderCopies.swift:77
+msgid "Uploaded to Immich: {folder}"
+msgstr "Загружено в Immich: {folder}"
+
+#: crates/immich-mount-linux/src/folders.rs:206
+#: apple/App/FolderCopies.swift:72
+msgid "Photos and videos in the timeline: {count}"
+msgstr "Фото и видео в хронологии: {count}"
+
+#: crates/immich-mount-linux/src/folders.rs:207
+#: apple/App/FolderCopies.swift:73
+msgid "Albums it can make: {albums}"
+msgstr "Альбомы, которые можно создать: {albums}"
+
+#: crates/immich-mount-linux/src/folders.rs:210
+#: apple/App/FolderCopies.swift:75
+msgid "Files not uploaded: {count}"
+msgstr "Не загружено файлов: {count}"
+
+#: crates/immich-mount-linux/src/folders.rs:213
+#: crates/immich-mount-core/src/settings.rs:91
+#: apple/App/FolderCopies.swift:83
+msgid "Make Albums"
+msgstr "Создать альбомы"
+
+#: crates/immich-mount-linux/src/folders.rs:213
+#: crates/immich-mount-core/src/settings.rs:90
+#: apple/App/FolderCopies.swift:84
+msgid "Timeline Only"
+msgstr "Только хронология"
+
+#: crates/immich-mount-linux/src/folders.rs:234
+#: apple/App/FolderCopies.swift:97
+msgid "Albums made from {folder}"
+msgstr "Созданы альбомы из {folder}"
+
+#: crates/immich-mount-linux/src/folders.rs:236
+#: apple/App/FolderCopies.swift:100
+#: apple/App/FolderCopies.swift:104
+msgid "No albums made from {folder}"
+msgstr "Альбомы из {folder} не созданы"
+
+#: crates/immich-mount-linux/src/folders.rs:242
+#: apple/App/FolderCopies.swift:101
+msgid "Immich does not let this account make albums ({permission}). The photos and videos are in the timeline."
+msgstr "Immich не разрешает этой учётной записи создавать альбомы ({permission}). Фото и видео находятся в хронологии."
+
+#: crates/immich-mount-linux/src/folders.rs:247
+msgid "Signed out of Immich. The photos and videos are in the timeline."
+msgstr "Выполнен выход из Immich. Фото и видео находятся в хронологии."
+
+#: crates/immich-mount-linux/src/fuse.rs:637
+#: crates/immich-mount-linux/src/fuse.rs:685
+#: crates/immich-mount-linux/src/fuse.rs:691
+#: crates/immich-mount-linux/src/fuse.rs:701
+#: crates/immich-mount-linux/src/fuse.rs:1166
 msgid "Not uploaded: {name}"
 msgstr "Не загружено: {name}"
 
-#: crates/immich-mount-linux/src/fuse.rs:621
+#: crates/immich-mount-linux/src/fuse.rs:637
 msgid "The file is incomplete, as if its copy was cancelled."
 msgstr "Файл неполный, как будто его копирование было отменено."
 
-#: crates/immich-mount-linux/src/fuse.rs:636
+#: crates/immich-mount-linux/src/fuse.rs:653
 msgid "Uploading {name} to Immich"
 msgstr "Загрузка {name} в Immich"
 
-#: crates/immich-mount-linux/src/fuse.rs:637
+#: crates/immich-mount-linux/src/fuse.rs:654
 msgid "The copy finishes once Immich has the file."
 msgstr "Копирование завершится, когда файл окажется в Immich."
 
-#: crates/immich-mount-linux/src/fuse.rs:649
+#: crates/immich-mount-linux/src/fuse.rs:667
+msgid "Restored from the trash: {name}"
+msgstr "Восстановлено из корзины: {name}"
+
+#: crates/immich-mount-linux/src/fuse.rs:668
+msgid "Immich had this photo in its trash, and copying it in brought it back."
+msgstr "Это фото было в корзине Immich, и копирование вернуло его."
+
+#: crates/immich-mount-linux/src/fuse.rs:672
 msgid "Immich has this photo already, so nothing was added."
 msgstr "Это фото уже есть в Immich, поэтому ничего не добавлено."
 
-#: crates/immich-mount-linux/src/fuse.rs:650
+#: crates/immich-mount-linux/src/fuse.rs:673
 msgid "Already in Immich: {name}"
 msgstr "Уже в Immich: {name}"
 
-#: crates/immich-mount-linux/src/fuse.rs:659
+#: crates/immich-mount-linux/src/fuse.rs:682
 msgid "{error}. The file is kept in {folder}."
 msgstr "{error}. Файл остаётся в {folder}."
 
-#: crates/immich-mount-linux/src/fuse.rs:669
+#: crates/immich-mount-linux/src/fuse.rs:692
 msgid "This computer lets a file operation take at most {seconds} seconds (fs.fuse.default_request_timeout). Set it to 0 for longer uploads. The file is kept in {folder}."
 msgstr "Этот компьютер позволяет файловой операции длиться не более {seconds} с (fs.fuse.default_request_timeout). Установите 0, чтобы загрузка могла длиться дольше. Файл остаётся в {folder}."
 
-#: crates/immich-mount-linux/src/fuse.rs:679
+#: crates/immich-mount-linux/src/fuse.rs:702
 msgid "The upload took too long. The file is kept in {folder}."
 msgstr "Загрузка заняла слишком много времени. Файл остаётся в {folder}."
 
-#: crates/immich-mount-linux/src/fuse.rs:1129
+#: crates/immich-mount-linux/src/fuse.rs:1166
 msgid "Immich takes photos and videos only."
 msgstr "Immich принимает только фото и видео."
 
 #: crates/immich-mount-linux/src/tray.rs:68
-#: apple/App/ImmichMountApp.swift:596
+#: apple/App/ImmichMountApp.swift:605
 msgid "Connected to {server}"
 msgstr "Подключено к {server}"
 
 #: crates/immich-mount-linux/src/tray.rs:69
-#: apple/App/ImmichMountApp.swift:596
+#: apple/App/ImmichMountApp.swift:605
 msgid "{server} is not reachable"
 msgstr "{server} недоступен"
 
 #: crates/immich-mount-linux/src/tray.rs:71
-#: apple/App/ImmichMountApp.swift:595
+#: apple/App/ImmichMountApp.swift:604
 msgid "Signed in to {server}"
 msgstr "Выполнен вход на {server}"
 
 #: crates/immich-mount-linux/src/tray.rs:79
-#: apple/App/ImmichMountApp.swift:604
+#: apple/App/ImmichMountApp.swift:613
 msgid "Server version: Immich {version}"
 msgstr "Версия сервера: Immich {version}"
 
 #: crates/immich-mount-linux/src/tray.rs:82
-#: apple/App/ImmichMountApp.swift:607
+#: apple/App/ImmichMountApp.swift:616
 msgid "Signed in as: {account}"
 msgstr "Вход выполнен как: {account}"
 
@@ -147,20 +207,25 @@ msgid "Date Folders"
 msgstr "Папки по датам"
 
 #: crates/immich-mount-desktop/src/preferences.rs:16
-#: apple/App/SettingsView.swift:185
+#: apple/App/SettingsView.swift:194
 msgid "Files"
 msgstr "Файлы"
 
 #: crates/immich-mount-desktop/src/preferences.rs:17
+#: apple/App/SettingsView.swift:183
+msgid "Uploads"
+msgstr "Загрузки"
+
+#: crates/immich-mount-desktop/src/preferences.rs:18
 msgid "Thumbnails"
 msgstr "Миниатюры"
 
-#: crates/immich-mount-desktop/src/preferences.rs:18
+#: crates/immich-mount-desktop/src/preferences.rs:19
 #: crates/immich-mount-gnome/src/window.blp:314
 msgid "Cache"
 msgstr "Кэш"
 
-#: crates/immich-mount-desktop/src/preferences.rs:19
+#: crates/immich-mount-desktop/src/preferences.rs:20
 msgid "Updates"
 msgstr "Обновления"
 
@@ -251,7 +316,7 @@ msgstr "Использование ИИ"
 
 #: crates/immich-mount-gnome/src/main.rs:117
 #: crates/immich-mount-kde/qml/Main.qml:175
-#: apple/App/ImmichMountApp.swift:452
+#: apple/App/ImmichMountApp.swift:461
 msgid "Parts of this project were written with the assistance of AI coding agents. All changes are reviewed by the maintainer."
 msgstr "Части этого проекта написаны с помощью ИИ-агентов для программирования. Все изменения проверяет сопровождающий."
 
@@ -516,7 +581,7 @@ msgid "The Immich API layer: {project}"
 msgstr "Слой API Immich: {project}"
 
 #: crates/immich-mount-kde/qml/Main.qml:171
-#: apple/App/ImmichMountApp.swift:451
+#: apple/App/ImmichMountApp.swift:460
 msgid "AI disclosure"
 msgstr "Использование ИИ"
 
@@ -674,141 +739,150 @@ msgstr "Отсоединиться"
 msgid "Immich Mount is an independent, unofficial project. It is not affiliated with, endorsed by, or sponsored by the Immich project or FUTO."
 msgstr "Immich Mount является независимым неофициальным проектом. Он не связан с проектом Immich или FUTO, не одобрен и не спонсируется ими."
 
-#: crates/immich-mount-core/src/settings.rs:50
+#: crates/immich-mount-core/src/settings.rs:51
 msgid "The Immich server; /api is added"
 msgstr "Сервер Immich; /api добавляется"
 
-#: crates/immich-mount-core/src/settings.rs:51
+#: crates/immich-mount-core/src/settings.rs:52
 msgid "Where the mount appears"
 msgstr "Где появляется диск"
 
-#: crates/immich-mount-core/src/settings.rs:52
+#: crates/immich-mount-core/src/settings.rs:53
 msgid "The drive's name in the sidebar"
 msgstr "Имя диска на боковой панели"
 
-#: crates/immich-mount-core/src/settings.rs:53
+#: crates/immich-mount-core/src/settings.rs:54
 msgid "Mount when the session starts"
 msgstr "Подключать при запуске сеанса"
 
-#: crates/immich-mount-core/src/settings.rs:54
+#: crates/immich-mount-core/src/settings.rs:55
 msgid "Show the Photos section"
 msgstr "Показывать раздел Photos"
 
-#: crates/immich-mount-core/src/settings.rs:55
+#: crates/immich-mount-core/src/settings.rs:56
 msgid "Show the Albums section"
 msgstr "Показывать раздел Albums"
 
-#: crates/immich-mount-core/src/settings.rs:56
+#: crates/immich-mount-core/src/settings.rs:57
 msgid "Show the People section"
 msgstr "Показывать раздел People"
 
-#: crates/immich-mount-core/src/settings.rs:57
+#: crates/immich-mount-core/src/settings.rs:58
 msgid "Show the Places section"
 msgstr "Показывать раздел Places"
 
-#: crates/immich-mount-core/src/settings.rs:58
+#: crates/immich-mount-core/src/settings.rs:59
 msgid "Show the Favorites section"
 msgstr "Показывать раздел Favorites"
 
-#: crates/immich-mount-core/src/settings.rs:59
+#: crates/immich-mount-core/src/settings.rs:60
 msgid "Show the Archive section"
 msgstr "Показывать раздел Archive"
 
-#: crates/immich-mount-core/src/settings.rs:60
+#: crates/immich-mount-core/src/settings.rs:61
 msgid "Day folders inside months"
 msgstr "Папки дней внутри месяцев"
 
-#: crates/immich-mount-core/src/settings.rs:61
+#: crates/immich-mount-core/src/settings.rs:62
 msgid "Year and month folders inside albums"
 msgstr "Папки лет и месяцев внутри альбомов"
 
-#: crates/immich-mount-core/src/settings.rs:62
+#: crates/immich-mount-core/src/settings.rs:63
 msgid "Year and month folders inside people"
 msgstr "Папки лет и месяцев внутри папок людей"
 
-#: crates/immich-mount-core/src/settings.rs:63
+#: crates/immich-mount-core/src/settings.rs:64
 msgid "Year and month folders inside cities"
 msgstr "Папки лет и месяцев внутри городов"
 
-#: crates/immich-mount-core/src/settings.rs:64
+#: crates/immich-mount-core/src/settings.rs:65
 msgid "Year and month folders inside favorites"
 msgstr "Папки лет и месяцев внутри избранного"
 
-#: crates/immich-mount-core/src/settings.rs:65
+#: crates/immich-mount-core/src/settings.rs:66
 msgid "Year and month folders inside the archive"
 msgstr "Папки лет и месяцев внутри архива"
 
-#: crates/immich-mount-core/src/settings.rs:66
+#: crates/immich-mount-core/src/settings.rs:67
 msgid "How album folders are named and grouped"
 msgstr "Как называются и группируются папки альбомов"
 
-#: crates/immich-mount-core/src/settings.rs:67
+#: crates/immich-mount-core/src/settings.rs:68
 msgid "How files are named"
 msgstr "Как называются файлы"
 
-#: crates/immich-mount-core/src/settings.rs:68
+#: crates/immich-mount-core/src/settings.rs:69
 msgid "The content cache's size limit"
 msgstr "Предельный размер кэша содержимого"
 
-#: crates/immich-mount-core/src/settings.rs:69
+#: crates/immich-mount-core/src/settings.rs:70
 msgid "Show the Upload folder, and upload what is copied into it"
 msgstr "Показывать папку Upload и загружать то, что в неё копируется"
 
-#: crates/immich-mount-core/src/settings.rs:70
+#: crates/immich-mount-core/src/settings.rs:71
+#: apple/App/SettingsView.swift:180
+msgid "Folders copied into Upload"
+msgstr "Папки, скопированные в Upload"
+
+#: crates/immich-mount-core/src/settings.rs:72
 msgid "Also seed 1024 px thumbnails from the preview"
 msgstr "Также создавать миниатюры 1024 пикс. из превью"
 
-#: crates/immich-mount-core/src/settings.rs:71
+#: crates/immich-mount-core/src/settings.rs:73
 msgid "Refuse thumbnailer reads of originals"
 msgstr "Запрещать генераторам миниатюр читать оригиналы"
 
-#: crates/immich-mount-core/src/settings.rs:72
+#: crates/immich-mount-core/src/settings.rs:74
 msgid "Tell me when a new version is out"
 msgstr "Сообщать о выходе новой версии"
 
-#: crates/immich-mount-core/src/settings.rs:73
+#: crates/immich-mount-core/src/settings.rs:75
 msgid "Headless only: a 0600 file holding the credential"
 msgstr "Только без графического окружения: файл 0600 с учётными данными"
 
-#: crates/immich-mount-core/src/settings.rs:79
+#: crates/immich-mount-core/src/settings.rs:81
 msgid "Never"
 msgstr "Никогда"
 
-#: crates/immich-mount-core/src/settings.rs:80
+#: crates/immich-mount-core/src/settings.rs:82
 msgid "From 500 Items"
 msgstr "От 500 элементов"
 
-#: crates/immich-mount-core/src/settings.rs:81
+#: crates/immich-mount-core/src/settings.rs:83
 msgid "Always"
 msgstr "Всегда"
 
-#: crates/immich-mount-core/src/settings.rs:82
+#: crates/immich-mount-core/src/settings.rs:84
 msgid "Year in the Name (2023 - Trip)"
 msgstr "Год в названии (2023 - Поездка)"
 
-#: crates/immich-mount-core/src/settings.rs:83
+#: crates/immich-mount-core/src/settings.rs:85
 msgid "Year Folders (2023/Trip)"
 msgstr "Папки по годам (2023/Поездка)"
 
-#: crates/immich-mount-core/src/settings.rs:84
+#: crates/immich-mount-core/src/settings.rs:86
 msgid "Name Only (Trip)"
 msgstr "Только название (Поездка)"
 
-#: crates/immich-mount-core/src/settings.rs:85
+#: crates/immich-mount-core/src/settings.rs:87
 msgid "Date and Time Taken"
 msgstr "Дата и время съёмки"
 
-#: crates/immich-mount-core/src/settings.rs:86
+#: crates/immich-mount-core/src/settings.rs:88
 msgid "Original File Names"
 msgstr "Исходные имена файлов"
 
+#: crates/immich-mount-core/src/settings.rs:89
+msgid "Ask Each Time"
+msgstr "Спрашивать каждый раз"
+
 #: apple/App/ContentView.swift:19
-#: apple/App/SettingsView.swift:268
+#: apple/App/SettingsView.swift:277
 msgid "Move Immich Mount to Applications"
 msgstr "Переместите Immich Mount в папку «Программы»"
 
 #: apple/App/ContentView.swift:20
-#: apple/App/SettingsView.swift:269
+#: apple/App/SettingsView.swift:278
 msgid "Finder's location runs from the Applications folder. Quit Immich Mount, drag it into Applications, then open it from there."
 msgstr "Расположение в Finder работает только из папки «Программы». Завершите Immich Mount, перетащите его в «Программы» и откройте оттуда."
 
@@ -849,114 +923,114 @@ msgid "Use System Settings Instead"
 msgstr "Использовать Системные настройки"
 
 #: apple/App/ContentView.swift:167
-#: apple/App/ImmichMountApp.swift:410
-#: apple/App/SettingsView.swift:249
+#: apple/App/ImmichMountApp.swift:419
+#: apple/App/SettingsView.swift:258
 msgid "Open in Finder"
 msgstr "Открыть в Finder"
 
-#: apple/App/ImmichMountApp.swift:167
+#: apple/App/ImmichMountApp.swift:176
 msgid "Sign out of Immich Mount?"
 msgstr "Выйти из Immich Mount?"
 
-#: apple/App/ImmichMountApp.swift:168
+#: apple/App/ImmichMountApp.swift:177
 msgid "Immich Mount leaves Finder, together with the photos and videos downloaded to this Mac. Your library on the server stays as it is."
 msgstr "Immich Mount исчезнет из Finder вместе с фото и видео, скачанными на этот Mac. Ваша библиотека на сервере останется без изменений."
 
-#: apple/App/ImmichMountApp.swift:170
+#: apple/App/ImmichMountApp.swift:179
 msgid "Files in Upload that have not reached Immich: {count}. They stay on this Mac, and Finder shows where once you have signed out."
 msgstr "Файлы в Upload, ещё не попавшие в Immich: {count}. Они останутся на этом Mac, и после выхода Finder покажет, где они."
 
-#: apple/App/ImmichMountApp.swift:174
+#: apple/App/ImmichMountApp.swift:183
 msgid "Sign Out"
 msgstr "Выйти"
 
-#: apple/App/ImmichMountApp.swift:175
+#: apple/App/ImmichMountApp.swift:184
 msgid "Cancel"
 msgstr "Отменить"
 
-#: apple/App/ImmichMountApp.swift:190
+#: apple/App/ImmichMountApp.swift:199
 msgid "Still signed in"
 msgstr "Вход по-прежнему выполнен"
 
-#: apple/App/ImmichMountApp.swift:191
+#: apple/App/ImmichMountApp.swift:200
 msgid "Finder's location could not be removed, so Immich Mount stays signed in: {error}"
 msgstr "Не удалось убрать расположение из Finder, поэтому выход из Immich Mount не выполнен: {error}"
 
-#: apple/App/ImmichMountApp.swift:441
+#: apple/App/ImmichMountApp.swift:450
 msgid "Your Immich photos and videos as a drive in Finder. By Jakob Hviid, under the MIT license."
 msgstr "Ваши фото и видео из Immich как диск в Finder. Автор: Jakob Hviid, лицензия MIT."
 
-#: apple/App/ImmichMountApp.swift:442
+#: apple/App/ImmichMountApp.swift:451
 msgid "Website"
 msgstr "Сайт"
 
-#: apple/App/ImmichMountApp.swift:444
+#: apple/App/ImmichMountApp.swift:453
 msgid "Source code"
 msgstr "Исходный код"
 
-#: apple/App/ImmichMountApp.swift:447
+#: apple/App/ImmichMountApp.swift:456
 msgid "Inspired by"
 msgstr "Вдохновлено"
 
-#: apple/App/ImmichMountApp.swift:449
+#: apple/App/ImmichMountApp.swift:458
 msgid "The Immich API layer"
 msgstr "Слой API Immich"
 
-#: apple/App/ImmichMountApp.swift:612
+#: apple/App/ImmichMountApp.swift:621
 msgid "Last checked: {time}"
 msgstr "Последняя проверка: {time}"
 
-#: apple/App/ImmichMountApp.swift:614
+#: apple/App/ImmichMountApp.swift:623
 msgid "Reason: {reason}"
 msgstr "Причина: {reason}"
 
-#: apple/App/ImmichMountApp.swift:614
+#: apple/App/ImmichMountApp.swift:623
 msgid "none given"
 msgstr "не указана"
 
-#: apple/App/ImmichMountApp.swift:700
+#: apple/App/ImmichMountApp.swift:721
 msgid "The login item could not be changed: {error}"
 msgstr "Не удалось изменить объект входа: {error}"
 
-#: apple/App/ImmichMountApp.swift:734
+#: apple/App/ImmichMountApp.swift:755
 msgid "The server sent an address that cannot be opened."
 msgstr "Сервер прислал адрес, который нельзя открыть."
 
-#: apple/App/ImmichMountApp.swift:820
+#: apple/App/ImmichMountApp.swift:842
 msgid "Finder does not show Immich yet. Is the extension switched on in System Settings? ({error})"
 msgstr "Finder пока не показывает Immich. Включено ли расширение в Системных настройках? ({error})"
 
-#: apple/App/ImmichMountApp.swift:41
-#: apple/App/ImmichMountApp.swift:421
+#: apple/App/ImmichMountApp.swift:42
+#: apple/App/ImmichMountApp.swift:430
 msgid "About Immich Mount"
 msgstr "О программе Immich Mount"
 
-#: apple/App/ImmichMountApp.swift:44
-#: apple/App/ImmichMountApp.swift:414
+#: apple/App/ImmichMountApp.swift:45
+#: apple/App/ImmichMountApp.swift:423
 msgid "Check for Updates…"
 msgstr "Проверить обновления…"
 
-#: apple/App/ImmichMountApp.swift:49
-#: apple/App/ImmichMountApp.swift:412
+#: apple/App/ImmichMountApp.swift:50
+#: apple/App/ImmichMountApp.swift:421
 msgid "Settings…"
 msgstr "Настройки…"
 
-#: apple/App/ImmichMountApp.swift:399
-#: apple/App/SettingsView.swift:227
+#: apple/App/ImmichMountApp.swift:408
+#: apple/App/SettingsView.swift:236
 msgid "Sign In…"
 msgstr "Войти…"
 
-#: apple/App/ImmichMountApp.swift:401
-#: apple/App/SettingsView.swift:247
+#: apple/App/ImmichMountApp.swift:410
+#: apple/App/SettingsView.swift:256
 msgid "Switch On in Finder…"
 msgstr "Включить в Finder…"
 
-#: apple/App/ImmichMountApp.swift:417
-#: apple/App/SettingsView.swift:252
+#: apple/App/ImmichMountApp.swift:426
+#: apple/App/SettingsView.swift:261
 msgid "Sign Out…"
 msgstr "Выйти…"
 
-#: apple/App/ImmichMountApp.swift:422
+#: apple/App/ImmichMountApp.swift:431
 msgid "Quit Immich Mount"
 msgstr "Завершить Immich Mount"
 
@@ -968,15 +1042,15 @@ msgstr "Основные"
 msgid "Folders"
 msgstr "Папки"
 
-#: apple/App/SettingsView.swift:180
+#: apple/App/SettingsView.swift:189
 msgid "Folder names"
 msgstr "Имена папок"
 
-#: apple/App/SettingsView.swift:183
+#: apple/App/SettingsView.swift:192
 msgid "File names"
 msgstr "Имена файлов"
 
-#: apple/App/SettingsView.swift:226
+#: apple/App/SettingsView.swift:235
 msgid "Not signed in"
 msgstr "Вход не выполнен"
 
@@ -1000,7 +1074,11 @@ msgstr "В Photos папки по датам делят каждый месяц 
 msgid "Photos and videos copied into Upload are added to Immich."
 msgstr "Фото и видео, скопированные в Upload, добавляются в Immich."
 
-#: apple/App/SettingsView.swift:187
+#: apple/App/SettingsView.swift:185
+msgid "Every photo and video in them is added to Immich. An album is named by its folder's path, such as Trip › Day 1."
+msgstr "Все фото и видео в них добавляются в Immich. Альбом называется по пути своей папки, например Поездка › День 1."
+
+#: apple/App/SettingsView.swift:196
 msgid "Finder lists Immich again after each change."
 msgstr "После каждого изменения Finder заново показывает содержимое Immich."
 

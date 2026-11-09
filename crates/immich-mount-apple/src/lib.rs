@@ -14,13 +14,14 @@ use std::task::{Context, Poll};
 use std::time::{Duration, Instant, SystemTime};
 
 use immich_api::{ApiError, Client, Credential as ApiCredential};
+use immich_mount_core::folder_uploads::{make_albums, tried_again, AlbumProgress, AlbumTarget, FolderEvent, FolderUploads};
 use immich_mount_core::immich::ImmichSource;
 use immich_mount_core::settings::{self, choice_label, Config, Kind, SETTINGS};
 use immich_mount_core::sign_in::{self, normalised_address, BrowserSignIn};
 use immich_mount_core::source::{LibrarySource, SourceError, ThumbnailKind, ThumbnailSource};
 use immich_mount_core::store::{Anchor, Change, JournalRead, MetadataStore};
 use immich_mount_core::tree::{is_touched, Entry, EntryKind, NameMemory, NodeKey, Tree};
-use immich_mount_core::uploads::{completeness, Admission, Completeness, UploadError, UploadTarget, Uploaded};
+use immich_mount_core::uploads::{completeness, Admission, Completeness, UploadError, UploadTarget};
 use sha2::{Digest, Sha256};
 
 uniffi::setup_scaffolding!();
@@ -41,6 +42,27 @@ const LEAVING_UPLOAD: &str = "leaving-upload";
 /// How long an uploaded file stays in the Upload folder, as on Linux: long enough for the system to take the item
 /// before it is told the item went away.
 const UPLOAD_STAY: Duration = Duration::from_secs(10);
+/// The name the folders copied into Upload are kept under in the store, as the system's items.
+const UPLOAD_FOLDERS: &str = "upload-folders";
+/// The name the record of each copied folder is kept under in the store (`FolderUploads`).
+const FOLDER_COPIES: &str = "folder-copies";
+/// How long a folder copied into Upload stays once it is empty and untouched, when macOS says it holds nothing the
+/// system has not handed over (its pending set): long enough for the last files to leave. Never shorter than the time
+/// macOS takes to bring that list up to date, and a margin.
+const FOLDER_STAY: Duration = Duration::from_secs(20);
+/// The margin above the pending set's refresh time.
+const PENDING_MARGIN: Duration = Duration::from_secs(10);
+/// How long it stays when macOS does not say: as long as its copy is remembered, so a copy Finder is still writing
+/// (a large file, which the extension hears of only once it is whole) is never taken from under it.
+const FOLDER_STAY_UNSURE: Duration = Duration::from_secs(immich_mount_core::folder_uploads::REMEMBER_SECONDS);
+/// Where the extension leaves the questions about settled copies for the app, in the library's directory.
+const QUESTIONS_FILE: &str = "folder-questions.json";
+/// The app's answers, one file each (`folder-answer-<copy>.json`), which the extension takes and removes.
+const ANSWER_FILE_PREFIX: &str = "folder-answer-";
+/// What came of album work, for the app to tell, one file each (`folder-notice-<n>.json`); the app removes them.
+const NOTICE_FILE_PREFIX: &str = "folder-notice-";
+/// Why a file or folder added anywhere but Upload is refused.
+const ONLY_UPLOAD: &str = "Only the Upload folder takes new files; every other folder is a view of the library.";
 /// How long one poll lists folders again; what is left waits for the next poll, so a change's report never waits
 /// on a library-wide relisting.
 const RELIST_BUDGET: Duration = Duration::from_secs(20);
@@ -162,7 +184,7 @@ fn item_for(entry: &Entry, folder: &NodeKey, set_up: SystemTime) -> Item {
         parent_identifier: folder.storage_key(),
         name: entry.name.clone(),
         is_folder: matches!(entry.kind, EntryKind::Folder),
-        accepts_new_files: entry.node == NodeKey::Upload,
+        accepts_new_files: entry.node.upload_path().is_some(),
         size,
         taken,
         content_version,
@@ -227,6 +249,10 @@ struct Answers<Source, Names> {
     /// When the location was set up: every folder's time, stable from run to run, since it is part of the folders'
     /// versions.
     set_up: SystemTime,
+    folders: Arc<FolderFollowing>,
+    /// The library's directory, where the questions, answers and notices about copied folders pass between the
+    /// extension and the app; `None` in tests that need none.
+    files: Option<PathBuf>,
 }
 
 /// An uploaded file waiting to leave the Upload folder, which no listing shows: the system may still ask about it,
@@ -234,6 +260,9 @@ struct Answers<Source, Names> {
 #[derive(serde::Serialize, serde::Deserialize)]
 struct Leaving {
     key: String,
+    /// The folder it was added to: Upload, or a folder copied into it.
+    #[serde(default = "upload_identifier")]
+    parent: String,
     /// Seconds since the epoch.
     leaves_at: u64,
     name: String,
@@ -250,7 +279,7 @@ impl Leaving {
         };
         Item {
             identifier: self.key.clone(),
-            parent_identifier: NodeKey::Upload.storage_key(),
+            parent_identifier: self.parent.clone(),
             name: self.name.clone(),
             is_folder: false,
             accepts_new_files: false,
@@ -263,14 +292,71 @@ impl Leaving {
     }
 }
 
-/// Where the uploaded files waiting to leave Upload are kept: the metadata store, which keeps them across runs.
+fn upload_identifier() -> String {
+    NodeKey::Upload.storage_key()
+}
+
+/// A folder copied into Upload, as the system's item: no listing shows it, since it holds only what is being
+/// uploaded, so it is kept until it leaves (ARCHITECTURE.md, "The macOS edition", "Uploads").
+#[derive(Debug, Clone, serde::Serialize, serde::Deserialize)]
+struct UploadFolder {
+    key: String,
+    parent: String,
+    name: String,
+    /// Seconds since the epoch.
+    made: u64,
+    /// When something last arrived in it, in seconds since the epoch.
+    touched: u64,
+    /// Files added to it that have not uploaded (yet), from the moment they arrive, and folders inside it that were
+    /// refused: the system keeps them in the folder, so it stays.
+    #[serde(default)]
+    waiting: Vec<String>,
+    /// Files in it that failed, each counted once as not uploaded, however often the system tries again.
+    #[serde(default)]
+    failed: Vec<String>,
+}
+
+impl UploadFolder {
+    fn item(&self) -> Item {
+        Item {
+            identifier: self.key.clone(),
+            parent_identifier: self.parent.clone(),
+            name: self.name.clone(),
+            is_folder: true,
+            accepts_new_files: true,
+            size: None,
+            taken: Some(SystemTime::UNIX_EPOCH + Duration::from_secs(self.made)),
+            content_version: "folder".to_owned(),
+            version: String::new(),
+        }
+        .versioned()
+    }
+}
+
+/// The folders copied into Upload, as kept.
+fn upload_folders(kept: Option<&str>) -> Vec<UploadFolder> {
+    kept.and_then(|text| serde_json::from_str(text).ok()).unwrap_or_default()
+}
+
+/// Where the uploaded files waiting to leave Upload, and the folders copied into it, are kept: the metadata store,
+/// which keeps them across runs.
 trait Uploads {
     fn uploaded(&self, key: &str) -> Option<Item>;
+    /// The copied folders: all of them, or those inside the folder `parent`.
+    fn upload_folders(&self, parent: Option<&str>) -> Vec<Item>;
 }
 
 impl Uploads for MetadataStore {
     fn uploaded(&self, key: &str) -> Option<Item> {
         leaving_upload(self.kept_state(LEAVING_UPLOAD).as_deref()).iter().find(|leaving| leaving.key == key).map(Leaving::item)
+    }
+
+    fn upload_folders(&self, parent: Option<&str>) -> Vec<Item> {
+        upload_folders(self.kept_state(UPLOAD_FOLDERS).as_deref())
+            .iter()
+            .filter(|folder| parent.is_none_or(|parent| folder.parent == parent))
+            .map(UploadFolder::item)
+            .collect()
     }
 }
 
@@ -278,11 +364,92 @@ impl<Shared: Uploads> Uploads for Arc<Shared> {
     fn uploaded(&self, key: &str) -> Option<Item> {
         self.as_ref().uploaded(key)
     }
+
+    fn upload_folders(&self, parent: Option<&str>) -> Vec<Item> {
+        self.as_ref().upload_folders(parent)
+    }
 }
 
 impl Uploads for immich_mount_core::tree::InMemoryNames {
     fn uploaded(&self, _key: &str) -> Option<Item> {
         None
+    }
+
+    fn upload_folders(&self, _parent: Option<&str>) -> Vec<Item> {
+        Vec::new()
+    }
+}
+
+/// Runs its closure when dropped: album work's task dropped midway frees the work for a later poll.
+struct OnDrop<Work: FnMut()>(Option<Work>);
+
+impl<Work: FnMut()> OnDrop<Work> {
+    /// Done: nothing to run.
+    fn defuse(&mut self) {
+        self.0 = None;
+    }
+}
+
+impl<Work: FnMut()> Drop for OnDrop<Work> {
+    fn drop(&mut self) {
+        if let Some(work) = self.0.as_mut() {
+            work();
+        }
+    }
+}
+
+/// The folders copied into Upload (ARCHITECTURE.md, "Folders copied into Upload"): the core's record of each copy,
+/// kept in the store after every change, and the uploads running under each copied folder, which only this process
+/// knows. Shared by the answers that new settings replace.
+#[derive(Default)]
+struct FolderFollowing {
+    copies: Mutex<FolderUploads>,
+    /// Uploads running, by the copied folder they are in.
+    in_flight: Mutex<HashMap<String, usize>>,
+    /// Copies whose albums are due, for the library to make in a task of their own, outside the poll the system may
+    /// cancel.
+    albums_due: Mutex<Vec<u64>>,
+}
+
+impl FolderFollowing {
+    /// The copies kept in a store, or none yet, numbered from now: a store made anew by signing in again never takes
+    /// an answer the app gave about a copy of before.
+    fn from_kept(kept: Option<&str>) -> FolderFollowing {
+        let copies = kept
+            .and_then(|text| serde_json::from_str(text).ok())
+            .unwrap_or_else(|| FolderUploads::numbered_from(seconds_since_epoch(SystemTime::now())));
+        FolderFollowing { copies: Mutex::new(copies), in_flight: Mutex::default(), albums_due: Mutex::default() }
+    }
+
+    fn busy(&self, top: &str) -> bool {
+        self.in_flight.lock().expect("in flight lock").get(top).is_some_and(|count| *count > 0)
+    }
+}
+
+/// An upload running under a copied folder, counted while it lives.
+struct InFlight<'following> {
+    following: &'following FolderFollowing,
+    top: Option<String>,
+}
+
+impl<'following> InFlight<'following> {
+    fn start(following: &'following FolderFollowing, folder: &NodeKey) -> InFlight<'following> {
+        let top = folder.upload_path().and_then(<[String]>::first).cloned();
+        if let Some(top) = &top {
+            *following.in_flight.lock().expect("in flight lock").entry(top.clone()).or_default() += 1;
+        }
+        InFlight { following, top }
+    }
+}
+
+impl Drop for InFlight<'_> {
+    fn drop(&mut self) {
+        if let Some(top) = &self.top {
+            let mut in_flight = self.following.in_flight.lock().expect("in flight lock");
+            if let Some(count) = in_flight.get_mut(top) {
+                *count = count.saturating_sub(1);
+            }
+        }
     }
 }
 
@@ -298,6 +465,8 @@ where
             deadline: LISTING_DEADLINE,
             kept_poll: Mutex::new(None),
             set_up: SystemTime::UNIX_EPOCH,
+            folders: Arc::default(),
+            files: None,
         }
     }
 
@@ -306,13 +475,24 @@ where
         self
     }
 
+    /// Follow the copied folders in `folders`, passing questions and answers through files in `files`.
+    fn following(mut self, folders: Arc<FolderFollowing>, files: Option<PathBuf>) -> Self {
+        self.folders = folders;
+        self.files = files;
+        self
+    }
+
     async fn item(&self, identifier: &str) -> Result<Item, BridgeError> {
         let node = node_for(identifier)?;
         if node == NodeKey::Root {
             return Ok(root_item(self.set_up));
         }
-        if matches!(&node, NodeKey::Asset { parent, .. } if **parent == NodeKey::Upload) {
+        if matches!(&node, NodeKey::Asset { parent, .. } if parent.upload_path().is_some()) {
             return self.tree.names().uploaded(identifier).ok_or(BridgeError::NoSuchItem);
+        }
+        if matches!(node, NodeKey::UploadFolder(_)) {
+            let folders = self.tree.names().upload_folders(None);
+            return folders.into_iter().find(|folder| folder.identifier == identifier).ok_or(BridgeError::NoSuchItem);
         }
         let found = tokio::time::timeout(self.deadline, self.tree.entry_of(&node)).await.map_err(|_| too_slow())??;
         let (folder, entry) = found.ok_or(BridgeError::NoSuchItem)?;
@@ -325,7 +505,12 @@ where
             Ok(listed) => listed?,
             Err(_) => self.tree.stale_listing(&folder).ok_or_else(too_slow)?,
         };
-        Ok(entries.iter().map(|entry| item_for(entry, &folder, self.set_up)).collect())
+        let mut items: Vec<Item> = entries.iter().map(|entry| item_for(entry, &folder, self.set_up)).collect();
+        // The folders copied into it, which no listing of the library holds: listed, the system keeps them.
+        if folder.upload_path().is_some() {
+            items.extend(self.tree.names().upload_folders(Some(identifier)));
+        }
+        Ok(items)
     }
 
     async fn fetch(&self, identifier: &str, destination: &Path) -> Result<Item, BridgeError> {
@@ -369,7 +554,10 @@ where
     /// listed now (the server busy, or the budget spent) is listed at a later poll; a change is never seen once and
     /// then lost. Deletions are settled once every touched folder was listed again, so a node that only moved, to a
     /// folder not listed yet, is not deleted.
-    async fn poll(&self) -> Result<bool, BridgeError> {
+    async fn poll(&self, pending: Option<&PendingFolders>) -> Result<bool, BridgeError>
+    where
+        Source: AlbumTarget,
+    {
         let before = self.store().journal_anchor().map_err(failed)?;
         self.record_departures(seconds_since_epoch(SystemTime::now()))?;
         let kept = self.kept_poll.lock().expect("kept poll lock").take();
@@ -405,37 +593,56 @@ where
         } else {
             log::info!("deletions wait until every changed folder is listed again");
         }
+        self.follow_folder_copies(pending).await?;
         Ok(self.store().journal_anchor().map_err(failed)? != before)
     }
 
-    /// Upload a finished file added to the Upload folder (ARCHITECTURE.md, "The macOS edition", "Uploads"), and
-    /// return its item there. It leaves the folder at the first poll after `UPLOAD_STAY`, and shows in its month once
-    /// the poll sees the server's change.
+    /// Upload a finished file added to the Upload folder, or to a folder copied into it (ARCHITECTURE.md, "The macOS
+    /// edition", "Uploads"), and return its item there. It leaves the folder at the first poll after `UPLOAD_STAY`, and
+    /// shows in its month once the poll sees the server's change.
     async fn upload(&self, folder: &str, name: &str, path: &Path, modified: SystemTime) -> Result<Item, BridgeError>
     where
         Source: UploadTarget,
     {
-        if node_for(folder)? != NodeKey::Upload || !self.tree.config().uploads_enabled {
-            return Err(failed("Only the Upload folder takes new files; every other folder is a view of the library."));
+        let folder_node = node_for(folder)?;
+        if folder_node.upload_path().is_none() || !self.tree.config().uploads_enabled {
+            return Err(failed(ONLY_UPLOAD));
         }
+        let _running = InFlight::start(&self.folders, &folder_node);
+        // Finder's own record of a folder's view is no photo, and keeps no copied folder from leaving.
+        if name == ".DS_Store" {
+            return Err(failed(format!("{name} is not a photo or video Immich takes.")));
+        }
+        self.folder_waits_for(&folder_node, name)?;
+        self.folder_touched(&folder_node, None)?;
+        let refused = |message: String| {
+            self.not_uploaded(&folder_node, name)?;
+            Err(failed(message))
+        };
         let media = self.source.media_types().await.unwrap_or_default();
         if media.admission(name) != Admission::Upload {
-            return Err(failed(format!("{name} is not a photo or video Immich takes.")));
+            return refused(format!("{name} is not a photo or video Immich takes."));
         }
         let owned = path.to_owned();
         let judged = tokio::task::spawn_blocking(move || completeness(&owned)).await.map_err(failed)?;
         if matches!(judged.map_err(failed)?, Completeness::Truncated) {
-            return Err(failed(format!("{name} is not whole: its copy may have been cut short.")));
+            return refused(format!("{name} is not whole: its copy may have been cut short."));
         }
         let asset_id = match self.source.upload(path, name, modified.into()).await {
-            Ok(Uploaded::Created(asset_id) | Uploaded::AlreadyInLibrary(asset_id)) => asset_id,
-            Err(UploadError::Source(error)) => return Err(error.into()),
-            Err(error) => return Err(failed(error)),
+            Ok(uploaded) => uploaded.asset_id().to_owned(),
+            Err(error) => {
+                self.not_uploaded(&folder_node, name)?;
+                return Err(match error {
+                    UploadError::Source(error) => error.into(),
+                    error => failed(error),
+                });
+            }
         };
         // The same bytes added twice are one Asset, so one item: the system merges the two.
-        let node = NodeKey::Asset { parent: Box::new(NodeKey::Upload), asset_id };
+        let node = NodeKey::Asset { parent: Box::new(folder_node.clone()), asset_id: asset_id.clone() };
         let leaving = Leaving {
             key: node.storage_key(),
+            parent: folder.to_owned(),
             leaves_at: seconds_since_epoch(SystemTime::now() + UPLOAD_STAY),
             name: name.to_owned(),
             size: std::fs::metadata(path).ok().map(|metadata| metadata.len()),
@@ -450,8 +657,300 @@ where
                 (Some(serde_json::to_string(&waiting).unwrap_or_default()), Vec::new(), ())
             })
             .map_err(failed)?;
+        self.folder_touched(&folder_node, Some(name))?;
+        if let Some(path) = folder_node.upload_path().filter(|path| !path.is_empty()) {
+            self.with_copies(|copies| copies.uploaded(path, &asset_id, seconds_since_epoch(SystemTime::now())));
+        }
         self.tree.forget_timeline();
         Ok(item)
+    }
+
+    /// Change the record of the copied folders, and keep it: the system stops the extension between requests.
+    fn with_copies<Answer>(&self, change: impl FnOnce(&mut FolderUploads) -> Answer) -> Answer {
+        let mut copies = self.folders.copies.lock().expect("folder copies lock");
+        let answer = change(&mut copies);
+        self.store().keep_state(FOLDER_COPIES, &serde_json::to_string(&*copies).unwrap_or_default());
+        answer
+    }
+
+    /// Note that something arrived in a copied folder, so it stays; with `uploaded`, that the file of that name is
+    /// in Immich now, so the folder no longer waits for it. Nothing for Upload itself.
+    fn folder_touched(&self, folder: &NodeKey, uploaded: Option<&str>) -> Result<(), BridgeError> {
+        let Some(path) = folder.upload_path().filter(|path| !path.is_empty()) else { return Ok(()) };
+        let (key, now) = (folder.storage_key(), seconds_since_epoch(SystemTime::now()));
+        self.store()
+            .update_state(UPLOAD_FOLDERS, |kept| {
+                let mut folders = upload_folders(kept);
+                if let Some(record) = folders.iter_mut().find(|record| record.key == key) {
+                    record.touched = now;
+                    record.waiting.retain(|name| Some(name.as_str()) != uploaded);
+                }
+                (Some(serde_json::to_string(&folders).unwrap_or_default()), Vec::new(), ())
+            })
+            .map_err(failed)?;
+        if uploaded.is_none() {
+            self.with_copies(|copies| copies.touched(path, now));
+        }
+        Ok(())
+    }
+
+    /// Something named `name` arrived in the copied folder `folder`: until it uploads (or is deleted with its folder),
+    /// the system holds it there, so the folder stays. Nothing for Upload itself.
+    fn folder_waits_for(&self, folder: &NodeKey, name: &str) -> Result<(), BridgeError> {
+        if !matches!(folder, NodeKey::UploadFolder(_)) {
+            return Ok(());
+        }
+        let key = folder.storage_key();
+        self.store()
+            .update_state(UPLOAD_FOLDERS, |kept| {
+                let mut folders = upload_folders(kept);
+                if let Some(record) = folders.iter_mut().find(|record| record.key == key) {
+                    if !record.waiting.iter().any(|waiting| waiting == name) {
+                        record.waiting.push(name.to_owned());
+                    }
+                }
+                (Some(serde_json::to_string(&folders).unwrap_or_default()), Vec::new(), ())
+            })
+            .map_err(failed)
+    }
+
+    /// A file added to `folder` as `name` did not upload. In a copied folder the system keeps it there, refused with
+    /// its reason, so the folder stays until it uploads; the copy counts it once.
+    fn not_uploaded(&self, folder: &NodeKey, name: &str) -> Result<(), BridgeError> {
+        let Some(path) = folder.upload_path().filter(|path| !path.is_empty()) else { return Ok(()) };
+        let key = folder.storage_key();
+        let first_time = self
+            .store()
+            .update_state(UPLOAD_FOLDERS, |kept| {
+                let mut folders = upload_folders(kept);
+                let mut first_time = false;
+                if let Some(record) = folders.iter_mut().find(|record| record.key == key) {
+                    if !record.waiting.iter().any(|waiting| waiting == name) {
+                        record.waiting.push(name.to_owned());
+                    }
+                    if !record.failed.iter().any(|failed| failed == name) {
+                        record.failed.push(name.to_owned());
+                        first_time = true;
+                    }
+                }
+                (Some(serde_json::to_string(&folders).unwrap_or_default()), Vec::new(), first_time)
+            })
+            .map_err(failed)?;
+        if first_time {
+            self.with_copies(|copies| copies.not_uploaded(path, seconds_since_epoch(SystemTime::now())));
+        }
+        Ok(())
+    }
+
+    /// Make the folder `name` inside `parent` (Upload, or a folder copied into it), as Finder copies a folder in, and
+    /// return its item. Made again (the system reimporting), it is the one there.
+    fn create_folder(&self, parent: &str, name: &str) -> Result<Item, BridgeError> {
+        let parent_node = node_for(parent)?;
+        let key = parent_node.upload_child(name).filter(|_| self.tree.config().uploads_enabled).ok_or_else(|| failed(ONLY_UPLOAD))?;
+        if name.is_empty() || name.starts_with('.') || name.contains('/') {
+            // The system keeps the refused folder in its parent, so the parent stays with it.
+            self.folder_waits_for(&parent_node, name)?;
+            return Err(failed("Hidden folders are not uploaded."));
+        }
+        let (identifier, now) = (key.storage_key(), seconds_since_epoch(SystemTime::now()));
+        let record = self
+            .store()
+            .update_state(UPLOAD_FOLDERS, |kept| {
+                let mut folders = upload_folders(kept);
+                let record = match folders.iter_mut().find(|record| record.key == identifier) {
+                    Some(record) => {
+                        record.touched = now;
+                        record.clone()
+                    }
+                    None => {
+                        let record = UploadFolder {
+                            key: identifier.clone(),
+                            parent: parent.to_owned(),
+                            name: name.to_owned(),
+                            made: now,
+                            touched: now,
+                            waiting: Vec::new(),
+                            failed: Vec::new(),
+                        };
+                        folders.push(record.clone());
+                        record
+                    }
+                };
+                (Some(serde_json::to_string(&folders).unwrap_or_default()), Vec::new(), record)
+            })
+            .map_err(failed)?;
+        if let Some(path) = key.upload_path() {
+            self.with_copies(|copies| copies.folder_created(path, now));
+        }
+        Ok(record.item())
+    }
+
+    /// Someone deleted a copied folder in Finder (its files that did not upload with it); it is forgotten, with the
+    /// folders inside it. Only these folders may be deleted: everything else is a view of the library.
+    fn delete_folder(&self, identifier: &str) -> Result<(), BridgeError> {
+        let Some(path) = node_for(identifier)?.upload_path().filter(|path| !path.is_empty()).map(<[String]>::to_vec) else {
+            return Err(failed(ONLY_UPLOAD));
+        };
+        let gone = self
+            .store()
+            .update_state(UPLOAD_FOLDERS, |kept| {
+                let (gone, folders): (Vec<UploadFolder>, Vec<UploadFolder>) = upload_folders(kept).into_iter().partition(|record| {
+                    NodeKey::from_storage_key(&record.key).and_then(|key| key.upload_path().map(|inside| inside.starts_with(&path))).unwrap_or(false)
+                });
+                ((!folders.is_empty()).then(|| serde_json::to_string(&folders).unwrap_or_default()), Vec::new(), gone)
+            })
+            .map_err(failed)?;
+        if gone.is_empty() {
+            return Err(BridgeError::NoSuchItem);
+        }
+        self.with_copies(|copies| {
+            for record in &gone {
+                if let Some(key) = NodeKey::from_storage_key(&record.key) {
+                    copies.folder_removed(key.upload_path().unwrap_or_default());
+                }
+            }
+        });
+        Ok(())
+    }
+
+    /// The copied folders' part of a poll: take the app's answers, move the copies along, make their albums, leave the
+    /// app the questions and what came of the albums, and record the folders that are done leaving.
+    async fn follow_folder_copies(&self, pending: Option<&PendingFolders>) -> Result<(), BridgeError>
+    where
+        Source: AlbumTarget,
+    {
+        for (copy, albums) in self.take_answers() {
+            self.with_copies(|copies| copies.answer(copy, albums));
+        }
+        let now = seconds_since_epoch(SystemTime::now());
+        let choice = self.tree.config().upload_folders;
+        let events = self.with_copies(|copies| copies.tick(now, choice, |top| self.folders.busy(top)));
+        for event in events {
+            if let FolderEvent::MakeAlbums(copy) = event {
+                let mut due = self.folders.albums_due.lock().expect("albums due lock");
+                if !due.contains(&copy) {
+                    due.push(copy);
+                }
+            }
+        }
+        self.leave_questions();
+        self.record_folder_departures(now, pending)
+    }
+
+    /// The copies whose albums are due, taken.
+    fn take_albums_due(&self) -> Vec<u64> {
+        std::mem::take(&mut *self.folders.albums_due.lock().expect("albums due lock"))
+    }
+
+    /// Make a copy's albums, recording each step as it happens. Dropped midway, the work is freed for a later poll,
+    /// and what it did is in the record.
+    async fn make_albums(&self, copy: u64)
+    where
+        Source: AlbumTarget,
+    {
+        let Some(work) = self.with_copies(|copies| copies.album_work(copy)) else { return };
+        let mut freed = OnDrop(Some(|| self.with_copies(|copies| copies.abandon_work(copy))));
+        let mut albums = Vec::new();
+        let outcome = make_albums(self.source.as_ref(), &work, chrono::Local::now().date_naive(), |step| {
+            if let AlbumProgress::Made { name: Some(name), .. } = &step {
+                albums.push(name.clone());
+            }
+            self.with_copies(|copies| copies.album_progress(copy, &step));
+        })
+        .await;
+        freed.defuse();
+        let failure = outcome.err();
+        self.with_copies(|copies| copies.albums_done(copy, failure.as_ref(), seconds_since_epoch(SystemTime::now())));
+        if !albums.is_empty() {
+            log::info!("made {} albums from a copied folder", albums.len());
+            self.leave_notice(&FolderNotice::AlbumsMade { folder: work.folder.clone(), albums });
+        }
+        let folder = work.folder.clone();
+        match failure {
+            None => {}
+            Some(error) if tried_again(&error) => log::info!("albums from a copied folder wait: {error}"),
+            Some(SourceError::MissingPermission(permission)) => self.leave_notice(&FolderNotice::AlbumsNotAllowed {
+                folder,
+                permission: permission.unwrap_or_else(|| "album.create".to_owned()),
+            }),
+            Some(error) => {
+                log::warn!("no albums from a copied folder: {error}");
+                self.leave_notice(&FolderNotice::AlbumsFailed { folder, reason: error.to_string() });
+            }
+        }
+    }
+
+    /// The answers the app left, taken: each file is removed once read.
+    fn take_answers(&self) -> Vec<(u64, bool)> {
+        let Some(files) = &self.files else { return Vec::new() };
+        let Ok(entries) = std::fs::read_dir(files) else { return Vec::new() };
+        let mut answers = Vec::new();
+        for entry in entries.flatten() {
+            let name = entry.file_name().to_string_lossy().into_owned();
+            let Some(copy) = name.strip_prefix(ANSWER_FILE_PREFIX).and_then(|rest| rest.strip_suffix(".json")).and_then(|copy| copy.parse().ok()) else {
+                continue;
+            };
+            if let Ok(answer) = std::fs::read_to_string(entry.path()) {
+                answers.push((copy, answer.trim() == "\"albums\""));
+            }
+            let _ = std::fs::remove_file(entry.path());
+        }
+        answers
+    }
+
+    /// Leave the app the questions waiting for an answer, in place of those left before.
+    fn leave_questions(&self) {
+        let Some(files) = &self.files else { return };
+        let questions: Vec<FolderQuestion> = self.folders.copies.lock().expect("folder copies lock").questions().into_iter().map(FolderQuestion::from).collect();
+        write_whole(&files.join(QUESTIONS_FILE), &serde_json::to_string(&questions).unwrap_or_default());
+    }
+
+    fn leave_notice(&self, notice: &FolderNotice) {
+        let Some(files) = &self.files else { return };
+        let stamp = SystemTime::now().duration_since(SystemTime::UNIX_EPOCH).map_or(0, |since| since.as_nanos());
+        write_whole(&files.join(format!("{NOTICE_FILE_PREFIX}{stamp}.json")), &serde_json::to_string(notice).unwrap_or_default());
+    }
+
+    /// Record in the journal the copied folders that are done: empty, untouched for a while, and with nothing in them
+    /// uploading, leaving, kept by the system after it did not upload, or pending in the system. `pending` holds the
+    /// folders macOS still holds items in that it has not handed over; when it is not known, they stay as long as
+    /// their copy is remembered. The deepest go first.
+    fn record_folder_departures(&self, now: u64, pending: Option<&PendingFolders>) -> Result<(), BridgeError> {
+        let leaving: Vec<String> = leaving_upload(self.store().kept_state(LEAVING_UPLOAD).as_deref()).into_iter().map(|leaving| leaving.parent).collect();
+        let stay = match pending {
+            Some(pending) => FOLDER_STAY.max(Duration::from_secs(pending.refresh_seconds.into()) + PENDING_MARGIN),
+            None => FOLDER_STAY_UNSURE,
+        }
+        .as_secs();
+        let pending: &[String] = pending.map(|pending| pending.folders.as_slice()).unwrap_or_default();
+        self.store()
+            .update_state(UPLOAD_FOLDERS, |kept| {
+                let mut folders = upload_folders(kept);
+                let mut gone = Vec::new();
+                loop {
+                    let done: Vec<String> = folders
+                        .iter()
+                        .filter(|record| {
+                            let top = NodeKey::from_storage_key(&record.key).and_then(|key| key.upload_path().and_then(<[String]>::first).cloned());
+                            now >= record.touched.saturating_add(stay)
+                                && record.waiting.is_empty()
+                                && !pending.contains(&record.key)
+                                && !folders.iter().any(|other| other.parent == record.key)
+                                && !leaving.contains(&record.key)
+                                && !top.is_some_and(|top| self.folders.busy(&top))
+                        })
+                        .map(|record| record.key.clone())
+                        .collect();
+                    if done.is_empty() {
+                        break;
+                    }
+                    folders.retain(|record| !done.contains(&record.key));
+                    gone.extend(done);
+                }
+                let changes = gone.iter().filter_map(|key| NodeKey::from_storage_key(key)).map(Change::Deleted).collect();
+                ((!folders.is_empty()).then(|| serde_json::to_string(&folders).unwrap_or_default()), changes, ())
+            })
+            .map_err(failed)
     }
 
     /// Record in the journal the uploaded files due to leave the Upload folder at `now`, in the same transaction that
@@ -496,15 +995,111 @@ where
         Ok(ChangeBatch { updated, deleted, anchor: anchor.to_text(), more })
     }
 
-    /// Every item the system holds: the entries of every kept listing.
+    /// Every item the system holds: the entries of every kept listing, and the folders copied into Upload.
     fn working_set(&self) -> Vec<Item> {
         let store = self.store();
-        store
+        let mut items: Vec<Item> = store
             .kept_folders()
             .into_iter()
             .flat_map(|folder| store.kept_listing(&folder).unwrap_or_default().iter().map(|entry| item_for(entry, &folder, self.set_up)).collect::<Vec<_>>())
-            .collect()
+            .collect();
+        items.extend(store.upload_folders(None));
+        items
     }
+}
+
+/// Write a file whole, through a temporary one beside it, so a reader never sees half of it.
+fn write_whole(path: &Path, contents: &str) {
+    // A name of its own for each write: two writers at once (a poll and a look after an upload) never share one.
+    static WRITES: std::sync::atomic::AtomicU64 = std::sync::atomic::AtomicU64::new(0);
+    let write = WRITES.fetch_add(1, std::sync::atomic::Ordering::Relaxed);
+    let temporary = path.with_extension(format!("{}-{write}.partial", std::process::id()));
+    if std::fs::write(&temporary, contents).and_then(|()| std::fs::rename(&temporary, path)).is_err() {
+        log::info!("could not write {}", path.display());
+        let _ = std::fs::remove_file(&temporary);
+    }
+}
+
+/// What macOS says it holds back (its pending set): the folders holding items it has not handed over yet, and how often
+/// it brings that list up to date.
+#[derive(Debug, Clone, PartialEq, Eq, uniffi::Record)]
+pub struct PendingFolders {
+    pub folders: Vec<String>,
+    pub refresh_seconds: u32,
+}
+
+/// A copied folder that settled, for the app to ask about (ARCHITECTURE.md, "Folders copied into Upload").
+#[derive(Debug, Clone, PartialEq, Eq, uniffi::Record, serde::Serialize, serde::Deserialize)]
+pub struct FolderQuestion {
+    /// Which copy it is, for the answer.
+    pub copy: u64,
+    /// The copied folder's name.
+    pub folder: String,
+    /// Photos and videos uploaded from it.
+    pub uploaded: u32,
+    /// Files in it that did not upload.
+    pub not_uploaded: u32,
+    /// The albums it would make, by their names before any clash is settled.
+    pub albums: Vec<String>,
+}
+
+impl From<immich_mount_core::folder_uploads::FolderQuestion> for FolderQuestion {
+    fn from(question: immich_mount_core::folder_uploads::FolderQuestion) -> FolderQuestion {
+        FolderQuestion {
+            copy: question.id,
+            folder: question.folder,
+            uploaded: question.uploaded,
+            not_uploaded: question.not_uploaded,
+            albums: question.albums,
+        }
+    }
+}
+
+/// What came of a copied folder's albums, for the app to tell.
+#[derive(Debug, Clone, PartialEq, Eq, uniffi::Enum, serde::Serialize, serde::Deserialize)]
+pub enum FolderNotice {
+    /// Albums were made, with these names.
+    AlbumsMade { folder: String, albums: Vec<String> },
+    /// The account may not make albums: the copy stays in the timeline only.
+    AlbumsNotAllowed { folder: String, permission: String },
+    /// The albums could not be made, for this reason (as the server or the system gave it): the copy stays in the
+    /// timeline only.
+    AlbumsFailed { folder: String, reason: String },
+}
+
+/// The questions about copied folders waiting for an answer, as the extension left them in the library's
+/// `directory`.
+#[uniffi::export]
+pub fn folder_questions(directory: String) -> Vec<FolderQuestion> {
+    std::fs::read_to_string(Path::new(&directory).join(QUESTIONS_FILE)).ok().and_then(|text| serde_json::from_str(&text).ok()).unwrap_or_default()
+}
+
+/// Answer the question about copy `copy`: albums too, or the timeline only. The extension takes the answer at its
+/// next poll.
+#[uniffi::export]
+pub fn answer_folder_question(directory: String, copy: u64, make_albums: bool) {
+    let answer = if make_albums { "\"albums\"" } else { "\"timeline\"" };
+    write_whole(&Path::new(&directory).join(format!("{ANSWER_FILE_PREFIX}{copy}.json")), answer);
+}
+
+/// What came of copied folders' albums since the app last asked, taken: each is told once.
+#[uniffi::export]
+pub fn take_folder_notices(directory: String) -> Vec<FolderNotice> {
+    let Ok(entries) = std::fs::read_dir(&directory) else { return Vec::new() };
+    let mut found: Vec<(String, PathBuf)> = entries
+        .flatten()
+        .map(|entry| (entry.file_name().to_string_lossy().into_owned(), entry.path()))
+        .filter(|(name, _)| name.starts_with(NOTICE_FILE_PREFIX) && name.ends_with(".json"))
+        .collect();
+    found.sort();
+    found
+        .into_iter()
+        .filter_map(|(_, path)| {
+            let notice = std::fs::read_to_string(&path).ok().and_then(|text| serde_json::from_str(&text).ok());
+            let _ = std::fs::remove_file(&path);
+            notice
+        })
+        .collect()
 }
 
 /// Uploaded files waiting to leave the Upload folder, as kept.
@@ -527,6 +1122,25 @@ pub struct Library {
     config: Mutex<String>,
     /// When the location was set up (`Answers::set_up`).
     set_up: SystemTime,
+    /// The folders copied into Upload, followed across new settings.
+    folders: Arc<FolderFollowing>,
+    /// The library's directory, where the store is and where the questions about copied folders pass.
+    directory: PathBuf,
+}
+
+/// Look at the copied folders again once a copy could have settled, rather than at the next poll, up to ten seconds
+/// later: the question reaches the app sooner. The poll still does the same, for an extension stopped meanwhile.
+fn look_again_once_settled(answers: Arc<Answers<ImmichSource, Arc<MetadataStore>>>) {
+    runtime().spawn(async move {
+        tokio::time::sleep(Duration::from_secs(immich_mount_core::folder_uploads::SETTLE_SECONDS + 1)).await;
+        if let Err(error) = answers.follow_folder_copies(None).await {
+            log::info!("the copied folders were not looked at: {error}");
+        }
+        for copy in answers.take_albums_due() {
+            let answers = answers.clone();
+            runtime().spawn(async move { answers.make_albums(copy).await });
+        }
+    });
 }
 
 /// The settings in `config.toml`, as the macOS edition follows them.
@@ -598,9 +1212,18 @@ impl Library {
         let store = Arc::new(store);
         let set_up = set_up_time(&directory.join("metadata.redb"));
         let source = Arc::new(ImmichSource::new(client));
-        let answers = Answers::new(source.clone(), store.clone(), parsed).set_up_at(set_up);
+        let folders = Arc::new(FolderFollowing::from_kept(store.kept_state(FOLDER_COPIES).as_deref()));
+        let answers = Answers::new(source.clone(), store.clone(), parsed).set_up_at(set_up).following(folders.clone(), Some(directory.clone()));
         *answers.kept_poll.lock().expect("kept poll lock") = store.kept_state(POLL_MEMORY);
-        let library = Arc::new(Library { answers: RwLock::new(Arc::new(answers)), source, store, config: Mutex::new(config), set_up });
+        let library = Arc::new(Library {
+            answers: RwLock::new(Arc::new(answers)),
+            source,
+            store,
+            config: Mutex::new(config),
+            set_up,
+            folders,
+            directory: directory.clone(),
+        });
         open.insert(key, Arc::downgrade(&library));
         Ok(library)
     }
@@ -636,10 +1259,19 @@ impl Library {
     }
 
     /// Ask the server what changed, and record in the journal what changed for the folders the system holds.
-    /// Returns whether anything did.
-    pub async fn poll(&self, cancel: Option<Arc<Cancel>>) -> Result<bool, BridgeError> {
+    /// `pending` is macOS's pending set, `None` when it did not say, or said its list was full: a copied folder leaves
+    /// Upload soon only once it holds none of it. Returns whether anything changed.
+    pub async fn poll(&self, pending: Option<PendingFolders>, cancel: Option<Arc<Cancel>>) -> Result<bool, BridgeError> {
         let answers = self.answers();
-        cancellable(cancel, async move { answers.poll().await }).await
+        let polling = answers.clone();
+        let result = cancellable(cancel, async move { polling.poll(pending.as_ref()).await }).await;
+        // Albums are made in tasks of their own: the system cancels a poll it no longer waits for, and album work cut
+        // short there would wait for the next one.
+        for copy in answers.take_albums_due() {
+            let answers = answers.clone();
+            runtime().spawn(async move { answers.make_albums(copy).await });
+        }
+        result
     }
 
     /// The journal's anchor now, as the system's sync anchor.
@@ -678,7 +1310,24 @@ impl Library {
         cancel: Option<Arc<Cancel>>,
     ) -> Result<Item, BridgeError> {
         let answers = self.answers();
-        cancellable(cancel, async move { answers.upload(&folder, &name, Path::new(&path), modified).await }).await
+        let copied = matches!(NodeKey::from_storage_key(&folder), Some(NodeKey::UploadFolder(_)));
+        let uploading = answers.clone();
+        let result = cancellable(cancel, async move { uploading.upload(&folder, &name, Path::new(&path), modified).await }).await;
+        if copied {
+            look_again_once_settled(answers);
+        }
+        result
+    }
+
+    /// Make the folder `name` inside `parent`, as Finder copies a folder into Upload or into a folder copied there,
+    /// and return its item. Refused anywhere else, and for a hidden folder.
+    pub fn create_folder(&self, parent: String, name: String) -> Result<Item, BridgeError> {
+        self.answers().create_folder(&parent, &name)
+    }
+
+    /// Forget a copied folder Finder deleted. Refused for every other folder, which is a view of the library.
+    pub fn delete_folder(&self, identifier: String) -> Result<(), BridgeError> {
+        self.answers().delete_folder(&identifier)
     }
 
     /// Follow the settings in `config` (the text of `config.toml`) from now on, when they differ from those in use:
@@ -688,7 +1337,9 @@ impl Library {
         if *current == config {
             return Ok(false);
         }
-        let answers = Answers::new(self.source.clone(), self.store.clone(), parse_config(&config)?).set_up_at(self.set_up);
+        let answers = Answers::new(self.source.clone(), self.store.clone(), parse_config(&config)?)
+            .set_up_at(self.set_up)
+            .following(self.folders.clone(), Some(self.directory.clone()));
         *self.answers.write().expect("answers lock") = Arc::new(answers);
         *current = config;
         Ok(true)
@@ -721,6 +1372,8 @@ pub struct SettingsPanes {
     pub album_layout: Preference,
     /// How files are named (`files.naming`).
     pub file_naming: Preference,
+    /// What a folder copied into Upload becomes (`uploads.folders`).
+    pub upload_folders: Preference,
 }
 
 /// One section of the drive, as a row of the Folders pane.
@@ -794,7 +1447,12 @@ pub fn settings_panes(config: String) -> Result<SettingsPanes, BridgeError> {
             })
         })
         .collect::<Result<Vec<_>, BridgeError>>()?;
-    Ok(SettingsPanes { sections, album_layout: preference("albums.layout")?, file_naming: preference("files.naming")? })
+    Ok(SettingsPanes {
+        sections,
+        album_layout: preference("albums.layout")?,
+        file_naming: preference("files.naming")?,
+        upload_folders: preference("uploads.folders")?,
+    })
 }
 
 /// The Finder location's name in the sidebar (`mount.name`), the default when `config` does not say or cannot be read.
@@ -1055,6 +1713,7 @@ impl<Output> Drop for Cancelling<Output> {
 mod tests {
     use super::*;
     use chrono::{NaiveDate, TimeZone, Utc};
+    use immich_mount_core::uploads::Uploaded;
     use immich_mount_core::model::{Album, Asset, Person, YearMonth};
     use immich_mount_core::source::Watched;
     use immich_mount_core::tree::{InMemoryNames, SectionKey};
@@ -1073,6 +1732,8 @@ mod tests {
         months_fail: AtomicBool,
         poll_told: AtomicBool,
         thumbnails_asked: Mutex<Vec<ThumbnailKind>>,
+        /// Albums made, by name, with their Assets.
+        albums_made: Mutex<Vec<(String, Vec<String>)>>,
     }
 
     fn photo() -> Asset {
@@ -1166,6 +1827,24 @@ mod tests {
         }
         async fn upload(&self, _path: &Path, _file_name: &str, _modified: chrono::DateTime<Utc>) -> Result<Uploaded, UploadError> {
             Ok(Uploaded::Created("asset-uploaded".into()))
+        }
+    }
+
+    impl AlbumTarget for FakeLibrary {
+        async fn album_names(&self) -> Result<Vec<String>, SourceError> {
+            let made = self.albums_made.lock().unwrap();
+            Ok(std::iter::once("Trip".to_owned()).chain(made.iter().map(|(name, _)| name.clone())).collect())
+        }
+        async fn create_album(&self, name: &str, asset_ids: &[String]) -> Result<String, SourceError> {
+            let mut made = self.albums_made.lock().unwrap();
+            made.push((name.to_owned(), asset_ids.to_vec()));
+            Ok(format!("made-{}", made.len()))
+        }
+        async fn add_to_album(&self, _album_id: &str, _asset_ids: &[String]) -> Result<(), SourceError> {
+            Ok(())
+        }
+        async fn album_with(&self, _name: &str, _asset_id: &str) -> Result<Option<String>, SourceError> {
+            Ok(None)
         }
     }
 
@@ -1294,11 +1973,11 @@ mod tests {
             answers.list(folder).await.unwrap();
         }
         let shown = answers.current_anchor().unwrap();
-        assert!(!answers.poll().await.unwrap(), "nothing changed yet");
+        assert!(!answers.poll(None).await.unwrap(), "nothing changed yet");
         assert_eq!(answers.store().kept_state(POLL_MEMORY).as_deref(), Some("seen"), "the poll's memory is kept");
 
         answers.source.second_photo.store(true, Ordering::SeqCst);
-        assert!(answers.poll().await.unwrap(), "the month changed, and the system holds it");
+        assert!(answers.poll(None).await.unwrap(), "the month changed, and the system holds it");
         let batch = answers.changes_since(&shown, 100).unwrap();
         assert_eq!(batch.deleted, Vec::<String>::new());
         assert_eq!(batch.updated.len(), 1);
@@ -1383,19 +2062,85 @@ mod tests {
     }
 
     #[tokio::test]
+    async fn a_folder_copied_into_upload_uploads_its_files_and_asks_about_albums() {
+        use immich_mount_core::folder_uploads::FolderChoice;
+        let (directory, answers) = journaled();
+        let files = directory.path().join("library");
+        std::fs::create_dir(&files).unwrap();
+        let shared = files.display().to_string();
+        let answers = answers.following(Arc::default(), Some(files));
+        let trip = answers.create_folder("upload", "Trip").unwrap();
+        assert_eq!((trip.identifier.as_str(), trip.parent_identifier.as_str()), ("upload-folder|Trip", "upload"));
+        assert!(trip.is_folder && trip.accepts_new_files);
+        let day = answers.create_folder(&trip.identifier, "Day 1").unwrap();
+        assert_eq!(answers.create_folder(&trip.identifier, "Day 1").unwrap(), day, "made again, it is the one there");
+        assert!(answers.create_folder("upload", ".thumbnails").is_err(), "hidden folders are not uploaded");
+        assert!(answers.create_folder("section|Photos", "Trip").is_err(), "only Upload takes folders");
+        assert_eq!(answers.item(&day.identifier).await, Ok(day.clone()), "the system may ask about it");
+        assert_eq!(answers.list("upload").await.unwrap(), std::slice::from_ref(&trip), "and listed, the system keeps it");
+        assert_eq!(answers.list(&trip.identifier).await.unwrap(), std::slice::from_ref(&day));
+        assert!(answers.working_set().contains(&day));
+
+        let photo = directory.path().join("photo.png");
+        std::fs::write(&photo, b"\x89PNG\r\n\x1a\n....\0\0\0\0IEND\xaeB`\x82").unwrap();
+        let taken = SystemTime::UNIX_EPOCH + Duration::from_secs(1_700_000_000);
+        let item = answers.upload(&day.identifier, "IMG_1.png", &photo, taken).await.unwrap();
+        assert_eq!(item.parent_identifier, day.identifier);
+        assert_eq!(answers.item(&item.identifier).await, Ok(item.clone()));
+        assert!(answers.upload(&trip.identifier, "notes.txt", &photo, taken).await.is_err());
+
+        // Settled, the copy is asked about, through a file the app reads.
+        let later = seconds_since_epoch(SystemTime::now()) + 60;
+        let events = answers.with_copies(|copies| copies.tick(later, FolderChoice::Ask, |_| false));
+        assert!(matches!(events.as_slice(), [FolderEvent::Ask(_)]));
+        answers.leave_questions();
+        let question = FolderQuestion { copy: 1, folder: "Trip".into(), uploaded: 1, not_uploaded: 1, albums: vec!["Trip › Day 1".into()] };
+        assert_eq!(folder_questions(shared.clone()), [question]);
+        answer_folder_question(shared.clone(), 1, true);
+        assert_eq!(answers.take_answers(), [(1, true)]);
+        assert!(answers.take_answers().is_empty(), "an answer is taken once");
+        assert!(answers.with_copies(|copies| copies.answer(1, true)));
+        answers.make_albums(1).await;
+        assert_eq!(*answers.source.albums_made.lock().unwrap(), [("Trip › Day 1".to_owned(), vec!["asset-uploaded".to_owned()])]);
+        assert_eq!(take_folder_notices(shared.clone()), [FolderNotice::AlbumsMade { folder: "Trip".into(), albums: vec!["Trip › Day 1".into()] }]);
+        assert!(take_folder_notices(shared).is_empty(), "told once");
+
+        // Day 1 leaves once its photo left and it stayed untouched; Trip stays, holding the refused file.
+        let before = answers.current_anchor().unwrap();
+        answers.record_departures(seconds_since_epoch(SystemTime::now() + UPLOAD_STAY)).unwrap();
+        let soon = seconds_since_epoch(SystemTime::now()) + FOLDER_STAY.as_secs();
+        answers.record_folder_departures(soon, None).unwrap();
+        assert_eq!(answers.changes_since(&before, 100).unwrap().deleted, std::slice::from_ref(&item.identifier), "unsure: the folder stays");
+        let holding = |folders: &[String]| PendingFolders { folders: folders.to_vec(), refresh_seconds: 0 };
+        answers.record_folder_departures(soon, Some(&holding(std::slice::from_ref(&day.identifier)))).unwrap();
+        assert_eq!(answers.changes_since(&before, 100).unwrap().deleted.len(), 1, "macOS holds something in it: it stays");
+        let slow = PendingFolders { folders: Vec::new(), refresh_seconds: 60 };
+        answers.record_folder_departures(soon, Some(&slow)).unwrap();
+        assert_eq!(answers.changes_since(&before, 100).unwrap().deleted.len(), 1, "a list a minute old: it waits that long");
+        answers.record_folder_departures(soon, Some(&holding(&[]))).unwrap();
+        let deleted = answers.changes_since(&before, 100).unwrap().deleted;
+        assert_eq!(deleted, [item.identifier.clone(), day.identifier.clone()], "nothing pending: it goes soon");
+        assert_eq!(answers.item(&trip.identifier).await, Ok(trip.clone()));
+        // Deleted in Finder, with the file that did not upload, it is forgotten.
+        answers.delete_folder(&trip.identifier).unwrap();
+        assert_eq!(answers.item(&trip.identifier).await, Err(BridgeError::NoSuchItem));
+        assert!(answers.delete_folder("section|Photos").is_err(), "the library's folders are views");
+    }
+
+    #[tokio::test]
     async fn a_change_whose_folder_cannot_be_listed_now_reaches_the_system_at_a_later_poll() {
         let (_directory, answers) = journaled();
         for folder in ["root", "section|Photos", "year|2024", "month|2024-03"] {
             answers.list(folder).await.unwrap();
         }
-        answers.poll().await.unwrap();
+        answers.poll(None).await.unwrap();
         let shown = answers.current_anchor().unwrap();
         answers.source.second_photo.store(true, Ordering::SeqCst);
         answers.source.months_fail.store(true, Ordering::SeqCst);
-        assert!(!answers.poll().await.unwrap(), "the month could not be listed again");
+        assert!(!answers.poll(None).await.unwrap(), "the month could not be listed again");
         assert!(answers.store().folders_to_relist().contains(&NodeKey::TimelineMonth(YearMonth { year: 2024, month: 3 })));
         answers.source.months_fail.store(false, Ordering::SeqCst);
-        assert!(answers.poll().await.unwrap(), "the server tells of the change only once, and the next poll still lists it");
+        assert!(answers.poll(None).await.unwrap(), "the server tells of the change only once, and the next poll still lists it");
         assert_eq!(answers.changes_since(&shown, 100).unwrap().updated[0].content_version, "asset-2");
         assert!(answers.store().folders_to_relist().is_empty());
     }

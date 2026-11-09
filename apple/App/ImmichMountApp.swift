@@ -10,6 +10,7 @@ import os
 import ServiceManagement
 import Sparkle
 import SwiftUI
+import UserNotifications
 
 let logger = Logger(subsystem: "dev.hviid.ImmichMount", category: "app")
 
@@ -59,7 +60,7 @@ struct ImmichMountApp: App {
 /// `@preconcurrency`.
 @MainActor
 final class AppDelegate: NSObject, NSApplicationDelegate, SPUUpdaterDelegate,
-                         @preconcurrency SPUStandardUserDriverDelegate {
+                         @preconcurrency SPUStandardUserDriverDelegate, UNUserNotificationCenterDelegate {
     private(set) static weak var shared: AppDelegate?
     let model = AppModel()
     /// Sparkle, which reads the download page's appcast and replaces the app in place, so it stays in Applications,
@@ -94,6 +95,8 @@ final class AppDelegate: NSObject, NSApplicationDelegate, SPUUpdaterDelegate,
     func applicationDidFinishLaunching(_ notification: Notification) {
         _ = updater
         followWindows()
+        // What came of a copied folder's albums is told in notifications, shown even while the app is in front.
+        UNUserNotificationCenter.current().delegate = self
         // Back from Finder or System Settings, the menu and the window know at once whether the location is on.
         NotificationCenter.default.addObserver(forName: NSApplication.didBecomeActiveNotification, object: nil, queue: .main) { _ in
             MainActor.assumeIsolated {
@@ -130,6 +133,12 @@ final class AppDelegate: NSObject, NSApplicationDelegate, SPUUpdaterDelegate,
             showSettings()
         }
         #endif
+    }
+
+    /// A notification shows even while the app is in front (its Settings window open, say).
+    nonisolated func userNotificationCenter(_ center: UNUserNotificationCenter, willPresent notification: UNNotification,
+                                            withCompletionHandler completionHandler: @escaping (UNNotificationPresentationOptions) -> Void) {
+        completionHandler([.banner, .list])
     }
 
     /// Sparkle's scheduled update alerts come without a window of the app's in front: they bring the app forward, so
@@ -638,6 +647,7 @@ final class AppModel: ObservableObject {
         Task { await FinderLocation.applyName() }
         Task { await refreshState() }
         Task { await keepChangesFlowing() }
+        Task { await followFolderCopies() }
     }
 
     /// Have the system read every item again when the bridge's item format changed since the last run. The format is
@@ -685,6 +695,17 @@ final class AppModel: ObservableObject {
                 try await manager.signalEnumerator(for: .workingSet)
             } catch {
                 logger.debug("the extension was not woken: \(String(describing: error), privacy: .public)")
+            }
+        }
+    }
+
+    /// Look for questions about copied folders every few seconds: the extension leaves one as soon as a copy settles,
+    /// and a file read costs nothing, where waiting for the change signal kept it up to ten seconds.
+    private func followFolderCopies() async {
+        while !Task.isCancelled {
+            try? await Task.sleep(for: .seconds(2))
+            if server != nil {
+                FolderCopies.follow()
             }
         }
     }
@@ -780,6 +801,7 @@ final class AppModel: ObservableObject {
         }
         Account.forget()
         try? FileManager.default.removeItem(at: AppGroup.libraryDirectory)
+        FolderCopies.forget()
         server = nil
         logger.notice("signed out; the Finder location is removed")
     }

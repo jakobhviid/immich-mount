@@ -22,6 +22,7 @@ use immich_mount_core::content::{BlockCache, ContentSource};
 use immich_mount_core::settings::DEFAULT_MOUNT_NAME;
 use immich_mount_core::source::{LibrarySource, SourceError, ThumbnailSource};
 use immich_mount_core::tree::{Entry, EntryKind, NameMemory, NodeKey, Tree};
+use immich_mount_core::folder_uploads::FolderUploads;
 use immich_mount_core::uploads::{completeness, Admission, Completeness, MediaTypes, UploadError, UploadTarget, Uploaded};
 
 use crate::caller;
@@ -480,6 +481,8 @@ struct UploadSetup<Content> {
     staging: Arc<Staging>,
     media: Arc<MediaTypes>,
     target: Arc<Content>,
+    /// The folders copied into Upload, followed for their albums (`crate::folders`).
+    folders: Arc<Mutex<FolderUploads>>,
 }
 
 /// Seeding and the safety net (SPEC.md, "Thumbnails").
@@ -536,8 +539,8 @@ where
         self
     }
 
-    pub fn with_uploads(mut self, staging: Arc<Staging>, media: MediaTypes, target: Arc<Content>) -> Self {
-        self.uploads = Some(UploadSetup { staging, media: Arc::new(media), target });
+    pub fn with_uploads(mut self, staging: Arc<Staging>, media: MediaTypes, target: Arc<Content>, folders: Arc<Mutex<FolderUploads>>) -> Self {
+        self.uploads = Some(UploadSetup { staging, media: Arc::new(media), target, folders });
         self
     }
 
@@ -577,10 +580,22 @@ where
     }
 }
 
-/// Whether a folder is Upload, the only place new files are accepted. Photos and its date folders are views built
-/// from each photo's own date, where a dropped file could not stay where it was put.
+/// Whether a folder takes new files: Upload, and the folders copied into it. Photos and its date folders are views
+/// built from each photo's own date, where a dropped file could not stay where it was put.
 fn is_upload_folder(node: &NodeKey) -> bool {
-    matches!(node, NodeKey::Upload)
+    node.upload_path().is_some()
+}
+
+/// Seconds since the epoch, the folder uploads' clock.
+pub(crate) fn seconds_now() -> u64 {
+    SystemTime::now().duration_since(SystemTime::UNIX_EPOCH).map_or(0, |since| since.as_secs())
+}
+
+/// Tell the folder uploads about a folder below Upload; files directly in Upload are no copy of a folder.
+fn note_folder(folders: &Mutex<FolderUploads>, folder: &NodeKey, note: impl FnOnce(&mut FolderUploads, &[String], u64)) {
+    if let Some(path) = folder.upload_path().filter(|path| !path.is_empty()) {
+        note(&mut folders.lock().expect("folder uploads lock"), path, seconds_now());
+    }
 }
 
 fn staged_kind(file: &StagedFile) -> EntryKind {
@@ -606,6 +621,7 @@ async fn run_upload<Content, Library, Names>(
     target: Arc<Content>,
     staging: Arc<Staging>,
     tree: Arc<Tree<Library, Names>>,
+    folders: Arc<Mutex<FolderUploads>>,
     pending: PendingUpload,
 ) -> UploadResult
 where
@@ -619,6 +635,7 @@ where
     if matches!(judged, Ok(Ok(Completeness::Truncated))) {
         log::warn!("not uploading {name}: the file ends before its own structure does (a cancelled or broken copy)");
         crate::notify::notify_in_background(tr("Not uploaded: {name}").replace("{name}", &name), tr("The file is incomplete, as if its copy was cancelled.").to_owned());
+        note_folder(&folders, &pending.folder, FolderUploads::not_uploaded);
         staging.finish_cut_short(pending);
         return Err(libc::EIO);
     }
@@ -642,8 +659,14 @@ where
     };
     let result = match outcome {
         Ok(Ok(uploaded)) => {
+            note_folder(&folders, &pending.folder, |folders, path, now| folders.uploaded(path, uploaded.asset_id(), now));
             match uploaded {
                 Uploaded::Created(_) => log::info!("uploaded {name}"),
+                Uploaded::Restored(_) => {
+                    log::info!("{name} was in Immich's trash; restored");
+                    let summary = tr("Restored from the trash: {name}").replace("{name}", &name);
+                    crate::notify::notify_once_in_a_while("restored", &summary, tr("Immich had this photo in its trash, and copying it in brought it back.")).await;
+                }
                 Uploaded::AlreadyInLibrary(_) => {
                     log::info!("{name} is already in the library");
                     let body = tr("Immich has this photo already, so nothing was added.");
@@ -682,6 +705,9 @@ where
             Err(libc::EIO)
         }
     };
+    if result.is_err() {
+        note_folder(&folders, &pending.folder, FolderUploads::not_uploaded);
+    }
     staging.finish_upload(pending, result);
     result
 }
@@ -713,6 +739,11 @@ where
             let node = MountNode::Staged(id);
             let inode = self.inodes.lock().expect("inode table lock").assign(node, staged_kind(&file), parent_record.path.join(&name), true);
             return reply.entry(&Duration::ZERO, &self.staged_attributes(inode, id, &file), self.generation);
+        }
+        if let Some(key) = self.uploads.as_ref().and_then(|uploads| uploads.staging.look_up_folder(&parent_key, &name)) {
+            let node = MountNode::Tree(key);
+            let inode = self.inodes.lock().expect("inode table lock").assign(node.clone(), EntryKind::Folder, parent_record.path.join(&name), true);
+            return reply.entry(&Duration::ZERO, &self.attributes(inode, &node, &EntryKind::Folder), self.generation);
         }
         if parent_key == NodeKey::Root {
             if let Some(virtual_name) = VIRTUAL_FILES.iter().find(|file_name| **file_name == name) {
@@ -956,6 +987,7 @@ where
         let inodes = self.inodes.clone();
         let folder_path = record.path.clone();
         let staged = self.uploads.as_ref().map(|uploads| uploads.staging.in_folder(&key)).unwrap_or_default();
+        let staged_folders = self.uploads.as_ref().map(|uploads| uploads.staging.folders_in(&key)).unwrap_or_default();
         let listings = self.listings.clone();
         // Only the first page of a listing seeds, never a search crawl's, and a count only ahead (`RecentListings`).
         let seeding = match &self.thumbnails {
@@ -1038,6 +1070,10 @@ where
                     let child = table.assign(MountNode::Tree(entry.node), entry.kind, folder_path.join(&entry.name), false);
                     listing.push((child, file_type, entry.name));
                 }
+                for (name, folder, _) in staged_folders {
+                    let child = table.assign(MountNode::Tree(folder), EntryKind::Folder, folder_path.join(&name), false);
+                    listing.push((child, FileType::Directory, name));
+                }
                 for (id, file) in staged {
                     let child = table.assign(MountNode::Staged(id), staged_kind(&file), folder_path.join(&file.name), false);
                     listing.push((child, FileType::RegularFile, file.name));
@@ -1077,9 +1113,9 @@ where
                 reply.error(Errno::EIO);
             }
             CloseAction::Upload(pending) => {
-                let (target, staging, tree) = (uploads.target.clone(), uploads.staging.clone(), self.tree.clone());
+                let (target, staging, tree, folders) = (uploads.target.clone(), uploads.staging.clone(), self.tree.clone(), uploads.folders.clone());
                 self.spawn(async move {
-                    match run_upload(target, staging, tree, pending).await {
+                    match run_upload(target, staging, tree, folders, pending).await {
                         Ok(()) => reply.ok(),
                         Err(errno) => reply.error(Errno::from_i32(errno)),
                     }
@@ -1124,12 +1160,17 @@ where
         let admission = uploads.media.admission(&name);
         if admission == Admission::Refused {
             // Refused before a byte is copied: not an image or video Immich takes (SPEC.md, "Uploads").
+            note_folder(&uploads.folders, &folder, FolderUploads::not_uploaded);
             let name = name.clone();
             self.spawn(async move {
                 crate::notify::notify_once_in_a_while("refused", &tr("Not uploaded: {name}").replace("{name}", &name), tr("Immich takes photos and videos only.")).await;
             });
             return reply.error(Errno::ENOTSUP);
         }
+        if uploads.staging.find_folder(&folder, &name).is_some() {
+            return reply.error(Errno::EEXIST);
+        }
+        note_folder(&uploads.folders, &folder, FolderUploads::touched);
         let (staging, tree, inodes, filesystem) = (uploads.staging.clone(), self.tree.clone(), self.inodes.clone(), self.snapshot());
         let patience = self.listing_patience.clone();
         self.spawn(async move {
@@ -1212,6 +1253,11 @@ where
                 }
             }
             (Some(InodeRecord { node: MountNode::Tree(NodeKey::Asset { parent, .. }), .. }), _) => reply.error(self.refusal(&parent)),
+            // A copied folder's times and modes (`cp -a`, GIO's copy) are accepted and ignored, as a staged file's are:
+            // the folder goes once its files have.
+            (Some(InodeRecord { node: node @ MountNode::Tree(NodeKey::UploadFolder(_)), kind, .. }), Some(_)) => {
+                reply.attr(&Duration::ZERO, &self.attributes(inode.0, &node, &kind))
+            }
             (Some(InodeRecord { node: MountNode::Tree(key), .. }), _) => reply.error(self.refusal(&key)),
             (Some(_), _) => reply.error(Errno::EROFS),
             (None, _) => reply.error(Errno::ENOENT),
@@ -1249,7 +1295,12 @@ where
         if flags.contains(RenameFlags::RENAME_NOREPLACE) && uploads.staging.find(&new_folder, &new_name).is_some() {
             return reply.error(Errno::EEXIST);
         }
+        // A copied folder's name is taken: a file of that name would hide the folder.
+        if uploads.staging.find_folder(&new_folder, &new_name).is_some() {
+            return reply.error(Errno::EEXIST);
+        }
         let (target, staging, tree, inodes) = (uploads.target.clone(), uploads.staging.clone(), self.tree.clone(), self.inodes.clone());
+        let folders = uploads.folders.clone();
         let patience = self.listing_patience.clone();
         self.spawn(async move {
             // An Asset's name in the target folder is taken (principle 8).
@@ -1265,7 +1316,7 @@ where
             inodes.lock().expect("inode table lock").assign(MountNode::Staged(id), staged_kind(&file), new_folder_path.join(&new_name), false);
             match staging.upload_after_rename(id) {
                 None => reply.ok(),
-                Some(pending) => match run_upload(target, staging, tree, pending).await {
+                Some(pending) => match run_upload(target, staging, tree, folders, pending).await {
                     Ok(()) => reply.ok(),
                     Err(errno) => reply.error(Errno::from_i32(errno)),
                 },
@@ -1354,17 +1405,48 @@ where
         }
     }
 
-    fn mkdir(&self, _request: &Request, parent: INodeNo, _name: &OsStr, _mode: u32, _umask: u32, reply: ReplyEntry) {
-        match self.parent_folder(parent) {
-            Ok((folder, _)) => reply.error(self.refusal(&folder)),
-            Err(errno) => reply.error(errno),
+    /// A folder copied into Upload, or into a folder copied there: its photos and videos upload as they arrive, and
+    /// its albums follow once the copy has settled (`crate::folders`). A hidden folder (a thumbnail cache, a version
+    /// control folder) is refused, as hidden files are; everywhere else the mount is a view.
+    fn mkdir(&self, _request: &Request, parent: INodeNo, name: &OsStr, _mode: u32, _umask: u32, reply: ReplyEntry) {
+        let (folder, folder_path) = match self.parent_folder(parent) {
+            Ok(found) => found,
+            Err(errno) => return reply.error(errno),
+        };
+        let Some(uploads) = self.uploads.as_ref().filter(|_| is_upload_folder(&folder)) else {
+            return reply.error(self.refusal(&folder));
+        };
+        let Some(name) = name.to_str() else { return reply.error(Errno::EINVAL) };
+        if name.starts_with('.') {
+            return reply.error(Errno::EPERM);
+        }
+        match uploads.staging.create_folder(&folder, name) {
+            Ok(key) => {
+                note_folder(&uploads.folders, &key, FolderUploads::folder_created);
+                let node = MountNode::Tree(key);
+                let inode = self.inodes.lock().expect("inode table lock").assign(node.clone(), EntryKind::Folder, folder_path.join(name), true);
+                reply.entry(&Duration::ZERO, &self.attributes(inode, &node, &EntryKind::Folder), self.generation)
+            }
+            Err(errno) => reply.error(Errno::from_i32(errno)),
         }
     }
 
-    fn rmdir(&self, _request: &Request, parent: INodeNo, _name: &OsStr, reply: ReplyEmpty) {
-        match self.parent_folder(parent) {
-            Ok((folder, _)) => reply.error(self.refusal(&folder)),
-            Err(errno) => reply.error(errno),
+    /// An empty folder copied into Upload may be removed (a cancelled copy cleaning up); the library's folders may not.
+    fn rmdir(&self, _request: &Request, parent: INodeNo, name: &OsStr, reply: ReplyEmpty) {
+        let folder = match self.parent_folder(parent) {
+            Ok((folder, _)) => folder,
+            Err(errno) => return reply.error(errno),
+        };
+        let found = name.to_str().and_then(|name| self.uploads.as_ref().and_then(|uploads| Some((uploads, uploads.staging.find_folder(&folder, name)?))));
+        match found {
+            Some((uploads, key)) => match uploads.staging.remove_folder(&key) {
+                Ok(()) => {
+                    note_folder(&uploads.folders, &key, |folders, path, _| folders.folder_removed(path));
+                    reply.ok()
+                }
+                Err(errno) => reply.error(Errno::from_i32(errno)),
+            },
+            None => reply.error(self.refusal(&folder)),
         }
     }
 

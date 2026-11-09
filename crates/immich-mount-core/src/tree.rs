@@ -27,6 +27,9 @@ pub enum NodeKey {
     Section(SectionKey),
     /// The Upload folder: it holds only files being uploaded, which the platform's filesystem lists.
     Upload,
+    /// A folder copied into Upload, by its path below Upload, the copied folder first. Like Upload it holds only
+    /// what is being uploaded, which the platform lists (SPEC.md, "Uploads").
+    UploadFolder(Vec<String>),
     TimelineYear(i32),
     TimelineMonth(YearMonth),
     TimelineDay(YearMonth, u32),
@@ -51,6 +54,9 @@ impl NodeKey {
         match self {
             NodeKey::Root => "root".to_string(),
             NodeKey::Upload => "upload".to_string(),
+            NodeKey::UploadFolder(path) => {
+                std::iter::once("upload-folder".to_owned()).chain(path.iter().map(|name| escape(name))).collect::<Vec<_>>().join("|")
+            }
             NodeKey::Section(section) => format!("section|{section:?}"),
             NodeKey::TimelineYear(year) => format!("year|{year}"),
             NodeKey::TimelineMonth(month) => format!("month|{}-{:02}", month.year, month.month),
@@ -84,6 +90,7 @@ impl NodeKey {
         let node = match parts.as_slice() {
             ["root"] => NodeKey::Root,
             ["upload"] => NodeKey::Upload,
+            ["upload-folder", path @ ..] if !path.is_empty() => NodeKey::UploadFolder(path.iter().map(|name| unescape(name)).collect()),
             ["section", "Photos"] => NodeKey::Section(SectionKey::Photos),
             ["section", "Albums"] => NodeKey::Section(SectionKey::Albums),
             ["section", "People"] => NodeKey::Section(SectionKey::People),
@@ -115,6 +122,23 @@ impl NodeKey {
         };
         // Numbers parse from more than one spelling ("3", "03", "+3"); only the one `storage_key` writes is accepted.
         (node.storage_key() == text).then_some(node)
+    }
+
+    /// Where a folder that takes new files is below Upload: empty for Upload itself, the path for a folder copied
+    /// into it. `None` for every other node, which is a view of the library.
+    pub fn upload_path(&self) -> Option<&[String]> {
+        match self {
+            NodeKey::Upload => Some(&[]),
+            NodeKey::UploadFolder(path) => Some(path),
+            _ => None,
+        }
+    }
+
+    /// The folder named `name` inside a folder that takes new files; `None` inside any other.
+    pub fn upload_child(&self, name: &str) -> Option<NodeKey> {
+        let mut path = self.upload_path()?.to_vec();
+        path.push(name.to_owned());
+        Some(NodeKey::UploadFolder(path))
     }
 }
 
@@ -390,6 +414,8 @@ impl<Source: LibrarySource, Names: NameMemory> Tree<Source, Names> {
         let parent = match node {
             NodeKey::Root => return Ok(None),
             NodeKey::Section(_) | NodeKey::Upload => NodeKey::Root,
+            NodeKey::UploadFolder(path) if path.len() > 1 => NodeKey::UploadFolder(path[..path.len() - 1].to_vec()),
+            NodeKey::UploadFolder(_) => NodeKey::Upload,
             NodeKey::TimelineYear(_) => NodeKey::Section(SectionKey::Photos),
             NodeKey::TimelineMonth(month) => NodeKey::TimelineYear(month.year),
             NodeKey::TimelineDay(month, _) => NodeKey::TimelineMonth(*month),
@@ -431,7 +457,7 @@ impl<Source: LibrarySource, Names: NameMemory> Tree<Source, Names> {
     async fn list_uncached(&self, node: &NodeKey) -> Result<Vec<Entry>, SourceError> {
         match node {
             NodeKey::Root => Ok(self.root_entries()),
-            NodeKey::Upload => Ok(Vec::new()),
+            NodeKey::Upload | NodeKey::UploadFolder(_) => Ok(Vec::new()),
             NodeKey::Section(SectionKey::Photos) => {
                 let years: BTreeSet<i32> = self.source.timeline_months().await?.iter().map(|(month, _)| month.year).collect();
                 Ok(years.into_iter().map(|year| folder(year_folder_name(year), NodeKey::TimelineYear(year))).collect())
@@ -936,6 +962,8 @@ mod tests {
         let keys = [
             NodeKey::Root,
             NodeKey::Upload,
+            NodeKey::UploadFolder(vec!["Trip".into()]),
+            NodeKey::UploadFolder(vec!["Trip|2026".into(), "Day 1 %7C".into()]),
             NodeKey::Section(SectionKey::Photos),
             NodeKey::Section(SectionKey::Places),
             NodeKey::Section(SectionKey::Archive),

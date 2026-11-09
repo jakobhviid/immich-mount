@@ -27,8 +27,9 @@ without downloading the library first.
   seeks without downloading the whole file. On the Mac a file is downloaded whole when opened, and Finder's Remove
   Download frees it again. Folders you have visited stay browsable offline.
 - **Uploads by copy and move:** drop photos and videos into **Upload** and they are uploaded unchanged, then show
-  in Photos by their own date. Every other folder is a read-only view of the library. A move never loses a photo:
-  the file manager keeps the source until Immich has the file, and anything that fails to upload is kept.
+  in Photos by their own date. Drop a whole folder and you are asked whether its folders become albums too. Every
+  other folder is a read-only view of the library. A move never loses a photo: the file manager keeps the source
+  until Immich has the file, and anything that fails to upload is kept.
 - **Changes in Immich show within seconds,** in an open folder after a refresh.
 - **One app, native on each desktop:** it opens in GTK and libadwaita on GNOME and in Kirigami on KDE Plasma, to sign
   in, choose what to show, and see the status. A tray icon shows how it is connected, in KDE Plasma's system tray and
