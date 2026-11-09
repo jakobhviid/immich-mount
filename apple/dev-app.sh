@@ -3,8 +3,8 @@
 # Dev.app (Finder's location runs only from Applications) and started. It has an identity of its own (the bundle
 # identifier dev.hviid.ImmichMount.Dev, its App Group, Keychain group, settings and Finder location) and a blue icon,
 # so it lives beside the installed release: sign it in once, to the lab server or your own, and every later build
-# keeps that sign-in. It never updates itself. Its extension is switched on once, in System Settings (General, Login
-# Items & Extensions), as the release's is.
+# keeps that sign-in. It never updates itself. Its extension is switched on once, with Enable at the top of its
+# location's Finder window or in System Settings' list of file providers, as the release's is.
 #
 #   apple/dev-app.sh        build, install and start (about two minutes; the bridge's build is most of it)
 #
