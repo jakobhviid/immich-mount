@@ -130,6 +130,21 @@ pub async fn ask(connection: &zbus::Connection, summary: &str, body: &str, butto
     }
 }
 
+/// Close a notification shown earlier: a question a restarted daemon asks again.
+pub async fn close(connection: &zbus::Connection, id: u32) {
+    let body = (id,);
+    let closing = connection.call_method(
+        Some("org.freedesktop.Notifications"),
+        "/org/freedesktop/Notifications",
+        Some("org.freedesktop.Notifications"),
+        "CloseNotification",
+        &body,
+    );
+    if let Ok(Err(error)) = tokio::time::timeout(SEND_LIMIT, closing).await {
+        log::debug!("could not close notification {id}: {error}");
+    }
+}
+
 /// What became of a question: a button pressed (its key), or dismissed (`None`).
 pub type Answer = (u32, Option<String>);
 

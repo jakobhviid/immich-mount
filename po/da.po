@@ -18,71 +18,72 @@ msgstr "Immich er ikke monteret"
 msgid "The keyring stayed locked. Open Immich Mount, or run “immich-mount mount”, to try again."
 msgstr "Nøgleringen forblev låst. Åbn Immich Mount, eller kør »immich-mount mount«, for at prøve igen."
 
-#: crates/immich-mount-linux/src/daemon.rs:304
+#: crates/immich-mount-linux/src/daemon.rs:306
 msgid "Immich is unreachable"
 msgstr "Immich kan ikke nås"
 
-#: crates/immich-mount-linux/src/daemon.rs:305
+#: crates/immich-mount-linux/src/daemon.rs:307
 msgid "The Immich server cannot be reached. Files you opened before stay available."
 msgstr "Immich-serveren kan ikke nås. Filer, du har åbnet før, er stadig tilgængelige."
 
-#: crates/immich-mount-linux/src/daemon.rs:308
+#: crates/immich-mount-linux/src/daemon.rs:310
 #: crates/immich-mount-linux/src/tray.rs:70
 msgid "Signed out of Immich"
 msgstr "Logget ud af Immich"
 
-#: crates/immich-mount-linux/src/daemon.rs:309
+#: crates/immich-mount-linux/src/daemon.rs:311
 msgid "Immich no longer accepts this sign-in. Open Immich Mount to sign in again."
 msgstr "Immich accepterer ikke længere dette login. Åbn Immich Mount for at logge ind igen."
 
-#: crates/immich-mount-linux/src/folders.rs:88
-#: apple/App/FolderCopies.swift:64
+#: crates/immich-mount-linux/src/folders.rs:169
+#: apple/App/FolderCopies.swift:76
 msgid "Uploaded to Immich: {folder}"
 msgstr "Uploadet til Immich: {folder}"
 
-#: crates/immich-mount-linux/src/folders.rs:90
-#: apple/App/FolderCopies.swift:59
+#: crates/immich-mount-linux/src/folders.rs:171
+#: apple/App/FolderCopies.swift:71
 msgid "Photos and videos in the timeline: {count}"
 msgstr "Billeder og videoer på tidslinjen: {count}"
 
-#: crates/immich-mount-linux/src/folders.rs:91
-#: apple/App/FolderCopies.swift:60
+#: crates/immich-mount-linux/src/folders.rs:172
+#: apple/App/FolderCopies.swift:72
 msgid "Albums it can make: {albums}"
 msgstr "Album, den kan blive til: {albums}"
 
-#: crates/immich-mount-linux/src/folders.rs:94
-#: apple/App/FolderCopies.swift:62
+#: crates/immich-mount-linux/src/folders.rs:175
+#: apple/App/FolderCopies.swift:74
 msgid "Files not uploaded: {count}"
 msgstr "Filer, der ikke blev uploadet: {count}"
 
-#: crates/immich-mount-linux/src/folders.rs:97
+#: crates/immich-mount-linux/src/folders.rs:178
 #: crates/immich-mount-core/src/settings.rs:91
-#: apple/App/FolderCopies.swift:70
+#: apple/App/FolderCopies.swift:82
 msgid "Make Albums"
 msgstr "Opret album"
 
-#: crates/immich-mount-linux/src/folders.rs:97
+#: crates/immich-mount-linux/src/folders.rs:178
 #: crates/immich-mount-core/src/settings.rs:90
-#: apple/App/FolderCopies.swift:71
+#: apple/App/FolderCopies.swift:83
 msgid "Timeline Only"
 msgstr "Kun tidslinjen"
 
-#: crates/immich-mount-linux/src/folders.rs:108
-#: apple/App/FolderCopies.swift:84
+#: crates/immich-mount-linux/src/folders.rs:197
+#: apple/App/FolderCopies.swift:96
 msgid "Albums made from {folder}"
 msgstr "Album oprettet fra {folder}"
 
-#: crates/immich-mount-linux/src/folders.rs:110
-#: apple/App/FolderCopies.swift:87
+#: crates/immich-mount-linux/src/folders.rs:199
+#: apple/App/FolderCopies.swift:99
+#: apple/App/FolderCopies.swift:103
 msgid "No albums made from {folder}"
 msgstr "Ingen album oprettet fra {folder}"
 
-#: crates/immich-mount-linux/src/folders.rs:115
-#: apple/App/FolderCopies.swift:88
+#: crates/immich-mount-linux/src/folders.rs:205
+#: apple/App/FolderCopies.swift:100
 msgid "Immich does not let this account make albums ({permission}). The photos and videos are in the timeline."
 msgstr "Immich lader ikke denne konto oprette album ({permission}). Billederne og videoerne er på tidslinjen."
 
-#: crates/immich-mount-linux/src/folders.rs:120
+#: crates/immich-mount-linux/src/folders.rs:210
 msgid "Signed out of Immich. The photos and videos are in the timeline."
 msgstr "Logget ud af Immich. Billederne og videoerne er på tidslinjen."
 
@@ -987,7 +988,7 @@ msgstr "Login-emnet kunne ikke ændres: {error}"
 msgid "The server sent an address that cannot be opened."
 msgstr "Serveren sendte en adresse, der ikke kan åbnes."
 
-#: apple/App/ImmichMountApp.swift:830
+#: apple/App/ImmichMountApp.swift:831
 msgid "Finder does not show Immich yet. Is the extension switched on in System Settings? ({error})"
 msgstr "Finder viser ikke Immich endnu. Er udvidelsen slået til i Systemindstillinger? ({error})"
 

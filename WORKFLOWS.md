@@ -258,7 +258,8 @@ folders in the drive keep their English names.
 - **Already in library:** a file whose content already exists counts as done, adds nothing, and a notification says
   so (a photo copied from the mount itself, say). A file matching something in the Immich
   trash is refused; restore it in Immich if you want it.
-- Non-media files and hidden folders are refused, with a notification explaining why.
+- Non-media files are refused, with a notification explaining why; hidden folders (a thumbnail cache) are refused
+  too.
 - **Folders** go in whole: copy a folder (with folders inside it, if you like) into Upload, and every photo and video
   in it uploads as it arrives. Once the copy has finished, Immich Mount asks whether to make albums of it too (a
   notification that stays on screen on Linux, a dialog on the Mac):

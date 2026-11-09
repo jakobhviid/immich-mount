@@ -1291,6 +1291,10 @@ where
         if flags.contains(RenameFlags::RENAME_NOREPLACE) && uploads.staging.find(&new_folder, &new_name).is_some() {
             return reply.error(Errno::EEXIST);
         }
+        // A copied folder's name is taken: a file of that name would hide the folder.
+        if uploads.staging.find_folder(&new_folder, &new_name).is_some() {
+            return reply.error(Errno::EEXIST);
+        }
         let (target, staging, tree, inodes) = (uploads.target.clone(), uploads.staging.clone(), self.tree.clone(), self.inodes.clone());
         let folders = uploads.folders.clone();
         let patience = self.listing_patience.clone();

@@ -198,10 +198,12 @@ where
         let area = Arc::new(Staging::new(&staging_directory, not_uploaded_directory).map_err(|error| prepare_error(&staging_directory, error.to_string()))?);
         // The server's own list of media types; the built-in one when it cannot be asked yet.
         let media = runtime.block_on(async { tokio::time::timeout(Duration::from_secs(10), source.media_types()).await }).ok().and_then(Result::ok);
-        // The folders copied into Upload, followed for their albums (ARCHITECTURE.md, "Folders copied into Upload").
-        let folders = Arc::new(std::sync::Mutex::new(immich_mount_core::folder_uploads::FolderUploads::default()));
+        // The folders copied into Upload, followed for their albums (ARCHITECTURE.md, "Folders copied into Upload"),
+        // and kept in the account's cache, so a restart asks again what was being asked.
+        let copies_file = account_cache.join("folder-copies.json");
+        let folders = Arc::new(std::sync::Mutex::new(crate::folders::kept_copies(&copies_file)));
         filesystem = filesystem.with_uploads(area.clone(), media.unwrap_or_default(), Arc::new(source.clone()), folders.clone());
-        runtime.spawn(crate::folders::follow(folders, area.clone(), Arc::new(source.clone()), upload_folders));
+        runtime.spawn(crate::folders::follow(folders, copies_file, area.clone(), Arc::new(source.clone()), upload_folders));
         staging = Some(area);
     }
     // The daemon leaves for an upgrade or an uninstall only when nothing is open or uploading.

@@ -212,12 +212,34 @@ final class FileProviderExtension: NSObject, NSFileProviderReplicatedExtension, 
                 userInfo: [NSLocalizedDescriptionKey: message])
     }
 
+    /// Upload and the folders copied into it change only their times and such on disk, as files come and go: those
+    /// are taken and kept as they are, as Linux takes a copied folder's times. Refused, the system marked Upload as
+    /// failing and tried again without end (seen on macOS 27.2, "diffs:mtime"). Anything else (a rename, a move, new
+    /// contents) is refused: every other folder is a view of the library.
     func modifyItem(_ item: NSFileProviderItem, baseVersion version: NSFileProviderItemVersion,
                     changedFields: NSFileProviderItemFields, contents newContents: URL?,
                     options: NSFileProviderModifyItemOptions = [], request: NSFileProviderRequest,
                     completionHandler: @escaping (NSFileProviderItem?, NSFileProviderItemFields, Bool, Error?) -> Void) -> Progress {
-        completionHandler(nil, [], false, CocoaError(.featureUnsupported))
-        return Progress()
+        let metadata: NSFileProviderItemFields = [.contentModificationDate, .creationDate, .extendedAttributes, .tagData,
+                                                  .lastUsedDate, .favoriteRank, .fileSystemFlags]
+        let identifier = item.itemIdentifier.bridged
+        let takesFiles = identifier == "upload" || identifier.hasPrefix("upload-folder|")
+        guard let library, takesFiles, changedFields.subtracting(metadata).isEmpty else {
+            completionHandler(nil, [], false, CocoaError(.featureUnsupported))
+            return Progress()
+        }
+        let progress = Progress(totalUnitCount: 1)
+        let task = Task {
+            do {
+                let current = try await library.item(identifier: identifier, cancel: nil)
+                completionHandler(FileProviderItem(current), [], false, nil)
+            } catch {
+                completionHandler(nil, [], false, error.forSystem)
+            }
+            progress.completedUnitCount = 1
+        }
+        progress.cancellationHandler = { task.cancel() }
+        return progress
     }
 
     /// Only a folder copied into Upload may be deleted (with a file in it that did not upload); everything else is a
@@ -229,6 +251,8 @@ final class FileProviderExtension: NSObject, NSFileProviderReplicatedExtension, 
             guard let library else { throw NSFileProviderError(.notAuthenticated) }
             try library.deleteFolder(identifier: identifier.bridged)
             completionHandler(nil)
+        } catch BridgeError.NoSuchItem {
+            completionHandler(NSFileProviderError(.noSuchItem))
         } catch {
             completionHandler(CocoaError(.featureUnsupported))
         }

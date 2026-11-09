@@ -695,7 +695,7 @@ final class AppModel: ObservableObject {
             } catch {
                 logger.debug("the extension was not woken: \(String(describing: error), privacy: .public)")
             }
-            await FolderCopies.follow()
+            FolderCopies.follow()
         }
     }
 
@@ -790,6 +790,7 @@ final class AppModel: ObservableObject {
         }
         Account.forget()
         try? FileManager.default.removeItem(at: AppGroup.libraryDirectory)
+        FolderCopies.forget()
         server = nil
         logger.notice("signed out; the Finder location is removed")
     }

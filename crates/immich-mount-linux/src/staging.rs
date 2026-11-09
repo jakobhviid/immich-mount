@@ -166,6 +166,14 @@ impl Inner {
     }
 }
 
+/// The copied folder a folder copied into Upload belongs to: the first part of its path.
+fn top_of(folder: &NodeKey) -> Option<&str> {
+    match folder {
+        NodeKey::UploadFolder(path) => path.first().map(String::as_str),
+        _ => None,
+    }
+}
+
 /// Whether `key` is a folder directly inside `folder`.
 fn is_inside(key: &NodeKey, folder: &NodeKey) -> bool {
     match (key.upload_path(), folder.upload_path()) {
@@ -203,15 +211,23 @@ fn keep(kept: &Path, staged: &Path, name: &str) {
     // Only plain names make the path: never `..` or an absolute one, whatever the name file says.
     let mut parts: Vec<&str> = name.split('/').filter(|part| !matches!(*part, "" | "." | "..")).collect();
     let name = parts.pop().map_or_else(|| "not-uploaded".to_owned(), str::to_owned);
-    let kept = &parts.iter().fold(kept.to_path_buf(), |path, part| path.join(part));
     let (stem, extension) = match name.rsplit_once('.') {
         Some((stem, extension)) if !stem.is_empty() => (stem.to_owned(), format!(".{extension}")),
         _ => (name.clone(), String::new()),
     };
-    if let Err(error) = std::fs::DirBuilder::new().recursive(true).mode(0o700).create(kept) {
-        log::error!("could not keep {name} that was not uploaded: {}: {error}", kept.display());
-        return;
-    }
+    // Its folders, or the not-uploaded folder itself where one of them cannot be made (a kept file has its name).
+    let folders = parts.iter().fold(kept.to_path_buf(), |path, part| path.join(part));
+    let kept = match std::fs::DirBuilder::new().recursive(true).mode(0o700).create(&folders) {
+        Ok(()) => &folders,
+        Err(error) => {
+            log::warn!("could not keep {name} in {}: {error}", folders.display());
+            if let Err(error) = std::fs::DirBuilder::new().recursive(true).mode(0o700).create(kept) {
+                log::error!("could not keep {name} that was not uploaded: {}: {error}", kept.display());
+                return;
+            }
+            kept
+        }
+    };
     let Some(target) = (1..10_000)
         .map(|counter| if counter == 1 { kept.join(&name) } else { kept.join(format!("{stem} ({counter}){extension}")) })
         .find(|candidate| !candidate.exists())
@@ -290,20 +306,28 @@ impl Staging {
                 self.dispose(file);
             }
         }
-        // Empty folders that nothing touched for a while go, the deepest first, so their parents may follow.
-        loop {
-            let gone: Vec<NodeKey> = inner
-                .folders
-                .iter()
-                .filter(|(key, folder)| now.duration_since(folder.touched) >= self.folder_linger && !inner.holds_anything(key))
-                .map(|(key, _)| key.clone())
-                .collect();
-            if gone.is_empty() {
-                break;
+        // A copied folder goes with the rest of its copy, once no file is in any of them and nothing under the copied
+        // folder was touched for a while. Folder by folder, one waiting for its turn went while its copy was busy
+        // elsewhere: Dolphin and rsync make every folder of a copy before its first file.
+        let mut copies: HashMap<String, (Instant, bool)> = HashMap::new();
+        for (key, folder) in &inner.folders {
+            if let Some(top) = top_of(key) {
+                let copy = copies.entry(top.to_owned()).or_insert((folder.touched, false));
+                copy.0 = copy.0.max(folder.touched);
             }
-            for key in gone {
-                inner.folders.remove(&key);
+        }
+        for file in inner.files.values() {
+            if let Some(copy) = top_of(&file.folder).and_then(|top| copies.get_mut(top)) {
+                copy.1 = true;
             }
+        }
+        let gone: Vec<String> = copies
+            .into_iter()
+            .filter(|(_, (touched, holds_files))| !holds_files && now.duration_since(*touched) >= self.folder_linger)
+            .map(|(top, _)| top)
+            .collect();
+        if !gone.is_empty() {
+            inner.folders.retain(|key, _| top_of(key).is_none_or(|top| !gone.iter().any(|copy| copy == top)));
         }
         inner
     }
@@ -927,6 +951,25 @@ mod tests {
         let empty = staging.create_folder(&NodeKey::Upload, "Empty").unwrap();
         assert_eq!(staging.remove_folder(&empty), Ok(()));
         assert_eq!(staging.remove_folder(&empty), Err(libc::ENOENT));
+    }
+
+    #[tokio::test]
+    async fn a_folder_waiting_for_its_turn_stays_while_its_copy_is_busy() {
+        let directory = tempfile::tempdir().unwrap();
+        let linger = Duration::from_secs(1);
+        let staging = Staging::new(directory.path(), &directory.path().join("kept")).unwrap().with_folder_linger(linger);
+        // Dolphin makes every folder of a copy first, then copies the files.
+        let trip = staging.create_folder(&NodeKey::Upload, "Trip").unwrap();
+        let (one, two) = (staging.create_folder(&trip, "Day 1").unwrap(), staging.create_folder(&trip, "Day 2").unwrap());
+        let (_, writer) = staging.create(&one, "IMG_0001.JPG", false).unwrap();
+        staging.write(writer, 0, b"bytes").unwrap();
+        staging.age(linger * 2);
+        assert_eq!(staging.find_folder(&trip, "Day 2"), Some(two.clone()), "its copy is busy in Day 1, long past the linger");
+        staging.finish_upload(upload(staging.close(writer)), Ok(()));
+        staging.release(writer);
+        assert_eq!(staging.find_folder(&trip, "Day 2"), Some(two), "and Day 1 holds a receipt");
+        staging.age(RECEIPT_LIFETIME + linger);
+        assert!(staging.folders_in(&NodeKey::Upload).is_empty(), "the copy goes whole");
     }
 
     #[test]

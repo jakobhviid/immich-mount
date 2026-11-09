@@ -106,9 +106,13 @@ bridge's folder items, questions, answers, albums and departures. **Verified in 
 server, with Files' own copy: a folder with a subfolder and a text file (Files stops at the text file; after 40
 seconds on its question, Skip All copies the rest into the folders, which stayed); the urgent question stays on
 screen; Make Albums made `Trip` and `Trip › Day 1`, a taken name became `Holiday Mix - 2026-11-09`, and Timeline
-Only made none. Finder's folder copy works on the maintainer's Mac. Open:
+Only made none. On the maintainer's Mac, Finder's folder copy and the app's dialog work. The adversarial review
+(2026-11-09) found no way to lose a photo; it found a folder of a busy copy going too soon (Dolphin and rsync make
+every folder first), a lost answer making a second album, album work stranded by a cancelled poll on macOS, the
+desktop looked for only at login, a question lost to a daemon restart or to a click on its body, and Upload marked
+failing on the Mac by a change of its times. All are fixed, and covered by tests where they can be. Open:
 - Dolphin's folder copy and move, and the question's buttons, in the Plasma VM.
-- The Mac's dialog, on the maintainer's Mac.
+- What macOS does with a copied folder deleted by the extension while it still holds a file it has not handed over.
 
 ## M4. The GNOME app
 

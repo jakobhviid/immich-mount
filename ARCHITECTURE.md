@@ -775,8 +775,15 @@ folders may become albums named by their paths (SPEC.md, "Folders copied into Up
   first photo: it waits for that, and is forgotten after 10 minutes without one.
 - **One portable record** (`immich_mount_core::folder_uploads`): each copy by its folder's name, each folder by its
   path with the Asset ids uploaded in it, the copy's state (copying, asked, albums, timeline) and the albums made.
-  It is plain data, which Linux keeps in memory and macOS in its store, since the system stops the extension
-  between requests. Album work in progress is not kept, so work a stopped process cut short is done again.
+  It is plain data, which macOS keeps in its store, since the system stops the extension between requests, and
+  Linux in the account's cache, so a daemon restarted by a settings change asks again what it was asking (and
+  closes its old notification, whose buttons would answer nobody).
+- **Album work records each step as it happens:** the name chosen for a folder's album before the album is made,
+  then the album. Work done again (an answer lost on the way back, a process stopped midway) finds the album it made
+  by that name and the folder's first photo, so no second, dated album follows. Only a server that cannot be reached
+  or is busy is tried again; any other failure ends the work, with a notification. On macOS the work runs in a task
+  of its own, not in the poll, which the system cancels when it no longer waits: there it was left half done until
+  the extension started again.
 - **Names:** the path joined with ` › `, which reads the same in Immich and in the mount's Albums folder; `/`, which
   a file name cannot hold, would show as `_` there (SPEC.md, "Sanitising"). A taken name gets the day's date, then
   a counter, as the maintainer chose: it says when, where `Trip 2` says nothing. **Not chosen:** adding to an album
@@ -788,12 +795,18 @@ folders may become albums named by their paths (SPEC.md, "Folders copied into Up
   straight into the message list while another was on screen, and on the maintainer's Mac it was easy to ignore.
   - **On Linux** the daemon asks with an urgent notification, which GNOME and Plasma keep on screen until a button
     is pressed (verified in a GNOME 50 VM). It goes over one session connection that both shows the notification
-    and hears the answer, since the desktop sends `ActionInvoked` to the connection that showed it. GNOME shows the
-    body on one line, so its parts are set apart with ` · `. **Not chosen:** a dialog, which the daemon has no
-    window for, and the apps, which may not run (or be installed).
+    and hears the answer, since the desktop sends `ActionInvoked` to the connection that showed it, made when the
+    first question is due: the user service starts at login, often before the desktop serves notifications. A
+    click on the notification itself (its `default` action) answers nothing, and the question is asked again;
+    without that action GNOME closed it as dismissed, which read as Timeline Only. GNOME shows the body on one line,
+    so its parts are set apart with ` · `. **Not chosen:** a dialog, which the daemon has no window for, and the
+    apps, which may not run (or be installed).
   - **On macOS** the menu bar app asks in a dialog, since the extension can show nothing. It floats above other
     apps until one of its two buttons is clicked, and neither answers to a key, so a dialog that comes up while
-    someone types elsewhere is answered on purpose. **Not chosen:** a notification with buttons, which Notification
+    someone types elsewhere is answered on purpose. The app looks for questions in a task of its own, since telling
+    what came of albums first asks macOS whether it may post notifications, and its change signal must not wait on
+    that answer. Copy numbers start from the time in a new store, so after signing out and in an answer meant for
+    a copy of before never reaches one of now. **Not chosen:** a notification with buttons, which Notification
     Center and Focus hide away; and a third button, Cancel (below).
   - Dismissing is an answer (the timeline only), and so is no answer within a day. Asking needs a desktop: a daemon
     without one, or with notifications that carry no buttons, leaves the copy in the timeline only, and
@@ -812,24 +825,32 @@ folders may become albums named by their paths (SPEC.md, "Folders copied into Up
   rewrites what the other wrote. The app looks at its 10-second change signal, and wakes the extension at once
   after an answer.
 - **Folders in the system's terms (macOS):** a copied folder is an item of its own (`upload-folder|Trip|Day 1`),
-  kept in the store until it leaves, since no listing shows it; its uploaded files are answered for from the
-  departures list, as files in Upload are. It leaves once it is empty, untouched for 10 minutes, and holds no file
-  the system keeps after a refusal. Such a folder stays with its file, and may be deleted in Finder, which forgets
-  both.
-- **Folders on Linux:** the staging area keeps each folder with the time something last arrived in it. A folder
-  goes once it holds nothing and nothing arrived for 10 minutes, as long as its copy is remembered, so a copy that
-  paused can go on into it: Files stops at a file Immich does not take until someone answers Skip All, and with a
-  30-second stay the rest of such a copy failed with "No such file or directory" (verified in a GNOME 50 VM). One
-  written into again comes back. A file that did not upload is kept under its folder's path in
-  `not-uploaded/`, so two `IMG_0001.JPG` from two folders stay apart, and no name leads out of that folder. Times
-  and modes set on a folder (`cp -a`, GIO) are taken and ignored, as a staged file's are.
+  kept in the store until it leaves, and listed in its parent and the working set, so the system keeps it however
+  it enumerates; its uploaded files are answered for from the departures list, as files in Upload are. It leaves
+  once it is empty, untouched for 10 minutes, and holds nothing the system keeps: a file counts from the moment it
+  arrives until it uploads, and a refused folder inside it counts too. Such a folder stays, and may be deleted in
+  Finder, which forgets it. Upload and the copied folders take changes to their times and such (the system passes
+  on each change on disk as files come and go) and keep them as they are: refused, the system marked Upload as
+  failing and tried again without end (seen on the maintainer's Mac, macOS 27.2). Finder's `.DS_Store` is no photo
+  and keeps no folder.
+- **Folders on Linux:** the staging area keeps each folder with the time something last arrived in it, and they go
+  per copy: once no file is in any of the copy's folders and nothing arrived in any of them for 10 minutes, as long
+  as the copy is remembered. Files stops at a file Immich does not take until someone answers Skip All, and with a
+  30-second stay the rest of such a copy failed with "No such file or directory" (verified in a GNOME 50 VM); and
+  Dolphin and rsync make every folder of a copy before its first file, so one folder at a time, a folder waiting
+  for its turn went while the copy was busy elsewhere (found by the adversarial review). A file that did not upload
+  is kept under its folder's path in `not-uploaded/`, so two `IMG_0001.JPG` from two folders stay apart, no name
+  leads out of that folder, and where a folder of that path cannot be made the file is kept at the top. Times and
+  modes set on a folder (`cp -a`, GIO) are taken and ignored, as a staged file's are, and no file may take a
+  copied folder's name.
 - **Permissions:** a credential that may not make albums (an API key made for uploads only) gets a notification
-  saying so, and the copy stays in the timeline; a refusal is never tried again, while a server that cannot be
-  reached is, a minute later.
+  saying so, and the copy stays in the timeline.
 - **Settings:** `uploads.folders` (ask, timeline only, albums) is in every app: the Linux apps' preferences show it
   with the Upload switch in a group of their own, and the Mac's Folders pane under Uploads.
-- **Flatpak impact:** none beyond notifications, which a Flatpak sends through the portal, whose notifications carry
-  buttons too.
+- **Flatpak impact:** the question needs notifications with buttons and their answers. The daemon calls
+  `org.freedesktop.Notifications` and hears its `ActionInvoked`; a Flatpak would call the Notification portal
+  instead (`AddNotification`, and the portal's own `ActionInvoked`), which carries buttons too. The record kept in
+  the account's cache follows `XDG_CACHE_HOME`.
 
 ## Signing in
 

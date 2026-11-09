@@ -14,17 +14,30 @@ enum FolderCopies {
     private static let namesShown = 4
     /// The copies asked about in this run of the app. One still waiting at the next start is asked again.
     private static var asked = Set<UInt64>()
+    /// Whether a look is under way: telling waits for macOS's question about notifications, the first time, and the
+    /// change signal must not wait with it.
+    private static var following = false
 
-    /// Ask what waits for an answer, and tell what came of albums. Called at each change signal.
-    static func follow() async {
-        let directory = AppGroup.libraryDirectory.path
-        for notice in takeFolderNotices(directory: directory) {
-            await tell(notice)
+    /// Ask what waits for an answer, and tell what came of albums, in a task of its own. Called at each change signal.
+    static func follow() {
+        guard !following else { return }
+        following = true
+        Task {
+            defer { following = false }
+            let directory = AppGroup.libraryDirectory.path
+            for question in folderQuestions(directory: directory) where !asked.contains(question.copy) {
+                asked.insert(question.copy)
+                ask(question)
+            }
+            for notice in takeFolderNotices(directory: directory) {
+                await tell(notice)
+            }
         }
-        for question in folderQuestions(directory: directory) where !asked.contains(question.copy) {
-            asked.insert(question.copy)
-            ask(question)
-        }
+    }
+
+    /// Forget what was asked: signed out, the next account's copies are its own.
+    static func forget() {
+        asked.removeAll()
     }
 
     /// Pass an answer to the extension, and wake it, so the albums do not wait for the next change signal.
@@ -86,6 +99,9 @@ enum FolderCopies {
             content.title = tr("No albums made from {folder}", ["folder": folder])
             content.body = tr("Immich does not let this account make albums ({permission}). The photos and videos are in the timeline.",
                               ["permission": permission])
+        case let .albumsFailed(folder, reason):
+            content.title = tr("No albums made from {folder}", ["folder": folder])
+            content.body = reason
         }
         let request = UNNotificationRequest(identifier: UUID().uuidString, content: content, trigger: nil)
         try? await UNUserNotificationCenter.current().add(request)

@@ -27,7 +27,7 @@ pub const QUESTION_SECONDS: u64 = 24 * 60 * 60;
 /// a question, such as Files' "Skip All" for a file Immich does not take), and the platforms keep a copied folder
 /// this long once empty, so a copy that paused can go on into it.
 pub const REMEMBER_SECONDS: u64 = 10 * 60;
-/// How long album work that failed (the server unreachable) waits before it is tried again.
+/// How long album work that failed for a while (the server unreachable or busy) waits before it is tried again.
 pub const RETRY_SECONDS: u64 = 60;
 /// Between the folders of an album's name: `Trip › Day 1`. Unlike `/`, which file names cannot hold, it reads the
 /// same in Immich and in the mount's Albums folder.
@@ -101,6 +101,10 @@ struct CopiedFolder {
     /// How many of `assets` the album holds.
     #[serde(default)]
     in_album: usize,
+    /// The name chosen for its album, kept before the album is made: work done again after an answer that never
+    /// came (a request cut off, a stopped process) finds the album by it instead of making a second one.
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    album_name: Option<String>,
 }
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq, serde::Serialize, serde::Deserialize)]
@@ -156,20 +160,30 @@ pub struct AlbumItem {
     pub path: Vec<String>,
     /// The album made of the folder before, to add to; `None` makes one.
     pub album: Option<String>,
+    /// The name chosen for it before, when work on it was cut short: an album of that name holding its first Asset
+    /// is the one made then.
+    pub name: Option<String>,
     /// The Assets to put in it.
     pub assets: Vec<String>,
     /// How many of the folder's Assets the album holds once these are in.
     pub through: usize,
 }
 
-/// One folder's album, made or added to.
+/// One step of album work, recorded as it happens with `FolderUploads::album_progress`, so work cut short is never
+/// done twice.
 #[derive(Debug, Clone, PartialEq, Eq)]
-pub struct MadeAlbum {
-    pub path: Vec<String>,
-    pub album_id: String,
-    /// The name it was made with; `None` when it was added to, or was gone.
-    pub name: Option<String>,
-    pub through: usize,
+pub enum AlbumProgress {
+    /// The name chosen for a folder's album, before the album is made.
+    Named { path: Vec<String>, name: String },
+    /// A folder's album was made (or found, made before), or added to. `name` is the made album's, `None` when an
+    /// album made before was added to or was gone.
+    Made { path: Vec<String>, album_id: String, name: Option<String>, through: usize },
+}
+
+/// Whether album work that failed this way is tried again: the server unreachable or busy. Anything else (no
+/// permission, signed out, a request the server refused) ends it, and the copy stays in the timeline only.
+pub fn tried_again(error: &SourceError) -> bool {
+    matches!(error, SourceError::Offline(_) | SourceError::Busy)
 }
 
 impl FolderCopy {
@@ -195,7 +209,14 @@ impl FolderCopy {
         let index = match self.folders.iter().position(|folder| folder.path == path) {
             Some(index) => index,
             None => {
-                self.folders.push(CopiedFolder { path: path.to_vec(), assets: Vec::new(), not_uploaded: 0, album: None, in_album: 0 });
+                self.folders.push(CopiedFolder {
+                    path: path.to_vec(),
+                    assets: Vec::new(),
+                    not_uploaded: 0,
+                    album: None,
+                    in_album: 0,
+                    album_name: None,
+                });
                 self.folders.len() - 1
             }
         };
@@ -214,6 +235,12 @@ impl FolderCopy {
 }
 
 impl FolderUploads {
+    /// No copies yet, numbering them from `first`: a store made anew (signing out and in) starts from the time, so an
+    /// answer meant for a copy of before never reaches one of now.
+    pub fn numbered_from(first: u64) -> FolderUploads {
+        FolderUploads { copies: Vec::new(), next_id: first.saturating_sub(1) }
+    }
+
     /// The copy that a folder under `top` belongs to: the one still taking arrivals under that name, or a new one.
     fn copy_for(&mut self, top: &str, now: u64) -> &mut FolderCopy {
         let index = match self.copies.iter().position(|copy| copy.top == top && copy.is_active(now)) {
@@ -340,7 +367,8 @@ impl FolderUploads {
         }
     }
 
-    /// The album work waiting in copy `id`, taken: until `albums_made` reports on it, nothing else takes it.
+    /// The album work waiting in copy `id`, taken: until `albums_done` (or `abandon_work`) reports on it, nothing else
+    /// takes it.
     pub fn album_work(&mut self, id: u64) -> Option<AlbumWork> {
         let copy = self.copies.iter_mut().find(|copy| copy.id == id && copy.state == CopyState::Albums && !copy.making)?;
         let items: Vec<AlbumItem> = copy
@@ -350,6 +378,7 @@ impl FolderUploads {
             .map(|folder| AlbumItem {
                 path: folder.path.clone(),
                 album: folder.album.clone(),
+                name: folder.album_name.clone(),
                 // Added to an album made before: only what came since. Made now: everything.
                 assets: if folder.album.is_some() { folder.assets[folder.in_album..].to_vec() } else { folder.assets.clone() },
                 through: folder.assets.len(),
@@ -362,21 +391,36 @@ impl FolderUploads {
         Some(AlbumWork { id, folder: copy.top.clone(), items })
     }
 
-    /// Record what `make_albums` did with copy `id`'s work. `failure` says why the rest was not done: a credential
-    /// that may not make albums ends the work, and the copy stays in the timeline only; anything else is tried again
-    /// after `RETRY_SECONDS`.
-    pub fn albums_made(&mut self, id: u64, made: &[MadeAlbum], failure: Option<&SourceError>, now: u64) {
+    /// Record one step of copy `id`'s album work, as it happens.
+    pub fn album_progress(&mut self, id: u64, progress: &AlbumProgress) {
+        let Some(copy) = self.copies.iter_mut().find(|copy| copy.id == id) else { return };
+        match progress {
+            AlbumProgress::Named { path, name } => copy.folder(path).album_name = Some(name.clone()),
+            AlbumProgress::Made { path, album_id, through, .. } => {
+                let folder = copy.folder(path);
+                folder.album = Some(album_id.clone());
+                folder.in_album = folder.in_album.max(*through);
+            }
+        }
+    }
+
+    /// Copy `id`'s album work ended, with `failure` when it stopped short. A failure for a while (`tried_again`) waits
+    /// `RETRY_SECONDS`; any other ends the work, and the copy stays in the timeline only.
+    pub fn albums_done(&mut self, id: u64, failure: Option<&SourceError>, now: u64) {
         let Some(copy) = self.copies.iter_mut().find(|copy| copy.id == id) else { return };
         copy.making = false;
-        for album in made {
-            let folder = copy.folder(&album.path);
-            folder.album = Some(album.album_id.clone());
-            folder.in_album = folder.in_album.max(album.through);
-        }
         match failure {
-            Some(SourceError::MissingPermission(_) | SourceError::SignedOut) => copy.state = CopyState::Timeline,
-            Some(_) => copy.retry_after = now.saturating_add(RETRY_SECONDS),
+            Some(error) if tried_again(error) => copy.retry_after = now.saturating_add(RETRY_SECONDS),
+            Some(_) => copy.state = CopyState::Timeline,
             None => {}
+        }
+    }
+
+    /// Copy `id`'s album work stopped without an end (its task dropped): it is taken up again later, and what it did
+    /// is in the record already.
+    pub fn abandon_work(&mut self, id: u64) {
+        if let Some(copy) = self.copies.iter_mut().find(|copy| copy.id == id) {
+            copy.making = false;
         }
     }
 }
@@ -389,6 +433,8 @@ pub trait AlbumTarget: Send + Sync {
     fn create_album(&self, name: &str, asset_ids: &[String]) -> impl Future<Output = Result<String, SourceError>> + Send;
     /// Put `asset_ids` in album `album_id`; any already there stay as they are.
     fn add_to_album(&self, album_id: &str, asset_ids: &[String]) -> impl Future<Output = Result<(), SourceError>> + Send;
+    /// The album named exactly `name` that holds `asset_id`, if there is one.
+    fn album_with(&self, name: &str, asset_id: &str) -> impl Future<Output = Result<Option<String>, SourceError>> + Send;
 }
 
 impl<Shared: AlbumTarget> AlbumTarget for Arc<Shared> {
@@ -402,6 +448,10 @@ impl<Shared: AlbumTarget> AlbumTarget for Arc<Shared> {
 
     async fn add_to_album(&self, album_id: &str, asset_ids: &[String]) -> Result<(), SourceError> {
         self.as_ref().add_to_album(album_id, asset_ids).await
+    }
+
+    async fn album_with(&self, name: &str, asset_id: &str) -> Result<Option<String>, SourceError> {
+        self.as_ref().album_with(name, asset_id).await
     }
 }
 
@@ -419,34 +469,54 @@ fn free_name(base: &str, taken: &mut HashSet<String>, today: NaiveDate) -> Strin
 }
 
 /// Do album work: make each folder's album, named by its path and dated where an album has that name already, or add
-/// to the one made before. Returns what was done, for `FolderUploads::albums_made`, and the failure that stopped the
-/// rest. An album made before and deleted since is not made again: someone removed it on purpose.
-pub async fn make_albums(target: &impl AlbumTarget, work: &AlbumWork, today: NaiveDate) -> (Vec<MadeAlbum>, Option<SourceError>) {
-    let mut made = Vec::new();
-    let mut taken = HashSet::new();
-    if work.items.iter().any(|item| item.album.is_none()) {
-        match target.album_names().await {
-            Ok(names) => taken.extend(names.iter().map(|name| clash_key(name))),
-            Err(error) => return (made, Some(error)),
-        }
-    }
+/// to the one made before. Each step is told to `progress` as it happens, a name before its album is made, so work
+/// cut short and done again finds what it made: an album of the chosen name holding the folder's first Asset. An
+/// album made before and deleted since is not made again: someone removed it on purpose. Returns the failure that
+/// stopped it, for `FolderUploads::albums_done`.
+pub async fn make_albums(
+    target: &impl AlbumTarget,
+    work: &AlbumWork,
+    today: NaiveDate,
+    mut progress: impl FnMut(AlbumProgress),
+) -> Result<(), SourceError> {
+    let mut taken: Option<HashSet<String>> = None;
     for item in &work.items {
-        let outcome = match &item.album {
-            Some(album_id) => match target.add_to_album(album_id, &item.assets).await {
-                Ok(()) | Err(SourceError::NotFound) => Ok((album_id.clone(), None)),
-                Err(error) => Err(error),
-            },
+        let made = |album_id: String, name: Option<String>| AlbumProgress::Made {
+            path: item.path.clone(),
+            album_id,
+            name,
+            through: item.through,
+        };
+        if let Some(album_id) = &item.album {
+            match target.add_to_album(album_id, &item.assets).await {
+                Ok(()) | Err(SourceError::NotFound) => progress(made(album_id.clone(), None)),
+                Err(error) => return Err(error),
+            }
+            continue;
+        }
+        let first = item.assets.first().ok_or(SourceError::NotFound)?;
+        if let Some(name) = &item.name {
+            if let Some(album_id) = target.album_with(name, first).await? {
+                target.add_to_album(&album_id, &item.assets).await?;
+                progress(made(album_id, Some(name.clone())));
+                continue;
+            }
+        }
+        let name = match &item.name {
+            Some(name) => name.clone(),
             None => {
-                let name = free_name(&album_name(&item.path), &mut taken, today);
-                target.create_album(&name, &item.assets).await.map(|album_id| (album_id, Some(name)))
+                if taken.is_none() {
+                    taken = Some(target.album_names().await?.iter().map(|name| clash_key(name)).collect());
+                }
+                let name = free_name(&album_name(&item.path), taken.as_mut().expect("just filled"), today);
+                progress(AlbumProgress::Named { path: item.path.clone(), name: name.clone() });
+                name
             }
         };
-        match outcome {
-            Ok((album_id, name)) => made.push(MadeAlbum { path: item.path.clone(), album_id, name, through: item.through }),
-            Err(error) => return (made, Some(error)),
-        }
+        let album_id = target.create_album(&name, &item.assets).await?;
+        progress(made(album_id, Some(name)));
     }
-    (made, None)
+    Ok(())
 }
 
 #[cfg(test)]
@@ -567,6 +637,8 @@ mod tests {
     struct FakeAlbums {
         albums: Mutex<Vec<(String, String, Vec<String>)>>,
         refuse: Mutex<Option<SourceError>>,
+        /// Albums are made, and the answer is lost on the way back.
+        lose_answers: std::sync::atomic::AtomicBool,
     }
 
     impl AlbumTarget for FakeAlbums {
@@ -584,14 +656,22 @@ mod tests {
             let mut albums = self.albums.lock().unwrap();
             let id = format!("album-{}", albums.len() + 1);
             albums.push((id.clone(), name.to_owned(), asset_ids.to_vec()));
+            if self.lose_answers.load(std::sync::atomic::Ordering::SeqCst) {
+                return Err(SourceError::Offline("the connection dropped".into()));
+            }
             Ok(id)
         }
 
         async fn add_to_album(&self, album_id: &str, asset_ids: &[String]) -> Result<(), SourceError> {
             let mut albums = self.albums.lock().unwrap();
             let album = albums.iter_mut().find(|(id, _, _)| id == album_id).ok_or(SourceError::NotFound)?;
-            album.2.extend(asset_ids.iter().cloned());
+            album.2.extend(asset_ids.iter().filter(|asset| !album.2.contains(asset)).cloned().collect::<Vec<_>>());
             Ok(())
+        }
+
+        async fn album_with(&self, name: &str, asset_id: &str) -> Result<Option<String>, SourceError> {
+            let albums = self.albums.lock().unwrap();
+            Ok(albums.iter().find(|(_, album, assets)| album == name && assets.iter().any(|asset| asset == asset_id)).map(|(id, _, _)| id.clone()))
         }
     }
 
@@ -599,12 +679,21 @@ mod tests {
         NaiveDate::from_ymd_opt(2026, 11, 9).unwrap()
     }
 
-    async fn work(uploads: &mut FolderUploads, target: &FakeAlbums, id: u64, now: u64) -> Vec<MadeAlbum> {
+    /// Take copy `id`'s work, do it, and record each step; the names of the albums made.
+    async fn work(uploads: &mut FolderUploads, target: &FakeAlbums, id: u64, now: u64) -> Vec<String> {
         let work = uploads.album_work(id).expect("work waits");
         assert!(uploads.album_work(id).is_none(), "taken: nothing else takes it meanwhile");
-        let (made, failure) = make_albums(target, &work, today()).await;
-        uploads.albums_made(id, &made, failure.as_ref(), now);
-        made
+        let mut steps = Vec::new();
+        let failure = make_albums(target, &work, today(), |step| steps.push(step)).await.err();
+        let mut names = Vec::new();
+        for step in &steps {
+            uploads.album_progress(id, step);
+            if let AlbumProgress::Made { name: Some(name), .. } = step {
+                names.push(name.clone());
+            }
+        }
+        uploads.albums_done(id, failure.as_ref(), now);
+        names
     }
 
     #[tokio::test]
@@ -629,8 +718,7 @@ mod tests {
         }
         let mut uploads = trip();
         uploads.tick(200, FolderChoice::Albums, IDLE);
-        let made = work(&mut uploads, &target, 1, 200).await;
-        let names: Vec<_> = made.iter().map(|album| album.name.clone().unwrap()).collect();
+        let names = work(&mut uploads, &target, 1, 200).await;
         assert_eq!(names, ["Trip - 2026-11-09", "Trip › Day 1 - 2026-11-09 (2)"], "compared ignoring case");
     }
 
@@ -665,18 +753,46 @@ mod tests {
     }
 
     #[tokio::test]
-    async fn without_permission_the_copy_stays_in_the_timeline_and_other_failures_wait() {
+    async fn an_unreachable_server_is_tried_again_and_any_other_failure_ends_the_work() {
+        for (refusal, again) in [
+            (SourceError::MissingPermission(Some("album.create".into())), false),
+            (SourceError::Protocol("400 Bad Request".into()), false),
+            (SourceError::Busy, true),
+        ] {
+            let target = FakeAlbums::default();
+            *target.refuse.lock().unwrap() = Some(SourceError::Offline("unreachable".into()));
+            let mut uploads = trip();
+            uploads.tick(200, FolderChoice::Albums, IDLE);
+            work(&mut uploads, &target, 1, 200).await;
+            assert!(uploads.tick(210, FolderChoice::Albums, IDLE).is_empty(), "waits before trying again");
+            assert_eq!(uploads.tick(200 + RETRY_SECONDS, FolderChoice::Albums, IDLE), [FolderEvent::MakeAlbums(1)]);
+            *target.refuse.lock().unwrap() = Some(refusal.clone());
+            work(&mut uploads, &target, 1, 300).await;
+            let events = uploads.tick(300 + RETRY_SECONDS, FolderChoice::Albums, IDLE);
+            assert_eq!(!events.is_empty(), again, "{refusal:?}");
+        }
+    }
+
+    #[tokio::test]
+    async fn an_album_made_whose_answer_was_lost_is_found_not_made_twice() {
         let target = FakeAlbums::default();
-        *target.refuse.lock().unwrap() = Some(SourceError::Offline("unreachable".into()));
+        target.lose_answers.store(true, std::sync::atomic::Ordering::SeqCst);
         let mut uploads = trip();
         uploads.tick(200, FolderChoice::Albums, IDLE);
-        work(&mut uploads, &target, 1, 200).await;
-        assert!(uploads.tick(210, FolderChoice::Albums, IDLE).is_empty(), "waits before trying again");
-        assert_eq!(uploads.tick(200 + RETRY_SECONDS, FolderChoice::Albums, IDLE), [FolderEvent::MakeAlbums(1)]);
-        *target.refuse.lock().unwrap() = Some(SourceError::MissingPermission(Some("album.create".into())));
-        work(&mut uploads, &target, 1, 300).await;
-        assert!(uploads.tick(300 + RETRY_SECONDS, FolderChoice::Albums, IDLE).is_empty(), "never tried again");
-        assert!(uploads.album_work(1).is_none());
+        assert!(work(&mut uploads, &target, 1, 200).await.is_empty(), "no answer, so nothing known made");
+        target.lose_answers.store(false, std::sync::atomic::Ordering::SeqCst);
+        uploads.tick(200 + RETRY_SECONDS, FolderChoice::Albums, IDLE);
+        assert_eq!(work(&mut uploads, &target, 1, 300).await, ["Trip", "Trip › Day 1"]);
+        let names: Vec<String> = target.albums.lock().unwrap().iter().map(|(_, name, _)| name.clone()).collect();
+        assert_eq!(names, ["Trip", "Trip › Day 1"], "Trip was found by its name and first photo, not made again");
+    }
+
+    #[test]
+    fn a_new_store_numbers_its_copies_from_where_it_is_told() {
+        let mut uploads = FolderUploads::numbered_from(1_000);
+        uploads.uploaded(&path(&["Trip"]), "a1", 100);
+        uploads.tick(200, FolderChoice::Ask, IDLE);
+        assert_eq!(uploads.questions()[0].id, 1_000);
     }
 
     #[tokio::test]
@@ -701,6 +817,8 @@ mod tests {
         let kept: FolderUploads = serde_json::from_str(&serde_json::to_string(&uploads).unwrap()).unwrap();
         let mut again = kept;
         assert!(again.album_work(1).is_some(), "the work in progress is not kept");
+        uploads.abandon_work(1);
+        assert!(uploads.album_work(1).is_some(), "and work dropped in this process is taken up again");
     }
 
     #[test]

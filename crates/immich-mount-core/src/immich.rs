@@ -616,6 +616,13 @@ impl AlbumTarget for ImmichSource {
         self.client.add_assets_to_album(album_id, asset_ids).await.map_err(source_error)?;
         Ok(())
     }
+
+    async fn album_with(&self, name: &str, asset_id: &str) -> Result<Option<String>, SourceError> {
+        self.check_online()?;
+        let filter = immich_api::AlbumFilter { containing_asset: Some(asset_id.to_owned()), ..immich_api::AlbumFilter::default() };
+        let albums = self.client.albums_where(&filter).await.map_err(source_error)?;
+        Ok(albums.into_iter().find(|album| album.name == name).map(|album| album.id))
+    }
 }
 
 /// Whether a watched section's months changed between two polls. A section seen for the first time only takes note.

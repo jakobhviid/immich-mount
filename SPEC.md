@@ -321,18 +321,23 @@ cameras. Clashes are detected case-insensitively, after Unicode NFC normalisatio
 - **After the albums:** what arrives later in the same copy, while it is remembered (10 minutes after its last
   file), joins its albums, and a new folder in it gets one of its own. A folder of the same name copied after that
   is a new copy. An album made by a copy and deleted since is not made again.
-- **Permissions:** making albums needs `album.read`, `album.create` and `albumAsset.create`. Without them, or signed
-  out, a notification says no albums were made, and the copy stays in the timeline only. A server that cannot be
-  reached is tried again a minute later, for up to a day.
-- **The folders leave Upload** once they are empty and nothing arrived in them for 10 minutes, as long as the copy is
-  remembered: their files leave as single files do, and a copy that paused on a question (Files stops at a file
-  Immich does not take until Skip or Skip All) can go on into its folders. An empty one may be removed before then.
+- **Failures:** making albums needs `album.read`, `album.create` and `albumAsset.create`. A server that cannot be
+  reached, or is busy, is tried again a minute later, for up to a day; an album made whose answer was lost is found
+  again by its name and first photo, never made twice. Any other failure (no permission, signed out, a request the
+  server refused) is told in a notification, and the copy stays in the timeline only.
+- **The folders leave Upload** with the rest of their copy, once none of them holds a file and nothing arrived in
+  any of them for 10 minutes, as long as the copy is remembered: their files leave as single files do, and a copy
+  that paused (Files stops at a file Immich does not take until Skip or Skip All), or one whose folders were all
+  made first (Dolphin, rsync), can go on into its folders. An empty one may be removed before then.
 - **Files stops at a file it cannot copy** (one Immich does not take) and asks; Skip All goes on with the rest. A
   copy with nothing uploaded yet waits for its first upload before it is asked about.
-- **Hidden folders** (a name starting with `.`: a thumbnail cache, a version-control folder) are refused, as hidden
-  files are.
+- **Hidden folders** (a name starting with `.`: a thumbnail cache, a version-control folder) are refused, without a
+  notification; a hidden photo still uploads.
 - **On Linux** the daemon asks, as an urgent desktop notification, which stays on screen until a button is
-  pressed or it is dismissed. A file of a copied folder that did not upload is kept under its folder's path:
+  pressed or it is dismissed; a click on the notification itself answers nothing, and it asks again. It looks for
+  the desktop's notifications when a question is due, so a daemon that started before the desktop still asks. A
+  restarted daemon (a settings change) asks again what was being asked, in place of the notification it showed
+  before. A file of a copied folder that did not upload is kept under its folder's path:
   `not-uploaded/Trip/Day 1/IMG_1.JPG`.
 - **On macOS** the menu bar app asks, in a dialog that stays above other apps until one of its two buttons is
   clicked; neither answers to a key, so typing elsewhere cannot answer it. It asks while it runs: a copy that
@@ -481,6 +486,7 @@ A click on the icon shows the menu (`ItemIsMenu`), as the Mac's menu bar item do
 | Metadata store | `~/.cache/immich-mount/<account>/metadata.redb` |
 | Content cache | `~/.cache/immich-mount/<account>/content/`: `<id>.bin` (sparse) and its block map `<id>.blocks`, and `<id>.edges`, the original's first 64 KiB and last 16 KiB |
 | Upload staging | `~/.cache/immich-mount/<account>/staging/` |
+| The folders copied into Upload, followed for their albums | `~/.cache/immich-mount/<account>/folder-copies.json` |
 | Files not uploaded | `~/.local/share/immich-mount/not-uploaded/`; `logout` keeps them |
 | Server thumbnails | `~/.cache/immich-mount/<account>/server-thumbnails/` (Immich's own, by Asset id) |
 | Seeded thumbnails | `$HOME/.cache/thumbnails/{x-large,xx-large}/`, and on KDE `{normal,large}/` too, each URI recorded in `~/.cache/immich-mount/<account>/seeded-thumbnails`; where home is reached through a symlink, under both the resolved and the configured path |
