@@ -1393,7 +1393,7 @@ when opened, eviction under storage pressure, the Finder sidebar and every file 
   system starts it on demand and stops it when idle.
 - **The app** signs in, edits settings and shows status, and keeps changes flowing while it runs (below). It is a
   menu bar app, as Mac apps that keep something in sync are (`LSUIElement`):
-  - **Its menu** starts with what needs doing, when something does ("Sign In…", "Switch On in System Settings…"),
+  - **Its menu** starts with what needs doing, when something does ("Sign In…", "Switch On in Finder…"),
     and otherwise with the connection ("Connected to <server>") and its details in grey lines below, as menu bar
     apps show them: Immich's version, the account, and when the connection was last checked, or why it failed. Then
     Open in Finder, Settings…, Sign Out… (asked first: it removes the location and what was downloaded), About and
@@ -1401,7 +1401,8 @@ when opened, eviction under storage pressure, the Finder sidebar and every file 
   - **Its one window** is for signing in, laid out as Mail's and Internet Accounts' sign-in windows are: the drive,
     a title, and a form with its labels on the left (the server's address, then single sign-on as the main button,
     or an email and password, or an API key). After signing in it shows one step more while the location waits to
-    be switched on, which nothing else on the Mac tells and without which Finder shows nothing, and closes by itself
+    be switched on, which nothing else on the Mac tells and without which Finder shows nothing: Open in Finder as the
+    main button, and Use System Settings Instead beside it (below, "Switching the location on"). It closes by itself
     once the switch is on. It takes each step's height, keeping its top edge, as macOS's own setup windows do; the
     app resizes it after its layout pass, since a window that follows its SwiftUI content during layout is laid out
     again without end as the content changes, which stopped the app (macOS 27). Settings measures each pane once, as
@@ -1490,9 +1491,9 @@ Mac's own apps and its sync apps (Dropbox, OneDrive) lay theirs out:
 - **Folders:** one row per section, its switch beside its date folders (greyed out while the section is hidden), then
   the album layout and file naming, so a section and its date folders are set in one place. Upload is a section too:
   its switch shows or hides the folder, and what is copied into it is uploaded; it has no date folders.
-- **Account:** the connection, as the menu bar menu tells it, then Open in Finder (or Switch On in System
-  Settings…) and Sign Out…, which asks first; with nobody signed in, Sign In…. It repeats the menu, and is where
-  Mac users look for signing out.
+- **Account:** the connection, as the menu bar menu tells it, then Open in Finder (or Switch On in Finder…) and
+  Sign Out…, which asks first; with nobody signed in, Sign In…. It repeats the menu, and is where Mac users look
+  for signing out.
 - **Run from elsewhere than Applications,** each pane says so, as the sign-in window does, and greys out what reaches
   Finder.
 - **Grouped forms,** as System Settings has them; the centred columns of older Mac apps are the fallback should a
@@ -1585,11 +1586,31 @@ Mac and in the release workflow's `macos` job:
 - **One version with Linux:** `apple/build-rust.sh` hands Xcode the release line's version (`ci/version.sh`) and the
   commit count as the build number, which grows with every release; development builds show the same.
 
-Development builds run under a free Personal Team on the maintainer's Mac. Each Mac switches the
-extension on once, in System Settings (General, Login Items & Extensions); no program can do it for the user. The
-app adds the location switched off (verified: `fileproviderctl dump` shows it `enabled: no` until then), and its
-folder is `~/Library/CloudStorage/ImmichMount-<the drive's name without spaces>`, `ImmichMount-ImmichMount` by
-default. Renaming the location moves the folder there, and keeps its items and downloads (verified, macOS 27.0.1).
+Development builds run under a free Personal Team on the maintainer's Mac. The location's folder is
+`~/Library/CloudStorage/ImmichMount-<the drive's name without spaces>`, `ImmichMount-ImmichMount` by default.
+Renaming the location moves the folder there, and keeps its items and downloads (verified, macOS 27.0.1).
+
+**Switching the location on:** macOS keeps a new file provider off until someone switches it on, once per app and
+user account; the locations the app adds after that come up on. The app adds the location switched off (verified:
+`fileproviderctl dump` shows it `enabled: no` until then), and asks for the switch as the step after signing in.
+Not yet seen on the maintainer's Mac (ROADMAP, M7).
+- **Finder's Enable button is the main way.** Open in Finder shows the location, and while it is off Finder offers
+  Enable at the top of the window: one click, where the user is going anyway, with no list to search. Proton
+  Drive's setup ends the same way.
+- **System Settings is the fallback.** Use System Settings Instead, and Open in Finder when the system does not tell
+  where a switched-off location is, open System Settings at its list of file providers
+  (`x-apple.systempreferences:com.apple.ExtensionsPreferences?extensionPointIdentifier=com.apple.fileprovider-nonui`),
+  where Immich Mount has a switch with its name and icon (the extension carries the app's). Login Items &
+  Extensions alone (`x-apple.systempreferences:com.apple.LoginItems-Settings.extension`) opens above that list,
+  and is the address left should System Settings not take the first.
+- **No program can switch it on,** so the install cannot either. The SDK has no call for it (`userEnabled` is
+  read-only), and `pluginkit -e use`, adding the location again and starting the app through Launch Services
+  change nothing (seen in a File Provider spike on macOS 27.0.1, valkyrianlabs/vaulthalla-desktop#2). The disk
+  image runs no code, and the location exists only once signed in.
+- **Not chosen:** System Settings as the main way, where a new app is one row of a long list; and testing mode
+  (`NSFileProviderDomainTestingModeAlwaysEnabled`), which switches a location on with nobody asked but needs the
+  `com.apple.developer.fileprovider.testing-mode` entitlement, made for testing. Device management can choose the
+  apps whose file provider is on from the start (macOS 26.4 and later), on the Macs an organisation manages only.
 
 **Flatpak impact:** none. The Linux edition is unchanged, and the core's additions are platform-free.
 

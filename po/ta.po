@@ -80,27 +80,27 @@ msgid "Immich takes photos and videos only."
 msgstr "Immich படங்களையும் வீடியோக்களையும் மட்டுமே ஏற்கும்."
 
 #: crates/immich-mount-linux/src/tray.rs:68
-#: apple/App/ImmichMountApp.swift:560
+#: apple/App/ImmichMountApp.swift:596
 msgid "Connected to {server}"
 msgstr "{server} உடன் இணைக்கப்பட்டுள்ளது"
 
 #: crates/immich-mount-linux/src/tray.rs:69
-#: apple/App/ImmichMountApp.swift:560
+#: apple/App/ImmichMountApp.swift:596
 msgid "{server} is not reachable"
 msgstr "{server} ஐ அணுக முடியவில்லை"
 
 #: crates/immich-mount-linux/src/tray.rs:71
-#: apple/App/ImmichMountApp.swift:559
+#: apple/App/ImmichMountApp.swift:595
 msgid "Signed in to {server}"
 msgstr "{server} இல் உள்நுழைந்துள்ளீர்கள்"
 
 #: crates/immich-mount-linux/src/tray.rs:79
-#: apple/App/ImmichMountApp.swift:568
+#: apple/App/ImmichMountApp.swift:604
 msgid "Server version: Immich {version}"
 msgstr "சேவையகப் பதிப்பு: Immich {version}"
 
 #: crates/immich-mount-linux/src/tray.rs:82
-#: apple/App/ImmichMountApp.swift:571
+#: apple/App/ImmichMountApp.swift:607
 msgid "Signed in as: {account}"
 msgstr "உள்நுழைந்துள்ள கணக்கு: {account}"
 
@@ -137,17 +137,17 @@ msgstr "டிரைவ்"
 #: crates/immich-mount-desktop/src/preferences.rs:13
 #: crates/immich-mount-gnome/src/window.blp:144
 #: crates/immich-mount-kde/qml/Main.qml:364
-#: apple/App/SettingsView.swift:158
+#: apple/App/SettingsView.swift:168
 msgid "Sections"
 msgstr "பிரிவுகள்"
 
 #: crates/immich-mount-desktop/src/preferences.rs:14
-#: apple/App/SettingsView.swift:160
+#: apple/App/SettingsView.swift:170
 msgid "Date Folders"
 msgstr "தேதிக் கோப்புறைகள்"
 
 #: crates/immich-mount-desktop/src/preferences.rs:16
-#: apple/App/SettingsView.swift:175
+#: apple/App/SettingsView.swift:185
 msgid "Files"
 msgstr "கோப்புகள்"
 
@@ -251,7 +251,7 @@ msgstr "AI பயன்பாடு குறித்த அறிவிப்�
 
 #: crates/immich-mount-gnome/src/main.rs:117
 #: crates/immich-mount-kde/qml/Main.qml:175
-#: apple/App/ImmichMountApp.swift:443
+#: apple/App/ImmichMountApp.swift:452
 msgid "Parts of this project were written with the assistance of AI coding agents. All changes are reviewed by the maintainer."
 msgstr "இந்தத் திட்டத்தின் சில பகுதிகள் AI நிரலாக்க முகவர்களின் உதவியுடன் எழுதப்பட்டன. எல்லா மாற்றங்களையும் பராமரிப்பாளர் மதிப்பாய்வு செய்கிறார்."
 
@@ -516,7 +516,7 @@ msgid "The Immich API layer: {project}"
 msgstr "Immich API அடுக்கு: {project}"
 
 #: crates/immich-mount-kde/qml/Main.qml:171
-#: apple/App/ImmichMountApp.swift:442
+#: apple/App/ImmichMountApp.swift:451
 msgid "AI disclosure"
 msgstr "AI பயன்பாடு குறித்த அறிவிப்பு"
 
@@ -803,12 +803,12 @@ msgid "Original File Names"
 msgstr "அசல் கோப்புப் பெயர்கள்"
 
 #: apple/App/ContentView.swift:19
-#: apple/App/SettingsView.swift:261
+#: apple/App/SettingsView.swift:268
 msgid "Move Immich Mount to Applications"
 msgstr "Immich Mount-ஐ Applications-க்கு நகர்த்து"
 
 #: apple/App/ContentView.swift:20
-#: apple/App/SettingsView.swift:262
+#: apple/App/SettingsView.swift:269
 msgid "Finder's location runs from the Applications folder. Quit Immich Mount, drag it into Applications, then open it from there."
 msgstr "Finder இருப்பிடம் Applications கோப்புறையிலிருந்து மட்டுமே இயங்கும். Immich Mount-ஐ மூடி, அதை Applications-க்கு இழுத்து, பிறகு அங்கிருந்து திறக்கவும்."
 
@@ -828,13 +828,13 @@ msgstr "மின்னஞ்சலையும் கடவுச்சொல�
 msgid "Use an API Key"
 msgstr "API விசையைப் பயன்படுத்துக"
 
-#: apple/App/ContentView.swift:159
+#: apple/App/ContentView.swift:161
 msgid "Switch On Immich Mount"
 msgstr "Immich Mount-ஐ இயக்கு"
 
-#: apple/App/ContentView.swift:160
-msgid "macOS asks once before a new location shows in Finder: switch Immich Mount on in System Settings, under General, Login Items & Extensions, File Providers."
-msgstr "Finder-இல் புதிய இருப்பிடம் தோன்றும் முன் macOS ஒருமுறை கேட்கும்: System Settings-இல் General, Login Items & Extensions, File Providers என்பதன் கீழ் Immich Mount-ஐ இயக்கவும்."
+#: apple/App/ContentView.swift:162
+msgid "macOS asks once before a new location shows in Finder: open it in Finder, then click Enable at the top of the window."
+msgstr "Finder-இல் புதிய இருப்பிடம் தோன்றும் முன் macOS ஒருமுறை கேட்கும்: அதை Finder-இல் திறந்து, சாளரத்தின் மேலே உள்ள Enable-ஐக் கிளிக் செய்யவும்."
 
 #: apple/App/ContentView.swift:91
 msgid "API Key:"
@@ -844,118 +844,119 @@ msgstr "API விசை:"
 msgid "Make one in Immich under Account Settings, API Keys; one that may only read is enough to browse."
 msgstr "Immich-இல் “கணக்கு அமைப்புகள்”, “API விசைகள்” என்பதன் கீழ் ஒன்றை உருவாக்கவும்; உலாவுவதற்குப் படிக்க மட்டுமே அனுமதி உள்ள விசை போதும்."
 
-#: apple/App/ContentView.swift:163
-msgid "Open System Settings"
-msgstr "System Settings-ஐத் திற"
+#: apple/App/ContentView.swift:164
+msgid "Use System Settings Instead"
+msgstr "பதிலாக System Settings-ஐப் பயன்படுத்து"
 
-#: apple/App/ImmichMountApp.swift:158
-msgid "Sign out of Immich Mount?"
-msgstr "Immich Mount-இலிருந்து வெளியேறவா?"
-
-#: apple/App/ImmichMountApp.swift:159
-msgid "Immich Mount leaves Finder, together with the photos and videos downloaded to this Mac. Your library on the server stays as it is."
-msgstr "இந்த Mac-இல் பதிவிறக்கப்பட்ட படங்கள், வீடியோக்களுடன் சேர்ந்து Immich Mount, Finder-இலிருந்து நீங்கும். சேவையகத்தில் உள்ள உங்கள் லைப்ரரி அப்படியே இருக்கும்."
-
-#: apple/App/ImmichMountApp.swift:161
-msgid "Files in Upload that have not reached Immich: {count}. They stay on this Mac, and Finder shows where once you have signed out."
-msgstr "Immich-ஐ இன்னும் சென்றடையாத Upload கோப்புகள்: {count}. அவை இந்த Mac-இலேயே இருக்கும், நீங்கள் வெளியேறியதும் அவை எங்கே உள்ளன என்பதை Finder காட்டும்."
-
-#: apple/App/ImmichMountApp.swift:165
-msgid "Sign Out"
-msgstr "வெளியேறு"
-
-#: apple/App/ImmichMountApp.swift:166
-msgid "Cancel"
-msgstr "ரத்துசெய்"
-
-#: apple/App/ImmichMountApp.swift:181
-msgid "Still signed in"
-msgstr "இன்னும் உள்நுழைந்துள்ளீர்கள்"
-
-#: apple/App/ImmichMountApp.swift:182
-msgid "Finder's location could not be removed, so Immich Mount stays signed in: {error}"
-msgstr "Finder இருப்பிடத்தை அகற்ற முடியவில்லை, எனவே Immich Mount உள்நுழைந்த நிலையிலேயே உள்ளது: {error}"
-
-#: apple/App/ImmichMountApp.swift:432
-msgid "Your Immich photos and videos as a drive in Finder. By Jakob Hviid, under the MIT license."
-msgstr "Finder-இல் ஒரு டிரைவாக உங்கள் Immich படங்களும் வீடியோக்களும். உருவாக்கியவர் Jakob Hviid, MIT உரிமத்தின் கீழ்."
-
-#: apple/App/ImmichMountApp.swift:433
-msgid "Website"
-msgstr "இணையதளம்"
-
-#: apple/App/ImmichMountApp.swift:435
-msgid "Source code"
-msgstr "மூலக் குறியீடு"
-
-#: apple/App/ImmichMountApp.swift:438
-msgid "Inspired by"
-msgstr "உத்வேகம்"
-
-#: apple/App/ImmichMountApp.swift:440
-msgid "The Immich API layer"
-msgstr "Immich API அடுக்கு"
-
-#: apple/App/ImmichMountApp.swift:576
-msgid "Last checked: {time}"
-msgstr "கடைசியாகச் சரிபார்த்தது: {time}"
-
-#: apple/App/ImmichMountApp.swift:578
-msgid "Reason: {reason}"
-msgstr "காரணம்: {reason}"
-
-#: apple/App/ImmichMountApp.swift:578
-msgid "none given"
-msgstr "எதுவும் குறிப்பிடப்படவில்லை"
-
-#: apple/App/ImmichMountApp.swift:664
-msgid "The login item could not be changed: {error}"
-msgstr "உள்நுழைவு உருப்படியை மாற்ற முடியவில்லை: {error}"
-
-#: apple/App/ImmichMountApp.swift:698
-msgid "The server sent an address that cannot be opened."
-msgstr "திறக்க முடியாத ஒரு முகவரியைச் சேவையகம் அனுப்பியது."
-
-#: apple/App/ImmichMountApp.swift:783
-msgid "Finder does not show Immich yet. Is the extension switched on in System Settings? ({error})"
-msgstr "Finder இன்னும் Immich-ஐக் காட்டவில்லை. System Settings-இல் நீட்டிப்பு இயக்கப்பட்டுள்ளதா? ({error})"
-
-#: apple/App/ImmichMountApp.swift:36
-#: apple/App/ImmichMountApp.swift:412
-msgid "About Immich Mount"
-msgstr "Immich Mount பற்றி"
-
-#: apple/App/ImmichMountApp.swift:37
-#: apple/App/ImmichMountApp.swift:405
-msgid "Check for Updates…"
-msgstr "புதுப்பிப்புகளைச் சரிபார்…"
-
-#: apple/App/ImmichMountApp.swift:40
-#: apple/App/ImmichMountApp.swift:403
-msgid "Settings…"
-msgstr "அமைப்புகள்…"
-
-#: apple/App/ImmichMountApp.swift:389
-#: apple/App/SettingsView.swift:218
-msgid "Sign In…"
-msgstr "உள்நுழைக…"
-
-#: apple/App/ImmichMountApp.swift:391
-#: apple/App/SettingsView.swift:238
-msgid "Switch On in System Settings…"
-msgstr "System Settings-இல் இயக்கு…"
-
-#: apple/App/ImmichMountApp.swift:400
-#: apple/App/SettingsView.swift:240
+#: apple/App/ContentView.swift:167
+#: apple/App/ImmichMountApp.swift:410
+#: apple/App/SettingsView.swift:249
 msgid "Open in Finder"
 msgstr "Finder-இல் திற"
 
-#: apple/App/ImmichMountApp.swift:408
-#: apple/App/SettingsView.swift:243
+#: apple/App/ImmichMountApp.swift:167
+msgid "Sign out of Immich Mount?"
+msgstr "Immich Mount-இலிருந்து வெளியேறவா?"
+
+#: apple/App/ImmichMountApp.swift:168
+msgid "Immich Mount leaves Finder, together with the photos and videos downloaded to this Mac. Your library on the server stays as it is."
+msgstr "இந்த Mac-இல் பதிவிறக்கப்பட்ட படங்கள், வீடியோக்களுடன் சேர்ந்து Immich Mount, Finder-இலிருந்து நீங்கும். சேவையகத்தில் உள்ள உங்கள் லைப்ரரி அப்படியே இருக்கும்."
+
+#: apple/App/ImmichMountApp.swift:170
+msgid "Files in Upload that have not reached Immich: {count}. They stay on this Mac, and Finder shows where once you have signed out."
+msgstr "Immich-ஐ இன்னும் சென்றடையாத Upload கோப்புகள்: {count}. அவை இந்த Mac-இலேயே இருக்கும், நீங்கள் வெளியேறியதும் அவை எங்கே உள்ளன என்பதை Finder காட்டும்."
+
+#: apple/App/ImmichMountApp.swift:174
+msgid "Sign Out"
+msgstr "வெளியேறு"
+
+#: apple/App/ImmichMountApp.swift:175
+msgid "Cancel"
+msgstr "ரத்துசெய்"
+
+#: apple/App/ImmichMountApp.swift:190
+msgid "Still signed in"
+msgstr "இன்னும் உள்நுழைந்துள்ளீர்கள்"
+
+#: apple/App/ImmichMountApp.swift:191
+msgid "Finder's location could not be removed, so Immich Mount stays signed in: {error}"
+msgstr "Finder இருப்பிடத்தை அகற்ற முடியவில்லை, எனவே Immich Mount உள்நுழைந்த நிலையிலேயே உள்ளது: {error}"
+
+#: apple/App/ImmichMountApp.swift:441
+msgid "Your Immich photos and videos as a drive in Finder. By Jakob Hviid, under the MIT license."
+msgstr "Finder-இல் ஒரு டிரைவாக உங்கள் Immich படங்களும் வீடியோக்களும். உருவாக்கியவர் Jakob Hviid, MIT உரிமத்தின் கீழ்."
+
+#: apple/App/ImmichMountApp.swift:442
+msgid "Website"
+msgstr "இணையதளம்"
+
+#: apple/App/ImmichMountApp.swift:444
+msgid "Source code"
+msgstr "மூலக் குறியீடு"
+
+#: apple/App/ImmichMountApp.swift:447
+msgid "Inspired by"
+msgstr "உத்வேகம்"
+
+#: apple/App/ImmichMountApp.swift:449
+msgid "The Immich API layer"
+msgstr "Immich API அடுக்கு"
+
+#: apple/App/ImmichMountApp.swift:612
+msgid "Last checked: {time}"
+msgstr "கடைசியாகச் சரிபார்த்தது: {time}"
+
+#: apple/App/ImmichMountApp.swift:614
+msgid "Reason: {reason}"
+msgstr "காரணம்: {reason}"
+
+#: apple/App/ImmichMountApp.swift:614
+msgid "none given"
+msgstr "எதுவும் குறிப்பிடப்படவில்லை"
+
+#: apple/App/ImmichMountApp.swift:700
+msgid "The login item could not be changed: {error}"
+msgstr "உள்நுழைவு உருப்படியை மாற்ற முடியவில்லை: {error}"
+
+#: apple/App/ImmichMountApp.swift:734
+msgid "The server sent an address that cannot be opened."
+msgstr "திறக்க முடியாத ஒரு முகவரியைச் சேவையகம் அனுப்பியது."
+
+#: apple/App/ImmichMountApp.swift:820
+msgid "Finder does not show Immich yet. Is the extension switched on in System Settings? ({error})"
+msgstr "Finder இன்னும் Immich-ஐக் காட்டவில்லை. System Settings-இல் நீட்டிப்பு இயக்கப்பட்டுள்ளதா? ({error})"
+
+#: apple/App/ImmichMountApp.swift:41
+#: apple/App/ImmichMountApp.swift:421
+msgid "About Immich Mount"
+msgstr "Immich Mount பற்றி"
+
+#: apple/App/ImmichMountApp.swift:44
+#: apple/App/ImmichMountApp.swift:414
+msgid "Check for Updates…"
+msgstr "புதுப்பிப்புகளைச் சரிபார்…"
+
+#: apple/App/ImmichMountApp.swift:49
+#: apple/App/ImmichMountApp.swift:412
+msgid "Settings…"
+msgstr "அமைப்புகள்…"
+
+#: apple/App/ImmichMountApp.swift:399
+#: apple/App/SettingsView.swift:227
+msgid "Sign In…"
+msgstr "உள்நுழைக…"
+
+#: apple/App/ImmichMountApp.swift:401
+#: apple/App/SettingsView.swift:247
+msgid "Switch On in Finder…"
+msgstr "Finder-இல் இயக்கு…"
+
+#: apple/App/ImmichMountApp.swift:417
+#: apple/App/SettingsView.swift:252
 msgid "Sign Out…"
 msgstr "வெளியேறு…"
 
-#: apple/App/ImmichMountApp.swift:413
+#: apple/App/ImmichMountApp.swift:422
 msgid "Quit Immich Mount"
 msgstr "Immich Mount-ஐ மூடு"
 
@@ -967,39 +968,39 @@ msgstr "பொது"
 msgid "Folders"
 msgstr "கோப்புறைகள்"
 
-#: apple/App/SettingsView.swift:170
+#: apple/App/SettingsView.swift:180
 msgid "Folder names"
 msgstr "கோப்புறைப் பெயர்கள்"
 
-#: apple/App/SettingsView.swift:173
+#: apple/App/SettingsView.swift:183
 msgid "File names"
 msgstr "கோப்புப் பெயர்கள்"
 
-#: apple/App/SettingsView.swift:217
+#: apple/App/SettingsView.swift:226
 msgid "Not signed in"
 msgstr "உள்நுழையவில்லை"
 
-#: apple/App/SettingsView.swift:117
+#: apple/App/SettingsView.swift:125
 msgid "Open at login"
 msgstr "உள்நுழையும்போது திற"
 
-#: apple/App/SettingsView.swift:118
+#: apple/App/SettingsView.swift:127
 msgid "Check for updates automatically"
 msgstr "புதுப்பிப்புகளைத் தானாகச் சரிபார்"
 
-#: apple/App/SettingsView.swift:123
+#: apple/App/SettingsView.swift:133
 msgid "While Immich Mount runs, in the menu bar, changes in Immich reach Finder within seconds. Updates come from jakob.hviid.phd, signed by the project and notarized by Apple."
 msgstr "Immich Mount மெனு பட்டியில் இயங்கும்போது, Immich-இல் ஏற்படும் மாற்றங்கள் சில வினாடிகளில் Finder-ஐச் சென்றடையும். புதுப்பிப்புகள் jakob.hviid.phd இலிருந்து வருகின்றன, திட்டத்தால் கையொப்பமிடப்பட்டு Apple-ஆல் நோட்டரைஸ் செய்யப்பட்டவை."
 
-#: apple/App/SettingsView.swift:164
+#: apple/App/SettingsView.swift:174
 msgid "Date folders are day folders inside each month in Photos, and year and month folders in the other sections."
 msgstr "Photos இல் தேதிக் கோப்புறைகள் ஒவ்வொரு மாதத்திற்குள்ளும் நாள் கோப்புறைகள், மற்ற பிரிவுகளில் ஆண்டு மற்றும் மாதக் கோப்புறைகள்."
 
-#: apple/App/SettingsView.swift:165
+#: apple/App/SettingsView.swift:175
 msgid "Photos and videos copied into Upload are added to Immich."
 msgstr "Upload இல் நகலெடுக்கப்படும் படங்களும் வீடியோக்களும் Immich இல் சேர்க்கப்படும்."
 
-#: apple/App/SettingsView.swift:177
+#: apple/App/SettingsView.swift:187
 msgid "Finder lists Immich again after each change."
 msgstr "ஒவ்வொரு மாற்றத்திற்குப் பிறகும் Finder Immich ஐ மீண்டும் பட்டியலிடும்."
 

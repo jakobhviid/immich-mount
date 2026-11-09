@@ -18,6 +18,12 @@ between the two. Thank you, Kartax.
 - **[Mimick](https://github.com/nicx17/mimick)** by nicx17 (GPL-3.0), an Immich client for GNOME in Rust: read for
   the further endpoints a Linux client uses (OCR, statistics, places). Nothing is copied: its license differs from
   ours.
+- **[Proton Drive for macOS](https://github.com/ProtonDriveApps/mac-drive)** by Proton (GPL-3.0): read for how a
+  File Provider app has its location switched on, by opening it in Finder for Finder's own Enable button, which
+  the Mac app's setup does too. Nothing is copied: its license differs from ours.
+- **[Zephyr](https://github.com/RISCfuture/Zephyr)** by RISCfuture (MIT), a Dropbox client for macOS, and
+  **[PermissionFlow](https://github.com/jaywcjlove/PermissionFlow)** by jaywcjlove (MIT): the System Settings
+  address that opens its list of file providers, the Mac app's fallback. No code is copied.
 - **[Sparkle](https://sparkle-project.org)** (MIT): the macOS app's updates. Its notice, with those of the parts it
   includes, is in [THIRD-PARTY-NOTICES.md](THIRD-PARTY-NOTICES.md), which the app carries.
 - **The Rust crates we depend on** are listed with their licenses in `THIRD-PARTY-LICENSES.md`, which every

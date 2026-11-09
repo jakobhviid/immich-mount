@@ -38,12 +38,12 @@ libadwaita 1.8 for the GTK one); on a Plasma whose Qt is not Fedora 44's, the GT
 as on Linux; or download `immich-mount-<version>.dmg` from the [download page](https://jakob.hviid.phd/immich-mount/),
 open it, drag Immich Mount into Applications and open it from there (an app opened from the disk image asks to be
 moved first). The cask leaves updates to the app (`auto_updates`), and `--zap` on uninstalling also removes its
-sandbox data. Sign in; the app then asks you to switch Immich
-Mount on once, in System Settings, under General, Login Items & Extensions, File Providers, and closes its window
-when you have. It lives in the menu bar: its menu has the connection, Open in Finder, Settings (with Open at login),
-Sign Out, and Quit. It updates itself: "Check for Updates…" in its menu, or a daily check once you allow it (it asks,
-and Settings has the switch). Replacing the app in Applications with a newer one works too; your sign-in and settings
-stay.
+sandbox data. Sign in; the app then asks you to switch Immich Mount on, once: Open in Finder, then click Enable at
+the top of the Finder window, and the app closes its window. Should Finder show no Enable button, Use System
+Settings Instead opens System Settings at its list of file providers, where Immich Mount has a switch. It lives in
+the menu bar: its menu has the connection, Open in Finder, Settings (with Open at login), Sign Out, and Quit. It
+updates itself: "Check for Updates…" in its menu, or a daily check once you allow it (it asks, and Settings has the
+switch). Replacing the app in Applications with a newer one works too; your sign-in and settings stay.
 
 **Without a desktop, with Homebrew** (x86_64 or ARM): the daemon and CLI alone, as the formula
 `immich-mount-headless`. It and the app hold the same `immich-mount`, so a machine has one or the other. FUSE comes

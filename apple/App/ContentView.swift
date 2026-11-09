@@ -151,16 +151,20 @@ struct SignInForm: View {
 }
 
 /// The step after signing in, while the location waits to be switched on: nothing else on the Mac says so, and
-/// Finder shows nothing until it is. The window closes by itself once it is on.
+/// Finder shows nothing until it is. Finder's own Enable button, at the top of the location's window, is the one
+/// click it takes; System Settings' list of file providers is the way when Finder offers none. The window closes by
+/// itself once it is on.
 struct SwitchOnStep: View {
     @EnvironmentObject private var model: AppModel
 
     var body: some View {
         Title(text: tr("Switch On Immich Mount"),
-              line: tr("macOS asks once before a new location shows in Finder: switch Immich Mount on in System Settings, under General, Login Items & Extensions, File Providers."))
+              line: tr("macOS asks once before a new location shows in Finder: open it in Finder, then click Enable at the top of the window."))
         HStack {
+            Button("Use System Settings Instead") { model.openExtensionSettings() }
+                .buttonStyle(.link)
             Spacer()
-            Button("Open System Settings") { model.openExtensionSettings() }
+            Button("Open in Finder") { Task { await model.showInFinder() } }
                 .keyboardShortcut(.defaultAction)
         }
         .task {

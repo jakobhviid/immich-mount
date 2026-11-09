@@ -103,9 +103,8 @@ brew install --cask jakobhviid/tap/immich-mount
 
 Or download `immich-mount-<version>.dmg` from the [download page](https://jakob.hviid.phd/immich-mount/) or the
 [releases](https://github.com/jakobhviid/immich-mount/releases), open it, drag **Immich Mount** into Applications,
-and open it from there. Sign in,
-then switch Immich Mount on in System Settings, under General, Login Items & Extensions, File Providers, once: the
-app shows the way. It lives in the menu bar, and your library in Finder's sidebar. It updates itself.
+and open it from there. Sign in, then switch Immich Mount on, once: click Open in Finder, then Enable at the top of
+the Finder window. It lives in the menu bar, and your library in Finder's sidebar. It updates itself.
 
 <table><tr>
 <td><img src="docs/screenshots/mac-finder.png" alt="Immich Mount in Finder's sidebar, with Albums, People, Photos, Places and Upload"></td>
@@ -201,6 +200,8 @@ procedures in `.claude/skills/`.
   library as a drive in Finder on macOS. Thank you, Kartax.
 - The Immich API layer started from **[immich-rs](https://github.com/boul2gom/immich-rs)** (MIT), and learned the
   rest of the API from **[ImmichGallery](https://github.com/IGOLz/ImmichGallery)** and **[Mimick](https://github.com/nicx17/mimick)**.
+- The Mac app switches its Finder location on the way **[Proton Drive](https://github.com/ProtonDriveApps/mac-drive)**
+  does, with Finder's own Enable button.
 - **[Immich](https://github.com/immich-app/immich)**, the server all of this talks to.
 - The photographers on **Wikimedia Commons** whose freely licensed photos fill the test server and the screenshots
   ([credited one by one](lab/immich-server/fixtures/ATTRIBUTION.md)).

@@ -80,27 +80,27 @@ msgid "Immich takes photos and videos only."
 msgstr "Immich는 사진과 동영상만 받습니다."
 
 #: crates/immich-mount-linux/src/tray.rs:68
-#: apple/App/ImmichMountApp.swift:560
+#: apple/App/ImmichMountApp.swift:596
 msgid "Connected to {server}"
 msgstr "{server}에 연결됨"
 
 #: crates/immich-mount-linux/src/tray.rs:69
-#: apple/App/ImmichMountApp.swift:560
+#: apple/App/ImmichMountApp.swift:596
 msgid "{server} is not reachable"
 msgstr "{server}에 연결할 수 없음"
 
 #: crates/immich-mount-linux/src/tray.rs:71
-#: apple/App/ImmichMountApp.swift:559
+#: apple/App/ImmichMountApp.swift:595
 msgid "Signed in to {server}"
 msgstr "{server}에 로그인됨"
 
 #: crates/immich-mount-linux/src/tray.rs:79
-#: apple/App/ImmichMountApp.swift:568
+#: apple/App/ImmichMountApp.swift:604
 msgid "Server version: Immich {version}"
 msgstr "서버 버전: Immich {version}"
 
 #: crates/immich-mount-linux/src/tray.rs:82
-#: apple/App/ImmichMountApp.swift:571
+#: apple/App/ImmichMountApp.swift:607
 msgid "Signed in as: {account}"
 msgstr "로그인 계정: {account}"
 
@@ -137,17 +137,17 @@ msgstr "드라이브"
 #: crates/immich-mount-desktop/src/preferences.rs:13
 #: crates/immich-mount-gnome/src/window.blp:144
 #: crates/immich-mount-kde/qml/Main.qml:364
-#: apple/App/SettingsView.swift:158
+#: apple/App/SettingsView.swift:168
 msgid "Sections"
 msgstr "섹션"
 
 #: crates/immich-mount-desktop/src/preferences.rs:14
-#: apple/App/SettingsView.swift:160
+#: apple/App/SettingsView.swift:170
 msgid "Date Folders"
 msgstr "날짜 폴더"
 
 #: crates/immich-mount-desktop/src/preferences.rs:16
-#: apple/App/SettingsView.swift:175
+#: apple/App/SettingsView.swift:185
 msgid "Files"
 msgstr "파일"
 
@@ -251,7 +251,7 @@ msgstr "AI 사용 고지"
 
 #: crates/immich-mount-gnome/src/main.rs:117
 #: crates/immich-mount-kde/qml/Main.qml:175
-#: apple/App/ImmichMountApp.swift:443
+#: apple/App/ImmichMountApp.swift:452
 msgid "Parts of this project were written with the assistance of AI coding agents. All changes are reviewed by the maintainer."
 msgstr "이 프로젝트의 일부는 AI 코딩 에이전트의 도움을 받아 작성되었습니다. 모든 변경 사항은 관리자가 검토합니다."
 
@@ -516,7 +516,7 @@ msgid "The Immich API layer: {project}"
 msgstr "Immich API 계층: {project}"
 
 #: crates/immich-mount-kde/qml/Main.qml:171
-#: apple/App/ImmichMountApp.swift:442
+#: apple/App/ImmichMountApp.swift:451
 msgid "AI disclosure"
 msgstr "AI 사용 고지"
 
@@ -803,12 +803,12 @@ msgid "Original File Names"
 msgstr "원본 파일 이름"
 
 #: apple/App/ContentView.swift:19
-#: apple/App/SettingsView.swift:261
+#: apple/App/SettingsView.swift:268
 msgid "Move Immich Mount to Applications"
 msgstr "Immich Mount를 ‘응용 프로그램’ 폴더로 이동"
 
 #: apple/App/ContentView.swift:20
-#: apple/App/SettingsView.swift:262
+#: apple/App/SettingsView.swift:269
 msgid "Finder's location runs from the Applications folder. Quit Immich Mount, drag it into Applications, then open it from there."
 msgstr "Finder의 위치는 ‘응용 프로그램’ 폴더에서 실행해야 작동합니다. Immich Mount를 종료하고 ‘응용 프로그램’으로 드래그한 다음 그곳에서 여십시오."
 
@@ -828,13 +828,13 @@ msgstr "이메일과 암호 사용"
 msgid "Use an API Key"
 msgstr "API 키 사용"
 
-#: apple/App/ContentView.swift:159
+#: apple/App/ContentView.swift:161
 msgid "Switch On Immich Mount"
 msgstr "Immich Mount 켜기"
 
-#: apple/App/ContentView.swift:160
-msgid "macOS asks once before a new location shows in Finder: switch Immich Mount on in System Settings, under General, Login Items & Extensions, File Providers."
-msgstr "Finder에 새 위치가 표시되기 전에 macOS가 한 번 확인합니다: ‘시스템 설정’ > ‘일반’ > ‘로그인 항목 및 확장 프로그램’ > ‘파일 제공자’에서 Immich Mount를 켜십시오."
+#: apple/App/ContentView.swift:162
+msgid "macOS asks once before a new location shows in Finder: open it in Finder, then click Enable at the top of the window."
+msgstr "Finder에 새 위치가 표시되기 전에 macOS가 한 번 확인합니다: Finder에서 연 다음 윈도우 상단의 ‘활성화’를 클릭하십시오."
 
 #: apple/App/ContentView.swift:91
 msgid "API Key:"
@@ -844,118 +844,119 @@ msgstr "API 키:"
 msgid "Make one in Immich under Account Settings, API Keys; one that may only read is enough to browse."
 msgstr "Immich의 ‘계정 설정’ > ‘API 키’에서 만드십시오. 탐색만 하려면 읽기 전용 키로 충분합니다."
 
-#: apple/App/ContentView.swift:163
-msgid "Open System Settings"
-msgstr "시스템 설정 열기"
+#: apple/App/ContentView.swift:164
+msgid "Use System Settings Instead"
+msgstr "대신 ‘시스템 설정’ 사용"
 
-#: apple/App/ImmichMountApp.swift:158
-msgid "Sign out of Immich Mount?"
-msgstr "Immich Mount에서 로그아웃하겠습니까?"
-
-#: apple/App/ImmichMountApp.swift:159
-msgid "Immich Mount leaves Finder, together with the photos and videos downloaded to this Mac. Your library on the server stays as it is."
-msgstr "Immich Mount가 이 Mac에 다운로드된 사진 및 동영상과 함께 Finder에서 제거됩니다. 서버의 라이브러리는 그대로 유지됩니다."
-
-#: apple/App/ImmichMountApp.swift:161
-msgid "Files in Upload that have not reached Immich: {count}. They stay on this Mac, and Finder shows where once you have signed out."
-msgstr "Upload에 있지만 Immich에 전달되지 않은 파일: {count}. 이 파일들은 이 Mac에 남으며, 로그아웃하면 Finder가 그 위치를 표시합니다."
-
-#: apple/App/ImmichMountApp.swift:165
-msgid "Sign Out"
-msgstr "로그아웃"
-
-#: apple/App/ImmichMountApp.swift:166
-msgid "Cancel"
-msgstr "취소"
-
-#: apple/App/ImmichMountApp.swift:181
-msgid "Still signed in"
-msgstr "여전히 로그인되어 있음"
-
-#: apple/App/ImmichMountApp.swift:182
-msgid "Finder's location could not be removed, so Immich Mount stays signed in: {error}"
-msgstr "Finder의 위치를 제거할 수 없어 Immich Mount가 로그인 상태로 유지됩니다: {error}"
-
-#: apple/App/ImmichMountApp.swift:432
-msgid "Your Immich photos and videos as a drive in Finder. By Jakob Hviid, under the MIT license."
-msgstr "Immich 사진과 동영상을 Finder의 드라이브로 표시합니다. 제작: Jakob Hviid, MIT 라이선스."
-
-#: apple/App/ImmichMountApp.swift:433
-msgid "Website"
-msgstr "웹사이트"
-
-#: apple/App/ImmichMountApp.swift:435
-msgid "Source code"
-msgstr "소스 코드"
-
-#: apple/App/ImmichMountApp.swift:438
-msgid "Inspired by"
-msgstr "영감을 준 프로젝트"
-
-#: apple/App/ImmichMountApp.swift:440
-msgid "The Immich API layer"
-msgstr "Immich API 계층"
-
-#: apple/App/ImmichMountApp.swift:576
-msgid "Last checked: {time}"
-msgstr "마지막 확인: {time}"
-
-#: apple/App/ImmichMountApp.swift:578
-msgid "Reason: {reason}"
-msgstr "이유: {reason}"
-
-#: apple/App/ImmichMountApp.swift:578
-msgid "none given"
-msgstr "제공되지 않음"
-
-#: apple/App/ImmichMountApp.swift:664
-msgid "The login item could not be changed: {error}"
-msgstr "로그인 항목을 변경할 수 없음: {error}"
-
-#: apple/App/ImmichMountApp.swift:698
-msgid "The server sent an address that cannot be opened."
-msgstr "서버가 열 수 없는 주소를 보냈습니다."
-
-#: apple/App/ImmichMountApp.swift:783
-msgid "Finder does not show Immich yet. Is the extension switched on in System Settings? ({error})"
-msgstr "Finder에 아직 Immich가 표시되지 않습니다. ‘시스템 설정’에서 확장 프로그램이 켜져 있습니까? ({error})"
-
-#: apple/App/ImmichMountApp.swift:36
-#: apple/App/ImmichMountApp.swift:412
-msgid "About Immich Mount"
-msgstr "Immich Mount 정보"
-
-#: apple/App/ImmichMountApp.swift:37
-#: apple/App/ImmichMountApp.swift:405
-msgid "Check for Updates…"
-msgstr "업데이트 확인…"
-
-#: apple/App/ImmichMountApp.swift:40
-#: apple/App/ImmichMountApp.swift:403
-msgid "Settings…"
-msgstr "설정…"
-
-#: apple/App/ImmichMountApp.swift:389
-#: apple/App/SettingsView.swift:218
-msgid "Sign In…"
-msgstr "로그인…"
-
-#: apple/App/ImmichMountApp.swift:391
-#: apple/App/SettingsView.swift:238
-msgid "Switch On in System Settings…"
-msgstr "‘시스템 설정’에서 켜기…"
-
-#: apple/App/ImmichMountApp.swift:400
-#: apple/App/SettingsView.swift:240
+#: apple/App/ContentView.swift:167
+#: apple/App/ImmichMountApp.swift:410
+#: apple/App/SettingsView.swift:249
 msgid "Open in Finder"
 msgstr "Finder에서 열기"
 
-#: apple/App/ImmichMountApp.swift:408
-#: apple/App/SettingsView.swift:243
+#: apple/App/ImmichMountApp.swift:167
+msgid "Sign out of Immich Mount?"
+msgstr "Immich Mount에서 로그아웃하겠습니까?"
+
+#: apple/App/ImmichMountApp.swift:168
+msgid "Immich Mount leaves Finder, together with the photos and videos downloaded to this Mac. Your library on the server stays as it is."
+msgstr "Immich Mount가 이 Mac에 다운로드된 사진 및 동영상과 함께 Finder에서 제거됩니다. 서버의 라이브러리는 그대로 유지됩니다."
+
+#: apple/App/ImmichMountApp.swift:170
+msgid "Files in Upload that have not reached Immich: {count}. They stay on this Mac, and Finder shows where once you have signed out."
+msgstr "Upload에 있지만 Immich에 전달되지 않은 파일: {count}. 이 파일들은 이 Mac에 남으며, 로그아웃하면 Finder가 그 위치를 표시합니다."
+
+#: apple/App/ImmichMountApp.swift:174
+msgid "Sign Out"
+msgstr "로그아웃"
+
+#: apple/App/ImmichMountApp.swift:175
+msgid "Cancel"
+msgstr "취소"
+
+#: apple/App/ImmichMountApp.swift:190
+msgid "Still signed in"
+msgstr "여전히 로그인되어 있음"
+
+#: apple/App/ImmichMountApp.swift:191
+msgid "Finder's location could not be removed, so Immich Mount stays signed in: {error}"
+msgstr "Finder의 위치를 제거할 수 없어 Immich Mount가 로그인 상태로 유지됩니다: {error}"
+
+#: apple/App/ImmichMountApp.swift:441
+msgid "Your Immich photos and videos as a drive in Finder. By Jakob Hviid, under the MIT license."
+msgstr "Immich 사진과 동영상을 Finder의 드라이브로 표시합니다. 제작: Jakob Hviid, MIT 라이선스."
+
+#: apple/App/ImmichMountApp.swift:442
+msgid "Website"
+msgstr "웹사이트"
+
+#: apple/App/ImmichMountApp.swift:444
+msgid "Source code"
+msgstr "소스 코드"
+
+#: apple/App/ImmichMountApp.swift:447
+msgid "Inspired by"
+msgstr "영감을 준 프로젝트"
+
+#: apple/App/ImmichMountApp.swift:449
+msgid "The Immich API layer"
+msgstr "Immich API 계층"
+
+#: apple/App/ImmichMountApp.swift:612
+msgid "Last checked: {time}"
+msgstr "마지막 확인: {time}"
+
+#: apple/App/ImmichMountApp.swift:614
+msgid "Reason: {reason}"
+msgstr "이유: {reason}"
+
+#: apple/App/ImmichMountApp.swift:614
+msgid "none given"
+msgstr "제공되지 않음"
+
+#: apple/App/ImmichMountApp.swift:700
+msgid "The login item could not be changed: {error}"
+msgstr "로그인 항목을 변경할 수 없음: {error}"
+
+#: apple/App/ImmichMountApp.swift:734
+msgid "The server sent an address that cannot be opened."
+msgstr "서버가 열 수 없는 주소를 보냈습니다."
+
+#: apple/App/ImmichMountApp.swift:820
+msgid "Finder does not show Immich yet. Is the extension switched on in System Settings? ({error})"
+msgstr "Finder에 아직 Immich가 표시되지 않습니다. ‘시스템 설정’에서 확장 프로그램이 켜져 있습니까? ({error})"
+
+#: apple/App/ImmichMountApp.swift:41
+#: apple/App/ImmichMountApp.swift:421
+msgid "About Immich Mount"
+msgstr "Immich Mount 정보"
+
+#: apple/App/ImmichMountApp.swift:44
+#: apple/App/ImmichMountApp.swift:414
+msgid "Check for Updates…"
+msgstr "업데이트 확인…"
+
+#: apple/App/ImmichMountApp.swift:49
+#: apple/App/ImmichMountApp.swift:412
+msgid "Settings…"
+msgstr "설정…"
+
+#: apple/App/ImmichMountApp.swift:399
+#: apple/App/SettingsView.swift:227
+msgid "Sign In…"
+msgstr "로그인…"
+
+#: apple/App/ImmichMountApp.swift:401
+#: apple/App/SettingsView.swift:247
+msgid "Switch On in Finder…"
+msgstr "Finder에서 켜기…"
+
+#: apple/App/ImmichMountApp.swift:417
+#: apple/App/SettingsView.swift:252
 msgid "Sign Out…"
 msgstr "로그아웃…"
 
-#: apple/App/ImmichMountApp.swift:413
+#: apple/App/ImmichMountApp.swift:422
 msgid "Quit Immich Mount"
 msgstr "Immich Mount 종료"
 
@@ -967,39 +968,39 @@ msgstr "일반"
 msgid "Folders"
 msgstr "폴더"
 
-#: apple/App/SettingsView.swift:170
+#: apple/App/SettingsView.swift:180
 msgid "Folder names"
 msgstr "폴더 이름"
 
-#: apple/App/SettingsView.swift:173
+#: apple/App/SettingsView.swift:183
 msgid "File names"
 msgstr "파일 이름"
 
-#: apple/App/SettingsView.swift:217
+#: apple/App/SettingsView.swift:226
 msgid "Not signed in"
 msgstr "로그인하지 않음"
 
-#: apple/App/SettingsView.swift:117
+#: apple/App/SettingsView.swift:125
 msgid "Open at login"
 msgstr "로그인 시 열기"
 
-#: apple/App/SettingsView.swift:118
+#: apple/App/SettingsView.swift:127
 msgid "Check for updates automatically"
 msgstr "자동으로 업데이트 확인"
 
-#: apple/App/SettingsView.swift:123
+#: apple/App/SettingsView.swift:133
 msgid "While Immich Mount runs, in the menu bar, changes in Immich reach Finder within seconds. Updates come from jakob.hviid.phd, signed by the project and notarized by Apple."
 msgstr "Immich Mount가 메뉴 막대에서 실행되는 동안 Immich의 변경 사항이 몇 초 안에 Finder에 반영됩니다. 업데이트는 jakob.hviid.phd에서 제공되며, 프로젝트가 서명하고 Apple이 공증합니다."
 
-#: apple/App/SettingsView.swift:164
+#: apple/App/SettingsView.swift:174
 msgid "Date folders are day folders inside each month in Photos, and year and month folders in the other sections."
 msgstr "날짜 폴더는 Photos에서는 각 월 안의 일별 폴더이고, 다른 섹션에서는 연도 및 월 폴더입니다."
 
-#: apple/App/SettingsView.swift:165
+#: apple/App/SettingsView.swift:175
 msgid "Photos and videos copied into Upload are added to Immich."
 msgstr "Upload에 복사한 사진과 동영상은 Immich에 추가됩니다."
 
-#: apple/App/SettingsView.swift:177
+#: apple/App/SettingsView.swift:187
 msgid "Finder lists Immich again after each change."
 msgstr "변경할 때마다 Finder가 Immich 목록을 다시 불러옵니다."
 

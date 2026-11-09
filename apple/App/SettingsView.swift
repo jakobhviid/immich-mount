@@ -244,7 +244,7 @@ struct AccountPane: View {
                 Section {
                     HStack {
                         if model.locationSwitchedOff {
-                            Button("Switch On in System Settings…") { model.openExtensionSettings() }
+                            Button("Switch On in Finder…") { Task { await model.showInFinder() } }
                         } else {
                             Button("Open in Finder") { Task { await model.showInFinder() } }
                         }

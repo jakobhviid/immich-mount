@@ -133,8 +133,8 @@ def main(release_file, output, mac_release_file=None, update_file=None, notes_fi
             '<p>Or with <a href="https://brew.sh">Homebrew</a>:</p>'
             '<pre class="command"><code>brew install --cask jakobhviid/tap/immich-mount</code></pre>'
             f'<p class="small">Version {html.escape(mac_release["tagName"].lstrip("v"))}. Open the disk image, drag '
-            'Immich Mount into Applications and open it from there. Sign in, then switch Immich Mount on in System '
-            'Settings, under General, Login Items &amp; Extensions, File Providers: the app shows the way.</p>'
+            'Immich Mount into Applications and open it from there. Sign in, then switch Immich Mount on, once: click '
+            'Open in Finder, then Enable at the top of the Finder window.</p>'
         )
     else:
         macos = (

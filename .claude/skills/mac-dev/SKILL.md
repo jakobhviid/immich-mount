@@ -153,8 +153,9 @@ pkill -f "Immich Mount Dev.app/Contents/MacOS"   # quit it; no Apple events, so 
 `open` from SSH starts the app in the maintainer's session, where the Keychain and File Provider work (verified:
 signed in to the lab server through the tunnel, and added the Finder location).
 
-The extension serves Finder only once the maintainer has switched it on, once per Mac: System Settings, General,
-Login Items & Extensions, File Providers. No command can do it for them.
+The extension serves Finder only once the maintainer has switched it on, once per Mac: Enable at the top of the
+location's Finder window, or its switch in System Settings, General, Login Items & Extensions, File Providers. No
+command can do it for them.
 
 ## Check
 

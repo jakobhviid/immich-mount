@@ -94,7 +94,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate, SPUUpdaterDelegate,
     func applicationDidFinishLaunching(_ notification: Notification) {
         _ = updater
         followWindows()
-        // Back from System Settings, the menu and the window know at once whether the location was switched on.
+        // Back from Finder or System Settings, the menu and the window know at once whether the location is on.
         NotificationCenter.default.addObserver(forName: NSApplication.didBecomeActiveNotification, object: nil, queue: .main) { _ in
             MainActor.assumeIsolated {
                 // In front by right now, the windows need not float (`floatUntilUsed`).
@@ -398,7 +398,7 @@ struct MenuBarMenu: View {
         if model.server == nil {
             Button("Sign In…") { AppDelegate.shared?.showWindow() }
         } else if model.locationSwitchedOff {
-            Button("Switch On in System Settings…") { model.openExtensionSettings() }
+            Button("Switch On in Finder…") { Task { await model.showInFinder() } }
         } else {
             Text(model.statusLine)
         }
@@ -408,7 +408,6 @@ struct MenuBarMenu: View {
         Divider()
         if model.server != nil {
             Button("Open in Finder") { Task { await model.showInFinder() } }
-                .disabled(model.locationSwitchedOff)
         }
         Button("Settings…") { AppDelegate.shared?.showSettings() }
             .keyboardShortcut(",")
@@ -581,7 +580,7 @@ final class AppModel: ObservableObject {
     @Published private(set) var opensAtLogin = SMAppService.mainApp.status == .enabled
     /// What the extension last saw of the server, read again at each change signal.
     @Published private(set) var status = Status.load()
-    /// Whether the location waits to be switched on in System Settings, as it does after signing in.
+    /// Whether the location waits to be switched on, in Finder or System Settings, as it does after signing in.
     @Published private(set) var locationSwitchedOff = false
 
     /// Where the user is: signed out, waiting for the location to be switched on, or using it. The menu bar menu is
@@ -805,26 +804,42 @@ final class AppModel: ObservableObject {
     #endif
 
     /// A Finder window on the location. The sandboxed app may not open the folder itself (macOS answers that it has
-    /// no permission to open it), but it may ask Finder to show it.
+    /// no permission to open it), but it may ask Finder to show it. While the location is switched off, Finder shows
+    /// its Enable button at the top of that window, the one click that switches it on; should the system not tell
+    /// where the location is then, System Settings' list of file providers opens instead.
     func showInFinder() async {
+        let url: URL
         do {
-            guard let url = try await FinderLocation.rootURL() else { return }
-            let scoped = url.startAccessingSecurityScopedResource()
-            defer {
-                if scoped { url.stopAccessingSecurityScopedResource() }
-            }
-            if !NSWorkspace.shared.selectFile(nil, inFileViewerRootedAtPath: url.path) {
-                NSWorkspace.shared.activateFileViewerSelecting([url])
-            }
+            guard let root = try await FinderLocation.rootURL() else { throw CocoaError(.fileNoSuchFile) }
+            url = root
         } catch {
-            message = tr("Finder does not show Immich yet. Is the extension switched on in System Settings? ({error})", ["error": error.localizedDescription])
+            logger.error("Finder was not shown the location: \(String(describing: error), privacy: .public)")
+            if locationSwitchedOff {
+                openExtensionSettings()
+            } else {
+                message = tr("Finder does not show Immich yet. Is the extension switched on in System Settings? ({error})", ["error": error.localizedDescription])
+            }
+            return
+        }
+        let scoped = url.startAccessingSecurityScopedResource()
+        defer {
+            if scoped { url.stopAccessingSecurityScopedResource() }
+        }
+        if !NSWorkspace.shared.selectFile(nil, inFileViewerRootedAtPath: url.path) {
+            NSWorkspace.shared.activateFileViewerSelecting([url])
         }
     }
 
-    /// System Settings at Login Items & Extensions, where the extension is switched on.
+    /// System Settings at its list of file providers, where the extension is switched on too. Naming the extension
+    /// point opens the list itself; Login Items & Extensions alone leaves it to be found by scrolling, and is where
+    /// the app goes should System Settings not take the first address.
     func openExtensionSettings() {
-        if let url = URL(string: "x-apple.systempreferences:com.apple.LoginItems-Settings.extension") {
-            NSWorkspace.shared.open(url)
+        let addresses = [
+            "x-apple.systempreferences:com.apple.ExtensionsPreferences?extensionPointIdentifier=com.apple.fileprovider-nonui",
+            "x-apple.systempreferences:com.apple.LoginItems-Settings.extension",
+        ]
+        for address in addresses {
+            if let url = URL(string: address), NSWorkspace.shared.open(url) { return }
         }
     }
 
