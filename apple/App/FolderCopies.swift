@@ -52,8 +52,8 @@ enum FolderCopies {
     }
 
     /// The question as a dialog, asked from the run loop, as the sign-out question is, so the menu keeps answering
-    /// under it; a second one waits for the first. Neither button answers to Return: a dialog that comes up while
-    /// someone types elsewhere is answered by a click.
+    /// under it; a second one waits for the first. Neither button answers to a key: a dialog that comes up while
+    /// someone types elsewhere is answered by a click, one of the two, on purpose.
     private static func ask(_ question: FolderQuestion) {
         var lines = [tr("Photos and videos in the timeline: {count}", ["count": String(question.uploaded)]),
                      tr("Albums it can make: {albums}", ["albums": names(question.albums)])]

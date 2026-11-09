@@ -792,12 +792,19 @@ folders may become albums named by their paths (SPEC.md, "Folders copied into Up
     body on one line, so its parts are set apart with ` · `. **Not chosen:** a dialog, which the daemon has no
     window for, and the apps, which may not run (or be installed).
   - **On macOS** the menu bar app asks in a dialog, since the extension can show nothing. It floats above other
-    apps until clicked, and neither button answers to Return, so a dialog that comes up while someone types
-    elsewhere is answered on purpose. **Not chosen:** a notification with buttons, which Notification Center and
-    Focus hide away.
+    apps until one of its two buttons is clicked, and neither answers to a key, so a dialog that comes up while
+    someone types elsewhere is answered on purpose. **Not chosen:** a notification with buttons, which Notification
+    Center and Focus hide away; and a third button, Cancel (below).
   - Dismissing is an answer (the timeline only), and so is no answer within a day. Asking needs a desktop: a daemon
     without one, or with notifications that carry no buttons, leaves the copy in the timeline only, and
     `uploads.folders = albums` makes the albums without asking.
+- **Timeline Only is the way out, and a change of mind is another copy.** By the time it asks, the photos are in
+  Immich, so the only choice left is whether albums follow. A copy answered Timeline Only that takes an upload again
+  is asked about again: copying the folder in once more costs nothing, since Immich recognises what it has, and Make
+  Albums takes everything. **Not chosen,** as the maintainer settled: a Cancel that takes the uploads back. The
+  mount never deletes from the library (principles 4 and 5); it would take photos that were in Immich before the
+  copy too; and Immich refuses a photo in its trash, so uploading the folder again would fail until the trash was
+  emptied.
 - **On macOS the question passes through files** in the library's directory (the App Group's `Library/`). The
   extension writes the questions after each poll; the app writes each answer to a file of its own, which the
   extension takes and removes; and the extension leaves what came of the albums for the app to tell, one file

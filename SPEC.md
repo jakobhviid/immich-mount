@@ -309,6 +309,10 @@ cameras. Clashes are detected case-insensitively, after Unicode NFC normalisatio
     notifications without buttons), it is the timeline only.
   - `albums`: the albums are made without asking. `timeline`: none, as for single files.
   - A copy with nothing uploaded (an empty folder, or only refused files) makes no album and asks nothing.
+  - **Timeline Only is the way out:** nothing more happens, and the photos stay in the timeline. Nothing here takes
+    an upload back; a photo uploaded by mistake is deleted in Immich, as any upload is.
+  - **A change of mind is another copy:** a copy answered Timeline Only that is copied into Upload again is asked
+    about again. Immich recognises the photos it has, so nothing is sent twice, and Make Albums takes them all.
 - **Which albums:** one for each folder that directly holds photos or videos that uploaded, holding those (not those
   of the folders inside it). It is named by the folder's path below Upload, joined with ` › `: `Trip`,
   `Trip › Day 1`. A name an album has already (the account's own, or one shared with it, compared ignoring case and
@@ -330,11 +334,11 @@ cameras. Clashes are detected case-insensitively, after Unicode NFC normalisatio
 - **On Linux** the daemon asks, as an urgent desktop notification, which stays on screen until a button is
   pressed or it is dismissed. A file of a copied folder that did not upload is kept under its folder's path:
   `not-uploaded/Trip/Day 1/IMG_1.JPG`.
-- **On macOS** the menu bar app asks, in a dialog that stays above other apps until one of its buttons is clicked;
-  neither answers to Return, so typing elsewhere cannot answer it. It asks while it runs: a copy that settles while
-  it does not is asked about when it next starts. What came of the albums is told in notifications. A file that did
-  not upload stays in its folder in Upload, with its reason, and the folder with it; deleting the folder in Finder
-  lets both go.
+- **On macOS** the menu bar app asks, in a dialog that stays above other apps until one of its two buttons is
+  clicked; neither answers to a key, so typing elsewhere cannot answer it. It asks while it runs: a copy that
+  settles while it does not is asked about when it next starts. What came of the albums is told in notifications.
+  A file that did not upload stays in its folder in Upload, with its reason, and the folder with it; deleting the
+  folder in Finder lets both go.
 
 ## Signing in and credentials
 

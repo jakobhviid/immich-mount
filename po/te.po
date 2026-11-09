@@ -36,49 +36,49 @@ msgid "Immich no longer accepts this sign-in. Open Immich Mount to sign in again
 msgstr "Immich ఇకపై ఈ సైన్ ఇన్‌ను అంగీకరించడం లేదు. మళ్లీ సైన్ ఇన్ చేయడానికి Immich Mount తెరవండి."
 
 #: crates/immich-mount-linux/src/folders.rs:88
-#: apple/App/FolderCopies.swift:63
+#: apple/App/FolderCopies.swift:64
 msgid "Uploaded to Immich: {folder}"
 msgstr "Immichకు అప్‌లోడ్ అయింది: {folder}"
 
 #: crates/immich-mount-linux/src/folders.rs:90
-#: apple/App/FolderCopies.swift:58
+#: apple/App/FolderCopies.swift:59
 msgid "Photos and videos in the timeline: {count}"
 msgstr "టైమ్‌లైన్‌లో ఫోటోలు, వీడియోలు: {count}"
 
 #: crates/immich-mount-linux/src/folders.rs:91
-#: apple/App/FolderCopies.swift:59
+#: apple/App/FolderCopies.swift:60
 msgid "Albums it can make: {albums}"
 msgstr "సృష్టించగల ఆల్బమ్‌లు: {albums}"
 
 #: crates/immich-mount-linux/src/folders.rs:94
-#: apple/App/FolderCopies.swift:61
+#: apple/App/FolderCopies.swift:62
 msgid "Files not uploaded: {count}"
 msgstr "అప్‌లోడ్ కాని ఫైల్‌లు: {count}"
 
 #: crates/immich-mount-linux/src/folders.rs:97
 #: crates/immich-mount-core/src/settings.rs:91
-#: apple/App/FolderCopies.swift:69
+#: apple/App/FolderCopies.swift:70
 msgid "Make Albums"
 msgstr "ఆల్బమ్‌లను సృష్టించండి"
 
 #: crates/immich-mount-linux/src/folders.rs:97
 #: crates/immich-mount-core/src/settings.rs:90
-#: apple/App/FolderCopies.swift:70
+#: apple/App/FolderCopies.swift:71
 msgid "Timeline Only"
 msgstr "టైమ్‌లైన్ మాత్రమే"
 
 #: crates/immich-mount-linux/src/folders.rs:108
-#: apple/App/FolderCopies.swift:83
+#: apple/App/FolderCopies.swift:84
 msgid "Albums made from {folder}"
 msgstr "{folder} నుండి ఆల్బమ్‌లు సృష్టించబడ్డాయి"
 
 #: crates/immich-mount-linux/src/folders.rs:110
-#: apple/App/FolderCopies.swift:86
+#: apple/App/FolderCopies.swift:87
 msgid "No albums made from {folder}"
 msgstr "{folder} నుండి ఆల్బమ్‌లు ఏవీ సృష్టించబడలేదు"
 
 #: crates/immich-mount-linux/src/folders.rs:115
-#: apple/App/FolderCopies.swift:87
+#: apple/App/FolderCopies.swift:88
 msgid "Immich does not let this account make albums ({permission}). The photos and videos are in the timeline."
 msgstr "ఈ ఖాతా ఆల్బమ్‌లను సృష్టించడానికి Immich అనుమతించదు ({permission}). ఫోటోలు, వీడియోలు టైమ్‌లైన్‌లో ఉన్నాయి."
 

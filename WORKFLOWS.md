@@ -273,8 +273,9 @@ folders in the drive keep their English names.
 
   The apps' preferences have it under Uploads, and the Mac's Settings in the Folders pane. Making albums needs an
   API key with `album.read`, `album.create` and `albumAsset.create`; without them a notification says so, and the
-  photos stay in the timeline. On the Mac the menu bar app asks, while it runs; click a button, since Return does
-  not answer it.
+  photos stay in the timeline. On the Mac the menu bar app asks, in a dialog, while it runs. Timeline Only changes
+  nothing more: the photos are already in Immich (delete one there if it was a mistake). Changed your mind? Copy the
+  folder in again: Immich recognises its photos, so nothing is sent twice, and you are asked again.
 - **Cancelling a copy** keeps the part already copied out of Immich: each file's own structure shows whether it
   arrived whole. MTS and M2TS videos cannot tell, so a cut-short one does upload; delete it in Immich. Empty files
   and macOS's `._` companion files are never uploaded.

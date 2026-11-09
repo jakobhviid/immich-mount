@@ -36,49 +36,49 @@ msgid "Immich no longer accepts this sign-in. Open Immich Mount to sign in again
 msgstr "Immich இனி இந்த உள்நுழைவை ஏற்கவில்லை. மீண்டும் உள்நுழைய Immich Mount-ஐத் திறக்கவும்."
 
 #: crates/immich-mount-linux/src/folders.rs:88
-#: apple/App/FolderCopies.swift:63
+#: apple/App/FolderCopies.swift:64
 msgid "Uploaded to Immich: {folder}"
 msgstr "Immich-இல் பதிவேற்றப்பட்டது: {folder}"
 
 #: crates/immich-mount-linux/src/folders.rs:90
-#: apple/App/FolderCopies.swift:58
+#: apple/App/FolderCopies.swift:59
 msgid "Photos and videos in the timeline: {count}"
 msgstr "காலவரிசையில் உள்ள படங்களும் வீடியோக்களும்: {count}"
 
 #: crates/immich-mount-linux/src/folders.rs:91
-#: apple/App/FolderCopies.swift:59
+#: apple/App/FolderCopies.swift:60
 msgid "Albums it can make: {albums}"
 msgstr "உருவாக்கக்கூடிய ஆல்பங்கள்: {albums}"
 
 #: crates/immich-mount-linux/src/folders.rs:94
-#: apple/App/FolderCopies.swift:61
+#: apple/App/FolderCopies.swift:62
 msgid "Files not uploaded: {count}"
 msgstr "பதிவேற்றப்படாத கோப்புகள்: {count}"
 
 #: crates/immich-mount-linux/src/folders.rs:97
 #: crates/immich-mount-core/src/settings.rs:91
-#: apple/App/FolderCopies.swift:69
+#: apple/App/FolderCopies.swift:70
 msgid "Make Albums"
 msgstr "ஆல்பங்களை உருவாக்கு"
 
 #: crates/immich-mount-linux/src/folders.rs:97
 #: crates/immich-mount-core/src/settings.rs:90
-#: apple/App/FolderCopies.swift:70
+#: apple/App/FolderCopies.swift:71
 msgid "Timeline Only"
 msgstr "காலவரிசை மட்டும்"
 
 #: crates/immich-mount-linux/src/folders.rs:108
-#: apple/App/FolderCopies.swift:83
+#: apple/App/FolderCopies.swift:84
 msgid "Albums made from {folder}"
 msgstr "{folder}-இலிருந்து ஆல்பங்கள் உருவாக்கப்பட்டன"
 
 #: crates/immich-mount-linux/src/folders.rs:110
-#: apple/App/FolderCopies.swift:86
+#: apple/App/FolderCopies.swift:87
 msgid "No albums made from {folder}"
 msgstr "{folder}-இலிருந்து ஆல்பங்கள் எதுவும் உருவாக்கப்படவில்லை"
 
 #: crates/immich-mount-linux/src/folders.rs:115
-#: apple/App/FolderCopies.swift:87
+#: apple/App/FolderCopies.swift:88
 msgid "Immich does not let this account make albums ({permission}). The photos and videos are in the timeline."
 msgstr "இந்தக் கணக்கு ஆல்பங்களை உருவாக்க Immich அனுமதிக்கவில்லை ({permission}). படங்களும் வீடியோக்களும் காலவரிசையில் உள்ளன."
 

@@ -254,12 +254,19 @@ impl FolderUploads {
         self.arrived(path, now);
     }
 
-    /// A file in the folder at `path` was uploaded as `asset_id`, or found in the library already.
+    /// A file in the folder at `path` was uploaded as `asset_id`, or found in the library already. A copy answered
+    /// "timeline only" that takes an upload again (the folder copied in once more) is asked about again, so a change
+    /// of mind takes no more than another copy: Immich has the photos, and the album takes them all.
     pub fn uploaded(&mut self, path: &[String], asset_id: &str, now: u64) {
-        if let Some(folder) = self.arrived(path, now) {
-            if !folder.assets.iter().any(|known| known == asset_id) {
-                folder.assets.push(asset_id.to_owned());
-            }
+        let Some(top) = path.first() else { return };
+        let copy = self.copy_for(top, now);
+        copy.last_activity = now;
+        if copy.state == CopyState::Timeline {
+            copy.state = CopyState::Copying;
+        }
+        let folder = copy.folder(path);
+        if !folder.assets.iter().any(|known| known == asset_id) {
+            folder.assets.push(asset_id.to_owned());
         }
     }
 
@@ -515,6 +522,25 @@ mod tests {
         assert!(uploads.answer(1, true));
         assert!(!uploads.answer(1, false), "answered already");
         assert_eq!(uploads.tick(201, FolderChoice::Ask, IDLE), [FolderEvent::MakeAlbums(1)]);
+    }
+
+    #[test]
+    fn copied_again_after_timeline_only_it_is_asked_about_again() {
+        let mut uploads = trip();
+        uploads.tick(200, FolderChoice::Ask, IDLE);
+        assert!(uploads.answer(1, false));
+        assert!(uploads.tick(300, FolderChoice::Ask, IDLE).is_empty(), "the answer stands");
+        // The same folder copied in again: Immich has every photo, and says which.
+        for (folder, asset) in [(&["Trip"][..], "a1"), (&["Trip"][..], "a2"), (&["Trip", "Day 1"][..], "b1")] {
+            uploads.uploaded(&path(folder), asset, 320);
+        }
+        let events = uploads.tick(340, FolderChoice::Ask, IDLE);
+        let [FolderEvent::Ask(question)] = events.as_slice() else { panic!("asked again: {events:?}") };
+        assert_eq!((question.id, question.uploaded), (1, 3), "the same copy, with all its photos");
+        let mut timeline = trip();
+        timeline.tick(200, FolderChoice::Timeline, IDLE);
+        timeline.uploaded(&path(&["Trip"]), "a1", 320);
+        assert!(timeline.tick(340, FolderChoice::Timeline, IDLE).is_empty(), "with `timeline` set, nothing is asked");
     }
 
     #[test]

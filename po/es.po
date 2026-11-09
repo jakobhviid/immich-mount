@@ -36,49 +36,49 @@ msgid "Immich no longer accepts this sign-in. Open Immich Mount to sign in again
 msgstr "Immich ya no acepta este inicio de sesión. Abre Immich Mount para volver a iniciar sesión."
 
 #: crates/immich-mount-linux/src/folders.rs:88
-#: apple/App/FolderCopies.swift:63
+#: apple/App/FolderCopies.swift:64
 msgid "Uploaded to Immich: {folder}"
 msgstr "Subido a Immich: {folder}"
 
 #: crates/immich-mount-linux/src/folders.rs:90
-#: apple/App/FolderCopies.swift:58
+#: apple/App/FolderCopies.swift:59
 msgid "Photos and videos in the timeline: {count}"
 msgstr "Fotos y vídeos en la línea de tiempo: {count}"
 
 #: crates/immich-mount-linux/src/folders.rs:91
-#: apple/App/FolderCopies.swift:59
+#: apple/App/FolderCopies.swift:60
 msgid "Albums it can make: {albums}"
 msgstr "Álbumes que puede crear: {albums}"
 
 #: crates/immich-mount-linux/src/folders.rs:94
-#: apple/App/FolderCopies.swift:61
+#: apple/App/FolderCopies.swift:62
 msgid "Files not uploaded: {count}"
 msgstr "Archivos no subidos: {count}"
 
 #: crates/immich-mount-linux/src/folders.rs:97
 #: crates/immich-mount-core/src/settings.rs:91
-#: apple/App/FolderCopies.swift:69
+#: apple/App/FolderCopies.swift:70
 msgid "Make Albums"
 msgstr "Crear álbumes"
 
 #: crates/immich-mount-linux/src/folders.rs:97
 #: crates/immich-mount-core/src/settings.rs:90
-#: apple/App/FolderCopies.swift:70
+#: apple/App/FolderCopies.swift:71
 msgid "Timeline Only"
 msgstr "Solo la línea de tiempo"
 
 #: crates/immich-mount-linux/src/folders.rs:108
-#: apple/App/FolderCopies.swift:83
+#: apple/App/FolderCopies.swift:84
 msgid "Albums made from {folder}"
 msgstr "Álbumes creados a partir de {folder}"
 
 #: crates/immich-mount-linux/src/folders.rs:110
-#: apple/App/FolderCopies.swift:86
+#: apple/App/FolderCopies.swift:87
 msgid "No albums made from {folder}"
 msgstr "No se crearon álbumes a partir de {folder}"
 
 #: crates/immich-mount-linux/src/folders.rs:115
-#: apple/App/FolderCopies.swift:87
+#: apple/App/FolderCopies.swift:88
 msgid "Immich does not let this account make albums ({permission}). The photos and videos are in the timeline."
 msgstr "Immich no permite que esta cuenta cree álbumes ({permission}). Las fotos y los vídeos están en la línea de tiempo."
 

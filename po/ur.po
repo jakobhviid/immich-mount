@@ -36,49 +36,49 @@ msgid "Immich no longer accepts this sign-in. Open Immich Mount to sign in again
 msgstr "Immich اب یہ سائن ان قبول نہیں کرتا۔ دوبارہ سائن ان کرنے کے لیے Immich Mount کھولیں۔"
 
 #: crates/immich-mount-linux/src/folders.rs:88
-#: apple/App/FolderCopies.swift:63
+#: apple/App/FolderCopies.swift:64
 msgid "Uploaded to Immich: {folder}"
 msgstr "Immich پر اپ لوڈ ہو گیا: {folder}"
 
 #: crates/immich-mount-linux/src/folders.rs:90
-#: apple/App/FolderCopies.swift:58
+#: apple/App/FolderCopies.swift:59
 msgid "Photos and videos in the timeline: {count}"
 msgstr "ٹائم لائن میں تصاویر اور ویڈیوز: {count}"
 
 #: crates/immich-mount-linux/src/folders.rs:91
-#: apple/App/FolderCopies.swift:59
+#: apple/App/FolderCopies.swift:60
 msgid "Albums it can make: {albums}"
 msgstr "بننے والے البم: {albums}"
 
 #: crates/immich-mount-linux/src/folders.rs:94
-#: apple/App/FolderCopies.swift:61
+#: apple/App/FolderCopies.swift:62
 msgid "Files not uploaded: {count}"
 msgstr "اپ لوڈ نہ ہونے والی فائلیں: {count}"
 
 #: crates/immich-mount-linux/src/folders.rs:97
 #: crates/immich-mount-core/src/settings.rs:91
-#: apple/App/FolderCopies.swift:69
+#: apple/App/FolderCopies.swift:70
 msgid "Make Albums"
 msgstr "البم بنائیں"
 
 #: crates/immich-mount-linux/src/folders.rs:97
 #: crates/immich-mount-core/src/settings.rs:90
-#: apple/App/FolderCopies.swift:70
+#: apple/App/FolderCopies.swift:71
 msgid "Timeline Only"
 msgstr "صرف ٹائم لائن"
 
 #: crates/immich-mount-linux/src/folders.rs:108
-#: apple/App/FolderCopies.swift:83
+#: apple/App/FolderCopies.swift:84
 msgid "Albums made from {folder}"
 msgstr "{folder} سے البم بنائے گئے"
 
 #: crates/immich-mount-linux/src/folders.rs:110
-#: apple/App/FolderCopies.swift:86
+#: apple/App/FolderCopies.swift:87
 msgid "No albums made from {folder}"
 msgstr "{folder} سے کوئی البم نہیں بنا"
 
 #: crates/immich-mount-linux/src/folders.rs:115
-#: apple/App/FolderCopies.swift:87
+#: apple/App/FolderCopies.swift:88
 msgid "Immich does not let this account make albums ({permission}). The photos and videos are in the timeline."
 msgstr "Immich اس اکاؤنٹ کو البم بنانے کی اجازت نہیں دیتا ({permission})۔ تصاویر اور ویڈیوز ٹائم لائن میں ہیں۔"
 
