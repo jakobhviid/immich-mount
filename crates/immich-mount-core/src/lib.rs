@@ -6,6 +6,7 @@
 //! come in through traits.
 
 pub mod content;
+pub mod folder_uploads;
 pub mod immich;
 pub mod layout;
 pub mod model;

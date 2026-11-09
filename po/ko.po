@@ -18,89 +18,142 @@ msgstr "Immich가 마운트되지 않음"
 msgid "The keyring stayed locked. Open Immich Mount, or run “immich-mount mount”, to try again."
 msgstr "키링이 잠긴 상태로 남아 있습니다. 다시 시도하려면 Immich Mount를 열거나 “immich-mount mount”를 실행하십시오."
 
-#: crates/immich-mount-linux/src/daemon.rs:300
+#: crates/immich-mount-linux/src/daemon.rs:304
 msgid "Immich is unreachable"
 msgstr "Immich에 연결할 수 없음"
 
-#: crates/immich-mount-linux/src/daemon.rs:301
+#: crates/immich-mount-linux/src/daemon.rs:305
 msgid "The Immich server cannot be reached. Files you opened before stay available."
 msgstr "Immich 서버에 연결할 수 없습니다. 이전에 연 파일은 계속 사용할 수 있습니다."
 
-#: crates/immich-mount-linux/src/daemon.rs:304
+#: crates/immich-mount-linux/src/daemon.rs:308
 #: crates/immich-mount-linux/src/tray.rs:70
 msgid "Signed out of Immich"
 msgstr "Immich에서 로그아웃됨"
 
-#: crates/immich-mount-linux/src/daemon.rs:305
+#: crates/immich-mount-linux/src/daemon.rs:309
 msgid "Immich no longer accepts this sign-in. Open Immich Mount to sign in again."
 msgstr "Immich가 더 이상 이 로그인을 허용하지 않습니다. 다시 로그인하려면 Immich Mount를 여십시오."
 
-#: crates/immich-mount-linux/src/fuse.rs:621
-#: crates/immich-mount-linux/src/fuse.rs:662
-#: crates/immich-mount-linux/src/fuse.rs:668
-#: crates/immich-mount-linux/src/fuse.rs:678
-#: crates/immich-mount-linux/src/fuse.rs:1129
+#: crates/immich-mount-linux/src/folders.rs:88
+#: apple/App/FolderCopies.swift:76
+msgid "Uploaded to Immich: {folder}"
+msgstr "Immich에 업로드됨: {folder}"
+
+#: crates/immich-mount-linux/src/folders.rs:90
+#: apple/App/FolderCopies.swift:77
+msgid "Photos and videos in the timeline: {count}"
+msgstr "타임라인의 사진 및 비디오: {count}"
+
+#: crates/immich-mount-linux/src/folders.rs:91
+#: apple/App/FolderCopies.swift:78
+msgid "Albums it can make: {albums}"
+msgstr "만들 수 있는 앨범: {albums}"
+
+#: crates/immich-mount-linux/src/folders.rs:94
+#: apple/App/FolderCopies.swift:80
+msgid "Files not uploaded: {count}"
+msgstr "업로드되지 않은 파일: {count}"
+
+#: crates/immich-mount-linux/src/folders.rs:96
+#: crates/immich-mount-core/src/settings.rs:91
+#: apple/App/FolderCopies.swift:22
+#: apple/App/FolderCopies.swift:106
+msgid "Make Albums"
+msgstr "앨범 만들기"
+
+#: crates/immich-mount-linux/src/folders.rs:96
+#: crates/immich-mount-core/src/settings.rs:90
+#: apple/App/FolderCopies.swift:23
+#: apple/App/FolderCopies.swift:107
+msgid "Timeline Only"
+msgstr "타임라인만"
+
+#: crates/immich-mount-linux/src/folders.rs:107
+#: apple/App/FolderCopies.swift:118
+msgid "Albums made from {folder}"
+msgstr "{folder}에서 앨범을 만들었습니다"
+
+#: crates/immich-mount-linux/src/folders.rs:109
+#: apple/App/FolderCopies.swift:121
+msgid "No albums made from {folder}"
+msgstr "{folder}에서 앨범을 만들지 않았습니다"
+
+#: crates/immich-mount-linux/src/folders.rs:114
+#: apple/App/FolderCopies.swift:122
+msgid "Immich does not let this account make albums ({permission}). The photos and videos are in the timeline."
+msgstr "Immich가 이 계정의 앨범 생성을 허용하지 않습니다({permission}). 사진과 비디오는 타임라인에 있습니다."
+
+#: crates/immich-mount-linux/src/folders.rs:119
+msgid "Signed out of Immich. The photos and videos are in the timeline."
+msgstr "Immich에서 로그아웃됨. 사진과 비디오는 타임라인에 있습니다."
+
+#: crates/immich-mount-linux/src/fuse.rs:637
+#: crates/immich-mount-linux/src/fuse.rs:681
+#: crates/immich-mount-linux/src/fuse.rs:687
+#: crates/immich-mount-linux/src/fuse.rs:697
+#: crates/immich-mount-linux/src/fuse.rs:1162
 msgid "Not uploaded: {name}"
 msgstr "업로드되지 않음: {name}"
 
-#: crates/immich-mount-linux/src/fuse.rs:621
+#: crates/immich-mount-linux/src/fuse.rs:637
 msgid "The file is incomplete, as if its copy was cancelled."
 msgstr "파일이 불완전합니다. 복사가 취소된 것 같습니다."
 
-#: crates/immich-mount-linux/src/fuse.rs:636
+#: crates/immich-mount-linux/src/fuse.rs:653
 msgid "Uploading {name} to Immich"
 msgstr "{name}을(를) Immich에 업로드하는 중"
 
-#: crates/immich-mount-linux/src/fuse.rs:637
+#: crates/immich-mount-linux/src/fuse.rs:654
 msgid "The copy finishes once Immich has the file."
 msgstr "Immich가 파일을 받으면 복사가 완료됩니다."
 
-#: crates/immich-mount-linux/src/fuse.rs:649
+#: crates/immich-mount-linux/src/fuse.rs:668
 msgid "Immich has this photo already, so nothing was added."
 msgstr "Immich에 이미 이 사진이 있으므로 아무것도 추가되지 않았습니다."
 
-#: crates/immich-mount-linux/src/fuse.rs:650
+#: crates/immich-mount-linux/src/fuse.rs:669
 msgid "Already in Immich: {name}"
 msgstr "이미 Immich에 있음: {name}"
 
-#: crates/immich-mount-linux/src/fuse.rs:659
+#: crates/immich-mount-linux/src/fuse.rs:678
 msgid "{error}. The file is kept in {folder}."
 msgstr "{error}. 파일은 {folder}에 보관됩니다."
 
-#: crates/immich-mount-linux/src/fuse.rs:669
+#: crates/immich-mount-linux/src/fuse.rs:688
 msgid "This computer lets a file operation take at most {seconds} seconds (fs.fuse.default_request_timeout). Set it to 0 for longer uploads. The file is kept in {folder}."
 msgstr "이 컴퓨터는 파일 작업 하나에 최대 {seconds}초만 허용합니다(fs.fuse.default_request_timeout). 더 오래 걸리는 업로드를 허용하려면 0으로 설정하십시오. 파일은 {folder}에 보관됩니다."
 
-#: crates/immich-mount-linux/src/fuse.rs:679
+#: crates/immich-mount-linux/src/fuse.rs:698
 msgid "The upload took too long. The file is kept in {folder}."
 msgstr "업로드 시간이 너무 오래 걸렸습니다. 파일은 {folder}에 보관됩니다."
 
-#: crates/immich-mount-linux/src/fuse.rs:1129
+#: crates/immich-mount-linux/src/fuse.rs:1162
 msgid "Immich takes photos and videos only."
 msgstr "Immich는 사진과 동영상만 받습니다."
 
 #: crates/immich-mount-linux/src/tray.rs:68
-#: apple/App/ImmichMountApp.swift:596
+#: apple/App/ImmichMountApp.swift:616
 msgid "Connected to {server}"
 msgstr "{server}에 연결됨"
 
 #: crates/immich-mount-linux/src/tray.rs:69
-#: apple/App/ImmichMountApp.swift:596
+#: apple/App/ImmichMountApp.swift:616
 msgid "{server} is not reachable"
 msgstr "{server}에 연결할 수 없음"
 
 #: crates/immich-mount-linux/src/tray.rs:71
-#: apple/App/ImmichMountApp.swift:595
+#: apple/App/ImmichMountApp.swift:615
 msgid "Signed in to {server}"
 msgstr "{server}에 로그인됨"
 
 #: crates/immich-mount-linux/src/tray.rs:79
-#: apple/App/ImmichMountApp.swift:604
+#: apple/App/ImmichMountApp.swift:624
 msgid "Server version: Immich {version}"
 msgstr "서버 버전: Immich {version}"
 
 #: crates/immich-mount-linux/src/tray.rs:82
-#: apple/App/ImmichMountApp.swift:607
+#: apple/App/ImmichMountApp.swift:627
 msgid "Signed in as: {account}"
 msgstr "로그인 계정: {account}"
 
@@ -147,20 +200,25 @@ msgid "Date Folders"
 msgstr "날짜 폴더"
 
 #: crates/immich-mount-desktop/src/preferences.rs:16
-#: apple/App/SettingsView.swift:185
+#: apple/App/SettingsView.swift:194
 msgid "Files"
 msgstr "파일"
 
 #: crates/immich-mount-desktop/src/preferences.rs:17
+#: apple/App/SettingsView.swift:183
+msgid "Uploads"
+msgstr "업로드"
+
+#: crates/immich-mount-desktop/src/preferences.rs:18
 msgid "Thumbnails"
 msgstr "썸네일"
 
-#: crates/immich-mount-desktop/src/preferences.rs:18
+#: crates/immich-mount-desktop/src/preferences.rs:19
 #: crates/immich-mount-gnome/src/window.blp:314
 msgid "Cache"
 msgstr "캐시"
 
-#: crates/immich-mount-desktop/src/preferences.rs:19
+#: crates/immich-mount-desktop/src/preferences.rs:20
 msgid "Updates"
 msgstr "업데이트"
 
@@ -251,7 +309,7 @@ msgstr "AI 사용 고지"
 
 #: crates/immich-mount-gnome/src/main.rs:117
 #: crates/immich-mount-kde/qml/Main.qml:175
-#: apple/App/ImmichMountApp.swift:452
+#: apple/App/ImmichMountApp.swift:472
 msgid "Parts of this project were written with the assistance of AI coding agents. All changes are reviewed by the maintainer."
 msgstr "이 프로젝트의 일부는 AI 코딩 에이전트의 도움을 받아 작성되었습니다. 모든 변경 사항은 관리자가 검토합니다."
 
@@ -516,7 +574,7 @@ msgid "The Immich API layer: {project}"
 msgstr "Immich API 계층: {project}"
 
 #: crates/immich-mount-kde/qml/Main.qml:171
-#: apple/App/ImmichMountApp.swift:451
+#: apple/App/ImmichMountApp.swift:471
 msgid "AI disclosure"
 msgstr "AI 사용 고지"
 
@@ -674,141 +732,150 @@ msgstr "연결 해제"
 msgid "Immich Mount is an independent, unofficial project. It is not affiliated with, endorsed by, or sponsored by the Immich project or FUTO."
 msgstr "Immich Mount는 독립적인 비공식 프로젝트입니다. Immich 프로젝트나 FUTO와 제휴 관계가 없으며, 이들의 보증이나 후원을 받지 않습니다."
 
-#: crates/immich-mount-core/src/settings.rs:50
+#: crates/immich-mount-core/src/settings.rs:51
 msgid "The Immich server; /api is added"
 msgstr "Immich 서버; /api가 자동으로 추가됨"
 
-#: crates/immich-mount-core/src/settings.rs:51
+#: crates/immich-mount-core/src/settings.rs:52
 msgid "Where the mount appears"
 msgstr "마운트가 나타나는 위치"
 
-#: crates/immich-mount-core/src/settings.rs:52
+#: crates/immich-mount-core/src/settings.rs:53
 msgid "The drive's name in the sidebar"
 msgstr "사이드바에 표시되는 드라이브 이름"
 
-#: crates/immich-mount-core/src/settings.rs:53
+#: crates/immich-mount-core/src/settings.rs:54
 msgid "Mount when the session starts"
 msgstr "세션 시작 시 마운트"
 
-#: crates/immich-mount-core/src/settings.rs:54
+#: crates/immich-mount-core/src/settings.rs:55
 msgid "Show the Photos section"
 msgstr "Photos 섹션 표시"
 
-#: crates/immich-mount-core/src/settings.rs:55
+#: crates/immich-mount-core/src/settings.rs:56
 msgid "Show the Albums section"
 msgstr "Albums 섹션 표시"
 
-#: crates/immich-mount-core/src/settings.rs:56
+#: crates/immich-mount-core/src/settings.rs:57
 msgid "Show the People section"
 msgstr "People 섹션 표시"
 
-#: crates/immich-mount-core/src/settings.rs:57
+#: crates/immich-mount-core/src/settings.rs:58
 msgid "Show the Places section"
 msgstr "Places 섹션 표시"
 
-#: crates/immich-mount-core/src/settings.rs:58
+#: crates/immich-mount-core/src/settings.rs:59
 msgid "Show the Favorites section"
 msgstr "Favorites 섹션 표시"
 
-#: crates/immich-mount-core/src/settings.rs:59
+#: crates/immich-mount-core/src/settings.rs:60
 msgid "Show the Archive section"
 msgstr "Archive 섹션 표시"
 
-#: crates/immich-mount-core/src/settings.rs:60
+#: crates/immich-mount-core/src/settings.rs:61
 msgid "Day folders inside months"
 msgstr "월 안의 일별 폴더"
 
-#: crates/immich-mount-core/src/settings.rs:61
+#: crates/immich-mount-core/src/settings.rs:62
 msgid "Year and month folders inside albums"
 msgstr "앨범 안의 연도 및 월 폴더"
 
-#: crates/immich-mount-core/src/settings.rs:62
+#: crates/immich-mount-core/src/settings.rs:63
 msgid "Year and month folders inside people"
 msgstr "인물 안의 연도 및 월 폴더"
 
-#: crates/immich-mount-core/src/settings.rs:63
+#: crates/immich-mount-core/src/settings.rs:64
 msgid "Year and month folders inside cities"
 msgstr "도시 안의 연도 및 월 폴더"
 
-#: crates/immich-mount-core/src/settings.rs:64
+#: crates/immich-mount-core/src/settings.rs:65
 msgid "Year and month folders inside favorites"
 msgstr "즐겨찾기 안의 연도 및 월 폴더"
 
-#: crates/immich-mount-core/src/settings.rs:65
+#: crates/immich-mount-core/src/settings.rs:66
 msgid "Year and month folders inside the archive"
 msgstr "보관함 안의 연도 및 월 폴더"
 
-#: crates/immich-mount-core/src/settings.rs:66
+#: crates/immich-mount-core/src/settings.rs:67
 msgid "How album folders are named and grouped"
 msgstr "앨범 폴더의 이름 지정 및 그룹화 방식"
 
-#: crates/immich-mount-core/src/settings.rs:67
+#: crates/immich-mount-core/src/settings.rs:68
 msgid "How files are named"
 msgstr "파일 이름 지정 방식"
 
-#: crates/immich-mount-core/src/settings.rs:68
+#: crates/immich-mount-core/src/settings.rs:69
 msgid "The content cache's size limit"
 msgstr "콘텐츠 캐시 크기 제한"
 
-#: crates/immich-mount-core/src/settings.rs:69
+#: crates/immich-mount-core/src/settings.rs:70
 msgid "Show the Upload folder, and upload what is copied into it"
 msgstr "Upload 폴더를 표시하고 그 안에 복사한 항목 업로드"
 
-#: crates/immich-mount-core/src/settings.rs:70
+#: crates/immich-mount-core/src/settings.rs:71
+#: apple/App/SettingsView.swift:180
+msgid "Folders copied into Upload"
+msgstr "Upload에 복사한 폴더"
+
+#: crates/immich-mount-core/src/settings.rs:72
 msgid "Also seed 1024 px thumbnails from the preview"
 msgstr "미리 보기에서 1024px 썸네일도 생성"
 
-#: crates/immich-mount-core/src/settings.rs:71
+#: crates/immich-mount-core/src/settings.rs:73
 msgid "Refuse thumbnailer reads of originals"
 msgstr "썸네일 생성기의 원본 읽기 거부"
 
-#: crates/immich-mount-core/src/settings.rs:72
+#: crates/immich-mount-core/src/settings.rs:74
 msgid "Tell me when a new version is out"
 msgstr "새 버전이 나오면 알림"
 
-#: crates/immich-mount-core/src/settings.rs:73
+#: crates/immich-mount-core/src/settings.rs:75
 msgid "Headless only: a 0600 file holding the credential"
 msgstr "헤드리스 전용: 자격 증명을 담은 0600 파일"
 
-#: crates/immich-mount-core/src/settings.rs:79
+#: crates/immich-mount-core/src/settings.rs:81
 msgid "Never"
 msgstr "안 함"
 
-#: crates/immich-mount-core/src/settings.rs:80
+#: crates/immich-mount-core/src/settings.rs:82
 msgid "From 500 Items"
 msgstr "500개 항목부터"
 
-#: crates/immich-mount-core/src/settings.rs:81
+#: crates/immich-mount-core/src/settings.rs:83
 msgid "Always"
 msgstr "항상"
 
-#: crates/immich-mount-core/src/settings.rs:82
+#: crates/immich-mount-core/src/settings.rs:84
 msgid "Year in the Name (2023 - Trip)"
 msgstr "이름에 연도 포함 (2023 - 여행)"
 
-#: crates/immich-mount-core/src/settings.rs:83
+#: crates/immich-mount-core/src/settings.rs:85
 msgid "Year Folders (2023/Trip)"
 msgstr "연도 폴더 (2023/여행)"
 
-#: crates/immich-mount-core/src/settings.rs:84
+#: crates/immich-mount-core/src/settings.rs:86
 msgid "Name Only (Trip)"
 msgstr "이름만 (여행)"
 
-#: crates/immich-mount-core/src/settings.rs:85
+#: crates/immich-mount-core/src/settings.rs:87
 msgid "Date and Time Taken"
 msgstr "촬영 날짜 및 시간"
 
-#: crates/immich-mount-core/src/settings.rs:86
+#: crates/immich-mount-core/src/settings.rs:88
 msgid "Original File Names"
 msgstr "원본 파일 이름"
 
+#: crates/immich-mount-core/src/settings.rs:89
+msgid "Ask Each Time"
+msgstr "매번 묻기"
+
 #: apple/App/ContentView.swift:19
-#: apple/App/SettingsView.swift:268
+#: apple/App/SettingsView.swift:277
 msgid "Move Immich Mount to Applications"
 msgstr "Immich Mount를 ‘응용 프로그램’ 폴더로 이동"
 
 #: apple/App/ContentView.swift:20
-#: apple/App/SettingsView.swift:269
+#: apple/App/SettingsView.swift:278
 msgid "Finder's location runs from the Applications folder. Quit Immich Mount, drag it into Applications, then open it from there."
 msgstr "Finder의 위치는 ‘응용 프로그램’ 폴더에서 실행해야 작동합니다. Immich Mount를 종료하고 ‘응용 프로그램’으로 드래그한 다음 그곳에서 여십시오."
 
@@ -849,114 +916,114 @@ msgid "Use System Settings Instead"
 msgstr "대신 ‘시스템 설정’ 사용"
 
 #: apple/App/ContentView.swift:167
-#: apple/App/ImmichMountApp.swift:410
-#: apple/App/SettingsView.swift:249
+#: apple/App/ImmichMountApp.swift:430
+#: apple/App/SettingsView.swift:258
 msgid "Open in Finder"
 msgstr "Finder에서 열기"
 
-#: apple/App/ImmichMountApp.swift:167
+#: apple/App/ImmichMountApp.swift:187
 msgid "Sign out of Immich Mount?"
 msgstr "Immich Mount에서 로그아웃하겠습니까?"
 
-#: apple/App/ImmichMountApp.swift:168
+#: apple/App/ImmichMountApp.swift:188
 msgid "Immich Mount leaves Finder, together with the photos and videos downloaded to this Mac. Your library on the server stays as it is."
 msgstr "Immich Mount가 이 Mac에 다운로드된 사진 및 동영상과 함께 Finder에서 제거됩니다. 서버의 라이브러리는 그대로 유지됩니다."
 
-#: apple/App/ImmichMountApp.swift:170
+#: apple/App/ImmichMountApp.swift:190
 msgid "Files in Upload that have not reached Immich: {count}. They stay on this Mac, and Finder shows where once you have signed out."
 msgstr "Upload에 있지만 Immich에 전달되지 않은 파일: {count}. 이 파일들은 이 Mac에 남으며, 로그아웃하면 Finder가 그 위치를 표시합니다."
 
-#: apple/App/ImmichMountApp.swift:174
+#: apple/App/ImmichMountApp.swift:194
 msgid "Sign Out"
 msgstr "로그아웃"
 
-#: apple/App/ImmichMountApp.swift:175
+#: apple/App/ImmichMountApp.swift:195
 msgid "Cancel"
 msgstr "취소"
 
-#: apple/App/ImmichMountApp.swift:190
+#: apple/App/ImmichMountApp.swift:210
 msgid "Still signed in"
 msgstr "여전히 로그인되어 있음"
 
-#: apple/App/ImmichMountApp.swift:191
+#: apple/App/ImmichMountApp.swift:211
 msgid "Finder's location could not be removed, so Immich Mount stays signed in: {error}"
 msgstr "Finder의 위치를 제거할 수 없어 Immich Mount가 로그인 상태로 유지됩니다: {error}"
 
-#: apple/App/ImmichMountApp.swift:441
+#: apple/App/ImmichMountApp.swift:461
 msgid "Your Immich photos and videos as a drive in Finder. By Jakob Hviid, under the MIT license."
 msgstr "Immich 사진과 동영상을 Finder의 드라이브로 표시합니다. 제작: Jakob Hviid, MIT 라이선스."
 
-#: apple/App/ImmichMountApp.swift:442
+#: apple/App/ImmichMountApp.swift:462
 msgid "Website"
 msgstr "웹사이트"
 
-#: apple/App/ImmichMountApp.swift:444
+#: apple/App/ImmichMountApp.swift:464
 msgid "Source code"
 msgstr "소스 코드"
 
-#: apple/App/ImmichMountApp.swift:447
+#: apple/App/ImmichMountApp.swift:467
 msgid "Inspired by"
 msgstr "영감을 준 프로젝트"
 
-#: apple/App/ImmichMountApp.swift:449
+#: apple/App/ImmichMountApp.swift:469
 msgid "The Immich API layer"
 msgstr "Immich API 계층"
 
-#: apple/App/ImmichMountApp.swift:612
+#: apple/App/ImmichMountApp.swift:632
 msgid "Last checked: {time}"
 msgstr "마지막 확인: {time}"
 
-#: apple/App/ImmichMountApp.swift:614
+#: apple/App/ImmichMountApp.swift:634
 msgid "Reason: {reason}"
 msgstr "이유: {reason}"
 
-#: apple/App/ImmichMountApp.swift:614
+#: apple/App/ImmichMountApp.swift:634
 msgid "none given"
 msgstr "제공되지 않음"
 
-#: apple/App/ImmichMountApp.swift:700
+#: apple/App/ImmichMountApp.swift:721
 msgid "The login item could not be changed: {error}"
 msgstr "로그인 항목을 변경할 수 없음: {error}"
 
-#: apple/App/ImmichMountApp.swift:734
+#: apple/App/ImmichMountApp.swift:755
 msgid "The server sent an address that cannot be opened."
 msgstr "서버가 열 수 없는 주소를 보냈습니다."
 
-#: apple/App/ImmichMountApp.swift:820
+#: apple/App/ImmichMountApp.swift:841
 msgid "Finder does not show Immich yet. Is the extension switched on in System Settings? ({error})"
 msgstr "Finder에 아직 Immich가 표시되지 않습니다. ‘시스템 설정’에서 확장 프로그램이 켜져 있습니까? ({error})"
 
-#: apple/App/ImmichMountApp.swift:41
-#: apple/App/ImmichMountApp.swift:421
+#: apple/App/ImmichMountApp.swift:42
+#: apple/App/ImmichMountApp.swift:441
 msgid "About Immich Mount"
 msgstr "Immich Mount 정보"
 
-#: apple/App/ImmichMountApp.swift:44
-#: apple/App/ImmichMountApp.swift:414
+#: apple/App/ImmichMountApp.swift:45
+#: apple/App/ImmichMountApp.swift:434
 msgid "Check for Updates…"
 msgstr "업데이트 확인…"
 
-#: apple/App/ImmichMountApp.swift:49
-#: apple/App/ImmichMountApp.swift:412
+#: apple/App/ImmichMountApp.swift:50
+#: apple/App/ImmichMountApp.swift:432
 msgid "Settings…"
 msgstr "설정…"
 
-#: apple/App/ImmichMountApp.swift:399
-#: apple/App/SettingsView.swift:227
+#: apple/App/ImmichMountApp.swift:419
+#: apple/App/SettingsView.swift:236
 msgid "Sign In…"
 msgstr "로그인…"
 
-#: apple/App/ImmichMountApp.swift:401
-#: apple/App/SettingsView.swift:247
+#: apple/App/ImmichMountApp.swift:421
+#: apple/App/SettingsView.swift:256
 msgid "Switch On in Finder…"
 msgstr "Finder에서 켜기…"
 
-#: apple/App/ImmichMountApp.swift:417
-#: apple/App/SettingsView.swift:252
+#: apple/App/ImmichMountApp.swift:437
+#: apple/App/SettingsView.swift:261
 msgid "Sign Out…"
 msgstr "로그아웃…"
 
-#: apple/App/ImmichMountApp.swift:422
+#: apple/App/ImmichMountApp.swift:442
 msgid "Quit Immich Mount"
 msgstr "Immich Mount 종료"
 
@@ -968,15 +1035,15 @@ msgstr "일반"
 msgid "Folders"
 msgstr "폴더"
 
-#: apple/App/SettingsView.swift:180
+#: apple/App/SettingsView.swift:189
 msgid "Folder names"
 msgstr "폴더 이름"
 
-#: apple/App/SettingsView.swift:183
+#: apple/App/SettingsView.swift:192
 msgid "File names"
 msgstr "파일 이름"
 
-#: apple/App/SettingsView.swift:226
+#: apple/App/SettingsView.swift:235
 msgid "Not signed in"
 msgstr "로그인하지 않음"
 
@@ -1000,7 +1067,11 @@ msgstr "날짜 폴더는 Photos에서는 각 월 안의 일별 폴더이고, 다
 msgid "Photos and videos copied into Upload are added to Immich."
 msgstr "Upload에 복사한 사진과 동영상은 Immich에 추가됩니다."
 
-#: apple/App/SettingsView.swift:187
+#: apple/App/SettingsView.swift:185
+msgid "Every photo and video in them is added to Immich. An album is named by its folder's path, such as Trip › Day 1."
+msgstr "그 안의 모든 사진과 비디오가 Immich에 추가됩니다. 앨범 이름은 폴더 경로를 따릅니다(예: 여행 › 1일차)."
+
+#: apple/App/SettingsView.swift:196
 msgid "Finder lists Immich again after each change."
 msgstr "변경할 때마다 Finder가 Immich 목록을 다시 불러옵니다."
 

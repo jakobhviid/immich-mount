@@ -145,8 +145,9 @@ printf '%s' "$KEY" | immich-mount login --server https://photos.example.org --ap
 
 Without a terminal, `login` never prompts. Browser sign-in still prints the address to open on stderr, and reads
 the address the browser ends on from stdin; the other methods read their secrets from stdin. An API key needs
-`album.read`, `asset.read`, `asset.view`, `asset.download` and `person.read`, plus `asset.upload` for uploads, and
-`user.read` for the app and `status` to name the account.
+`album.read`, `asset.read`, `asset.view`, `asset.download` and `person.read`, plus `asset.upload` for uploads,
+`album.create` and `albumAsset.create` for albums of folders copied into Upload, and `user.read` for the app and
+`status` to name the account.
 
 ## 3. The mount
 
@@ -257,7 +258,20 @@ folders in the drive keep their English names.
 - **Already in library:** a file whose content already exists counts as done, adds nothing, and a notification says
   so (a photo copied from the mount itself, say). A file matching something in the Immich
   trash is refused; restore it in Immich if you want it.
-- Folders and non-media files are refused, with a notification explaining why.
+- Non-media files and hidden folders are refused, with a notification explaining why.
+- **Folders** go in whole: copy a folder (with folders inside it, if you like) into Upload, and every photo and video
+  in it uploads as it arrives. Once the copy has finished, a notification asks whether to make albums of it too:
+  **Make Albums** gives each folder that holds photos an album named by its path (`Trip`, `Trip › Day 1`), dated if
+  the name is taken (`Trip - 2026-11-09`); **Timeline Only**, or dismissing it, makes none. The folders leave Upload
+  once their files have. To decide once for all copies:
+
+  ```sh
+  immich-mount configure set uploads.folders albums      # always make the albums; `timeline` never; `ask` asks
+  ```
+
+  The apps' preferences have it under Uploads, and the Mac's Settings in the Folders pane. Making albums needs an
+  API key with `album.read`, `album.create` and `albumAsset.create`; without them a notification says so, and the
+  photos stay in the timeline. On the Mac the menu bar app asks, while it runs.
 - **Cancelling a copy** keeps the part already copied out of Immich: each file's own structure shows whether it
   arrived whole. MTS and M2TS videos cannot tell, so a cut-short one does upload; delete it in Immich. Empty files
   and macOS's `._` companion files are never uploaded.

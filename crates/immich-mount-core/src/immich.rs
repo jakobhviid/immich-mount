@@ -15,6 +15,7 @@ use futures_util::StreamExt;
 use immich_api::{ApiError, AssetQuery, Client, Fetched, ThumbnailSize, TimelineScope, Visibility};
 
 use crate::content::{ContentSource, RangeBytes};
+use crate::folder_uploads::AlbumTarget;
 use crate::model::{Album, Asset, Person, YearMonth};
 use crate::source::{LibraryChanges, LibrarySource, SourceError, ThumbnailKind, ThumbnailSource, Watched};
 use crate::uploads::{MediaTypes, UploadError, UploadTarget, Uploaded};
@@ -592,6 +593,28 @@ impl UploadTarget for ImmichSource {
             self.note_outcome::<()>(&Err(error.clone()));
         }
         result
+    }
+}
+
+/// Albums of the folders copied into Upload (ARCHITECTURE.md, "Folders copied into Upload"). Making one needs
+/// `album.read` (for the names taken), `album.create` and `albumAsset.create`.
+impl AlbumTarget for ImmichSource {
+    async fn album_names(&self) -> Result<Vec<String>, SourceError> {
+        self.check_online()?;
+        let albums = self.client.albums().await.map_err(source_error)?;
+        Ok(albums.into_iter().map(|album| album.name).collect())
+    }
+
+    async fn create_album(&self, name: &str, asset_ids: &[String]) -> Result<String, SourceError> {
+        self.check_online()?;
+        let album = immich_api::NewAlbum { name: name.to_owned(), asset_ids: asset_ids.to_vec(), ..immich_api::NewAlbum::default() };
+        Ok(self.client.create_album(&album).await.map_err(source_error)?.id)
+    }
+
+    async fn add_to_album(&self, album_id: &str, asset_ids: &[String]) -> Result<(), SourceError> {
+        self.check_online()?;
+        self.client.add_assets_to_album(album_id, asset_ids).await.map_err(source_error)?;
+        Ok(())
     }
 }
 

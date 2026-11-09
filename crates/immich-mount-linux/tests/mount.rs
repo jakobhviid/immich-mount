@@ -9,6 +9,7 @@ use std::time::{Duration, SystemTime};
 
 use chrono::{NaiveDate, TimeZone, Utc};
 use immich_mount_core::content::{BlockCache, ContentSource, RangeBytes};
+use immich_mount_core::folder_uploads::{FolderChoice, FolderEvent, FolderUploads};
 use immich_mount_core::model::{Album, Asset, Person, YearMonth};
 use immich_mount_core::settings::Config;
 use immich_mount_core::source::{LibrarySource, SourceError, ThumbnailKind, ThumbnailSource};
@@ -166,6 +167,8 @@ fn the_mount_lists_and_reads_like_a_normal_folder() {
 /// A library of a small, a medium and a large photo, mounted: the mount point, and what must live as long as the mount.
 struct Mounted {
     library: Arc<Library>,
+    /// The folders copied into Upload, as the filesystem reports them.
+    folders: Arc<std::sync::Mutex<FolderUploads>>,
     mountpoint: tempfile::TempDir,
     _cache: tempfile::TempDir,
     _runtime: tokio::runtime::Runtime,
@@ -202,13 +205,14 @@ impl Mounted {
         let tree = Arc::new(Tree::new(library.clone(), InMemoryNames::default(), Config::from_toml("").unwrap()));
         let content = Arc::new(BlockCache::new(library.clone(), cache.path(), u64::MAX).unwrap());
         let mut filesystem = ImmichFilesystem::new(tree, content, runtime.handle().clone());
+        let folders = Arc::new(std::sync::Mutex::new(FolderUploads::default()));
         if uploads {
             let staging = Staging::new(&cache.path().join("staging"), &cache.path().join("not-uploaded")).unwrap();
-            filesystem = filesystem.with_uploads(Arc::new(staging), MediaTypes::default(), Arc::new(library.clone()));
+            filesystem = filesystem.with_uploads(Arc::new(staging), MediaTypes::default(), Arc::new(library.clone()), folders.clone());
         }
         let session = mount(filesystem, mountpoint.path()).expect("mounts");
         std::thread::sleep(Duration::from_millis(200));
-        Mounted { library, mountpoint, _cache: cache, _runtime: runtime, session: Some(session) }
+        Mounted { library, folders, mountpoint, _cache: cache, _runtime: runtime, session: Some(session) }
     }
 
     fn month(&self) -> std::path::PathBuf {
@@ -363,6 +367,38 @@ fn only_upload_takes_new_files() {
     assert_eq!(sorted_names(&upload), ["new.png"]);
     std::fs::remove_file(upload.join("new.png")).unwrap();
     assert!(sorted_names(&upload).is_empty());
-    // It takes files only.
-    assert_eq!(errno(std::fs::create_dir(upload.join("folder"))), Some(libc::EPERM));
+    // Folders go into Upload only, and never hidden ones; links not at all.
+    assert_eq!(errno(std::fs::create_dir(mounted.month().join("folder"))), Some(libc::EROFS));
+    assert_eq!(errno(std::fs::create_dir(upload.join(".thumbnails"))), Some(libc::EPERM));
+    assert_eq!(errno(std::os::unix::fs::symlink("new.png", upload.join("link"))), Some(libc::EPERM));
+}
+
+#[test]
+#[ignore = "needs /dev/fuse and fusermount3"]
+fn a_folder_copied_into_upload_uploads_everything_in_it() {
+    let mounted = Mounted::with_uploads();
+    let upload = mounted.mountpoint.path().join("Upload");
+    let (trip, day) = (upload.join("Trip"), upload.join("Trip").join("Day 1"));
+    std::fs::create_dir_all(&day).unwrap();
+    assert_eq!(errno(std::fs::create_dir(&trip)), Some(libc::EEXIST));
+    assert!(access(&day, libc::W_OK));
+    std::fs::write(trip.join("one.png"), PNG).unwrap();
+    std::fs::write(day.join("two.png"), PNG).unwrap();
+    assert_eq!(errno(std::fs::write(day.join("notes.txt"), "no")), Some(libc::ENOTSUP));
+    assert_eq!(sorted_names(&upload), ["Trip"]);
+    assert_eq!(sorted_names(&trip), ["Day 1", "one.png"]);
+    assert_eq!(sorted_names(&day), ["two.png"]);
+    // A folder's times, as cp -a and GIO set them after a copy, are taken.
+    let folder = std::fs::File::open(&day).unwrap();
+    folder.set_modified(SystemTime::now()).unwrap();
+    // Not empty: only an empty folder may go (a cancelled copy cleaning up).
+    assert_eq!(errno(std::fs::remove_dir(&day)), Some(libc::ENOTEMPTY));
+    std::fs::create_dir(trip.join("Empty")).unwrap();
+    std::fs::remove_dir(trip.join("Empty")).unwrap();
+    // Every upload was noted under its folder, and once the copy settles it is asked about.
+    let later = SystemTime::now().duration_since(SystemTime::UNIX_EPOCH).unwrap().as_secs() + 60;
+    let events = mounted.folders.lock().unwrap().tick(later, FolderChoice::Ask, |_| false);
+    let [FolderEvent::Ask(question)] = events.as_slice() else { panic!("one question: {events:?}") };
+    assert_eq!((question.folder.as_str(), question.uploaded, question.not_uploaded), ("Trip", 2, 1));
+    assert_eq!(question.albums, ["Trip", "Trip › Day 1"]);
 }

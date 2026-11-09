@@ -18,89 +18,142 @@ msgstr "Immich माउंट नहीं है"
 msgid "The keyring stayed locked. Open Immich Mount, or run “immich-mount mount”, to try again."
 msgstr "कीरिंग लॉक रही। फिर से कोशिश करने के लिए Immich Mount खोलें, या “immich-mount mount” चलाएं।"
 
-#: crates/immich-mount-linux/src/daemon.rs:300
+#: crates/immich-mount-linux/src/daemon.rs:304
 msgid "Immich is unreachable"
 msgstr "Immich तक नहीं पहुंचा जा सकता"
 
-#: crates/immich-mount-linux/src/daemon.rs:301
+#: crates/immich-mount-linux/src/daemon.rs:305
 msgid "The Immich server cannot be reached. Files you opened before stay available."
 msgstr "Immich सर्वर तक नहीं पहुंचा जा सकता। पहले खोली गई फ़ाइलें उपलब्ध रहेंगी।"
 
-#: crates/immich-mount-linux/src/daemon.rs:304
+#: crates/immich-mount-linux/src/daemon.rs:308
 #: crates/immich-mount-linux/src/tray.rs:70
 msgid "Signed out of Immich"
 msgstr "Immich से साइन आउट हो गया"
 
-#: crates/immich-mount-linux/src/daemon.rs:305
+#: crates/immich-mount-linux/src/daemon.rs:309
 msgid "Immich no longer accepts this sign-in. Open Immich Mount to sign in again."
 msgstr "Immich अब यह साइन इन स्वीकार नहीं करता। फिर से साइन इन करने के लिए Immich Mount खोलें।"
 
-#: crates/immich-mount-linux/src/fuse.rs:621
-#: crates/immich-mount-linux/src/fuse.rs:662
-#: crates/immich-mount-linux/src/fuse.rs:668
-#: crates/immich-mount-linux/src/fuse.rs:678
-#: crates/immich-mount-linux/src/fuse.rs:1129
+#: crates/immich-mount-linux/src/folders.rs:88
+#: apple/App/FolderCopies.swift:76
+msgid "Uploaded to Immich: {folder}"
+msgstr "Immich पर अपलोड हुआ: {folder}"
+
+#: crates/immich-mount-linux/src/folders.rs:90
+#: apple/App/FolderCopies.swift:77
+msgid "Photos and videos in the timeline: {count}"
+msgstr "टाइमलाइन में फ़ोटो और वीडियो: {count}"
+
+#: crates/immich-mount-linux/src/folders.rs:91
+#: apple/App/FolderCopies.swift:78
+msgid "Albums it can make: {albums}"
+msgstr "इससे बन सकने वाले एल्बम: {albums}"
+
+#: crates/immich-mount-linux/src/folders.rs:94
+#: apple/App/FolderCopies.swift:80
+msgid "Files not uploaded: {count}"
+msgstr "अपलोड न हुई फ़ाइलें: {count}"
+
+#: crates/immich-mount-linux/src/folders.rs:96
+#: crates/immich-mount-core/src/settings.rs:91
+#: apple/App/FolderCopies.swift:22
+#: apple/App/FolderCopies.swift:106
+msgid "Make Albums"
+msgstr "एल्बम बनाएँ"
+
+#: crates/immich-mount-linux/src/folders.rs:96
+#: crates/immich-mount-core/src/settings.rs:90
+#: apple/App/FolderCopies.swift:23
+#: apple/App/FolderCopies.swift:107
+msgid "Timeline Only"
+msgstr "केवल टाइमलाइन"
+
+#: crates/immich-mount-linux/src/folders.rs:107
+#: apple/App/FolderCopies.swift:118
+msgid "Albums made from {folder}"
+msgstr "{folder} से एल्बम बनाए गए"
+
+#: crates/immich-mount-linux/src/folders.rs:109
+#: apple/App/FolderCopies.swift:121
+msgid "No albums made from {folder}"
+msgstr "{folder} से कोई एल्बम नहीं बना"
+
+#: crates/immich-mount-linux/src/folders.rs:114
+#: apple/App/FolderCopies.swift:122
+msgid "Immich does not let this account make albums ({permission}). The photos and videos are in the timeline."
+msgstr "Immich इस खाते को एल्बम बनाने नहीं देता ({permission})। फ़ोटो और वीडियो टाइमलाइन में हैं।"
+
+#: crates/immich-mount-linux/src/folders.rs:119
+msgid "Signed out of Immich. The photos and videos are in the timeline."
+msgstr "Immich से साइन आउट हो गया। फ़ोटो और वीडियो टाइमलाइन में हैं।"
+
+#: crates/immich-mount-linux/src/fuse.rs:637
+#: crates/immich-mount-linux/src/fuse.rs:681
+#: crates/immich-mount-linux/src/fuse.rs:687
+#: crates/immich-mount-linux/src/fuse.rs:697
+#: crates/immich-mount-linux/src/fuse.rs:1162
 msgid "Not uploaded: {name}"
 msgstr "अपलोड नहीं हुआ: {name}"
 
-#: crates/immich-mount-linux/src/fuse.rs:621
+#: crates/immich-mount-linux/src/fuse.rs:637
 msgid "The file is incomplete, as if its copy was cancelled."
 msgstr "फ़ाइल अधूरी है, मानो उसकी कॉपी रद्द कर दी गई हो।"
 
-#: crates/immich-mount-linux/src/fuse.rs:636
+#: crates/immich-mount-linux/src/fuse.rs:653
 msgid "Uploading {name} to Immich"
 msgstr "{name} को Immich पर अपलोड किया जा रहा है"
 
-#: crates/immich-mount-linux/src/fuse.rs:637
+#: crates/immich-mount-linux/src/fuse.rs:654
 msgid "The copy finishes once Immich has the file."
 msgstr "Immich को फ़ाइल मिलते ही कॉपी पूरी हो जाएगी।"
 
-#: crates/immich-mount-linux/src/fuse.rs:649
+#: crates/immich-mount-linux/src/fuse.rs:668
 msgid "Immich has this photo already, so nothing was added."
 msgstr "यह फ़ोटो Immich में पहले से है, इसलिए कुछ नहीं जोड़ा गया।"
 
-#: crates/immich-mount-linux/src/fuse.rs:650
+#: crates/immich-mount-linux/src/fuse.rs:669
 msgid "Already in Immich: {name}"
 msgstr "Immich में पहले से है: {name}"
 
-#: crates/immich-mount-linux/src/fuse.rs:659
+#: crates/immich-mount-linux/src/fuse.rs:678
 msgid "{error}. The file is kept in {folder}."
 msgstr "{error}। फ़ाइल {folder} में रखी गई है।"
 
-#: crates/immich-mount-linux/src/fuse.rs:669
+#: crates/immich-mount-linux/src/fuse.rs:688
 msgid "This computer lets a file operation take at most {seconds} seconds (fs.fuse.default_request_timeout). Set it to 0 for longer uploads. The file is kept in {folder}."
 msgstr "यह कंप्यूटर किसी फ़ाइल ऑपरेशन को अधिकतम {seconds} सेकंड देता है (fs.fuse.default_request_timeout)। लंबे अपलोड के लिए इसे 0 पर सेट करें। फ़ाइल {folder} में रखी गई है।"
 
-#: crates/immich-mount-linux/src/fuse.rs:679
+#: crates/immich-mount-linux/src/fuse.rs:698
 msgid "The upload took too long. The file is kept in {folder}."
 msgstr "अपलोड में बहुत ज़्यादा समय लगा। फ़ाइल {folder} में रखी गई है।"
 
-#: crates/immich-mount-linux/src/fuse.rs:1129
+#: crates/immich-mount-linux/src/fuse.rs:1162
 msgid "Immich takes photos and videos only."
 msgstr "Immich केवल फ़ोटो और वीडियो लेता है।"
 
 #: crates/immich-mount-linux/src/tray.rs:68
-#: apple/App/ImmichMountApp.swift:596
+#: apple/App/ImmichMountApp.swift:616
 msgid "Connected to {server}"
 msgstr "{server} से कनेक्ट है"
 
 #: crates/immich-mount-linux/src/tray.rs:69
-#: apple/App/ImmichMountApp.swift:596
+#: apple/App/ImmichMountApp.swift:616
 msgid "{server} is not reachable"
 msgstr "{server} तक नहीं पहुंचा जा सकता"
 
 #: crates/immich-mount-linux/src/tray.rs:71
-#: apple/App/ImmichMountApp.swift:595
+#: apple/App/ImmichMountApp.swift:615
 msgid "Signed in to {server}"
 msgstr "{server} में साइन इन किया गया"
 
 #: crates/immich-mount-linux/src/tray.rs:79
-#: apple/App/ImmichMountApp.swift:604
+#: apple/App/ImmichMountApp.swift:624
 msgid "Server version: Immich {version}"
 msgstr "सर्वर संस्करण: Immich {version}"
 
 #: crates/immich-mount-linux/src/tray.rs:82
-#: apple/App/ImmichMountApp.swift:607
+#: apple/App/ImmichMountApp.swift:627
 msgid "Signed in as: {account}"
 msgstr "साइन इन किया गया खाता: {account}"
 
@@ -147,20 +200,25 @@ msgid "Date Folders"
 msgstr "दिनांक फ़ोल्डर"
 
 #: crates/immich-mount-desktop/src/preferences.rs:16
-#: apple/App/SettingsView.swift:185
+#: apple/App/SettingsView.swift:194
 msgid "Files"
 msgstr "फ़ाइलें"
 
 #: crates/immich-mount-desktop/src/preferences.rs:17
+#: apple/App/SettingsView.swift:183
+msgid "Uploads"
+msgstr "अपलोड"
+
+#: crates/immich-mount-desktop/src/preferences.rs:18
 msgid "Thumbnails"
 msgstr "थंबनेल"
 
-#: crates/immich-mount-desktop/src/preferences.rs:18
+#: crates/immich-mount-desktop/src/preferences.rs:19
 #: crates/immich-mount-gnome/src/window.blp:314
 msgid "Cache"
 msgstr "कैश"
 
-#: crates/immich-mount-desktop/src/preferences.rs:19
+#: crates/immich-mount-desktop/src/preferences.rs:20
 msgid "Updates"
 msgstr "अपडेट"
 
@@ -251,7 +309,7 @@ msgstr "AI प्रकटीकरण"
 
 #: crates/immich-mount-gnome/src/main.rs:117
 #: crates/immich-mount-kde/qml/Main.qml:175
-#: apple/App/ImmichMountApp.swift:452
+#: apple/App/ImmichMountApp.swift:472
 msgid "Parts of this project were written with the assistance of AI coding agents. All changes are reviewed by the maintainer."
 msgstr "इस प्रोजेक्ट के कुछ हिस्से AI कोडिंग एजेंटों की सहायता से लिखे गए हैं। सभी बदलावों की समीक्षा मेंटेनर करते हैं।"
 
@@ -516,7 +574,7 @@ msgid "The Immich API layer: {project}"
 msgstr "Immich API परत: {project}"
 
 #: crates/immich-mount-kde/qml/Main.qml:171
-#: apple/App/ImmichMountApp.swift:451
+#: apple/App/ImmichMountApp.swift:471
 msgid "AI disclosure"
 msgstr "AI प्रकटीकरण"
 
@@ -674,141 +732,150 @@ msgstr "डिस्कनेक्ट करें"
 msgid "Immich Mount is an independent, unofficial project. It is not affiliated with, endorsed by, or sponsored by the Immich project or FUTO."
 msgstr "Immich Mount एक स्वतंत्र, अनाधिकारिक प्रोजेक्ट है। यह Immich प्रोजेक्ट या FUTO से संबद्ध नहीं है, और न ही उनके द्वारा अनुमोदित या प्रायोजित है।"
 
-#: crates/immich-mount-core/src/settings.rs:50
+#: crates/immich-mount-core/src/settings.rs:51
 msgid "The Immich server; /api is added"
 msgstr "Immich सर्वर; /api जोड़ा जाता है"
 
-#: crates/immich-mount-core/src/settings.rs:51
+#: crates/immich-mount-core/src/settings.rs:52
 msgid "Where the mount appears"
 msgstr "माउंट कहां दिखता है"
 
-#: crates/immich-mount-core/src/settings.rs:52
+#: crates/immich-mount-core/src/settings.rs:53
 msgid "The drive's name in the sidebar"
 msgstr "साइडबार में ड्राइव का नाम"
 
-#: crates/immich-mount-core/src/settings.rs:53
+#: crates/immich-mount-core/src/settings.rs:54
 msgid "Mount when the session starts"
 msgstr "सत्र शुरू होने पर माउंट करें"
 
-#: crates/immich-mount-core/src/settings.rs:54
+#: crates/immich-mount-core/src/settings.rs:55
 msgid "Show the Photos section"
 msgstr "Photos अनुभाग दिखाएं"
 
-#: crates/immich-mount-core/src/settings.rs:55
+#: crates/immich-mount-core/src/settings.rs:56
 msgid "Show the Albums section"
 msgstr "Albums अनुभाग दिखाएं"
 
-#: crates/immich-mount-core/src/settings.rs:56
+#: crates/immich-mount-core/src/settings.rs:57
 msgid "Show the People section"
 msgstr "People अनुभाग दिखाएं"
 
-#: crates/immich-mount-core/src/settings.rs:57
+#: crates/immich-mount-core/src/settings.rs:58
 msgid "Show the Places section"
 msgstr "Places अनुभाग दिखाएं"
 
-#: crates/immich-mount-core/src/settings.rs:58
+#: crates/immich-mount-core/src/settings.rs:59
 msgid "Show the Favorites section"
 msgstr "Favorites अनुभाग दिखाएं"
 
-#: crates/immich-mount-core/src/settings.rs:59
+#: crates/immich-mount-core/src/settings.rs:60
 msgid "Show the Archive section"
 msgstr "Archive अनुभाग दिखाएं"
 
-#: crates/immich-mount-core/src/settings.rs:60
+#: crates/immich-mount-core/src/settings.rs:61
 msgid "Day folders inside months"
 msgstr "महीनों के अंदर दिन के फ़ोल्डर"
 
-#: crates/immich-mount-core/src/settings.rs:61
+#: crates/immich-mount-core/src/settings.rs:62
 msgid "Year and month folders inside albums"
 msgstr "एल्बमों के अंदर वर्ष और महीने के फ़ोल्डर"
 
-#: crates/immich-mount-core/src/settings.rs:62
+#: crates/immich-mount-core/src/settings.rs:63
 msgid "Year and month folders inside people"
 msgstr "लोगों के अंदर वर्ष और महीने के फ़ोल्डर"
 
-#: crates/immich-mount-core/src/settings.rs:63
+#: crates/immich-mount-core/src/settings.rs:64
 msgid "Year and month folders inside cities"
 msgstr "शहरों के अंदर वर्ष और महीने के फ़ोल्डर"
 
-#: crates/immich-mount-core/src/settings.rs:64
+#: crates/immich-mount-core/src/settings.rs:65
 msgid "Year and month folders inside favorites"
 msgstr "पसंदीदा के अंदर वर्ष और महीने के फ़ोल्डर"
 
-#: crates/immich-mount-core/src/settings.rs:65
+#: crates/immich-mount-core/src/settings.rs:66
 msgid "Year and month folders inside the archive"
 msgstr "संग्रह के अंदर वर्ष और महीने के फ़ोल्डर"
 
-#: crates/immich-mount-core/src/settings.rs:66
+#: crates/immich-mount-core/src/settings.rs:67
 msgid "How album folders are named and grouped"
 msgstr "एल्बम फ़ोल्डरों के नाम कैसे रखे जाएं और उन्हें कैसे समूहित किया जाए"
 
-#: crates/immich-mount-core/src/settings.rs:67
+#: crates/immich-mount-core/src/settings.rs:68
 msgid "How files are named"
 msgstr "फ़ाइलों के नाम कैसे रखे जाएं"
 
-#: crates/immich-mount-core/src/settings.rs:68
+#: crates/immich-mount-core/src/settings.rs:69
 msgid "The content cache's size limit"
 msgstr "सामग्री कैश की आकार सीमा"
 
-#: crates/immich-mount-core/src/settings.rs:69
+#: crates/immich-mount-core/src/settings.rs:70
 msgid "Show the Upload folder, and upload what is copied into it"
 msgstr "Upload फ़ोल्डर दिखाएं, और उसमें कॉपी की गई चीज़ें अपलोड करें"
 
-#: crates/immich-mount-core/src/settings.rs:70
+#: crates/immich-mount-core/src/settings.rs:71
+#: apple/App/SettingsView.swift:180
+msgid "Folders copied into Upload"
+msgstr "Upload में कॉपी किए गए फ़ोल्डर"
+
+#: crates/immich-mount-core/src/settings.rs:72
 msgid "Also seed 1024 px thumbnails from the preview"
 msgstr "पूर्वावलोकन से 1024 px थंबनेल भी तैयार करें"
 
-#: crates/immich-mount-core/src/settings.rs:71
+#: crates/immich-mount-core/src/settings.rs:73
 msgid "Refuse thumbnailer reads of originals"
 msgstr "थंबनेलर को मूल फ़ाइलें पढ़ने से रोकें"
 
-#: crates/immich-mount-core/src/settings.rs:72
+#: crates/immich-mount-core/src/settings.rs:74
 msgid "Tell me when a new version is out"
 msgstr "नया संस्करण आने पर मुझे बताएं"
 
-#: crates/immich-mount-core/src/settings.rs:73
+#: crates/immich-mount-core/src/settings.rs:75
 msgid "Headless only: a 0600 file holding the credential"
 msgstr "केवल हेडलेस: क्रेडेंशियल रखने वाली 0600 फ़ाइल"
 
-#: crates/immich-mount-core/src/settings.rs:79
+#: crates/immich-mount-core/src/settings.rs:81
 msgid "Never"
 msgstr "कभी नहीं"
 
-#: crates/immich-mount-core/src/settings.rs:80
+#: crates/immich-mount-core/src/settings.rs:82
 msgid "From 500 Items"
 msgstr "500 आइटम से"
 
-#: crates/immich-mount-core/src/settings.rs:81
+#: crates/immich-mount-core/src/settings.rs:83
 msgid "Always"
 msgstr "हमेशा"
 
-#: crates/immich-mount-core/src/settings.rs:82
+#: crates/immich-mount-core/src/settings.rs:84
 msgid "Year in the Name (2023 - Trip)"
 msgstr "नाम में वर्ष (2023 - यात्रा)"
 
-#: crates/immich-mount-core/src/settings.rs:83
+#: crates/immich-mount-core/src/settings.rs:85
 msgid "Year Folders (2023/Trip)"
 msgstr "वर्ष फ़ोल्डर (2023/यात्रा)"
 
-#: crates/immich-mount-core/src/settings.rs:84
+#: crates/immich-mount-core/src/settings.rs:86
 msgid "Name Only (Trip)"
 msgstr "केवल नाम (यात्रा)"
 
-#: crates/immich-mount-core/src/settings.rs:85
+#: crates/immich-mount-core/src/settings.rs:87
 msgid "Date and Time Taken"
 msgstr "लिए जाने की तारीख और समय"
 
-#: crates/immich-mount-core/src/settings.rs:86
+#: crates/immich-mount-core/src/settings.rs:88
 msgid "Original File Names"
 msgstr "मूल फ़ाइल नाम"
 
+#: crates/immich-mount-core/src/settings.rs:89
+msgid "Ask Each Time"
+msgstr "हर बार पूछें"
+
 #: apple/App/ContentView.swift:19
-#: apple/App/SettingsView.swift:268
+#: apple/App/SettingsView.swift:277
 msgid "Move Immich Mount to Applications"
 msgstr "Immich Mount को ऐप्लिकेशन में ले जाएं"
 
 #: apple/App/ContentView.swift:20
-#: apple/App/SettingsView.swift:269
+#: apple/App/SettingsView.swift:278
 msgid "Finder's location runs from the Applications folder. Quit Immich Mount, drag it into Applications, then open it from there."
 msgstr "Finder का स्थान केवल ऐप्लिकेशन फ़ोल्डर से चलता है। Immich Mount छोड़ें, उसे ऐप्लिकेशन में खींचें, फिर वहीं से खोलें।"
 
@@ -849,114 +916,114 @@ msgid "Use System Settings Instead"
 msgstr "इसके बजाय सिस्टम सेटिंग्ज़ का उपयोग करें"
 
 #: apple/App/ContentView.swift:167
-#: apple/App/ImmichMountApp.swift:410
-#: apple/App/SettingsView.swift:249
+#: apple/App/ImmichMountApp.swift:430
+#: apple/App/SettingsView.swift:258
 msgid "Open in Finder"
 msgstr "Finder में खोलें"
 
-#: apple/App/ImmichMountApp.swift:167
+#: apple/App/ImmichMountApp.swift:187
 msgid "Sign out of Immich Mount?"
 msgstr "Immich Mount से साइन आउट करें?"
 
-#: apple/App/ImmichMountApp.swift:168
+#: apple/App/ImmichMountApp.swift:188
 msgid "Immich Mount leaves Finder, together with the photos and videos downloaded to this Mac. Your library on the server stays as it is."
 msgstr "Immich Mount, Finder से हट जाता है, और साथ में इस Mac पर डाउनलोड की गई फ़ोटो और वीडियो भी। सर्वर पर आपकी लाइब्रेरी जैसी है वैसी ही रहती है।"
 
-#: apple/App/ImmichMountApp.swift:170
+#: apple/App/ImmichMountApp.swift:190
 msgid "Files in Upload that have not reached Immich: {count}. They stay on this Mac, and Finder shows where once you have signed out."
 msgstr "Upload में ऐसी फ़ाइलें जो Immich तक नहीं पहुंचीं: {count}। वे इस Mac पर रहती हैं, और साइन आउट करने के बाद Finder दिखाता है कि वे कहां हैं।"
 
-#: apple/App/ImmichMountApp.swift:174
+#: apple/App/ImmichMountApp.swift:194
 msgid "Sign Out"
 msgstr "साइन आउट करें"
 
-#: apple/App/ImmichMountApp.swift:175
+#: apple/App/ImmichMountApp.swift:195
 msgid "Cancel"
 msgstr "रद्द करें"
 
-#: apple/App/ImmichMountApp.swift:190
+#: apple/App/ImmichMountApp.swift:210
 msgid "Still signed in"
 msgstr "अब भी साइन इन है"
 
-#: apple/App/ImmichMountApp.swift:191
+#: apple/App/ImmichMountApp.swift:211
 msgid "Finder's location could not be removed, so Immich Mount stays signed in: {error}"
 msgstr "Finder का स्थान हटाया नहीं जा सका, इसलिए Immich Mount साइन इन रहता है: {error}"
 
-#: apple/App/ImmichMountApp.swift:441
+#: apple/App/ImmichMountApp.swift:461
 msgid "Your Immich photos and videos as a drive in Finder. By Jakob Hviid, under the MIT license."
 msgstr "Finder में एक ड्राइव के रूप में आपकी Immich फ़ोटो और वीडियो। Jakob Hviid द्वारा, MIT लाइसेंस के अंतर्गत।"
 
-#: apple/App/ImmichMountApp.swift:442
+#: apple/App/ImmichMountApp.swift:462
 msgid "Website"
 msgstr "वेबसाइट"
 
-#: apple/App/ImmichMountApp.swift:444
+#: apple/App/ImmichMountApp.swift:464
 msgid "Source code"
 msgstr "स्रोत कोड"
 
-#: apple/App/ImmichMountApp.swift:447
+#: apple/App/ImmichMountApp.swift:467
 msgid "Inspired by"
 msgstr "प्रेरणा स्रोत"
 
-#: apple/App/ImmichMountApp.swift:449
+#: apple/App/ImmichMountApp.swift:469
 msgid "The Immich API layer"
 msgstr "Immich API परत"
 
-#: apple/App/ImmichMountApp.swift:612
+#: apple/App/ImmichMountApp.swift:632
 msgid "Last checked: {time}"
 msgstr "अंतिम जांच: {time}"
 
-#: apple/App/ImmichMountApp.swift:614
+#: apple/App/ImmichMountApp.swift:634
 msgid "Reason: {reason}"
 msgstr "कारण: {reason}"
 
-#: apple/App/ImmichMountApp.swift:614
+#: apple/App/ImmichMountApp.swift:634
 msgid "none given"
 msgstr "कोई नहीं बताया गया"
 
-#: apple/App/ImmichMountApp.swift:700
+#: apple/App/ImmichMountApp.swift:721
 msgid "The login item could not be changed: {error}"
 msgstr "लॉगिन आइटम बदला नहीं जा सका: {error}"
 
-#: apple/App/ImmichMountApp.swift:734
+#: apple/App/ImmichMountApp.swift:755
 msgid "The server sent an address that cannot be opened."
 msgstr "सर्वर ने ऐसा पता भेजा जो खोला नहीं जा सकता।"
 
-#: apple/App/ImmichMountApp.swift:820
+#: apple/App/ImmichMountApp.swift:841
 msgid "Finder does not show Immich yet. Is the extension switched on in System Settings? ({error})"
 msgstr "Finder अभी Immich नहीं दिखाता। क्या सिस्टम सेटिंग्ज़ में एक्सटेंशन चालू है? ({error})"
 
-#: apple/App/ImmichMountApp.swift:41
-#: apple/App/ImmichMountApp.swift:421
+#: apple/App/ImmichMountApp.swift:42
+#: apple/App/ImmichMountApp.swift:441
 msgid "About Immich Mount"
 msgstr "Immich Mount के बारे में"
 
-#: apple/App/ImmichMountApp.swift:44
-#: apple/App/ImmichMountApp.swift:414
+#: apple/App/ImmichMountApp.swift:45
+#: apple/App/ImmichMountApp.swift:434
 msgid "Check for Updates…"
 msgstr "अपडेट के लिए जांचें…"
 
-#: apple/App/ImmichMountApp.swift:49
-#: apple/App/ImmichMountApp.swift:412
+#: apple/App/ImmichMountApp.swift:50
+#: apple/App/ImmichMountApp.swift:432
 msgid "Settings…"
 msgstr "सेटिंग्ज़…"
 
-#: apple/App/ImmichMountApp.swift:399
-#: apple/App/SettingsView.swift:227
+#: apple/App/ImmichMountApp.swift:419
+#: apple/App/SettingsView.swift:236
 msgid "Sign In…"
 msgstr "साइन इन करें…"
 
-#: apple/App/ImmichMountApp.swift:401
-#: apple/App/SettingsView.swift:247
+#: apple/App/ImmichMountApp.swift:421
+#: apple/App/SettingsView.swift:256
 msgid "Switch On in Finder…"
 msgstr "Finder में चालू करें…"
 
-#: apple/App/ImmichMountApp.swift:417
-#: apple/App/SettingsView.swift:252
+#: apple/App/ImmichMountApp.swift:437
+#: apple/App/SettingsView.swift:261
 msgid "Sign Out…"
 msgstr "साइन आउट करें…"
 
-#: apple/App/ImmichMountApp.swift:422
+#: apple/App/ImmichMountApp.swift:442
 msgid "Quit Immich Mount"
 msgstr "Immich Mount छोड़ें"
 
@@ -968,15 +1035,15 @@ msgstr "सामान्य"
 msgid "Folders"
 msgstr "फ़ोल्डर"
 
-#: apple/App/SettingsView.swift:180
+#: apple/App/SettingsView.swift:189
 msgid "Folder names"
 msgstr "फ़ोल्डर के नाम"
 
-#: apple/App/SettingsView.swift:183
+#: apple/App/SettingsView.swift:192
 msgid "File names"
 msgstr "फ़ाइलों के नाम"
 
-#: apple/App/SettingsView.swift:226
+#: apple/App/SettingsView.swift:235
 msgid "Not signed in"
 msgstr "साइन इन नहीं है"
 
@@ -1000,7 +1067,11 @@ msgstr "दिनांक फ़ोल्डर Photos में हर मह�
 msgid "Photos and videos copied into Upload are added to Immich."
 msgstr "Upload में कॉपी की गई फ़ोटो और वीडियो Immich में जुड़ जाते हैं।"
 
-#: apple/App/SettingsView.swift:187
+#: apple/App/SettingsView.swift:185
+msgid "Every photo and video in them is added to Immich. An album is named by its folder's path, such as Trip › Day 1."
+msgstr "इनमें मौजूद हर फ़ोटो और वीडियो Immich में जुड़ जाता है। एल्बम का नाम उसके फ़ोल्डर के पथ से रखा जाता है, जैसे यात्रा › दिन 1।"
+
+#: apple/App/SettingsView.swift:196
 msgid "Finder lists Immich again after each change."
 msgstr "हर बदलाव के बाद Finder Immich को फिर से सूचीबद्ध करता है।"
 

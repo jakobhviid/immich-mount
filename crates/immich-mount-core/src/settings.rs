@@ -7,6 +7,7 @@
 
 use toml_edit::{value, DocumentMut, Item, Table};
 
+use crate::folder_uploads::FolderChoice;
 use crate::layout::{AlbumLayout, GroupingMode};
 use crate::naming::FileNaming;
 
@@ -67,6 +68,7 @@ pub const SETTINGS: &[Setting] = &[
     Setting { key: "files.naming", kind: Kind::Choice(&["date-time", "original"]), description: "How files are named", default: "date-time" },
     Setting { key: "cache.limit", kind: Kind::Size, description: "The content cache's size limit", default: "10GiB" },
     Setting { key: "uploads.enabled", kind: Kind::Bool, description: "Show the Upload folder, and upload what is copied into it", default: "true" },
+    Setting { key: "uploads.folders", kind: Kind::Choice(&["ask", "timeline", "albums"]), description: "Folders copied into Upload", default: "ask" },
     Setting { key: "thumbnails.sharp", kind: Kind::Bool, description: "Also seed 1024 px thumbnails from the preview", default: "true" },
     Setting { key: "thumbnails.safety_net", kind: Kind::Bool, description: "Refuse thumbnailer reads of originals", default: "true" },
     Setting { key: "updates.check", kind: Kind::Bool, description: "Tell me when a new version is out", default: "true" },
@@ -84,6 +86,9 @@ pub fn choice_label(word: &str) -> &str {
         "flat" => "Name Only (Trip)",
         "date-time" => "Date and Time Taken",
         "original" => "Original File Names",
+        "ask" => "Ask Each Time",
+        "timeline" => "Timeline Only",
+        "albums" => "Make Albums",
         "immich-mount" | "immich-drive" | "immich" => mount_name(word),
         other => other,
     }
@@ -167,6 +172,8 @@ pub struct Config {
     pub file_naming: FileNaming,
     pub cache_limit_bytes: u64,
     pub uploads_enabled: bool,
+    /// What a folder copied into Upload becomes besides its timeline uploads (`uploads.folders`).
+    pub upload_folders: FolderChoice,
     pub sharp_thumbnails: bool,
     pub thumbnail_safety_net: bool,
     /// Linux packages from the download page: tell of a newer release (ARCHITECTURE.md, "Updates on Linux").
@@ -217,6 +224,7 @@ impl Config {
             file_naming: if effective("files.naming")? == "original" { FileNaming::Original } else { FileNaming::DateTime },
             cache_limit_bytes: parse_size(&effective("cache.limit")?).unwrap_or(10 << 30),
             uploads_enabled: flag("uploads.enabled")?,
+            upload_folders: FolderChoice::from_setting(&effective("uploads.folders")?),
             sharp_thumbnails: flag("thumbnails.sharp")?,
             thumbnail_safety_net: flag("thumbnails.safety_net")?,
             update_check: flag("updates.check")?,
@@ -301,6 +309,7 @@ mod tests {
         assert_eq!((config.grouping_archive, config.grouping_favorites), (GroupingMode::Always, GroupingMode::Always));
         assert_eq!(config.cache_limit_bytes, 10 << 30);
         assert!(config.server_url.is_none());
+        assert_eq!(config.upload_folders, FolderChoice::Ask, "a folder copied into Upload asks before it makes albums");
     }
 
     #[test]

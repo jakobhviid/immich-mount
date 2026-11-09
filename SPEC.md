@@ -71,7 +71,7 @@ takes new files.
 │  └─ [<Year>/<MM Month>/]<file>
 ├─ Archive/                                off until switched on (`sections.archive`)
 │  └─ [<Year>/<MM Month>/]<file>
-└─ Upload/                                 the only folder that takes new files: copied in, uploaded, then gone
+└─ Upload/                                 the only folder that takes new files and folders: copied in, uploaded, then gone
 ```
 
 - Each section can be switched off; it then disappears from the root. Favorites and Archive are off until
@@ -193,9 +193,12 @@ cameras. Clashes are detected case-insensitively, after Unicode NFC normalisatio
 - The modes are what a copy gets, so a photo copied out is an ordinary file (`0644`) and a copied folder an ordinary
   folder (`0755`). What the mount allows is `access()`'s answer, which file managers read for their read-only
   emblem (GNOME Files' lock), and each operation's own refusal.
-- Every folder but Upload is a read-only view: write access, rename, delete and `setattr` on Assets, and new files
-  or folders, fail with `EROFS`. "Move to Trash" and "Paste" in the file manager therefore fail there.
-- In Upload, `mkdir` fails with `EPERM`, and so do `mknod`, `symlink` and `link`: it takes files only.
+- Every folder but Upload and the folders copied into it is a read-only view: write access, rename, delete and
+  `setattr` on Assets, and new files or folders, fail with `EROFS`. "Move to Trash" and "Paste" in the file manager
+  therefore fail there.
+- In Upload, a hidden folder (`mkdir` of a name starting with `.`) fails with `EPERM`, and so do `mknod`, `symlink`
+  and `link`. A folder copied into Upload takes the times and modes it is given and keeps none of them, and may be
+  removed (`rmdir`) only while empty, else `ENOTEMPTY`; it cannot be renamed (`EPERM`).
 - With uploads off (`uploads.enabled = false`), there is no Upload folder and the mount is read-only as a whole
   (`ro`).
 - Desktop indexers get `EIO` when they open an original: KDE's Baloo extractor (`baloo_file_extractor`) and GNOME's
@@ -251,8 +254,8 @@ cameras. Clashes are detected case-insensitively, after Unicode NFC normalisatio
 - Only the Upload folder accepts new files, and only while `uploads.enabled` is on and the credential may upload.
   An uploaded file leaves Upload and shows in Photos under its own date (and in albums, people and places as Immich
   files it); where it was dropped never decides where it appears. With uploads off, there is no Upload folder.
-- Only standalone image and video files are accepted (the server's media types, RAW included). Folders, symlinks,
-  other files, Live Photo pairs and XMP sidecars are not supported.
+- Only image and video files are uploaded (the server's media types, RAW included), on their own or in folders
+  copied into Upload (below). Symlinks, other files, Live Photo pairs and XMP sidecars are not supported.
 - **Upload on close:** the upload runs when the writing program closes the file. `close()` returns success only
   after the server has answered. If the upload fails, `close()` fails too, so the program reports the error and a
   move keeps its source, in programs that check `close()` (Files, `mv`, `cp`, rsync). Dolphin does not: its move
@@ -288,8 +291,44 @@ cameras. Clashes are detected case-insensitively, after Unicode NFC normalisatio
   | The same bytes are in the trash | `EEXIST` on `close()` |
   | The credential may not upload | `EACCES` on `close()` |
   | Server unreachable or busy past the limit | `EIO` on `close()` |
-  | A folder, a link or a device node in Upload | `EPERM` |
+  | A hidden folder, a link or a device node in Upload; renaming a folder there | `EPERM` |
+  | Removing a folder in Upload that is not empty | `ENOTEMPTY` |
   | Any change outside Upload | `EROFS` |
+
+### Folders copied into Upload
+
+- **A folder copied into Upload is taken whole,** with the folders inside it: every photo and video in it uploads to
+  the timeline as it arrives, exactly as a single file does (on close, with the same outcomes and errors), and other
+  files in it are refused as they would be in Upload.
+- **Settling:** no program tells that a copy is coming or how big it is, so a copy counts as finished once nothing
+  new has arrived in it for 10 seconds and nothing in it is being written or uploaded.
+- **Albums,** once it has settled, as `uploads.folders` says:
+  - `ask` (the default): a notification asks, naming the folder, counting what uploaded and what did not, and
+    listing the albums it would make, with two buttons: **Make Albums** and **Timeline Only**. Dismissing it, or
+    no answer within a day, is the timeline only. Where nobody can be asked (no desktop session, or notifications
+    without buttons), it is the timeline only.
+  - `albums`: the albums are made without asking. `timeline`: none, as for single files.
+  - A copy with nothing uploaded (an empty folder, or only refused files) makes no album and asks nothing.
+- **Which albums:** one for each folder that directly holds photos or videos that uploaded, holding those (not those
+  of the folders inside it). It is named by the folder's path below Upload, joined with ` › `: `Trip`,
+  `Trip › Day 1`. A name an album has already (the account's own, or one shared with it, compared ignoring case and
+  Unicode form) gets the day's date: `Trip - 2026-11-09`, then `Trip - 2026-11-09 (2)`. A photo Immich had already
+  goes into the album too.
+- **After the albums:** what arrives later in the same copy, while it is remembered (10 minutes after its last
+  file), joins its albums, and a new folder in it gets one of its own. A folder of the same name copied after that
+  is a new copy. An album made by a copy and deleted since is not made again.
+- **Permissions:** making albums needs `album.read`, `album.create` and `albumAsset.create`. Without them, or signed
+  out, a notification says no albums were made, and the copy stays in the timeline only. A server that cannot be
+  reached is tried again a minute later, for up to a day.
+- **The folders leave Upload** once they are empty and nothing arrived in them for 30 seconds: their files leave as
+  single files do. An empty one may be removed before then.
+- **Hidden folders** (a name starting with `.`: a thumbnail cache, a version-control folder) are refused, as hidden
+  files are.
+- **On Linux** the daemon asks, as a desktop notification. A file of a copied folder that did not upload is kept
+  under its folder's path: `not-uploaded/Trip/Day 1/IMG_1.JPG`.
+- **On macOS** the menu bar app asks, while it runs: a copy that settles while it does not is asked about when it
+  next starts. Where the app's notifications are off, it asks with an alert. A file that did not upload stays in
+  its folder in Upload, with its reason, and the folder with it; deleting the folder in Finder lets both go.
 
 ## Signing in and credentials
 
@@ -346,6 +385,7 @@ table in the Core drives validation, `immich-mount configure`, and the app's set
 | `files.naming` | `date-time`, `original` | `date-time` | How files are named |
 | `cache.limit` | size (`10GiB`) | `10GiB` | Content cache limit |
 | `uploads.enabled` | bool | `true` | Show the Upload folder, and upload what is copied into it (also needs the server's upload permission) |
+| `uploads.folders` | `ask`, `timeline`, `albums` | `ask` | What a folder copied into Upload becomes besides its uploads: asked each time once the copy has settled, the timeline only, or an album of each folder too ("Folders copied into Upload") |
 | `thumbnails.sharp` | bool | `true` | Also seed 1024 px thumbnails from `preview` |
 | `thumbnails.safety_net` | bool | `true` | Refuse thumbnailer reads of originals |
 | `updates.check` | bool | `true` | Tell, once per version, when a new release is out: a notification and a line on the tray's menu (ARCHITECTURE.md, "Updates on Linux"). Only packages from the download page look; Homebrew's installs are left to `brew upgrade`. Linux only: the Mac app has Sparkle's own setting |
@@ -457,7 +497,8 @@ macOS edition"). Where Finder's way differs:
 
 - **Uploads:** the system hands over a finished file, so there is no staging. A file Immich refuses stays in Upload
   with its reason, and one that has not reached Immich yet stays there while the system tries again; there is no
-  `not-uploaded/` folder. An uploaded file leaves Upload after about 10 seconds, as on Linux.
+  `not-uploaded/` folder. An uploaded file leaves Upload after about 10 seconds, as on Linux. Folders copied into
+  Upload are taken as on Linux ("Folders copied into Upload").
 - **Signing out** (the menu bar item's menu) ends the session on the server and removes the Finder location with
   what was downloaded. A file in Upload that has not reached Immich is kept: the confirmation counts them, the
   system preserves them, and Finder opens the folder they are kept in. When the location cannot be removed, the app
@@ -473,6 +514,7 @@ macOS edition"). Where Finder's way differs:
   | What | Where |
   |---|---|
   | Settings, the server's address, the account's email, the metadata store (`Library/`), the extension's status (`status.json`) | The App Group container, `~/Library/Group Containers/<team>.dev.hviid.ImmichMount/` |
+  | The questions about copied folders, their answers and what came of the albums, passing between the extension and the app | `Library/folder-questions.json`, `folder-answer-<copy>.json` and `folder-notice-<n>.json` in the App Group container |
   | Credential | The Keychain, service `dev.hviid.ImmichMount`, in the app's access group |
   | The system's copy of the location: downloaded originals and what waits in Upload | `~/Library/CloudStorage/ImmichMount-<name>/`, kept by macOS |
 

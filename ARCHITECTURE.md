@@ -758,6 +758,60 @@ A lost response is retried safely, because the checksum turns a second upload in
 - **Flatpak impact:** the folder follows `XDG_DATA_HOME`, which a Flatpak maps into its own data directory; the
   notification names the real path either way.
 
+### Folders copied into Upload
+
+A folder copied into Upload uploads every photo and video in it as it arrives, and once the copy has settled its
+folders may become albums named by their paths (SPEC.md, "Folders copied into Upload").
+- **Uploads first, the overview after.** No file manager says a copy is coming (Files, Dolphin and Finder send a
+  folder one file at a time), and each upload runs at its file's close, so a move keeps its source until Immich has
+  it (principle 6). So the files upload as they arrive, and the question about albums comes once the copy has
+  settled. Immich adds an Asset to an album at any time, so the albums come out the same. **Not chosen:** the whole
+  overview before any upload, which would hold every close until the last file arrived, or let a move delete its
+  sources before Immich had them.
+- **Settled** is nothing new for 10 seconds and nothing in the copy being written or uploaded: a long upload holds
+  its file open, so a slow copy does not count as finished early. A copy that pauses longer (a conflict dialog) may
+  be asked about early; what arrives after joins it: an unanswered question counts it, and albums take it in.
+- **One portable record** (`immich_mount_core::folder_uploads`): each copy by its folder's name, each folder by its
+  path with the Asset ids uploaded in it, the copy's state (copying, asked, albums, timeline) and the albums made.
+  It is plain data, which Linux keeps in memory and macOS in its store, since the system stops the extension
+  between requests. Album work in progress is not kept, so work a stopped process cut short is done again.
+- **Names:** the path joined with ` › `, which reads the same in Immich and in the mount's Albums folder; `/`, which
+  a file name cannot hold, would show as `_` there (SPEC.md, "Sanitising"). A taken name gets the day's date, then
+  a counter, as the maintainer chose: it says when, where `Trip 2` says nothing. **Not chosen:** adding to an album
+  of that name, which would mix a new trip into an old one; and refusing folders inside folders, which the path
+  names make unnecessary.
+- **One album per folder that holds photos,** with only its own: the timeline has them all, and a parent's album
+  would repeat its children's.
+- **The question** is a notification with two buttons, from the process that knows the copy. On Linux the daemon
+  asks, over one session connection that both shows the notification and hears the answer, since the desktop sends
+  `ActionInvoked` to the connection that showed it. On macOS the menu bar app asks, since the extension can show
+  nothing. Dismissing is an answer (the timeline only), and so is no answer within a day. Asking needs a desktop: a
+  daemon without one, or with notifications that carry no buttons, leaves the copy in the timeline only, and
+  `uploads.folders = albums` makes the albums without asking.
+- **On macOS the question passes through files** in the library's directory (the App Group's `Library/`). The
+  extension writes the questions after each poll; the app writes each answer to a file of its own, which the
+  extension takes and removes; and the extension leaves what came of the albums for the app to tell, one file
+  each. Only the extension opens the store (redb allows one process), and with a file per answer neither side ever
+  rewrites what the other wrote. The app looks at its 10-second change signal, and wakes the extension at once
+  after an answer.
+- **Folders in the system's terms (macOS):** a copied folder is an item of its own (`upload-folder|Trip|Day 1`),
+  kept in the store until it leaves, since no listing shows it; its uploaded files are answered for from the
+  departures list, as files in Upload are. It leaves once it is empty, untouched for 30 seconds, and holds no file
+  the system keeps after a refusal. Such a folder stays with its file, and may be deleted in Finder, which forgets
+  both.
+- **Folders on Linux:** the staging area keeps each folder with the time something last arrived in it. A folder
+  goes once it holds nothing and nothing arrived for 30 seconds, long enough for a copy that paused to go on into
+  it, and one written into again comes back. A file that did not upload is kept under its folder's path in
+  `not-uploaded/`, so two `IMG_0001.JPG` from two folders stay apart, and no name leads out of that folder. Times
+  and modes set on a folder (`cp -a`, GIO) are taken and ignored, as a staged file's are.
+- **Permissions:** a credential that may not make albums (an API key made for uploads only) gets a notification
+  saying so, and the copy stays in the timeline; a refusal is never tried again, while a server that cannot be
+  reached is, a minute later.
+- **Settings:** `uploads.folders` (ask, timeline only, albums) is in every app: the Linux apps' preferences show it
+  with the Upload switch in a group of their own, and the Mac's Folders pane under Uploads.
+- **Flatpak impact:** none beyond notifications, which a Flatpak sends through the portal, whose notifications carry
+  buttons too.
+
 ## Signing in
 
 **Sign-in is a button that opens the user's own browser, like Immich's mobile app.**
@@ -1513,7 +1567,8 @@ are Linux's.
 **Uploads.** The Upload folder lets items be added; every other folder stays a read-only view. The system hands the
 extension a finished file, which goes through the core's admission (photos and videos only, AppleDouble `._` files
 refused), its completeness check and its upload sequence, duplicates included; there is no staging, which Linux
-needs because files arrive there in writes. Folders, links and aliases are refused before anything is sent. The
+needs because files arrive there in writes. Links and aliases are refused before anything is sent; folders are
+taken, and the files in them go the same way ("Folders copied into Upload", above). The
 uploaded file stays in Upload for about 10 seconds, as on Linux, then a journal record takes it away: the system
 must have taken the item before it hears that it went. Pending departures are kept in the store, so a stopped
 extension still records them, and the photo shows in its month once the poll sees it. Until it leaves, the extension
