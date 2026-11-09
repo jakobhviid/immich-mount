@@ -43,7 +43,7 @@ private final class Collector: NSObject, NSFileProviderEnumerationObserver {
     }
 
     func start() {
-        enumerator.enumerateItems(for: self, startingAt: NSFileProviderPage.initialPageSortedByName)
+        enumerator.enumerateItems(for: self, startingAt: NSFileProviderPage(NSFileProviderPage.initialPageSortedByName as Data))
     }
 
     func didEnumerate(_ updatedItems: [NSFileProviderItemProtocol]) {
