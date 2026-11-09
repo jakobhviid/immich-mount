@@ -24,8 +24,8 @@ final class FileProviderItem: NSObject, NSFileProviderItem {
     var capabilities: NSFileProviderItemCapabilities {
         guard item.isFolder else { return [.allowsReading] }
         guard item.acceptsNewFiles else { return [.allowsReading, .allowsContentEnumerating] }
-        let copied: NSFileProviderItemCapabilities = item.identifier.hasPrefix("upload-folder|") ? [.allowsDeleting] : []
-        return [.allowsReading, .allowsContentEnumerating, .allowsAddingSubItems].union(copied)
+        let adding: NSFileProviderItemCapabilities = [.allowsReading, .allowsContentEnumerating, .allowsAddingSubItems]
+        return item.identifier.hasPrefix("upload-folder|") ? adding.union(.allowsDeleting) : adding
     }
 
     /// Downloaded when read, and evictable: Finder offers "Remove Download" on a file or a whole folder, which frees
