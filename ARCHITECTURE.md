@@ -1603,8 +1603,8 @@ it with Finder's Enable button, and Enable switched it on and closed the app's w
   (`x-apple.systempreferences:com.apple.ExtensionsPreferences?extensionPointIdentifier=com.apple.fileprovider-nonui`),
   where Immich Mount has a switch with its name and icon (the extension carries the app's). Login Items &
   Extensions alone (`x-apple.systempreferences:com.apple.LoginItems-Settings.extension`) opens above that list,
-  and is the address left should System Settings not take the first. That the first opens the list itself is not
-  yet seen (ROADMAP, M7).
+  and is the address left should System Settings not take the first. Verified on the maintainer's Mac (macOS
+  27.2): Use System Settings Instead opens the list itself.
 - **No program can switch it on,** so the install cannot either. The SDK has no call for it (`userEnabled` is
   read-only), and `pluginkit -e use`, adding the location again and starting the app through Launch Services
   change nothing (seen in a File Provider spike on macOS 27.0.1, valkyrianlabs/vaulthalla-desktop#2). The disk
