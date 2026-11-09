@@ -768,8 +768,12 @@ folders may become albums named by their paths (SPEC.md, "Folders copied into Up
   settled. Immich adds an Asset to an album at any time, so the albums come out the same. **Not chosen:** the whole
   overview before any upload, which would hold every close until the last file arrived, or let a move delete its
   sources before Immich had them.
-- **Settled** is nothing new for 10 seconds and nothing in the copy being written or uploaded: a long upload holds
-  its file open, so a slow copy does not count as finished early. A copy that pauses longer (Files asking about a
+- **Settled** is nothing new for 5 seconds and nothing in the copy being written or uploaded: file managers hand a
+  folder's files over one right after the other, and a long upload holds its file open, so a slow copy does not
+  count as finished early. 10 seconds, with the Mac's question waiting for a poll and then for the app's change
+  signal, kept it up to half a minute (the maintainer found it slow). On Linux the daemon looks every 2 seconds; on
+  macOS the extension looks again just after the settling time following each upload in a copied folder, and the
+  app reads the questions every 2 seconds, so the question comes within a few seconds of the copy. A copy that pauses longer (Files asking about a
   file Immich does not take) may be asked about early; what arrives after joins it: an unanswered question counts
   it, and albums take it in. A copy with nothing uploaded yet is not finished at all, since Files may ask before its
   first photo: it waits for that, and is forgotten after 10 minutes without one.
@@ -822,7 +826,7 @@ folders may become albums named by their paths (SPEC.md, "Folders copied into Up
   extension writes the questions after each poll; the app writes each answer to a file of its own, which the
   extension takes and removes; and the extension leaves what came of the albums for the app to tell, one file
   each. Only the extension opens the store (redb allows one process), and with a file per answer neither side ever
-  rewrites what the other wrote. The app looks at its 10-second change signal, and wakes the extension at once
+  rewrites what the other wrote. The app reads the questions every 2 seconds, and wakes the extension at once
   after an answer.
 - **Folders in the system's terms (macOS):** a copied folder is an item of its own (`upload-folder|Trip|Day 1`),
   kept in the store until it leaves, and listed in its parent and the working set, so the system keeps it however
@@ -838,7 +842,7 @@ folders may become albums named by their paths (SPEC.md, "Folders copied into Up
   failing and tried again without end (seen on the maintainer's Mac, macOS 27.2). Finder's `.DS_Store` is no photo
   and keeps no folder.
 - **Folders on Linux:** the staging area keeps each folder with the time something last arrived in it, and they go
-  per copy: once no file is in any of the copy's folders and nothing arrived in any of them for 10 seconds, about as
+  per copy: once no file is in any of the copy's folders and nothing arrived in any of them for 5 seconds, about as
   soon as the last file has left. Folder by folder, one waiting for its turn went while the copy was busy elsewhere,
   since Dolphin and rsync make every folder of a copy before its first file (found by the adversarial review). A gone
   folder is remembered for 10 minutes, unseen, and a path lookup brings it back: Files stops at a file Immich does not

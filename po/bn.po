@@ -980,15 +980,15 @@ msgstr "কারণ: {reason}"
 msgid "none given"
 msgstr "কিছু জানানো হয়নি"
 
-#: apple/App/ImmichMountApp.swift:710
+#: apple/App/ImmichMountApp.swift:721
 msgid "The login item could not be changed: {error}"
 msgstr "লগইন আইটেম পরিবর্তন করা যায়নি: {error}"
 
-#: apple/App/ImmichMountApp.swift:744
+#: apple/App/ImmichMountApp.swift:755
 msgid "The server sent an address that cannot be opened."
 msgstr "সার্ভার এমন একটি ঠিকানা পাঠিয়েছে যা খোলা যায় না।"
 
-#: apple/App/ImmichMountApp.swift:831
+#: apple/App/ImmichMountApp.swift:842
 msgid "Finder does not show Immich yet. Is the extension switched on in System Settings? ({error})"
 msgstr "Finder এখনো Immich দেখাচ্ছে না। System Settings-এ এক্সটেনশনটি কি চালু আছে? ({error})"
 

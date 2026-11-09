@@ -18,8 +18,10 @@ use chrono::NaiveDate;
 use crate::naming::clash_key;
 use crate::source::SourceError;
 
-/// How long a copy must be quiet, with nothing in it being written or uploaded, before it counts as finished.
-pub const SETTLE_SECONDS: u64 = 10;
+/// How long a copy must be quiet, with nothing in it being written or uploaded, before it counts as finished. File
+/// managers hand a folder's files over one right after the other, and an upload in progress counts as busy, so a short
+/// wait is enough; a copy that pauses longer is asked about early, and what arrives after joins it.
+pub const SETTLE_SECONDS: u64 = 5;
 /// How long a question waits for its answer; unanswered, the copy stays in the timeline only.
 pub const QUESTION_SECONDS: u64 = 24 * 60 * 60;
 /// How long a finished copy is remembered: a folder of the same name copied in meanwhile joins it, as the rest of a
@@ -736,7 +738,7 @@ mod tests {
         work(&mut uploads, &target, 1, 200).await;
         uploads.uploaded(&path(&["Trip"]), "a3", 250);
         uploads.uploaded(&path(&["Trip", "Day 2"]), "c1", 250);
-        assert!(uploads.tick(255, FolderChoice::Albums, IDLE).is_empty(), "settling again first");
+        assert!(uploads.tick(252, FolderChoice::Albums, IDLE).is_empty(), "settling again first");
         assert_eq!(uploads.tick(300, FolderChoice::Albums, IDLE), [FolderEvent::MakeAlbums(1)]);
         work(&mut uploads, &target, 1, 300).await;
         let albums = target.albums.lock().unwrap().clone();

@@ -980,15 +980,15 @@ msgstr "Причина: {reason}"
 msgid "none given"
 msgstr "не указана"
 
-#: apple/App/ImmichMountApp.swift:710
+#: apple/App/ImmichMountApp.swift:721
 msgid "The login item could not be changed: {error}"
 msgstr "Не удалось изменить объект входа: {error}"
 
-#: apple/App/ImmichMountApp.swift:744
+#: apple/App/ImmichMountApp.swift:755
 msgid "The server sent an address that cannot be opened."
 msgstr "Сервер прислал адрес, который нельзя открыть."
 
-#: apple/App/ImmichMountApp.swift:831
+#: apple/App/ImmichMountApp.swift:842
 msgid "Finder does not show Immich yet. Is the extension switched on in System Settings? ({error})"
 msgstr "Finder пока не показывает Immich. Включено ли расширение в Системных настройках? ({error})"
 

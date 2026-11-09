@@ -1110,6 +1110,21 @@ pub struct Library {
     directory: PathBuf,
 }
 
+/// Look at the copied folders again once a copy could have settled, rather than at the next poll, up to ten seconds
+/// later: the question reaches the app sooner. The poll still does the same, for an extension stopped meanwhile.
+fn look_again_once_settled(answers: Arc<Answers<ImmichSource, Arc<MetadataStore>>>) {
+    runtime().spawn(async move {
+        tokio::time::sleep(Duration::from_secs(immich_mount_core::folder_uploads::SETTLE_SECONDS + 1)).await;
+        if let Err(error) = answers.follow_folder_copies(None).await {
+            log::info!("the copied folders were not looked at: {error}");
+        }
+        for copy in answers.take_albums_due() {
+            let answers = answers.clone();
+            runtime().spawn(async move { answers.make_albums(copy).await });
+        }
+    });
+}
+
 /// The settings in `config.toml`, as the macOS edition follows them.
 fn parse_config(text: &str) -> Result<Config, BridgeError> {
     Config::from_toml(text).map_err(failed)
@@ -1277,7 +1292,13 @@ impl Library {
         cancel: Option<Arc<Cancel>>,
     ) -> Result<Item, BridgeError> {
         let answers = self.answers();
-        cancellable(cancel, async move { answers.upload(&folder, &name, Path::new(&path), modified).await }).await
+        let copied = matches!(NodeKey::from_storage_key(&folder), Some(NodeKey::UploadFolder(_)));
+        let uploading = answers.clone();
+        let result = cancellable(cancel, async move { uploading.upload(&folder, &name, Path::new(&path), modified).await }).await;
+        if copied {
+            look_again_once_settled(answers);
+        }
+        result
     }
 
     /// Make the folder `name` inside `parent`, as Finder copies a folder into Upload or into a folder copied there,

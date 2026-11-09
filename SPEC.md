@@ -301,7 +301,8 @@ cameras. Clashes are detected case-insensitively, after Unicode NFC normalisatio
   the timeline as it arrives, exactly as a single file does (on close, with the same outcomes and errors), and other
   files in it are refused as they would be in Upload.
 - **Settling:** no program tells that a copy is coming or how big it is, so a copy counts as finished once nothing
-  new has arrived in it for 10 seconds and nothing in it is being written or uploaded.
+  new has arrived in it for 5 seconds and nothing in it is being written or uploaded. It is asked about within a few
+  seconds of that.
 - **Albums,** once it has settled, as `uploads.folders` says:
   - `ask` (the default): Immich Mount asks, naming the folder, counting what uploaded and what did not, and
     listing the albums it would make, with two buttons: **Make Albums** and **Timeline Only**. Dismissing the
@@ -328,7 +329,7 @@ cameras. Clashes are detected case-insensitively, after Unicode NFC normalisatio
 - **The folders leave Upload soon after their copy,** about as soon as their last file has (their files leave as
   single files do):
   - **On Linux** a copy's folders go together, once none of them holds a file and nothing arrived in any of them for
-    10 seconds. For 10 minutes after, a gone folder looked up by its path comes back, so a copy that only paused
+    5 seconds. For 10 minutes after, a gone folder looked up by its path comes back, so a copy that only paused
     (Files stops at a file Immich does not take until Skip or Skip All) goes on into it.
   - **On macOS** a folder goes 20 seconds after its last file, once macOS says it holds nothing the extension has not
     been handed (Finder may still be writing a large file into it). Where macOS does not say, it stays 10 minutes.

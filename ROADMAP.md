@@ -106,13 +106,19 @@ bridge's folder items, questions, answers, albums and departures. **Verified in 
 server, with Files' own copy: a folder with a subfolder and a text file (Files stops at the text file; after 40
 seconds on its question, Skip All copies the rest into the folders, which stayed); the urgent question stays on
 screen; Make Albums made `Trip` and `Trip › Day 1`, a taken name became `Holiday Mix - 2026-11-09`, and Timeline
-Only made none. On the maintainer's Mac, Finder's folder copy and the app's dialog work. The adversarial review
-(2026-11-09) found no way to lose a photo; it found a folder of a busy copy going too soon (Dolphin and rsync make
-every folder first), a lost answer making a second album, album work stranded by a cancelled poll on macOS, the
-desktop looked for only at login, a question lost to a daemon restart or to a click on its body, and Upload marked
-failing on the Mac by a change of its times. All are fixed, and covered by tests where they can be. Open:
-- Dolphin's folder copy and move, and the question's buttons, in the Plasma VM.
-- What macOS does with a copied folder deleted by the extension while it still holds a file it has not handed over.
+Only made none; the folders leave about 20 seconds after their copy, and a copy paused 40 seconds on Files'
+question, its folder gone meanwhile, found the folder again and finished; a daemon restarted before the answer
+closed its question and asked again. **Verified in a Plasma 6.8 VM** with KDE's own copy (`kioclient copy`, which
+makes every folder first): every photo uploaded, the urgent question showed its buttons, and Make Albums made
+`River › Day 1` and `River › Day 2`. **On the maintainer's Mac** (macOS 27.2), Finder's folder copy, the app's
+dialog and the albums work; Upload no longer fails on a change of its times; and macOS answers the extension's
+question about its pending set, so a copied folder leaves soon after its copy. The adversarial review (2026-11-09)
+found no way to lose a photo; it found a folder of a busy copy going too soon (Dolphin and rsync make every folder
+first), a lost answer making a second album, album work stranded by a cancelled poll on macOS, the desktop looked
+for only at login, a question lost to a daemon restart or to a click on its body, and Upload marked failing on the
+Mac by a change of its times. All are fixed, and covered by tests where they can be. Open:
+- What macOS does with a copied folder deleted by the extension while it still holds a file it has not handed over
+  (the pending set is read first to avoid it).
 
 ## M4. The GNOME app
 

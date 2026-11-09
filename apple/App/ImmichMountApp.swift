@@ -647,6 +647,7 @@ final class AppModel: ObservableObject {
         Task { await FinderLocation.applyName() }
         Task { await refreshState() }
         Task { await keepChangesFlowing() }
+        Task { await followFolderCopies() }
     }
 
     /// Have the system read every item again when the bridge's item format changed since the last run. The format is
@@ -695,7 +696,17 @@ final class AppModel: ObservableObject {
             } catch {
                 logger.debug("the extension was not woken: \(String(describing: error), privacy: .public)")
             }
-            FolderCopies.follow()
+        }
+    }
+
+    /// Look for questions about copied folders every few seconds: the extension leaves one as soon as a copy settles,
+    /// and a file read costs nothing, where waiting for the change signal kept it up to ten seconds.
+    private func followFolderCopies() async {
+        while !Task.isCancelled {
+            try? await Task.sleep(for: .seconds(2))
+            if server != nil {
+                FolderCopies.follow()
+            }
         }
     }
 
