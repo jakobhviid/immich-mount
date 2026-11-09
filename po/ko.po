@@ -35,63 +35,63 @@ msgstr "Immich에서 로그아웃됨"
 msgid "Immich no longer accepts this sign-in. Open Immich Mount to sign in again."
 msgstr "Immich가 더 이상 이 로그인을 허용하지 않습니다. 다시 로그인하려면 Immich Mount를 여십시오."
 
-#: crates/immich-mount-linux/src/folders.rs:169
-#: apple/App/FolderCopies.swift:76
+#: crates/immich-mount-linux/src/folders.rs:204
+#: apple/App/FolderCopies.swift:77
 msgid "Uploaded to Immich: {folder}"
 msgstr "Immich에 업로드됨: {folder}"
 
-#: crates/immich-mount-linux/src/folders.rs:171
-#: apple/App/FolderCopies.swift:71
+#: crates/immich-mount-linux/src/folders.rs:206
+#: apple/App/FolderCopies.swift:72
 msgid "Photos and videos in the timeline: {count}"
 msgstr "타임라인의 사진 및 비디오: {count}"
 
-#: crates/immich-mount-linux/src/folders.rs:172
-#: apple/App/FolderCopies.swift:72
+#: crates/immich-mount-linux/src/folders.rs:207
+#: apple/App/FolderCopies.swift:73
 msgid "Albums it can make: {albums}"
 msgstr "만들 수 있는 앨범: {albums}"
 
-#: crates/immich-mount-linux/src/folders.rs:175
-#: apple/App/FolderCopies.swift:74
+#: crates/immich-mount-linux/src/folders.rs:210
+#: apple/App/FolderCopies.swift:75
 msgid "Files not uploaded: {count}"
 msgstr "업로드되지 않은 파일: {count}"
 
-#: crates/immich-mount-linux/src/folders.rs:178
+#: crates/immich-mount-linux/src/folders.rs:213
 #: crates/immich-mount-core/src/settings.rs:91
-#: apple/App/FolderCopies.swift:82
+#: apple/App/FolderCopies.swift:83
 msgid "Make Albums"
 msgstr "앨범 만들기"
 
-#: crates/immich-mount-linux/src/folders.rs:178
+#: crates/immich-mount-linux/src/folders.rs:213
 #: crates/immich-mount-core/src/settings.rs:90
-#: apple/App/FolderCopies.swift:83
+#: apple/App/FolderCopies.swift:84
 msgid "Timeline Only"
 msgstr "타임라인만"
 
-#: crates/immich-mount-linux/src/folders.rs:197
-#: apple/App/FolderCopies.swift:96
+#: crates/immich-mount-linux/src/folders.rs:234
+#: apple/App/FolderCopies.swift:97
 msgid "Albums made from {folder}"
 msgstr "{folder}에서 앨범을 만들었습니다"
 
-#: crates/immich-mount-linux/src/folders.rs:199
-#: apple/App/FolderCopies.swift:99
-#: apple/App/FolderCopies.swift:103
+#: crates/immich-mount-linux/src/folders.rs:236
+#: apple/App/FolderCopies.swift:100
+#: apple/App/FolderCopies.swift:104
 msgid "No albums made from {folder}"
 msgstr "{folder}에서 앨범을 만들지 않았습니다"
 
-#: crates/immich-mount-linux/src/folders.rs:205
-#: apple/App/FolderCopies.swift:100
+#: crates/immich-mount-linux/src/folders.rs:242
+#: apple/App/FolderCopies.swift:101
 msgid "Immich does not let this account make albums ({permission}). The photos and videos are in the timeline."
 msgstr "Immich가 이 계정의 앨범 생성을 허용하지 않습니다({permission}). 사진과 비디오는 타임라인에 있습니다."
 
-#: crates/immich-mount-linux/src/folders.rs:210
+#: crates/immich-mount-linux/src/folders.rs:247
 msgid "Signed out of Immich. The photos and videos are in the timeline."
 msgstr "Immich에서 로그아웃됨. 사진과 비디오는 타임라인에 있습니다."
 
 #: crates/immich-mount-linux/src/fuse.rs:637
-#: crates/immich-mount-linux/src/fuse.rs:681
-#: crates/immich-mount-linux/src/fuse.rs:687
-#: crates/immich-mount-linux/src/fuse.rs:697
-#: crates/immich-mount-linux/src/fuse.rs:1162
+#: crates/immich-mount-linux/src/fuse.rs:685
+#: crates/immich-mount-linux/src/fuse.rs:691
+#: crates/immich-mount-linux/src/fuse.rs:701
+#: crates/immich-mount-linux/src/fuse.rs:1166
 msgid "Not uploaded: {name}"
 msgstr "업로드되지 않음: {name}"
 
@@ -107,27 +107,35 @@ msgstr "{name}을(를) Immich에 업로드하는 중"
 msgid "The copy finishes once Immich has the file."
 msgstr "Immich가 파일을 받으면 복사가 완료됩니다."
 
+#: crates/immich-mount-linux/src/fuse.rs:667
+msgid "Restored from the trash: {name}"
+msgstr "휴지통에서 복원됨: {name}"
+
 #: crates/immich-mount-linux/src/fuse.rs:668
+msgid "Immich had this photo in its trash, and copying it in brought it back."
+msgstr "이 사진은 Immich 휴지통에 있었으며, 복사하여 다시 복원되었습니다."
+
+#: crates/immich-mount-linux/src/fuse.rs:672
 msgid "Immich has this photo already, so nothing was added."
 msgstr "Immich에 이미 이 사진이 있으므로 아무것도 추가되지 않았습니다."
 
-#: crates/immich-mount-linux/src/fuse.rs:669
+#: crates/immich-mount-linux/src/fuse.rs:673
 msgid "Already in Immich: {name}"
 msgstr "이미 Immich에 있음: {name}"
 
-#: crates/immich-mount-linux/src/fuse.rs:678
+#: crates/immich-mount-linux/src/fuse.rs:682
 msgid "{error}. The file is kept in {folder}."
 msgstr "{error}. 파일은 {folder}에 보관됩니다."
 
-#: crates/immich-mount-linux/src/fuse.rs:688
+#: crates/immich-mount-linux/src/fuse.rs:692
 msgid "This computer lets a file operation take at most {seconds} seconds (fs.fuse.default_request_timeout). Set it to 0 for longer uploads. The file is kept in {folder}."
 msgstr "이 컴퓨터는 파일 작업 하나에 최대 {seconds}초만 허용합니다(fs.fuse.default_request_timeout). 더 오래 걸리는 업로드를 허용하려면 0으로 설정하십시오. 파일은 {folder}에 보관됩니다."
 
-#: crates/immich-mount-linux/src/fuse.rs:698
+#: crates/immich-mount-linux/src/fuse.rs:702
 msgid "The upload took too long. The file is kept in {folder}."
 msgstr "업로드 시간이 너무 오래 걸렸습니다. 파일은 {folder}에 보관됩니다."
 
-#: crates/immich-mount-linux/src/fuse.rs:1162
+#: crates/immich-mount-linux/src/fuse.rs:1166
 msgid "Immich takes photos and videos only."
 msgstr "Immich는 사진과 동영상만 받습니다."
 

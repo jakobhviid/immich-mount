@@ -47,25 +47,43 @@ pub fn kept_copies(file: &Path) -> FolderUploads {
 /// serves notifications.
 #[derive(Default)]
 struct Desktop {
-    connection: Option<zbus::Connection>,
+    /// The session bus, once reached.
+    bus: Option<zbus::Connection>,
+    /// Whether the desktop's notifications carry buttons, and its answers are heard.
+    ready: bool,
     answers: Option<tokio::sync::mpsc::UnboundedReceiver<crate::notify::Answer>>,
 }
 
+/// Whether a question can be asked now.
+enum Reach<'desktop> {
+    Ready(&'desktop zbus::Connection),
+    /// A session without notifications that carry buttons, yet: the desktop may still be starting.
+    NotYet,
+    /// No session bus: nobody is there to ask (a machine without a desktop).
+    Never,
+}
+
 impl Desktop {
-    /// The connection to ask on, made (and its answers heard) the first time a desktop with buttons is there.
-    async fn connection(&mut self) -> Option<&zbus::Connection> {
-        if self.connection.is_none() {
-            let connection = zbus::Connection::session().await.ok()?;
-            if !crate::notify::has_buttons(&connection).await {
-                return None;
+    /// The connection to ask on, its answers heard from the first time a desktop with buttons is there.
+    async fn reach(&mut self) -> Reach<'_> {
+        if self.bus.is_none() {
+            match zbus::Connection::session().await {
+                Ok(bus) => self.bus = Some(bus),
+                Err(_) => return Reach::Never,
+            }
+        }
+        let bus = self.bus.as_ref().expect("just reached");
+        if !self.ready {
+            if !crate::notify::has_buttons(bus).await {
+                return Reach::NotYet;
             }
             let (sender, receiver) = tokio::sync::mpsc::unbounded_channel();
             // The desktop sends a button's answer to the connection that showed it, so one connection does both.
-            tokio::spawn(crate::notify::answers(connection.clone(), sender));
-            self.connection = Some(connection);
+            tokio::spawn(crate::notify::answers(bus.clone(), sender));
             self.answers = Some(receiver);
+            self.ready = true;
         }
-        self.connection.as_ref()
+        Reach::Ready(bus)
     }
 }
 
@@ -84,7 +102,7 @@ where
     let earlier: Vec<u32> = std::fs::read_to_string(&file).ok().and_then(|text| serde_json::from_str::<Kept>(&text).ok()).map(|kept| kept.notifications).unwrap_or_default();
     let mut pending: Vec<FolderQuestion> = folders.lock().expect("folder uploads lock").questions();
     if !earlier.is_empty() {
-        if let Some(connection) = desktop.connection().await {
+        if let Reach::Ready(connection) = desktop.reach().await {
             for notification in earlier {
                 crate::notify::close(connection, notification).await;
             }
@@ -107,6 +125,8 @@ where
                     let wanted = answer == Some(MAKE_ALBUMS);
                     if folders.lock().expect("folder uploads lock").answer(copy, wanted) {
                         log::info!("a folder copied into Upload: {}", if wanted { "albums wanted" } else { "the timeline only" });
+                        // Kept at once: a daemon stopped before the next look would ask again.
+                        keep(&file, &folders, &asked);
                     }
                 }
             }
@@ -115,36 +135,51 @@ where
         for event in events {
             match event {
                 FolderEvent::Ask(question) => pending.push(question),
-                FolderEvent::MakeAlbums(copy) => make(&folders, albums.as_ref(), copy).await,
+                FolderEvent::MakeAlbums(copy) => make(&folders, &file, albums.as_ref(), copy).await,
                 FolderEvent::Unanswered(copy) => {
                     asked.retain(|_, asked_about| *asked_about != copy);
+                    pending.retain(|question| question.id != copy);
                     log::info!("a question about a folder copied into Upload went unanswered; it stays in the timeline only");
                 }
             }
         }
+        let mut waiting = Vec::new();
         for question in pending.drain(..) {
-            let shown = match desktop.connection().await {
-                Some(connection) => ask(connection, &question).await,
-                None => None,
-            };
-            match shown {
-                Some(notification) => {
-                    asked.insert(notification, question.id);
-                }
-                None => {
+            match desktop.reach().await {
+                Reach::Ready(connection) => match ask(connection, &question).await {
+                    Some(notification) => {
+                        asked.insert(notification, question.id);
+                    }
+                    None => waiting.push(question),
+                },
+                // The desktop may still be starting (the daemon starts at login): asked once it is up, or after a day
+                // the copy stays in the timeline only.
+                Reach::NotYet => waiting.push(question),
+                Reach::Never => {
                     log::info!("{} was copied into Upload; with nobody to ask, it stays in the timeline only", question.folder);
                     folders.lock().expect("folder uploads lock").answer(question.id, false);
                 }
             }
         }
+        pending = waiting;
         // Kept when it changed, so a restarted daemon asks again what this one asked.
-        let kept = Kept { copies: folders.lock().expect("folder uploads lock").clone(), notifications: asked.keys().copied().collect() };
-        let text = serde_json::to_string(&kept).unwrap_or_default();
+        let text = kept_text_of(&folders, &asked);
         if text != kept_text {
             write_whole(&file, &text);
             kept_text = text;
         }
     }
+}
+
+/// What is kept, as text.
+fn kept_text_of(folders: &Mutex<FolderUploads>, asked: &HashMap<u32, u64>) -> String {
+    let kept = Kept { copies: folders.lock().expect("folder uploads lock").clone(), notifications: asked.keys().copied().collect() };
+    serde_json::to_string(&kept).unwrap_or_default()
+}
+
+/// Keep the record now.
+fn keep(file: &Path, folders: &Mutex<FolderUploads>, asked: &HashMap<u32, u64>) {
+    write_whole(file, &kept_text_of(folders, asked));
 }
 
 /// Write a file whole, through a temporary one beside it.
@@ -179,8 +214,9 @@ async fn ask(connection: &zbus::Connection, question: &FolderQuestion) -> Option
     crate::notify::ask(connection, &summary, &lines.join(" · "), &buttons).await
 }
 
-/// Make a copy's albums, recording each step as it happens, and say what came of it.
-async fn make<Albums: AlbumTarget>(folders: &Mutex<FolderUploads>, albums: &Albums, copy: u64) {
+/// Make a copy's albums, recording each step as it happens, in `file` too (a daemon stopped midway takes the work up
+/// again, and finds what it made), and say what came of it.
+async fn make<Albums: AlbumTarget>(folders: &Mutex<FolderUploads>, file: &Path, albums: &Albums, copy: u64) {
     let Some(work) = folders.lock().expect("folder uploads lock").album_work(copy) else { return };
     let mut new = Vec::new();
     let outcome = make_albums(albums, &work, chrono::Local::now().date_naive(), |step| {
@@ -188,6 +224,7 @@ async fn make<Albums: AlbumTarget>(folders: &Mutex<FolderUploads>, albums: &Albu
             new.push(name.clone());
         }
         folders.lock().expect("folder uploads lock").album_progress(copy, &step);
+        keep(file, folders, &HashMap::new());
     })
     .await;
     let failure = outcome.err();

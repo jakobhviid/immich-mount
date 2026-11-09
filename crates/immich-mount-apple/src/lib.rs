@@ -21,7 +21,7 @@ use immich_mount_core::sign_in::{self, normalised_address, BrowserSignIn};
 use immich_mount_core::source::{LibrarySource, SourceError, ThumbnailKind, ThumbnailSource};
 use immich_mount_core::store::{Anchor, Change, JournalRead, MetadataStore};
 use immich_mount_core::tree::{is_touched, Entry, EntryKind, NameMemory, NodeKey, Tree};
-use immich_mount_core::uploads::{completeness, Admission, Completeness, UploadError, UploadTarget, Uploaded};
+use immich_mount_core::uploads::{completeness, Admission, Completeness, UploadError, UploadTarget};
 use sha2::{Digest, Sha256};
 
 uniffi::setup_scaffolding!();
@@ -47,8 +47,11 @@ const UPLOAD_FOLDERS: &str = "upload-folders";
 /// The name the record of each copied folder is kept under in the store (`FolderUploads`).
 const FOLDER_COPIES: &str = "folder-copies";
 /// How long a folder copied into Upload stays once it is empty and untouched, when macOS says it holds nothing the
-/// system has not handed over (its pending set): long enough for the last files to leave.
+/// system has not handed over (its pending set): long enough for the last files to leave. Never shorter than the time
+/// macOS takes to bring that list up to date, and a margin.
 const FOLDER_STAY: Duration = Duration::from_secs(20);
+/// The margin above the pending set's refresh time.
+const PENDING_MARGIN: Duration = Duration::from_secs(10);
 /// How long it stays when macOS does not say: as long as its copy is remembered, so a copy Finder is still writing
 /// (a large file, which the extension hears of only once it is whole) is never taken from under it.
 const FOLDER_STAY_UNSURE: Duration = Duration::from_secs(immich_mount_core::folder_uploads::REMEMBER_SECONDS);
@@ -551,7 +554,7 @@ where
     /// listed now (the server busy, or the budget spent) is listed at a later poll; a change is never seen once and
     /// then lost. Deletions are settled once every touched folder was listed again, so a node that only moved, to a
     /// folder not listed yet, is not deleted.
-    async fn poll(&self, pending: Option<&[String]>) -> Result<bool, BridgeError>
+    async fn poll(&self, pending: Option<&PendingFolders>) -> Result<bool, BridgeError>
     where
         Source: AlbumTarget,
     {
@@ -626,7 +629,7 @@ where
             return refused(format!("{name} is not whole: its copy may have been cut short."));
         }
         let asset_id = match self.source.upload(path, name, modified.into()).await {
-            Ok(Uploaded::Created(asset_id) | Uploaded::AlreadyInLibrary(asset_id)) => asset_id,
+            Ok(uploaded) => uploaded.asset_id().to_owned(),
             Err(error) => {
                 self.not_uploaded(&folder_node, name)?;
                 return Err(match error {
@@ -812,7 +815,7 @@ where
 
     /// The copied folders' part of a poll: take the app's answers, move the copies along, make their albums, leave the
     /// app the questions and what came of the albums, and record the folders that are done leaving.
-    async fn follow_folder_copies(&self, pending: Option<&[String]>) -> Result<(), BridgeError>
+    async fn follow_folder_copies(&self, pending: Option<&PendingFolders>) -> Result<(), BridgeError>
     where
         Source: AlbumTarget,
     {
@@ -912,10 +915,14 @@ where
     /// uploading, leaving, kept by the system after it did not upload, or pending in the system. `pending` holds the
     /// folders macOS still holds items in that it has not handed over; when it is not known, they stay as long as
     /// their copy is remembered. The deepest go first.
-    fn record_folder_departures(&self, now: u64, pending: Option<&[String]>) -> Result<(), BridgeError> {
+    fn record_folder_departures(&self, now: u64, pending: Option<&PendingFolders>) -> Result<(), BridgeError> {
         let leaving: Vec<String> = leaving_upload(self.store().kept_state(LEAVING_UPLOAD).as_deref()).into_iter().map(|leaving| leaving.parent).collect();
-        let stay = if pending.is_some() { FOLDER_STAY } else { FOLDER_STAY_UNSURE }.as_secs();
-        let pending = pending.unwrap_or_default();
+        let stay = match pending {
+            Some(pending) => FOLDER_STAY.max(Duration::from_secs(pending.refresh_seconds.into()) + PENDING_MARGIN),
+            None => FOLDER_STAY_UNSURE,
+        }
+        .as_secs();
+        let pending: &[String] = pending.map(|pending| pending.folders.as_slice()).unwrap_or_default();
         self.store()
             .update_state(UPLOAD_FOLDERS, |kept| {
                 let mut folders = upload_folders(kept);
@@ -1003,11 +1010,22 @@ where
 
 /// Write a file whole, through a temporary one beside it, so a reader never sees half of it.
 fn write_whole(path: &Path, contents: &str) {
-    let temporary = path.with_extension("partial");
+    // A name of its own for each write: two writers at once (a poll and a look after an upload) never share one.
+    static WRITES: std::sync::atomic::AtomicU64 = std::sync::atomic::AtomicU64::new(0);
+    let write = WRITES.fetch_add(1, std::sync::atomic::Ordering::Relaxed);
+    let temporary = path.with_extension(format!("{}-{write}.partial", std::process::id()));
     if std::fs::write(&temporary, contents).and_then(|()| std::fs::rename(&temporary, path)).is_err() {
         log::info!("could not write {}", path.display());
         let _ = std::fs::remove_file(&temporary);
     }
+}
+
+/// What macOS says it holds back (its pending set): the folders holding items it has not handed over yet, and how often
+/// it brings that list up to date.
+#[derive(Debug, Clone, PartialEq, Eq, uniffi::Record)]
+pub struct PendingFolders {
+    pub folders: Vec<String>,
+    pub refresh_seconds: u32,
 }
 
 /// A copied folder that settled, for the app to ask about (ARCHITECTURE.md, "Folders copied into Upload").
@@ -1241,12 +1259,12 @@ impl Library {
     }
 
     /// Ask the server what changed, and record in the journal what changed for the folders the system holds.
-    /// `pending` names the folders holding items macOS has not handed over yet (its pending set), `None` when it did
-    /// not say: a copied folder leaves Upload soon only once it holds none. Returns whether anything changed.
-    pub async fn poll(&self, pending: Option<Vec<String>>, cancel: Option<Arc<Cancel>>) -> Result<bool, BridgeError> {
+    /// `pending` is macOS's pending set, `None` when it did not say, or said its list was full: a copied folder leaves
+    /// Upload soon only once it holds none of it. Returns whether anything changed.
+    pub async fn poll(&self, pending: Option<PendingFolders>, cancel: Option<Arc<Cancel>>) -> Result<bool, BridgeError> {
         let answers = self.answers();
         let polling = answers.clone();
-        let result = cancellable(cancel, async move { polling.poll(pending.as_deref()).await }).await;
+        let result = cancellable(cancel, async move { polling.poll(pending.as_ref()).await }).await;
         // Albums are made in tasks of their own: the system cancels a poll it no longer waits for, and album work cut
         // short there would wait for the next one.
         for copy in answers.take_albums_due() {
@@ -1695,6 +1713,7 @@ impl<Output> Drop for Cancelling<Output> {
 mod tests {
     use super::*;
     use chrono::{NaiveDate, TimeZone, Utc};
+    use immich_mount_core::uploads::Uploaded;
     use immich_mount_core::model::{Album, Asset, Person, YearMonth};
     use immich_mount_core::source::Watched;
     use immich_mount_core::tree::{InMemoryNames, SectionKey};
@@ -2092,9 +2111,13 @@ mod tests {
         let soon = seconds_since_epoch(SystemTime::now()) + FOLDER_STAY.as_secs();
         answers.record_folder_departures(soon, None).unwrap();
         assert_eq!(answers.changes_since(&before, 100).unwrap().deleted, std::slice::from_ref(&item.identifier), "unsure: the folder stays");
-        answers.record_folder_departures(soon, Some(std::slice::from_ref(&day.identifier))).unwrap();
+        let holding = |folders: &[String]| PendingFolders { folders: folders.to_vec(), refresh_seconds: 0 };
+        answers.record_folder_departures(soon, Some(&holding(std::slice::from_ref(&day.identifier)))).unwrap();
         assert_eq!(answers.changes_since(&before, 100).unwrap().deleted.len(), 1, "macOS holds something in it: it stays");
-        answers.record_folder_departures(soon, Some(&[])).unwrap();
+        let slow = PendingFolders { folders: Vec::new(), refresh_seconds: 60 };
+        answers.record_folder_departures(soon, Some(&slow)).unwrap();
+        assert_eq!(answers.changes_since(&before, 100).unwrap().deleted.len(), 1, "a list a minute old: it waits that long");
+        answers.record_folder_departures(soon, Some(&holding(&[]))).unwrap();
         let deleted = answers.changes_since(&before, 100).unwrap().deleted;
         assert_eq!(deleted, [item.identifier.clone(), day.identifier.clone()], "nothing pending: it goes soon");
         assert_eq!(answers.item(&trip.identifier).await, Ok(trip.clone()));

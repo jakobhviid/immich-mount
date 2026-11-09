@@ -659,10 +659,14 @@ where
     };
     let result = match outcome {
         Ok(Ok(uploaded)) => {
-            let (Uploaded::Created(asset_id) | Uploaded::AlreadyInLibrary(asset_id)) = &uploaded;
-            note_folder(&folders, &pending.folder, |folders, path, now| folders.uploaded(path, asset_id, now));
+            note_folder(&folders, &pending.folder, |folders, path, now| folders.uploaded(path, uploaded.asset_id(), now));
             match uploaded {
                 Uploaded::Created(_) => log::info!("uploaded {name}"),
+                Uploaded::Restored(_) => {
+                    log::info!("{name} was in Immich's trash; restored");
+                    let summary = tr("Restored from the trash: {name}").replace("{name}", &name);
+                    crate::notify::notify_once_in_a_while("restored", &summary, tr("Immich had this photo in its trash, and copying it in brought it back.")).await;
+                }
                 Uploaded::AlreadyInLibrary(_) => {
                     log::info!("{name} is already in the library");
                     let body = tr("Immich has this photo already, so nothing was added.");

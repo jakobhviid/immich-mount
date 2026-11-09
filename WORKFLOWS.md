@@ -146,8 +146,8 @@ printf '%s' "$KEY" | immich-mount login --server https://photos.example.org --ap
 Without a terminal, `login` never prompts. Browser sign-in still prints the address to open on stderr, and reads
 the address the browser ends on from stdin; the other methods read their secrets from stdin. An API key needs
 `album.read`, `asset.read`, `asset.view`, `asset.download` and `person.read`, plus `asset.upload` for uploads,
-`album.create` and `albumAsset.create` for albums of folders copied into Upload, and `user.read` for the app and
-`status` to name the account.
+`album.create` and `albumAsset.create` for albums of folders copied into Upload, `asset.delete` to restore a
+photo copied in while it is in Immich's trash, and `user.read` for the app and `status` to name the account.
 
 ## 3. The mount
 
@@ -256,8 +256,8 @@ folders in the drive keep their English names.
   fails, Files reports an error and the source stays where it was. Dolphin deletes the source even then, so any file
   that could not be uploaded is kept in `~/.local/share/immich-mount/not-uploaded/`, and the notification says so.
 - **Already in library:** a file whose content already exists counts as done, adds nothing, and a notification says
-  so (a photo copied from the mount itself, say). A file matching something in the Immich
-  trash is refused; restore it in Immich if you want it.
+  so (a photo copied from the mount itself, say). A file matching something in the Immich trash is restored from
+  the trash, as it was (the API key needs `asset.delete`; without it the file is refused).
 - Non-media files are refused, with a notification explaining why; hidden folders (a thumbnail cache) are refused
   too.
 - **Folders** go in whole: copy a folder (with folders inside it, if you like) into Upload, and every photo and video

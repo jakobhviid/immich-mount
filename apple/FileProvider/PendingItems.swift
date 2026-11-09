@@ -9,12 +9,13 @@ enum PendingItems {
     /// How long macOS may take to say; past it, nobody knows, and the folders stay their longer while.
     private static let patience: DispatchTimeInterval = .seconds(5)
 
-    /// The identifiers of the folders that hold pending items, or `nil` when macOS does not say.
-    static func folders(in domain: NSFileProviderDomain) async -> [String]? {
+    /// The folders that hold pending items, with how often macOS brings the list up to date; `nil` when macOS does not
+    /// say, or says its list is full, and so may leave some out.
+    static func folders(in domain: NSFileProviderDomain) async -> PendingFolders? {
         guard let manager = NSFileProviderManager(for: domain) else { return nil }
         let enumerator = manager.enumeratorForPendingItems()
         defer { enumerator.invalidate() }
-        return await withCheckedContinuation { continuation in
+        let folders: [String]? = await withCheckedContinuation { continuation in
             let answered = OSAllocatedUnfairLock(initialState: false)
             let answer: ([String]?) -> Void = { folders in
                 let first = answered.withLock { done in
@@ -28,6 +29,9 @@ enum PendingItems {
             // Holding the collector until then: the system's enumerator may not keep its observer.
             DispatchQueue.global().asyncAfter(deadline: .now() + patience) { withExtendedLifetime(collector) { answer(nil) } }
         }
+        guard let folders, !enumerator.isMaximumSizeReached else { return nil }
+        let refresh = UInt32(clamping: Int(enumerator.refreshInterval.rounded(.up)))
+        return PendingFolders(folders: folders, refreshSeconds: refresh)
     }
 }
 

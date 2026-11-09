@@ -35,63 +35,63 @@ msgstr "Von Immich abgemeldet"
 msgid "Immich no longer accepts this sign-in. Open Immich Mount to sign in again."
 msgstr "Immich akzeptiert diese Anmeldung nicht mehr. Öffnen Sie Immich Mount, um sich erneut anzumelden."
 
-#: crates/immich-mount-linux/src/folders.rs:169
-#: apple/App/FolderCopies.swift:76
+#: crates/immich-mount-linux/src/folders.rs:204
+#: apple/App/FolderCopies.swift:77
 msgid "Uploaded to Immich: {folder}"
 msgstr "In Immich hochgeladen: {folder}"
 
-#: crates/immich-mount-linux/src/folders.rs:171
-#: apple/App/FolderCopies.swift:71
+#: crates/immich-mount-linux/src/folders.rs:206
+#: apple/App/FolderCopies.swift:72
 msgid "Photos and videos in the timeline: {count}"
 msgstr "Fotos und Videos in der Zeitleiste: {count}"
 
-#: crates/immich-mount-linux/src/folders.rs:172
-#: apple/App/FolderCopies.swift:72
+#: crates/immich-mount-linux/src/folders.rs:207
+#: apple/App/FolderCopies.swift:73
 msgid "Albums it can make: {albums}"
 msgstr "Alben, die daraus entstehen können: {albums}"
 
-#: crates/immich-mount-linux/src/folders.rs:175
-#: apple/App/FolderCopies.swift:74
+#: crates/immich-mount-linux/src/folders.rs:210
+#: apple/App/FolderCopies.swift:75
 msgid "Files not uploaded: {count}"
 msgstr "Nicht hochgeladene Dateien: {count}"
 
-#: crates/immich-mount-linux/src/folders.rs:178
+#: crates/immich-mount-linux/src/folders.rs:213
 #: crates/immich-mount-core/src/settings.rs:91
-#: apple/App/FolderCopies.swift:82
+#: apple/App/FolderCopies.swift:83
 msgid "Make Albums"
 msgstr "Alben erstellen"
 
-#: crates/immich-mount-linux/src/folders.rs:178
+#: crates/immich-mount-linux/src/folders.rs:213
 #: crates/immich-mount-core/src/settings.rs:90
-#: apple/App/FolderCopies.swift:83
+#: apple/App/FolderCopies.swift:84
 msgid "Timeline Only"
 msgstr "Nur Zeitleiste"
 
-#: crates/immich-mount-linux/src/folders.rs:197
-#: apple/App/FolderCopies.swift:96
+#: crates/immich-mount-linux/src/folders.rs:234
+#: apple/App/FolderCopies.swift:97
 msgid "Albums made from {folder}"
 msgstr "Alben aus {folder} erstellt"
 
-#: crates/immich-mount-linux/src/folders.rs:199
-#: apple/App/FolderCopies.swift:99
-#: apple/App/FolderCopies.swift:103
+#: crates/immich-mount-linux/src/folders.rs:236
+#: apple/App/FolderCopies.swift:100
+#: apple/App/FolderCopies.swift:104
 msgid "No albums made from {folder}"
 msgstr "Keine Alben aus {folder} erstellt"
 
-#: crates/immich-mount-linux/src/folders.rs:205
-#: apple/App/FolderCopies.swift:100
+#: crates/immich-mount-linux/src/folders.rs:242
+#: apple/App/FolderCopies.swift:101
 msgid "Immich does not let this account make albums ({permission}). The photos and videos are in the timeline."
 msgstr "Immich erlaubt diesem Konto nicht, Alben zu erstellen ({permission}). Die Fotos und Videos sind in der Zeitleiste."
 
-#: crates/immich-mount-linux/src/folders.rs:210
+#: crates/immich-mount-linux/src/folders.rs:247
 msgid "Signed out of Immich. The photos and videos are in the timeline."
 msgstr "Von Immich abgemeldet. Die Fotos und Videos sind in der Zeitleiste."
 
 #: crates/immich-mount-linux/src/fuse.rs:637
-#: crates/immich-mount-linux/src/fuse.rs:681
-#: crates/immich-mount-linux/src/fuse.rs:687
-#: crates/immich-mount-linux/src/fuse.rs:697
-#: crates/immich-mount-linux/src/fuse.rs:1162
+#: crates/immich-mount-linux/src/fuse.rs:685
+#: crates/immich-mount-linux/src/fuse.rs:691
+#: crates/immich-mount-linux/src/fuse.rs:701
+#: crates/immich-mount-linux/src/fuse.rs:1166
 msgid "Not uploaded: {name}"
 msgstr "Nicht hochgeladen: {name}"
 
@@ -107,27 +107,35 @@ msgstr "{name} wird zu Immich hochgeladen"
 msgid "The copy finishes once Immich has the file."
 msgstr "Das Kopieren endet, sobald Immich die Datei hat."
 
+#: crates/immich-mount-linux/src/fuse.rs:667
+msgid "Restored from the trash: {name}"
+msgstr "Aus dem Papierkorb wiederhergestellt: {name}"
+
 #: crates/immich-mount-linux/src/fuse.rs:668
+msgid "Immich had this photo in its trash, and copying it in brought it back."
+msgstr "Immich hatte dieses Foto im Papierkorb, und das Kopieren hat es zurückgeholt."
+
+#: crates/immich-mount-linux/src/fuse.rs:672
 msgid "Immich has this photo already, so nothing was added."
 msgstr "Immich hat dieses Foto bereits, daher wurde nichts hinzugefügt."
 
-#: crates/immich-mount-linux/src/fuse.rs:669
+#: crates/immich-mount-linux/src/fuse.rs:673
 msgid "Already in Immich: {name}"
 msgstr "Bereits in Immich: {name}"
 
-#: crates/immich-mount-linux/src/fuse.rs:678
+#: crates/immich-mount-linux/src/fuse.rs:682
 msgid "{error}. The file is kept in {folder}."
 msgstr "{error}. Die Datei wird in {folder} aufbewahrt."
 
-#: crates/immich-mount-linux/src/fuse.rs:688
+#: crates/immich-mount-linux/src/fuse.rs:692
 msgid "This computer lets a file operation take at most {seconds} seconds (fs.fuse.default_request_timeout). Set it to 0 for longer uploads. The file is kept in {folder}."
 msgstr "Dieser Computer erlaubt einem Dateivorgang höchstens {seconds} Sekunden (fs.fuse.default_request_timeout). Setzen Sie den Wert für längere Uploads auf 0. Die Datei wird in {folder} aufbewahrt."
 
-#: crates/immich-mount-linux/src/fuse.rs:698
+#: crates/immich-mount-linux/src/fuse.rs:702
 msgid "The upload took too long. The file is kept in {folder}."
 msgstr "Das Hochladen dauerte zu lange. Die Datei wird in {folder} aufbewahrt."
 
-#: crates/immich-mount-linux/src/fuse.rs:1162
+#: crates/immich-mount-linux/src/fuse.rs:1166
 msgid "Immich takes photos and videos only."
 msgstr "Immich nimmt nur Fotos und Videos an."
 

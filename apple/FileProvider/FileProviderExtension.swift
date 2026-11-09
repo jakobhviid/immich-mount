@@ -171,6 +171,12 @@ final class FileProviderExtension: NSObject, NSFileProviderReplicatedExtension, 
         let isFile = kind.map { !$0.conforms(to: .folder) && !$0.conforms(to: .symbolicLink) && !$0.conforms(to: .aliasFile) } ?? true
         let modified = (itemTemplate.contentModificationDate ?? nil) ?? Date()
         let (folder, name) = (itemTemplate.parentItemIdentifier.bridged, itemTemplate.filename)
+        // Finder's record of a folder's view is no photo: kept on this Mac only, and never pending, so it keeps no
+        // copied folder in Upload.
+        if name == ".DS_Store" {
+            completionHandler(nil, [], false, NSFileProviderError(.excludedFromSync))
+            return progress
+        }
         let reimported = options.contains(.mayAlreadyExist)
         let cancel = Cancel()
         let task = Task {

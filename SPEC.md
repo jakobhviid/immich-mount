@@ -45,8 +45,8 @@ Use these words in code, docs and issues.
   anything for it in Immich (no album, no folder). Avoid: import, sync.
 - **Already in library**: an upload whose content (by checksum) already exists as a non-trashed Asset.
   It counts as success.
-- **Trashed duplicate**: an upload whose content matches an Asset in the Immich trash. It counts as a
-  failure, and it is not restored.
+- **Trashed duplicate**: an upload whose content matches an Asset in the Immich trash. It is restored from the
+  trash and counts as success; where the credential may not restore (`asset.delete`), it fails.
 - **Uncertain outcome**: a mutation whose request may or may not have reached the server. It is reported and
   checked, never blindly repeated.
 
@@ -270,7 +270,8 @@ cameras. Clashes are detected case-insensitively, after Unicode NFC normalisatio
 - Files are sent unchanged: no resizing, transcoding, metadata stripping or date rewriting, and no albums created.
 - **Outcomes:**
   - A new Asset or **Already in library** counts as success.
-  - A **trashed duplicate** fails and is not restored.
+  - A **trashed duplicate** is restored from the trash, as it was (its date, albums and faces), and counts as
+    success; on Linux a notification says so. Without `asset.delete` it fails, and stays in the trash.
   - Temporary server errors are retried, within a time limit.
 - **Temporary names:**
   - A hidden photo (`.IMG_1.JPG`) uploads on close like any photo. Known temporary names (GIO's
@@ -288,7 +289,7 @@ cameras. Clashes are detected case-insensitively, after Unicode NFC normalisatio
   |---|---|
   | A file type Immich does not take, at `create` or on a rename | `ENOTSUP` (Operation not supported) |
   | A name an Asset already has in that folder | `EEXIST` |
-  | The same bytes are in the trash | `EEXIST` on `close()` |
+  | The same bytes are in the trash, and the credential may not restore them | `EEXIST` on `close()` |
   | The credential may not upload | `EACCES` on `close()` |
   | Server unreachable or busy past the limit | `EIO` on `close()` |
   | A hidden folder, a link or a device node in Upload; renaming a folder there | `EPERM` |
@@ -318,7 +319,7 @@ cameras. Clashes are detected case-insensitively, after Unicode NFC normalisatio
   of the folders inside it). It is named by the folder's path below Upload, joined with ` › `: `Trip`,
   `Trip › Day 1`. A name an album has already (the account's own, or one shared with it, compared ignoring case and
   Unicode form) gets the day's date: `Trip - 2026-11-09`, then `Trip - 2026-11-09 (2)`. A photo Immich had already
-  goes into the album too.
+  goes into the album too, and so does one restored from its trash.
 - **After the albums:** what arrives later in the same copy, while it is remembered (10 minutes after its last
   file), joins its albums, and a new folder in it gets one of its own. A folder of the same name copied after that
   is a new copy. An album made by a copy and deleted since is not made again.
@@ -330,9 +331,12 @@ cameras. Clashes are detected case-insensitively, after Unicode NFC normalisatio
   single files do):
   - **On Linux** a copy's folders go together, once none of them holds a file and nothing arrived in any of them for
     5 seconds. For 10 minutes after, a gone folder looked up by its path comes back, so a copy that only paused
-    (Files stops at a file Immich does not take until Skip or Skip All) goes on into it.
-  - **On macOS** a folder goes 20 seconds after its last file, once macOS says it holds nothing the extension has not
-    been handed (Finder may still be writing a large file into it). Where macOS does not say, it stays 10 minutes.
+    (Files stops at a file Immich does not take until Skip or Skip All) goes on into it. A folder of the same name
+    copied again within those 10 minutes is that folder: Files asks to merge (Dolphin, that the folder exists), and
+    its photos join the earlier copy.
+  - **On macOS** a folder goes 20 seconds after its last file (or as long as macOS takes to bring its list up to
+    date, and 10 seconds more), once macOS says it holds nothing the extension has not been handed (Finder may still
+    be writing a large file into it). Where macOS does not say, or says its list is full, it stays 10 minutes.
   - An empty one may be removed before then.
 - **Files stops at a file it cannot copy** (one Immich does not take) and asks; Skip All goes on with the rest. A
   copy with nothing uploaded yet waits for its first upload before it is asked about.
@@ -340,8 +344,8 @@ cameras. Clashes are detected case-insensitively, after Unicode NFC normalisatio
   notification; a hidden photo still uploads.
 - **On Linux** the daemon asks, as an urgent desktop notification, which stays on screen until a button is
   pressed or it is dismissed; a click on the notification itself answers nothing, and it asks again. It looks for
-  the desktop's notifications when a question is due, so a daemon that started before the desktop still asks. A
-  restarted daemon (a settings change) asks again what was being asked, in place of the notification it showed
+  the desktop's notifications when a question is due, and a question waits for them, so a daemon that started
+  before the desktop still asks. A restarted daemon (a settings change) asks again what was being asked, in place of the notification it showed
   before. A file of a copied folder that did not upload is kept under its folder's path:
   `not-uploaded/Trip/Day 1/IMG_1.JPG`.
 - **On macOS** the menu bar app asks, in a dialog that stays above other apps until one of its two buttons is

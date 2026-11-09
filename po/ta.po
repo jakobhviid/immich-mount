@@ -35,63 +35,63 @@ msgstr "Immich-இலிருந்து வெளியேறிவிட்�
 msgid "Immich no longer accepts this sign-in. Open Immich Mount to sign in again."
 msgstr "Immich இனி இந்த உள்நுழைவை ஏற்கவில்லை. மீண்டும் உள்நுழைய Immich Mount-ஐத் திறக்கவும்."
 
-#: crates/immich-mount-linux/src/folders.rs:169
-#: apple/App/FolderCopies.swift:76
+#: crates/immich-mount-linux/src/folders.rs:204
+#: apple/App/FolderCopies.swift:77
 msgid "Uploaded to Immich: {folder}"
 msgstr "Immich-இல் பதிவேற்றப்பட்டது: {folder}"
 
-#: crates/immich-mount-linux/src/folders.rs:171
-#: apple/App/FolderCopies.swift:71
+#: crates/immich-mount-linux/src/folders.rs:206
+#: apple/App/FolderCopies.swift:72
 msgid "Photos and videos in the timeline: {count}"
 msgstr "காலவரிசையில் உள்ள படங்களும் வீடியோக்களும்: {count}"
 
-#: crates/immich-mount-linux/src/folders.rs:172
-#: apple/App/FolderCopies.swift:72
+#: crates/immich-mount-linux/src/folders.rs:207
+#: apple/App/FolderCopies.swift:73
 msgid "Albums it can make: {albums}"
 msgstr "உருவாக்கக்கூடிய ஆல்பங்கள்: {albums}"
 
-#: crates/immich-mount-linux/src/folders.rs:175
-#: apple/App/FolderCopies.swift:74
+#: crates/immich-mount-linux/src/folders.rs:210
+#: apple/App/FolderCopies.swift:75
 msgid "Files not uploaded: {count}"
 msgstr "பதிவேற்றப்படாத கோப்புகள்: {count}"
 
-#: crates/immich-mount-linux/src/folders.rs:178
+#: crates/immich-mount-linux/src/folders.rs:213
 #: crates/immich-mount-core/src/settings.rs:91
-#: apple/App/FolderCopies.swift:82
+#: apple/App/FolderCopies.swift:83
 msgid "Make Albums"
 msgstr "ஆல்பங்களை உருவாக்கு"
 
-#: crates/immich-mount-linux/src/folders.rs:178
+#: crates/immich-mount-linux/src/folders.rs:213
 #: crates/immich-mount-core/src/settings.rs:90
-#: apple/App/FolderCopies.swift:83
+#: apple/App/FolderCopies.swift:84
 msgid "Timeline Only"
 msgstr "காலவரிசை மட்டும்"
 
-#: crates/immich-mount-linux/src/folders.rs:197
-#: apple/App/FolderCopies.swift:96
+#: crates/immich-mount-linux/src/folders.rs:234
+#: apple/App/FolderCopies.swift:97
 msgid "Albums made from {folder}"
 msgstr "{folder}-இலிருந்து ஆல்பங்கள் உருவாக்கப்பட்டன"
 
-#: crates/immich-mount-linux/src/folders.rs:199
-#: apple/App/FolderCopies.swift:99
-#: apple/App/FolderCopies.swift:103
+#: crates/immich-mount-linux/src/folders.rs:236
+#: apple/App/FolderCopies.swift:100
+#: apple/App/FolderCopies.swift:104
 msgid "No albums made from {folder}"
 msgstr "{folder}-இலிருந்து ஆல்பங்கள் எதுவும் உருவாக்கப்படவில்லை"
 
-#: crates/immich-mount-linux/src/folders.rs:205
-#: apple/App/FolderCopies.swift:100
+#: crates/immich-mount-linux/src/folders.rs:242
+#: apple/App/FolderCopies.swift:101
 msgid "Immich does not let this account make albums ({permission}). The photos and videos are in the timeline."
 msgstr "இந்தக் கணக்கு ஆல்பங்களை உருவாக்க Immich அனுமதிக்கவில்லை ({permission}). படங்களும் வீடியோக்களும் காலவரிசையில் உள்ளன."
 
-#: crates/immich-mount-linux/src/folders.rs:210
+#: crates/immich-mount-linux/src/folders.rs:247
 msgid "Signed out of Immich. The photos and videos are in the timeline."
 msgstr "Immich-இலிருந்து வெளியேறிவிட்டீர்கள். படங்களும் வீடியோக்களும் காலவரிசையில் உள்ளன."
 
 #: crates/immich-mount-linux/src/fuse.rs:637
-#: crates/immich-mount-linux/src/fuse.rs:681
-#: crates/immich-mount-linux/src/fuse.rs:687
-#: crates/immich-mount-linux/src/fuse.rs:697
-#: crates/immich-mount-linux/src/fuse.rs:1162
+#: crates/immich-mount-linux/src/fuse.rs:685
+#: crates/immich-mount-linux/src/fuse.rs:691
+#: crates/immich-mount-linux/src/fuse.rs:701
+#: crates/immich-mount-linux/src/fuse.rs:1166
 msgid "Not uploaded: {name}"
 msgstr "பதிவேற்றப்படவில்லை: {name}"
 
@@ -107,27 +107,35 @@ msgstr "{name} Immich-இல் பதிவேற்றப்படுகிற
 msgid "The copy finishes once Immich has the file."
 msgstr "Immich-க்குக் கோப்பு கிடைத்ததும் நகலெடுப்பு முடியும்."
 
+#: crates/immich-mount-linux/src/fuse.rs:667
+msgid "Restored from the trash: {name}"
+msgstr "குப்பையிலிருந்து மீட்டெடுக்கப்பட்டது: {name}"
+
 #: crates/immich-mount-linux/src/fuse.rs:668
+msgid "Immich had this photo in its trash, and copying it in brought it back."
+msgstr "இந்தப் படம் Immich-இன் குப்பையில் இருந்தது; அதை நகலெடுத்ததால் அது திரும்ப வந்தது."
+
+#: crates/immich-mount-linux/src/fuse.rs:672
 msgid "Immich has this photo already, so nothing was added."
 msgstr "இந்தப் படம் ஏற்கெனவே Immich-இல் உள்ளது, எனவே எதுவும் சேர்க்கப்படவில்லை."
 
-#: crates/immich-mount-linux/src/fuse.rs:669
+#: crates/immich-mount-linux/src/fuse.rs:673
 msgid "Already in Immich: {name}"
 msgstr "ஏற்கெனவே Immich-இல் உள்ளது: {name}"
 
-#: crates/immich-mount-linux/src/fuse.rs:678
+#: crates/immich-mount-linux/src/fuse.rs:682
 msgid "{error}. The file is kept in {folder}."
 msgstr "{error}. கோப்பு {folder} இல் வைக்கப்பட்டுள்ளது."
 
-#: crates/immich-mount-linux/src/fuse.rs:688
+#: crates/immich-mount-linux/src/fuse.rs:692
 msgid "This computer lets a file operation take at most {seconds} seconds (fs.fuse.default_request_timeout). Set it to 0 for longer uploads. The file is kept in {folder}."
 msgstr "இந்தக் கணினி ஒரு கோப்புச் செயல்பாட்டுக்கு அதிகபட்சம் {seconds} வினாடிகள் மட்டுமே அனுமதிக்கிறது (fs.fuse.default_request_timeout). நீண்ட பதிவேற்றங்களுக்கு இதை 0 என அமைக்கவும். கோப்பு {folder} இல் வைக்கப்பட்டுள்ளது."
 
-#: crates/immich-mount-linux/src/fuse.rs:698
+#: crates/immich-mount-linux/src/fuse.rs:702
 msgid "The upload took too long. The file is kept in {folder}."
 msgstr "பதிவேற்றம் மிக அதிக நேரம் எடுத்தது. கோப்பு {folder} இல் வைக்கப்பட்டுள்ளது."
 
-#: crates/immich-mount-linux/src/fuse.rs:1162
+#: crates/immich-mount-linux/src/fuse.rs:1166
 msgid "Immich takes photos and videos only."
 msgstr "Immich படங்களையும் வீடியோக்களையும் மட்டுமே ஏற்கும்."
 

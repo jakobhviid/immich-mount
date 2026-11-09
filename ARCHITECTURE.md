@@ -696,17 +696,23 @@ failures would be invisible and moves could lose files.
 included), read from `/server/media-types` when the daemon starts, with a built-in list when the server cannot be
 asked. A refused extension fails at `create`, before any bytes are copied.
 
-**Not supported:** folders, Live Photo pairing, and separate XMP sidecars.
+**Not supported:** Live Photo pairing, and separate XMP sidecars. Folders are taken (below, "Folders copied into
+Upload").
 
 **The upload sequence:**
 1. Stream SHA-1 over the staging file.
-2. `POST /assets/bulk-upload-check`. A trashed duplicate fails here, before any upload.
+2. `POST /assets/bulk-upload-check`. A trashed duplicate is restored here (`POST /trash/restore/assets`), with no
+   upload: copying a photo into Upload is the plainest way to say it is wanted, and it comes back as it was (its
+   date, albums and faces), where the user would otherwise restore it in Immich and copy it again; a folder full of
+   them was stuck in Upload on the Mac (the maintainer's call). Restoring needs `asset.delete`; without it the
+   upload fails, saying so. **Not chosen:** refusing, the earlier rule, which kept a deletion standing; asking in
+   the album question, one more choice in one dialog.
 3. A streamed multipart `POST /assets` with `assetData`, `fileCreatedAt` and `fileModifiedAt`.
    - `fileCreatedAt` is the capture date from the file's EXIF (images) or container metadata (videos), falling back
      to the mtime, then to now. The server re-reads EXIF anyway. *(Built so far: the staged file's mtime at close;
      the client does not parse EXIF, since the server does. GIO may set the source's mtime only after closing, in
      which case a file without its own date is filed under the copy time.)*
-4. 201 is a new Asset, and 200 `duplicate` is Already in library.
+4. 201 is a new Asset, and 200 `duplicate` is Already in library, or restored when it is in the trash.
 
 A lost response is retried safely, because the checksum turns a second upload into a duplicate, not a second Asset.
 
@@ -781,7 +787,8 @@ folders may become albums named by their paths (SPEC.md, "Folders copied into Up
   path with the Asset ids uploaded in it, the copy's state (copying, asked, albums, timeline) and the albums made.
   It is plain data, which macOS keeps in its store, since the system stops the extension between requests, and
   Linux in the account's cache, so a daemon restarted by a settings change asks again what it was asking (and
-  closes its old notification, whose buttons would answer nobody).
+  closes its old notification, whose buttons would answer nobody). Linux keeps it at once after an answer and after
+  each step of album work, so a daemon stopped midway asks nothing twice and makes no album twice.
 - **Album work records each step as it happens:** the name chosen for a folder's album before the album is made,
   then the album. Work done again (an answer lost on the way back, a process stopped midway) finds the album it made
   by that name and the folder's first photo, so no second, dated album follows. Only a server that cannot be reached
@@ -800,16 +807,17 @@ folders may become albums named by their paths (SPEC.md, "Folders copied into Up
   - **On Linux** the daemon asks with an urgent notification, which GNOME and Plasma keep on screen until a button
     is pressed (verified in a GNOME 50 VM). It goes over one session connection that both shows the notification
     and hears the answer, since the desktop sends `ActionInvoked` to the connection that showed it, made when the
-    first question is due: the user service starts at login, often before the desktop serves notifications. A
+    first question is due: the user service starts at login, often before the desktop serves notifications, so a
+    question waits for the desktop (only a machine without a session bus answers it Timeline Only at once). A
     click on the notification itself (its `default` action) answers nothing, and the question is asked again;
     without that action GNOME closed it as dismissed, which read as Timeline Only. GNOME shows the body on one line,
     so its parts are set apart with ` · `. **Not chosen:** a dialog, which the daemon has no window for, and the
     apps, which may not run (or be installed).
   - **On macOS** the menu bar app asks in a dialog, since the extension can show nothing. It floats above other
     apps until one of its two buttons is clicked, and neither answers to a key, so a dialog that comes up while
-    someone types elsewhere is answered on purpose. The app looks for questions in a task of its own, since telling
-    what came of albums first asks macOS whether it may post notifications, and its change signal must not wait on
-    that answer. Copy numbers start from the time in a new store, so after signing out and in an answer meant for
+    someone types elsewhere is answered on purpose. Asking never waits on telling what came of albums, which first
+    asks macOS whether the app may post notifications: an unanswered question about that held up every later
+    question. Copy numbers start from the time in a new store, so after signing out and in an answer meant for
     a copy of before never reaches one of now. **Not chosen:** a notification with buttons, which Notification
     Center and Focus hide away; and a third button, Cancel (below).
   - Dismissing is an answer (the timeline only), and so is no answer within a day. Asking needs a desktop: a daemon
@@ -819,9 +827,8 @@ folders may become albums named by their paths (SPEC.md, "Folders copied into Up
   Immich, so the only choice left is whether albums follow. A copy answered Timeline Only that takes an upload again
   is asked about again: copying the folder in once more costs nothing, since Immich recognises what it has, and Make
   Albums takes everything. **Not chosen,** as the maintainer settled: a Cancel that takes the uploads back. The
-  mount never deletes from the library (principles 4 and 5); it would take photos that were in Immich before the
-  copy too; and Immich refuses a photo in its trash, so uploading the folder again would fail until the trash was
-  emptied.
+  mount never deletes from the library (principles 4 and 5); and it would take photos that were in Immich before the
+  copy too.
 - **On macOS the question passes through files** in the library's directory (the App Group's `Library/`). The
   extension writes the questions after each poll; the app writes each answer to a file of its own, which the
   extension takes and removes; and the extension leaves what came of the albums for the app to tell, one file
@@ -834,8 +841,10 @@ folders may become albums named by their paths (SPEC.md, "Folders copied into Up
   20 seconds after its last file, once it is empty and holds nothing the extension knows of (a file counts from the
   moment it arrives until it uploads, and a refused folder inside it counts too) and nothing in macOS's pending set:
   Finder may still be writing a large file into it, which the extension hears of only once it is whole, and taking
-  the folder from under that copy could cost a moved file. The extension reads the pending set before each poll;
-  where macOS does not say (within 5 seconds), the folder stays 10 minutes. A folder that keeps something stays, and
+  the folder from under that copy would fail it (Finder deletes a moved file's source only once the whole move has
+  succeeded, so the source stays). The extension reads the pending set before each poll, and a folder stays at
+  least as long as macOS takes to bring that list up to date, and 10 seconds more; where macOS does not say (within
+  5 seconds), or says its list is full, the folder stays 10 minutes. A folder that keeps something stays, and
   may be deleted in Finder, which forgets it. **Not chosen:** 10 minutes always, which left empty folders in Upload
   long enough to puzzle (the maintainer's call). Upload and the copied folders take changes to their times and such (the system passes
   on each change on disk as files come and go) and keep them as they are: refused, the system marked Upload as

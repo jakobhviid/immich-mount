@@ -14,21 +14,22 @@ enum FolderCopies {
     private static let namesShown = 4
     /// The copies asked about in this run of the app. One still waiting at the next start is asked again.
     private static var asked = Set<UInt64>()
-    /// Whether a look is under way: telling waits for macOS's question about notifications, the first time, and the
-    /// change signal must not wait with it.
-    private static var following = false
+    /// Whether notices are being told: telling waits for macOS's question about notifications, the first time, and
+    /// nothing else may wait with it.
+    private static var telling = false
 
-    /// Ask what waits for an answer, and tell what came of albums, in a task of its own. Called at each change signal.
+    /// Ask what waits for an answer, and tell what came of albums. Called every few seconds. Asking never waits on
+    /// telling: an unanswered question about notifications held up every later question.
     static func follow() {
-        guard !following else { return }
-        following = true
+        let directory = AppGroup.libraryDirectory.path
+        for question in folderQuestions(directory: directory) where !asked.contains(question.copy) {
+            asked.insert(question.copy)
+            ask(question)
+        }
+        guard !telling else { return }
+        telling = true
         Task {
-            defer { following = false }
-            let directory = AppGroup.libraryDirectory.path
-            for question in folderQuestions(directory: directory) where !asked.contains(question.copy) {
-                asked.insert(question.copy)
-                ask(question)
-            }
+            defer { telling = false }
             for notice in takeFolderNotices(directory: directory) {
                 await tell(notice)
             }
