@@ -36,55 +36,53 @@ msgid "Immich no longer accepts this sign-in. Open Immich Mount to sign in again
 msgstr "Immich ఇకపై ఈ సైన్ ఇన్‌ను అంగీకరించడం లేదు. మళ్లీ సైన్ ఇన్ చేయడానికి Immich Mount తెరవండి."
 
 #: crates/immich-mount-linux/src/folders.rs:88
-#: apple/App/FolderCopies.swift:76
+#: apple/App/FolderCopies.swift:63
 msgid "Uploaded to Immich: {folder}"
 msgstr "Immichకు అప్‌లోడ్ అయింది: {folder}"
 
 #: crates/immich-mount-linux/src/folders.rs:90
-#: apple/App/FolderCopies.swift:77
+#: apple/App/FolderCopies.swift:58
 msgid "Photos and videos in the timeline: {count}"
 msgstr "టైమ్‌లైన్‌లో ఫోటోలు, వీడియోలు: {count}"
 
 #: crates/immich-mount-linux/src/folders.rs:91
-#: apple/App/FolderCopies.swift:78
+#: apple/App/FolderCopies.swift:59
 msgid "Albums it can make: {albums}"
 msgstr "సృష్టించగల ఆల్బమ్‌లు: {albums}"
 
 #: crates/immich-mount-linux/src/folders.rs:94
-#: apple/App/FolderCopies.swift:80
+#: apple/App/FolderCopies.swift:61
 msgid "Files not uploaded: {count}"
 msgstr "అప్‌లోడ్ కాని ఫైల్‌లు: {count}"
 
-#: crates/immich-mount-linux/src/folders.rs:96
+#: crates/immich-mount-linux/src/folders.rs:97
 #: crates/immich-mount-core/src/settings.rs:91
-#: apple/App/FolderCopies.swift:22
-#: apple/App/FolderCopies.swift:106
+#: apple/App/FolderCopies.swift:69
 msgid "Make Albums"
 msgstr "ఆల్బమ్‌లను సృష్టించండి"
 
-#: crates/immich-mount-linux/src/folders.rs:96
+#: crates/immich-mount-linux/src/folders.rs:97
 #: crates/immich-mount-core/src/settings.rs:90
-#: apple/App/FolderCopies.swift:23
-#: apple/App/FolderCopies.swift:107
+#: apple/App/FolderCopies.swift:70
 msgid "Timeline Only"
 msgstr "టైమ్‌లైన్ మాత్రమే"
 
-#: crates/immich-mount-linux/src/folders.rs:107
-#: apple/App/FolderCopies.swift:118
+#: crates/immich-mount-linux/src/folders.rs:108
+#: apple/App/FolderCopies.swift:83
 msgid "Albums made from {folder}"
 msgstr "{folder} నుండి ఆల్బమ్‌లు సృష్టించబడ్డాయి"
 
-#: crates/immich-mount-linux/src/folders.rs:109
-#: apple/App/FolderCopies.swift:121
+#: crates/immich-mount-linux/src/folders.rs:110
+#: apple/App/FolderCopies.swift:86
 msgid "No albums made from {folder}"
 msgstr "{folder} నుండి ఆల్బమ్‌లు ఏవీ సృష్టించబడలేదు"
 
-#: crates/immich-mount-linux/src/folders.rs:114
-#: apple/App/FolderCopies.swift:122
+#: crates/immich-mount-linux/src/folders.rs:115
+#: apple/App/FolderCopies.swift:87
 msgid "Immich does not let this account make albums ({permission}). The photos and videos are in the timeline."
 msgstr "ఈ ఖాతా ఆల్బమ్‌లను సృష్టించడానికి Immich అనుమతించదు ({permission}). ఫోటోలు, వీడియోలు టైమ్‌లైన్‌లో ఉన్నాయి."
 
-#: crates/immich-mount-linux/src/folders.rs:119
+#: crates/immich-mount-linux/src/folders.rs:120
 msgid "Signed out of Immich. The photos and videos are in the timeline."
 msgstr "Immich నుండి సైన్ అవుట్ అయ్యారు. ఫోటోలు, వీడియోలు టైమ్‌లైన్‌లో ఉన్నాయి."
 
@@ -133,27 +131,27 @@ msgid "Immich takes photos and videos only."
 msgstr "Immich ఫోటోలు, వీడియోలను మాత్రమే తీసుకుంటుంది."
 
 #: crates/immich-mount-linux/src/tray.rs:68
-#: apple/App/ImmichMountApp.swift:616
+#: apple/App/ImmichMountApp.swift:605
 msgid "Connected to {server}"
 msgstr "{server}కు కనెక్ట్ అయింది"
 
 #: crates/immich-mount-linux/src/tray.rs:69
-#: apple/App/ImmichMountApp.swift:616
+#: apple/App/ImmichMountApp.swift:605
 msgid "{server} is not reachable"
 msgstr "{server} అందుబాటులో లేదు"
 
 #: crates/immich-mount-linux/src/tray.rs:71
-#: apple/App/ImmichMountApp.swift:615
+#: apple/App/ImmichMountApp.swift:604
 msgid "Signed in to {server}"
 msgstr "{server}కు సైన్ ఇన్ అయ్యారు"
 
 #: crates/immich-mount-linux/src/tray.rs:79
-#: apple/App/ImmichMountApp.swift:624
+#: apple/App/ImmichMountApp.swift:613
 msgid "Server version: Immich {version}"
 msgstr "సర్వర్ వెర్షన్: Immich {version}"
 
 #: crates/immich-mount-linux/src/tray.rs:82
-#: apple/App/ImmichMountApp.swift:627
+#: apple/App/ImmichMountApp.swift:616
 msgid "Signed in as: {account}"
 msgstr "సైన్ ఇన్ చేసిన ఖాతా: {account}"
 
@@ -309,7 +307,7 @@ msgstr "AI వినియోగ వెల్లడి"
 
 #: crates/immich-mount-gnome/src/main.rs:117
 #: crates/immich-mount-kde/qml/Main.qml:175
-#: apple/App/ImmichMountApp.swift:472
+#: apple/App/ImmichMountApp.swift:461
 msgid "Parts of this project were written with the assistance of AI coding agents. All changes are reviewed by the maintainer."
 msgstr "ఈ ప్రాజెక్ట్‌లోని కొన్ని భాగాలు AI కోడింగ్ ఏజెంట్‌ల సహాయంతో రాయబడ్డాయి. అన్ని మార్పులను నిర్వాహకుడు సమీక్షిస్తారు."
 
@@ -574,7 +572,7 @@ msgid "The Immich API layer: {project}"
 msgstr "Immich API లేయర్: {project}"
 
 #: crates/immich-mount-kde/qml/Main.qml:171
-#: apple/App/ImmichMountApp.swift:471
+#: apple/App/ImmichMountApp.swift:460
 msgid "AI disclosure"
 msgstr "AI వినియోగ వెల్లడి"
 
@@ -916,114 +914,114 @@ msgid "Use System Settings Instead"
 msgstr "బదులుగా System Settingsను ఉపయోగించండి"
 
 #: apple/App/ContentView.swift:167
-#: apple/App/ImmichMountApp.swift:430
+#: apple/App/ImmichMountApp.swift:419
 #: apple/App/SettingsView.swift:258
 msgid "Open in Finder"
 msgstr "Finderలో తెరవండి"
 
-#: apple/App/ImmichMountApp.swift:187
+#: apple/App/ImmichMountApp.swift:176
 msgid "Sign out of Immich Mount?"
 msgstr "Immich Mount నుండి సైన్ అవుట్ చేయాలా?"
 
-#: apple/App/ImmichMountApp.swift:188
+#: apple/App/ImmichMountApp.swift:177
 msgid "Immich Mount leaves Finder, together with the photos and videos downloaded to this Mac. Your library on the server stays as it is."
 msgstr "ఈ Macకు డౌన్‌లోడ్ అయిన ఫోటోలు, వీడియోలతో పాటు Immich Mount, Finder నుండి తొలగిపోతుంది. సర్వర్‌లోని మీ లైబ్రరీ అలాగే ఉంటుంది."
 
-#: apple/App/ImmichMountApp.swift:190
+#: apple/App/ImmichMountApp.swift:179
 msgid "Files in Upload that have not reached Immich: {count}. They stay on this Mac, and Finder shows where once you have signed out."
 msgstr "Immichకు ఇంకా చేరని Uploadలోని ఫైల్‌లు: {count}. అవి ఈ Macలోనే ఉంటాయి, మీరు సైన్ అవుట్ అయ్యాక అవి ఎక్కడ ఉన్నాయో Finder చూపిస్తుంది."
 
-#: apple/App/ImmichMountApp.swift:194
+#: apple/App/ImmichMountApp.swift:183
 msgid "Sign Out"
 msgstr "సైన్ అవుట్ చేయండి"
 
-#: apple/App/ImmichMountApp.swift:195
+#: apple/App/ImmichMountApp.swift:184
 msgid "Cancel"
 msgstr "రద్దు చేయండి"
 
-#: apple/App/ImmichMountApp.swift:210
+#: apple/App/ImmichMountApp.swift:199
 msgid "Still signed in"
 msgstr "ఇంకా సైన్ ఇన్ అయ్యే ఉన్నారు"
 
-#: apple/App/ImmichMountApp.swift:211
+#: apple/App/ImmichMountApp.swift:200
 msgid "Finder's location could not be removed, so Immich Mount stays signed in: {error}"
 msgstr "Finder స్థానాన్ని తీసివేయలేకపోయాము, కాబట్టి Immich Mount సైన్ ఇన్ అయ్యే ఉంటుంది: {error}"
 
-#: apple/App/ImmichMountApp.swift:461
+#: apple/App/ImmichMountApp.swift:450
 msgid "Your Immich photos and videos as a drive in Finder. By Jakob Hviid, under the MIT license."
 msgstr "Finderలో ఒక డ్రైవ్‌గా మీ Immich ఫోటోలు, వీడియోలు. Jakob Hviid రూపొందించారు, MIT లైసెన్స్ కింద."
 
-#: apple/App/ImmichMountApp.swift:462
+#: apple/App/ImmichMountApp.swift:451
 msgid "Website"
 msgstr "వెబ్‌సైట్"
 
-#: apple/App/ImmichMountApp.swift:464
+#: apple/App/ImmichMountApp.swift:453
 msgid "Source code"
 msgstr "సోర్స్ కోడ్"
 
-#: apple/App/ImmichMountApp.swift:467
+#: apple/App/ImmichMountApp.swift:456
 msgid "Inspired by"
 msgstr "స్ఫూర్తి"
 
-#: apple/App/ImmichMountApp.swift:469
+#: apple/App/ImmichMountApp.swift:458
 msgid "The Immich API layer"
 msgstr "Immich API లేయర్"
 
-#: apple/App/ImmichMountApp.swift:632
+#: apple/App/ImmichMountApp.swift:621
 msgid "Last checked: {time}"
 msgstr "చివరిగా తనిఖీ చేసింది: {time}"
 
-#: apple/App/ImmichMountApp.swift:634
+#: apple/App/ImmichMountApp.swift:623
 msgid "Reason: {reason}"
 msgstr "కారణం: {reason}"
 
-#: apple/App/ImmichMountApp.swift:634
+#: apple/App/ImmichMountApp.swift:623
 msgid "none given"
 msgstr "ఏదీ ఇవ్వలేదు"
 
-#: apple/App/ImmichMountApp.swift:721
+#: apple/App/ImmichMountApp.swift:710
 msgid "The login item could not be changed: {error}"
 msgstr "లాగిన్ ఐటెమ్‌ను మార్చలేకపోయాము: {error}"
 
-#: apple/App/ImmichMountApp.swift:755
+#: apple/App/ImmichMountApp.swift:744
 msgid "The server sent an address that cannot be opened."
 msgstr "సర్వర్ తెరవలేని అడ్రస్‌ను పంపింది."
 
-#: apple/App/ImmichMountApp.swift:841
+#: apple/App/ImmichMountApp.swift:830
 msgid "Finder does not show Immich yet. Is the extension switched on in System Settings? ({error})"
 msgstr "Finder ఇంకా Immichను చూపడం లేదు. System Settingsలో ఎక్స్‌టెన్షన్ ఆన్ చేయబడిందా? ({error})"
 
 #: apple/App/ImmichMountApp.swift:42
-#: apple/App/ImmichMountApp.swift:441
+#: apple/App/ImmichMountApp.swift:430
 msgid "About Immich Mount"
 msgstr "Immich Mount గురించి"
 
 #: apple/App/ImmichMountApp.swift:45
-#: apple/App/ImmichMountApp.swift:434
+#: apple/App/ImmichMountApp.swift:423
 msgid "Check for Updates…"
 msgstr "అప్‌డేట్‌ల కోసం చెక్ చేయండి…"
 
 #: apple/App/ImmichMountApp.swift:50
-#: apple/App/ImmichMountApp.swift:432
+#: apple/App/ImmichMountApp.swift:421
 msgid "Settings…"
 msgstr "సెట్టింగ్‌లు…"
 
-#: apple/App/ImmichMountApp.swift:419
+#: apple/App/ImmichMountApp.swift:408
 #: apple/App/SettingsView.swift:236
 msgid "Sign In…"
 msgstr "సైన్ ఇన్ చేయండి…"
 
-#: apple/App/ImmichMountApp.swift:421
+#: apple/App/ImmichMountApp.swift:410
 #: apple/App/SettingsView.swift:256
 msgid "Switch On in Finder…"
 msgstr "Finderలో ఆన్ చేయండి…"
 
-#: apple/App/ImmichMountApp.swift:437
+#: apple/App/ImmichMountApp.swift:426
 #: apple/App/SettingsView.swift:261
 msgid "Sign Out…"
 msgstr "సైన్ అవుట్ చేయండి…"
 
-#: apple/App/ImmichMountApp.swift:442
+#: apple/App/ImmichMountApp.swift:431
 msgid "Quit Immich Mount"
 msgstr "Immich Mount నుండి నిష్క్రమించండి"
 

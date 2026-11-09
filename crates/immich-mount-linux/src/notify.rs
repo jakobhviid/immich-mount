@@ -55,21 +55,34 @@ pub fn notify_in_background(summary: String, body: String) {
 
 async fn send(summary: &str, body: &str) -> zbus::Result<()> {
     let connection = zbus::Connection::session().await?;
-    show(&connection, summary, body, &[], -1).await?;
+    show(&connection, summary, body, &[], -1, false).await?;
     Ok(())
 }
 
 /// Show a notification on `connection`, with `actions` as buttons (key and label), and return its id. `expire` is in
-/// milliseconds: -1 for the desktop's default, 0 for never.
-async fn show(connection: &zbus::Connection, summary: &str, body: &str, actions: &[(&str, &str)], expire: i32) -> zbus::Result<u32> {
+/// milliseconds: -1 for the desktop's default, 0 for never. An `urgent` one stays on screen until it is answered or
+/// dismissed, where a normal one slides into the desktop's list, or never shows while another is up (GNOME 50).
+async fn show(
+    connection: &zbus::Connection,
+    summary: &str,
+    body: &str,
+    actions: &[(&str, &str)],
+    expire: i32,
+    urgent: bool,
+) -> zbus::Result<u32> {
     // Plasma heads a notification with the app its `desktop-entry` names, so the app's name and icon show and no
     // picture is needed. GNOME drops a notification whose `desktop-entry` names an app it did not come from, and the
     // daemon is not the app, so there it carries our symbolic icon and no entry.
-    let (icon, hints): (&str, HashMap<&str, zbus::zvariant::Value<'_>>) = if crate::kde::plasma_is_running().await {
+    let (icon, mut hints): (&str, HashMap<&str, zbus::zvariant::Value<'_>>) = if crate::kde::plasma_is_running().await {
         ("", HashMap::from([("desktop-entry", KDE_DESKTOP_ENTRY.into())]))
     } else {
         (ICON, HashMap::new())
     };
+    if urgent {
+        /// The specification's "critical" urgency.
+        const CRITICAL: u8 = 2;
+        hints.insert("urgency", CRITICAL.into());
+    }
     let actions: Vec<&str> = actions.iter().flat_map(|(key, label)| [*key, *label]).collect();
     let reply = connection
         .call_method(
@@ -104,9 +117,10 @@ pub async fn has_buttons(connection: &zbus::Connection) -> bool {
 }
 
 /// Ask a question with buttons on `connection`, which is where the desktop sends the answer (`ActionInvoked`), and
-/// return the notification's id. It stays until answered or dismissed, where the desktop lets it.
+/// return the notification's id. It is urgent, so it stays on screen until answered or dismissed: a question in the
+/// desktop's list was easy to miss (GNOME 50 put it there at once while another notification was up).
 pub async fn ask(connection: &zbus::Connection, summary: &str, body: &str, buttons: &[(&str, &str)]) -> Option<u32> {
-    match tokio::time::timeout(SEND_LIMIT, show(connection, summary, body, buttons, 0)).await {
+    match tokio::time::timeout(SEND_LIMIT, show(connection, summary, body, buttons, 0, true)).await {
         Ok(Ok(id)) => Some(id),
         Ok(Err(error)) => {
             log::info!("could not ask ({error}): {summary}");

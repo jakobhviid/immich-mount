@@ -36,55 +36,53 @@ msgid "Immich no longer accepts this sign-in. Open Immich Mount to sign in again
 msgstr "Immich không còn chấp nhận lần đăng nhập này. Hãy mở Immich Mount để đăng nhập lại."
 
 #: crates/immich-mount-linux/src/folders.rs:88
-#: apple/App/FolderCopies.swift:76
+#: apple/App/FolderCopies.swift:63
 msgid "Uploaded to Immich: {folder}"
 msgstr "Đã tải lên Immich: {folder}"
 
 #: crates/immich-mount-linux/src/folders.rs:90
-#: apple/App/FolderCopies.swift:77
+#: apple/App/FolderCopies.swift:58
 msgid "Photos and videos in the timeline: {count}"
 msgstr "Ảnh và video trong dòng thời gian: {count}"
 
 #: crates/immich-mount-linux/src/folders.rs:91
-#: apple/App/FolderCopies.swift:78
+#: apple/App/FolderCopies.swift:59
 msgid "Albums it can make: {albums}"
 msgstr "Album có thể tạo: {albums}"
 
 #: crates/immich-mount-linux/src/folders.rs:94
-#: apple/App/FolderCopies.swift:80
+#: apple/App/FolderCopies.swift:61
 msgid "Files not uploaded: {count}"
 msgstr "Tập tin chưa tải lên: {count}"
 
-#: crates/immich-mount-linux/src/folders.rs:96
+#: crates/immich-mount-linux/src/folders.rs:97
 #: crates/immich-mount-core/src/settings.rs:91
-#: apple/App/FolderCopies.swift:22
-#: apple/App/FolderCopies.swift:106
+#: apple/App/FolderCopies.swift:69
 msgid "Make Albums"
 msgstr "Tạo album"
 
-#: crates/immich-mount-linux/src/folders.rs:96
+#: crates/immich-mount-linux/src/folders.rs:97
 #: crates/immich-mount-core/src/settings.rs:90
-#: apple/App/FolderCopies.swift:23
-#: apple/App/FolderCopies.swift:107
+#: apple/App/FolderCopies.swift:70
 msgid "Timeline Only"
 msgstr "Chỉ dòng thời gian"
 
-#: crates/immich-mount-linux/src/folders.rs:107
-#: apple/App/FolderCopies.swift:118
+#: crates/immich-mount-linux/src/folders.rs:108
+#: apple/App/FolderCopies.swift:83
 msgid "Albums made from {folder}"
 msgstr "Đã tạo album từ {folder}"
 
-#: crates/immich-mount-linux/src/folders.rs:109
-#: apple/App/FolderCopies.swift:121
+#: crates/immich-mount-linux/src/folders.rs:110
+#: apple/App/FolderCopies.swift:86
 msgid "No albums made from {folder}"
 msgstr "Không tạo album nào từ {folder}"
 
-#: crates/immich-mount-linux/src/folders.rs:114
-#: apple/App/FolderCopies.swift:122
+#: crates/immich-mount-linux/src/folders.rs:115
+#: apple/App/FolderCopies.swift:87
 msgid "Immich does not let this account make albums ({permission}). The photos and videos are in the timeline."
 msgstr "Immich không cho tài khoản này tạo album ({permission}). Ảnh và video nằm trong dòng thời gian."
 
-#: crates/immich-mount-linux/src/folders.rs:119
+#: crates/immich-mount-linux/src/folders.rs:120
 msgid "Signed out of Immich. The photos and videos are in the timeline."
 msgstr "Đã đăng xuất khỏi Immich. Ảnh và video nằm trong dòng thời gian."
 
@@ -133,27 +131,27 @@ msgid "Immich takes photos and videos only."
 msgstr "Immich chỉ nhận ảnh và video."
 
 #: crates/immich-mount-linux/src/tray.rs:68
-#: apple/App/ImmichMountApp.swift:616
+#: apple/App/ImmichMountApp.swift:605
 msgid "Connected to {server}"
 msgstr "Đã kết nối tới {server}"
 
 #: crates/immich-mount-linux/src/tray.rs:69
-#: apple/App/ImmichMountApp.swift:616
+#: apple/App/ImmichMountApp.swift:605
 msgid "{server} is not reachable"
 msgstr "Không thể kết nối tới {server}"
 
 #: crates/immich-mount-linux/src/tray.rs:71
-#: apple/App/ImmichMountApp.swift:615
+#: apple/App/ImmichMountApp.swift:604
 msgid "Signed in to {server}"
 msgstr "Đã đăng nhập vào {server}"
 
 #: crates/immich-mount-linux/src/tray.rs:79
-#: apple/App/ImmichMountApp.swift:624
+#: apple/App/ImmichMountApp.swift:613
 msgid "Server version: Immich {version}"
 msgstr "Phiên bản máy chủ: Immich {version}"
 
 #: crates/immich-mount-linux/src/tray.rs:82
-#: apple/App/ImmichMountApp.swift:627
+#: apple/App/ImmichMountApp.swift:616
 msgid "Signed in as: {account}"
 msgstr "Đăng nhập với tư cách: {account}"
 
@@ -309,7 +307,7 @@ msgstr "Sử dụng AI"
 
 #: crates/immich-mount-gnome/src/main.rs:117
 #: crates/immich-mount-kde/qml/Main.qml:175
-#: apple/App/ImmichMountApp.swift:472
+#: apple/App/ImmichMountApp.swift:461
 msgid "Parts of this project were written with the assistance of AI coding agents. All changes are reviewed by the maintainer."
 msgstr "Một số phần của dự án này được viết với sự hỗ trợ của các tác nhân lập trình AI. Mọi thay đổi đều được người bảo trì xem xét."
 
@@ -574,7 +572,7 @@ msgid "The Immich API layer: {project}"
 msgstr "Lớp API Immich: {project}"
 
 #: crates/immich-mount-kde/qml/Main.qml:171
-#: apple/App/ImmichMountApp.swift:471
+#: apple/App/ImmichMountApp.swift:460
 msgid "AI disclosure"
 msgstr "Sử dụng AI"
 
@@ -916,114 +914,114 @@ msgid "Use System Settings Instead"
 msgstr "Dùng Cài đặt hệ thống thay thế"
 
 #: apple/App/ContentView.swift:167
-#: apple/App/ImmichMountApp.swift:430
+#: apple/App/ImmichMountApp.swift:419
 #: apple/App/SettingsView.swift:258
 msgid "Open in Finder"
 msgstr "Mở trong Finder"
 
-#: apple/App/ImmichMountApp.swift:187
+#: apple/App/ImmichMountApp.swift:176
 msgid "Sign out of Immich Mount?"
 msgstr "Đăng xuất khỏi Immich Mount?"
 
-#: apple/App/ImmichMountApp.swift:188
+#: apple/App/ImmichMountApp.swift:177
 msgid "Immich Mount leaves Finder, together with the photos and videos downloaded to this Mac. Your library on the server stays as it is."
 msgstr "Immich Mount sẽ rời khỏi Finder, cùng với ảnh và video đã tải xuống máy Mac này. Thư viện của bạn trên máy chủ vẫn giữ nguyên."
 
-#: apple/App/ImmichMountApp.swift:190
+#: apple/App/ImmichMountApp.swift:179
 msgid "Files in Upload that have not reached Immich: {count}. They stay on this Mac, and Finder shows where once you have signed out."
 msgstr "Tệp trong Upload chưa đến được Immich: {count}. Chúng vẫn ở trên máy Mac này, và Finder sẽ cho biết vị trí sau khi bạn đăng xuất."
 
-#: apple/App/ImmichMountApp.swift:194
+#: apple/App/ImmichMountApp.swift:183
 msgid "Sign Out"
 msgstr "Đăng xuất"
 
-#: apple/App/ImmichMountApp.swift:195
+#: apple/App/ImmichMountApp.swift:184
 msgid "Cancel"
 msgstr "Hủy"
 
-#: apple/App/ImmichMountApp.swift:210
+#: apple/App/ImmichMountApp.swift:199
 msgid "Still signed in"
 msgstr "Vẫn đăng nhập"
 
-#: apple/App/ImmichMountApp.swift:211
+#: apple/App/ImmichMountApp.swift:200
 msgid "Finder's location could not be removed, so Immich Mount stays signed in: {error}"
 msgstr "Không thể gỡ vị trí trong Finder, nên Immich Mount vẫn đăng nhập: {error}"
 
-#: apple/App/ImmichMountApp.swift:461
+#: apple/App/ImmichMountApp.swift:450
 msgid "Your Immich photos and videos as a drive in Finder. By Jakob Hviid, under the MIT license."
 msgstr "Ảnh và video Immich của bạn dưới dạng ổ đĩa trong Finder. Tác giả: Jakob Hviid, theo giấy phép MIT."
 
-#: apple/App/ImmichMountApp.swift:462
+#: apple/App/ImmichMountApp.swift:451
 msgid "Website"
 msgstr "Trang web"
 
-#: apple/App/ImmichMountApp.swift:464
+#: apple/App/ImmichMountApp.swift:453
 msgid "Source code"
 msgstr "Mã nguồn"
 
-#: apple/App/ImmichMountApp.swift:467
+#: apple/App/ImmichMountApp.swift:456
 msgid "Inspired by"
 msgstr "Lấy cảm hứng từ"
 
-#: apple/App/ImmichMountApp.swift:469
+#: apple/App/ImmichMountApp.swift:458
 msgid "The Immich API layer"
 msgstr "Lớp API Immich"
 
-#: apple/App/ImmichMountApp.swift:632
+#: apple/App/ImmichMountApp.swift:621
 msgid "Last checked: {time}"
 msgstr "Kiểm tra lần cuối: {time}"
 
-#: apple/App/ImmichMountApp.swift:634
+#: apple/App/ImmichMountApp.swift:623
 msgid "Reason: {reason}"
 msgstr "Lý do: {reason}"
 
-#: apple/App/ImmichMountApp.swift:634
+#: apple/App/ImmichMountApp.swift:623
 msgid "none given"
 msgstr "không có"
 
-#: apple/App/ImmichMountApp.swift:721
+#: apple/App/ImmichMountApp.swift:710
 msgid "The login item could not be changed: {error}"
 msgstr "Không thể thay đổi mục đăng nhập: {error}"
 
-#: apple/App/ImmichMountApp.swift:755
+#: apple/App/ImmichMountApp.swift:744
 msgid "The server sent an address that cannot be opened."
 msgstr "Máy chủ đã gửi một địa chỉ không mở được."
 
-#: apple/App/ImmichMountApp.swift:841
+#: apple/App/ImmichMountApp.swift:830
 msgid "Finder does not show Immich yet. Is the extension switched on in System Settings? ({error})"
 msgstr "Finder chưa hiển thị Immich. Tiện ích mở rộng đã được bật trong Cài đặt hệ thống chưa? ({error})"
 
 #: apple/App/ImmichMountApp.swift:42
-#: apple/App/ImmichMountApp.swift:441
+#: apple/App/ImmichMountApp.swift:430
 msgid "About Immich Mount"
 msgstr "Giới thiệu về Immich Mount"
 
 #: apple/App/ImmichMountApp.swift:45
-#: apple/App/ImmichMountApp.swift:434
+#: apple/App/ImmichMountApp.swift:423
 msgid "Check for Updates…"
 msgstr "Kiểm tra bản cập nhật…"
 
 #: apple/App/ImmichMountApp.swift:50
-#: apple/App/ImmichMountApp.swift:432
+#: apple/App/ImmichMountApp.swift:421
 msgid "Settings…"
 msgstr "Cài đặt…"
 
-#: apple/App/ImmichMountApp.swift:419
+#: apple/App/ImmichMountApp.swift:408
 #: apple/App/SettingsView.swift:236
 msgid "Sign In…"
 msgstr "Đăng nhập…"
 
-#: apple/App/ImmichMountApp.swift:421
+#: apple/App/ImmichMountApp.swift:410
 #: apple/App/SettingsView.swift:256
 msgid "Switch On in Finder…"
 msgstr "Bật trong Finder…"
 
-#: apple/App/ImmichMountApp.swift:437
+#: apple/App/ImmichMountApp.swift:426
 #: apple/App/SettingsView.swift:261
 msgid "Sign Out…"
 msgstr "Đăng xuất…"
 
-#: apple/App/ImmichMountApp.swift:442
+#: apple/App/ImmichMountApp.swift:431
 msgid "Quit Immich Mount"
 msgstr "Thoát Immich Mount"
 

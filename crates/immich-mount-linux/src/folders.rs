@@ -93,7 +93,8 @@ async fn ask(connection: &zbus::Connection, question: &FolderQuestion) -> Option
     if question.not_uploaded > 0 {
         lines.push(tr("Files not uploaded: {count}").replace("{count}", &question.not_uploaded.to_string()));
     }
-    crate::notify::ask(connection, &summary, &lines.join("\n"), &[(MAKE_ALBUMS, tr("Make Albums")), (TIMELINE_ONLY, tr("Timeline Only"))]).await
+    // GNOME shows a notification's body on one line, line breaks as spaces, so the parts are set apart.
+    crate::notify::ask(connection, &summary, &lines.join(" · "), &[(MAKE_ALBUMS, tr("Make Albums")), (TIMELINE_ONLY, tr("Timeline Only"))]).await
 }
 
 /// Make a copy's albums, and say what came of it.

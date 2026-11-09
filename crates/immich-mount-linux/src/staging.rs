@@ -31,9 +31,11 @@ use tokio::sync::watch;
 /// How long an uploaded file stays in Upload after its upload, as a receipt: copy tools set its times right after
 /// closing it (GIO, KIO, rsync), and those must find it. Then it goes: Immich has it, in its date folder.
 pub const RECEIPT_LIFETIME: Duration = Duration::from_secs(10);
-/// How long a folder copied into Upload stays once nothing is in it and nothing touched it: long enough for a copy
-/// that paused between files to go on into it.
-pub const FOLDER_LINGER: Duration = Duration::from_secs(30);
+/// How long a folder copied into Upload stays once nothing is in it and nothing touched it: as long as its copy is
+/// remembered, so a copy that paused between files (Files waiting on its question about a file Immich does not take)
+/// can go on into it. Gone sooner, the rest of that copy failed with "No such file or directory" (seen in a GNOME 50
+/// VM).
+pub const FOLDER_LINGER: Duration = Duration::from_secs(immich_mount_core::folder_uploads::REMEMBER_SECONDS);
 
 /// An upload's outcome as the closing program sees it: success, or an error number.
 pub type UploadResult = Result<(), i32>;
@@ -184,6 +186,8 @@ pub struct Staging {
     directory: PathBuf,
     /// Where files that were not uploaded are kept (`~/.local/share/immich-mount/not-uploaded`).
     kept: PathBuf,
+    /// `FOLDER_LINGER`, shorter in tests.
+    folder_linger: Duration,
     inner: Mutex<Inner>,
 }
 
@@ -251,6 +255,7 @@ impl Staging {
         Ok(Staging {
             directory: directory.to_path_buf(),
             kept: kept.to_path_buf(),
+            folder_linger: FOLDER_LINGER,
             inner: Mutex::new(Inner { next_file: 1, next_handle: 1, ..Inner::default() }),
         })
     }
@@ -290,7 +295,7 @@ impl Staging {
             let gone: Vec<NodeKey> = inner
                 .folders
                 .iter()
-                .filter(|(key, folder)| now.duration_since(folder.touched) >= FOLDER_LINGER && !inner.holds_anything(key))
+                .filter(|(key, folder)| now.duration_since(folder.touched) >= self.folder_linger && !inner.holds_anything(key))
                 .map(|(key, _)| key.clone())
                 .collect();
             if gone.is_empty() {
@@ -706,6 +711,12 @@ impl Staging {
 
 #[cfg(test)]
 impl Staging {
+    /// Folders go after `linger` instead: aging an `Instant` by `FOLDER_LINGER` fails on a machine up for less.
+    fn with_folder_linger(mut self, linger: Duration) -> Staging {
+        self.folder_linger = linger;
+        self
+    }
+
     /// Make every receipt and folder older by `by`, as time passing would.
     fn age(&self, by: Duration) {
         let mut inner = self.inner.lock().expect("staging lock");
@@ -890,7 +901,8 @@ mod tests {
     #[tokio::test]
     async fn a_folder_holds_its_files_and_goes_once_empty_and_untouched() {
         let directory = tempfile::tempdir().unwrap();
-        let staging = Staging::new(directory.path(), &directory.path().join("kept")).unwrap();
+        let linger = Duration::from_secs(1);
+        let staging = Staging::new(directory.path(), &directory.path().join("kept")).unwrap().with_folder_linger(linger);
         let trip = staging.create_folder(&NodeKey::Upload, "Trip").unwrap();
         assert_eq!(staging.create_folder(&NodeKey::Upload, "Trip"), Err(libc::EEXIST));
         assert_eq!(staging.create_folder(&photos(), "Trip"), Err(libc::EPERM), "only below Upload");
@@ -903,13 +915,13 @@ mod tests {
         staging.write(writer, 0, b"bytes").unwrap();
         assert!(staging.busy_under("Trip") && !staging.busy_under("Day 1"), "a copy is known by its folder");
         assert_eq!(staging.remove_folder(&day), Err(libc::ENOTEMPTY));
-        staging.age(FOLDER_LINGER * 2);
+        staging.age(linger * 2);
         assert_eq!(names(&trip), ["Day 1"], "it holds a file: it stays");
         staging.finish_upload(upload(staging.close(writer)), Ok(()));
         staging.release(writer);
         assert!(!staging.busy_under("Trip"));
         assert_eq!(names(&trip), ["Day 1"], "the receipt is still there");
-        staging.age(RECEIPT_LIFETIME + FOLDER_LINGER);
+        staging.age(RECEIPT_LIFETIME + linger);
         assert!(names(&NodeKey::Upload).is_empty(), "empty and untouched: Day 1 goes, and Trip after it");
 
         let empty = staging.create_folder(&NodeKey::Upload, "Empty").unwrap();

@@ -98,14 +98,17 @@ refused by the file's own structure, and for killed writers), renames onto Asset
 files. Notifications for refused, failed and long uploads are built, and show on GNOME 50. M3's exit criteria are
 met; what remains is watching a Cancel in Files' progress popover by hand.
 
-**Folders copied into Upload (2026-11-09): built and tested, not yet seen on a desktop.** A folder copied into
-Upload uploads everything in it, and once the copy has settled its folders may become albums named by their paths,
-asked with two buttons or set by `uploads.folders` (SPEC and ARCHITECTURE, "Folders copied into Upload"). Tested:
-the core's record and album work, the staging area's folders, a real FUSE mount taking folders inside folders,
-refusals and `rmdir`, and the Mac bridge's folder items, questions, answers, albums and departures. Open, each
-against the lab server:
-- Files' and Dolphin's folder copy and move, and the notification's buttons, in the GNOME and Plasma VMs.
-- Finder's folder copy, and the app's notification and its alert, on the maintainer's Mac.
+**Folders copied into Upload (2026-11-09): built and tested.** A folder copied into Upload uploads everything in
+it, and once the copy has settled its folders may become albums named by their paths, asked with two buttons or set
+by `uploads.folders` (SPEC and ARCHITECTURE, "Folders copied into Upload"). Tested: the core's record and album
+work, the staging area's folders, a real FUSE mount taking folders inside folders, refusals and `rmdir`, and the Mac
+bridge's folder items, questions, answers, albums and departures. **Verified in a GNOME 50 VM** against the lab
+server, with Files' own copy: a folder with a subfolder and a text file (Files stops at the text file; after 40
+seconds on its question, Skip All copies the rest into the folders, which stayed); the urgent question stays on
+screen; Make Albums made `Trip` and `Trip › Day 1`, a taken name became `Holiday Mix - 2026-11-09`, and Timeline
+Only made none. Finder's folder copy works on the maintainer's Mac. Open:
+- Dolphin's folder copy and move, and the question's buttons, in the Plasma VM.
+- The Mac's dialog, on the maintainer's Mac.
 
 ## M4. The GNOME app
 

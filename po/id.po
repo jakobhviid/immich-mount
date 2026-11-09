@@ -36,55 +36,53 @@ msgid "Immich no longer accepts this sign-in. Open Immich Mount to sign in again
 msgstr "Immich tidak lagi menerima proses masuk ini. Buka Immich Mount untuk masuk lagi."
 
 #: crates/immich-mount-linux/src/folders.rs:88
-#: apple/App/FolderCopies.swift:76
+#: apple/App/FolderCopies.swift:63
 msgid "Uploaded to Immich: {folder}"
 msgstr "Diunggah ke Immich: {folder}"
 
 #: crates/immich-mount-linux/src/folders.rs:90
-#: apple/App/FolderCopies.swift:77
+#: apple/App/FolderCopies.swift:58
 msgid "Photos and videos in the timeline: {count}"
 msgstr "Foto dan video di linimasa: {count}"
 
 #: crates/immich-mount-linux/src/folders.rs:91
-#: apple/App/FolderCopies.swift:78
+#: apple/App/FolderCopies.swift:59
 msgid "Albums it can make: {albums}"
 msgstr "Album yang dapat dibuat: {albums}"
 
 #: crates/immich-mount-linux/src/folders.rs:94
-#: apple/App/FolderCopies.swift:80
+#: apple/App/FolderCopies.swift:61
 msgid "Files not uploaded: {count}"
 msgstr "Berkas yang tidak diunggah: {count}"
 
-#: crates/immich-mount-linux/src/folders.rs:96
+#: crates/immich-mount-linux/src/folders.rs:97
 #: crates/immich-mount-core/src/settings.rs:91
-#: apple/App/FolderCopies.swift:22
-#: apple/App/FolderCopies.swift:106
+#: apple/App/FolderCopies.swift:69
 msgid "Make Albums"
 msgstr "Buat album"
 
-#: crates/immich-mount-linux/src/folders.rs:96
+#: crates/immich-mount-linux/src/folders.rs:97
 #: crates/immich-mount-core/src/settings.rs:90
-#: apple/App/FolderCopies.swift:23
-#: apple/App/FolderCopies.swift:107
+#: apple/App/FolderCopies.swift:70
 msgid "Timeline Only"
 msgstr "Hanya linimasa"
 
-#: crates/immich-mount-linux/src/folders.rs:107
-#: apple/App/FolderCopies.swift:118
+#: crates/immich-mount-linux/src/folders.rs:108
+#: apple/App/FolderCopies.swift:83
 msgid "Albums made from {folder}"
 msgstr "Album dibuat dari {folder}"
 
-#: crates/immich-mount-linux/src/folders.rs:109
-#: apple/App/FolderCopies.swift:121
+#: crates/immich-mount-linux/src/folders.rs:110
+#: apple/App/FolderCopies.swift:86
 msgid "No albums made from {folder}"
 msgstr "Tidak ada album dibuat dari {folder}"
 
-#: crates/immich-mount-linux/src/folders.rs:114
-#: apple/App/FolderCopies.swift:122
+#: crates/immich-mount-linux/src/folders.rs:115
+#: apple/App/FolderCopies.swift:87
 msgid "Immich does not let this account make albums ({permission}). The photos and videos are in the timeline."
 msgstr "Immich tidak mengizinkan akun ini membuat album ({permission}). Foto dan video ada di linimasa."
 
-#: crates/immich-mount-linux/src/folders.rs:119
+#: crates/immich-mount-linux/src/folders.rs:120
 msgid "Signed out of Immich. The photos and videos are in the timeline."
 msgstr "Telah keluar dari Immich. Foto dan video ada di linimasa."
 
@@ -133,27 +131,27 @@ msgid "Immich takes photos and videos only."
 msgstr "Immich hanya menerima foto dan video."
 
 #: crates/immich-mount-linux/src/tray.rs:68
-#: apple/App/ImmichMountApp.swift:616
+#: apple/App/ImmichMountApp.swift:605
 msgid "Connected to {server}"
 msgstr "Terhubung ke {server}"
 
 #: crates/immich-mount-linux/src/tray.rs:69
-#: apple/App/ImmichMountApp.swift:616
+#: apple/App/ImmichMountApp.swift:605
 msgid "{server} is not reachable"
 msgstr "{server} tidak dapat dijangkau"
 
 #: crates/immich-mount-linux/src/tray.rs:71
-#: apple/App/ImmichMountApp.swift:615
+#: apple/App/ImmichMountApp.swift:604
 msgid "Signed in to {server}"
 msgstr "Sudah masuk ke {server}"
 
 #: crates/immich-mount-linux/src/tray.rs:79
-#: apple/App/ImmichMountApp.swift:624
+#: apple/App/ImmichMountApp.swift:613
 msgid "Server version: Immich {version}"
 msgstr "Versi server: Immich {version}"
 
 #: crates/immich-mount-linux/src/tray.rs:82
-#: apple/App/ImmichMountApp.swift:627
+#: apple/App/ImmichMountApp.swift:616
 msgid "Signed in as: {account}"
 msgstr "Masuk sebagai: {account}"
 
@@ -309,7 +307,7 @@ msgstr "Penggunaan AI"
 
 #: crates/immich-mount-gnome/src/main.rs:117
 #: crates/immich-mount-kde/qml/Main.qml:175
-#: apple/App/ImmichMountApp.swift:472
+#: apple/App/ImmichMountApp.swift:461
 msgid "Parts of this project were written with the assistance of AI coding agents. All changes are reviewed by the maintainer."
 msgstr "Sebagian proyek ini ditulis dengan bantuan agen pemrograman AI. Semua perubahan ditinjau oleh pengelola proyek."
 
@@ -574,7 +572,7 @@ msgid "The Immich API layer: {project}"
 msgstr "Lapisan API Immich: {project}"
 
 #: crates/immich-mount-kde/qml/Main.qml:171
-#: apple/App/ImmichMountApp.swift:471
+#: apple/App/ImmichMountApp.swift:460
 msgid "AI disclosure"
 msgstr "Penggunaan AI"
 
@@ -916,114 +914,114 @@ msgid "Use System Settings Instead"
 msgstr "Gunakan Pengaturan Sistem sebagai gantinya"
 
 #: apple/App/ContentView.swift:167
-#: apple/App/ImmichMountApp.swift:430
+#: apple/App/ImmichMountApp.swift:419
 #: apple/App/SettingsView.swift:258
 msgid "Open in Finder"
 msgstr "Buka di Finder"
 
-#: apple/App/ImmichMountApp.swift:187
+#: apple/App/ImmichMountApp.swift:176
 msgid "Sign out of Immich Mount?"
 msgstr "Keluar dari akun di Immich Mount?"
 
-#: apple/App/ImmichMountApp.swift:188
+#: apple/App/ImmichMountApp.swift:177
 msgid "Immich Mount leaves Finder, together with the photos and videos downloaded to this Mac. Your library on the server stays as it is."
 msgstr "Immich Mount akan hilang dari Finder, bersama foto dan video yang diunduh ke Mac ini. Pustaka Anda di server tetap seperti semula."
 
-#: apple/App/ImmichMountApp.swift:190
+#: apple/App/ImmichMountApp.swift:179
 msgid "Files in Upload that have not reached Immich: {count}. They stay on this Mac, and Finder shows where once you have signed out."
 msgstr "File di Upload yang belum sampai ke Immich: {count}. File tersebut tetap ada di Mac ini, dan Finder menunjukkan lokasinya setelah Anda keluar dari akun."
 
-#: apple/App/ImmichMountApp.swift:194
+#: apple/App/ImmichMountApp.swift:183
 msgid "Sign Out"
 msgstr "Keluar dari akun"
 
-#: apple/App/ImmichMountApp.swift:195
+#: apple/App/ImmichMountApp.swift:184
 msgid "Cancel"
 msgstr "Batalkan"
 
-#: apple/App/ImmichMountApp.swift:210
+#: apple/App/ImmichMountApp.swift:199
 msgid "Still signed in"
 msgstr "Masih masuk"
 
-#: apple/App/ImmichMountApp.swift:211
+#: apple/App/ImmichMountApp.swift:200
 msgid "Finder's location could not be removed, so Immich Mount stays signed in: {error}"
 msgstr "Lokasi di Finder tidak dapat dihapus, jadi Immich Mount tetap masuk: {error}"
 
-#: apple/App/ImmichMountApp.swift:461
+#: apple/App/ImmichMountApp.swift:450
 msgid "Your Immich photos and videos as a drive in Finder. By Jakob Hviid, under the MIT license."
 msgstr "Foto dan video Immich Anda sebagai drive di Finder. Oleh Jakob Hviid, di bawah lisensi MIT."
 
-#: apple/App/ImmichMountApp.swift:462
+#: apple/App/ImmichMountApp.swift:451
 msgid "Website"
 msgstr "Situs web"
 
-#: apple/App/ImmichMountApp.swift:464
+#: apple/App/ImmichMountApp.swift:453
 msgid "Source code"
 msgstr "Kode sumber"
 
-#: apple/App/ImmichMountApp.swift:467
+#: apple/App/ImmichMountApp.swift:456
 msgid "Inspired by"
 msgstr "Terinspirasi oleh"
 
-#: apple/App/ImmichMountApp.swift:469
+#: apple/App/ImmichMountApp.swift:458
 msgid "The Immich API layer"
 msgstr "Lapisan API Immich"
 
-#: apple/App/ImmichMountApp.swift:632
+#: apple/App/ImmichMountApp.swift:621
 msgid "Last checked: {time}"
 msgstr "Terakhir diperiksa: {time}"
 
-#: apple/App/ImmichMountApp.swift:634
+#: apple/App/ImmichMountApp.swift:623
 msgid "Reason: {reason}"
 msgstr "Alasan: {reason}"
 
-#: apple/App/ImmichMountApp.swift:634
+#: apple/App/ImmichMountApp.swift:623
 msgid "none given"
 msgstr "tidak disebutkan"
 
-#: apple/App/ImmichMountApp.swift:721
+#: apple/App/ImmichMountApp.swift:710
 msgid "The login item could not be changed: {error}"
 msgstr "Item masuk tidak dapat diubah: {error}"
 
-#: apple/App/ImmichMountApp.swift:755
+#: apple/App/ImmichMountApp.swift:744
 msgid "The server sent an address that cannot be opened."
 msgstr "Server mengirim alamat yang tidak dapat dibuka."
 
-#: apple/App/ImmichMountApp.swift:841
+#: apple/App/ImmichMountApp.swift:830
 msgid "Finder does not show Immich yet. Is the extension switched on in System Settings? ({error})"
 msgstr "Finder belum menampilkan Immich. Apakah ekstensi sudah dinyalakan di Pengaturan Sistem? ({error})"
 
 #: apple/App/ImmichMountApp.swift:42
-#: apple/App/ImmichMountApp.swift:441
+#: apple/App/ImmichMountApp.swift:430
 msgid "About Immich Mount"
 msgstr "Tentang Immich Mount"
 
 #: apple/App/ImmichMountApp.swift:45
-#: apple/App/ImmichMountApp.swift:434
+#: apple/App/ImmichMountApp.swift:423
 msgid "Check for Updates…"
 msgstr "Periksa pembaruan…"
 
 #: apple/App/ImmichMountApp.swift:50
-#: apple/App/ImmichMountApp.swift:432
+#: apple/App/ImmichMountApp.swift:421
 msgid "Settings…"
 msgstr "Pengaturan…"
 
-#: apple/App/ImmichMountApp.swift:419
+#: apple/App/ImmichMountApp.swift:408
 #: apple/App/SettingsView.swift:236
 msgid "Sign In…"
 msgstr "Masuk…"
 
-#: apple/App/ImmichMountApp.swift:421
+#: apple/App/ImmichMountApp.swift:410
 #: apple/App/SettingsView.swift:256
 msgid "Switch On in Finder…"
 msgstr "Nyalakan di Finder…"
 
-#: apple/App/ImmichMountApp.swift:437
+#: apple/App/ImmichMountApp.swift:426
 #: apple/App/SettingsView.swift:261
 msgid "Sign Out…"
 msgstr "Keluar dari akun…"
 
-#: apple/App/ImmichMountApp.swift:442
+#: apple/App/ImmichMountApp.swift:431
 msgid "Quit Immich Mount"
 msgstr "Keluar dari Immich Mount"
 

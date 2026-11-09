@@ -303,10 +303,10 @@ cameras. Clashes are detected case-insensitively, after Unicode NFC normalisatio
 - **Settling:** no program tells that a copy is coming or how big it is, so a copy counts as finished once nothing
   new has arrived in it for 10 seconds and nothing in it is being written or uploaded.
 - **Albums,** once it has settled, as `uploads.folders` says:
-  - `ask` (the default): a notification asks, naming the folder, counting what uploaded and what did not, and
-    listing the albums it would make, with two buttons: **Make Albums** and **Timeline Only**. Dismissing it, or
-    no answer within a day, is the timeline only. Where nobody can be asked (no desktop session, or notifications
-    without buttons), it is the timeline only.
+  - `ask` (the default): Immich Mount asks, naming the folder, counting what uploaded and what did not, and
+    listing the albums it would make, with two buttons: **Make Albums** and **Timeline Only**. Dismissing the
+    question, or no answer within a day, is the timeline only. Where nobody can be asked (no desktop session, or
+    notifications without buttons), it is the timeline only.
   - `albums`: the albums are made without asking. `timeline`: none, as for single files.
   - A copy with nothing uploaded (an empty folder, or only refused files) makes no album and asks nothing.
 - **Which albums:** one for each folder that directly holds photos or videos that uploaded, holding those (not those
@@ -320,15 +320,21 @@ cameras. Clashes are detected case-insensitively, after Unicode NFC normalisatio
 - **Permissions:** making albums needs `album.read`, `album.create` and `albumAsset.create`. Without them, or signed
   out, a notification says no albums were made, and the copy stays in the timeline only. A server that cannot be
   reached is tried again a minute later, for up to a day.
-- **The folders leave Upload** once they are empty and nothing arrived in them for 30 seconds: their files leave as
-  single files do. An empty one may be removed before then.
+- **The folders leave Upload** once they are empty and nothing arrived in them for 10 minutes, as long as the copy is
+  remembered: their files leave as single files do, and a copy that paused on a question (Files stops at a file
+  Immich does not take until Skip or Skip All) can go on into its folders. An empty one may be removed before then.
+- **Files stops at a file it cannot copy** (one Immich does not take) and asks; Skip All goes on with the rest. A
+  copy with nothing uploaded yet waits for its first upload before it is asked about.
 - **Hidden folders** (a name starting with `.`: a thumbnail cache, a version-control folder) are refused, as hidden
   files are.
-- **On Linux** the daemon asks, as a desktop notification. A file of a copied folder that did not upload is kept
-  under its folder's path: `not-uploaded/Trip/Day 1/IMG_1.JPG`.
-- **On macOS** the menu bar app asks, while it runs: a copy that settles while it does not is asked about when it
-  next starts. Where the app's notifications are off, it asks with an alert. A file that did not upload stays in
-  its folder in Upload, with its reason, and the folder with it; deleting the folder in Finder lets both go.
+- **On Linux** the daemon asks, as an urgent desktop notification, which stays on screen until a button is
+  pressed or it is dismissed. A file of a copied folder that did not upload is kept under its folder's path:
+  `not-uploaded/Trip/Day 1/IMG_1.JPG`.
+- **On macOS** the menu bar app asks, in a dialog that stays above other apps until one of its buttons is clicked;
+  neither answers to Return, so typing elsewhere cannot answer it. It asks while it runs: a copy that settles while
+  it does not is asked about when it next starts. What came of the albums is told in notifications. A file that did
+  not upload stays in its folder in Upload, with its reason, and the folder with it; deleting the folder in Finder
+  lets both go.
 
 ## Signing in and credentials
 

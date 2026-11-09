@@ -95,9 +95,8 @@ final class AppDelegate: NSObject, NSApplicationDelegate, SPUUpdaterDelegate,
     func applicationDidFinishLaunching(_ notification: Notification) {
         _ = updater
         followWindows()
-        // The questions about folders copied into Upload, answered with a notification's buttons (`FolderCopies`).
+        // What came of a copied folder's albums is told in notifications, shown even while the app is in front.
         UNUserNotificationCenter.current().delegate = self
-        FolderCopies.register()
         // Back from Finder or System Settings, the menu and the window know at once whether the location is on.
         NotificationCenter.default.addObserver(forName: NSApplication.didBecomeActiveNotification, object: nil, queue: .main) { _ in
             MainActor.assumeIsolated {
@@ -136,17 +135,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate, SPUUpdaterDelegate,
         #endif
     }
 
-    /// A notification's button, or its dismissal, answers the question about a copied folder.
-    nonisolated func userNotificationCenter(_ center: UNUserNotificationCenter, didReceive response: UNNotificationResponse,
-                                            withCompletionHandler completionHandler: @escaping () -> Void) {
-        let copy = (response.notification.request.content.userInfo["copy"] as? String).flatMap(UInt64.init)
-        let albums = FolderCopies.albums(for: response.actionIdentifier)
-        completionHandler()
-        guard let copy, let albums else { return }
-        DispatchQueue.main.async { MainActor.assumeIsolated { FolderCopies.answer(copy: copy, albums: albums) } }
-    }
-
-    /// The question shows even while the app is in front (its Settings window open, say).
+    /// A notification shows even while the app is in front (its Settings window open, say).
     nonisolated func userNotificationCenter(_ center: UNUserNotificationCenter, willPresent notification: UNNotification,
                                             withCompletionHandler completionHandler: @escaping (UNNotificationPresentationOptions) -> Void) {
         completionHandler([.banner, .list])

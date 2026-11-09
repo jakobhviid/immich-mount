@@ -260,10 +260,12 @@ folders in the drive keep their English names.
   trash is refused; restore it in Immich if you want it.
 - Non-media files and hidden folders are refused, with a notification explaining why.
 - **Folders** go in whole: copy a folder (with folders inside it, if you like) into Upload, and every photo and video
-  in it uploads as it arrives. Once the copy has finished, a notification asks whether to make albums of it too:
+  in it uploads as it arrives. Once the copy has finished, Immich Mount asks whether to make albums of it too (a
+  notification that stays on screen on Linux, a dialog on the Mac):
   **Make Albums** gives each folder that holds photos an album named by its path (`Trip`, `Trip › Day 1`), dated if
-  the name is taken (`Trip - 2026-11-09`); **Timeline Only**, or dismissing it, makes none. The folders leave Upload
-  once their files have. To decide once for all copies:
+  the name is taken (`Trip - 2026-11-09`); **Timeline Only**, or dismissing it, makes none. Files stops at a file
+  Immich does not take and asks: choose **Skip All** to go on with the photos. The empty folders leave Upload 10
+  minutes after the copy. To decide once for all copies:
 
   ```sh
   immich-mount configure set uploads.folders albums      # always make the albums; `timeline` never; `ask` asks
@@ -271,7 +273,8 @@ folders in the drive keep their English names.
 
   The apps' preferences have it under Uploads, and the Mac's Settings in the Folders pane. Making albums needs an
   API key with `album.read`, `album.create` and `albumAsset.create`; without them a notification says so, and the
-  photos stay in the timeline. On the Mac the menu bar app asks, while it runs.
+  photos stay in the timeline. On the Mac the menu bar app asks, while it runs; click a button, since Return does
+  not answer it.
 - **Cancelling a copy** keeps the part already copied out of Immich: each file's own structure shows whether it
   arrived whole. MTS and M2TS videos cannot tell, so a cut-short one does upload; delete it in Immich. Empty files
   and macOS's `._` companion files are never uploaded.

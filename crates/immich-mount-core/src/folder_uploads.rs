@@ -23,7 +23,9 @@ pub const SETTLE_SECONDS: u64 = 10;
 /// How long a question waits for its answer; unanswered, the copy stays in the timeline only.
 pub const QUESTION_SECONDS: u64 = 24 * 60 * 60;
 /// How long a finished copy is remembered: a folder of the same name copied in meanwhile joins it, as the rest of a
-/// copy that paused.
+/// copy that paused. A copy with nothing uploaded yet waits this long for its first upload (a file manager may wait on
+/// a question, such as Files' "Skip All" for a file Immich does not take), and the platforms keep a copied folder
+/// this long once empty, so a copy that paused can go on into it.
 pub const REMEMBER_SECONDS: u64 = 10 * 60;
 /// How long album work that failed (the server unreachable) waits before it is tried again.
 pub const RETRY_SECONDS: u64 = 60;
@@ -174,6 +176,7 @@ impl FolderCopy {
     /// Whether it still takes arrivals under its folder's name, rather than a new copy starting.
     fn is_active(&self, now: u64) -> bool {
         match self.state {
+            CopyState::Copying if self.uploaded() == 0 => now < self.last_activity.saturating_add(REMEMBER_SECONDS),
             CopyState::Copying | CopyState::Asking { .. } => true,
             CopyState::Albums if self.has_album_work() => now < self.last_activity.saturating_add(QUESTION_SECONDS),
             CopyState::Albums | CopyState::Timeline => now < self.last_activity.saturating_add(REMEMBER_SECONDS),
@@ -276,15 +279,14 @@ impl FolderUploads {
     }
 
     /// Move every copy along at `now`. `busy` says whether anything under a copied folder of that name is being
-    /// written or uploaded. A copy that settled with nothing uploaded (an empty folder, or only refused files) is
-    /// not asked about: it has nothing to make an album of.
+    /// written or uploaded. A copy with nothing uploaded is not asked about, having nothing to make an album of: it
+    /// waits for its first upload (its file manager may be waiting on a question), and is forgotten without one.
     pub fn tick(&mut self, now: u64, choice: FolderChoice, busy: impl Fn(&str) -> bool) -> Vec<FolderEvent> {
         let mut events = Vec::new();
         for copy in &mut self.copies {
             let settled = now >= copy.last_activity.saturating_add(SETTLE_SECONDS) && !busy(&copy.top);
             match copy.state {
-                CopyState::Copying if settled && copy.uploaded() == 0 => copy.state = CopyState::Timeline,
-                CopyState::Copying if settled => match choice {
+                CopyState::Copying if settled && copy.uploaded() > 0 => match choice {
                     FolderChoice::Ask => {
                         copy.state = CopyState::Asking { since: now };
                         events.push(FolderEvent::Ask(copy.question()));
@@ -491,12 +493,18 @@ mod tests {
     }
 
     #[test]
-    fn a_copy_with_nothing_uploaded_is_not_asked_about() {
+    fn a_copy_with_nothing_uploaded_is_not_asked_about_and_waits_for_its_first_upload() {
         let mut uploads = FolderUploads::default();
-        uploads.folder_created(&path(&["Notes"]), 100);
-        uploads.not_uploaded(&path(&["Notes"]), 100);
-        assert!(uploads.tick(200, FolderChoice::Ask, IDLE).is_empty());
-        assert!(uploads.questions().is_empty());
+        uploads.folder_created(&path(&["Trip"]), 100);
+        uploads.not_uploaded(&path(&["Trip"]), 100);
+        assert!(uploads.tick(200, FolderChoice::Ask, IDLE).is_empty(), "nothing to make an album of yet");
+        // Files waited on its question about the refused file; then the photos came.
+        uploads.uploaded(&path(&["Trip"]), "a1", 400);
+        assert!(matches!(uploads.tick(500, FolderChoice::Ask, IDLE).as_slice(), [FolderEvent::Ask(_)]), "the same copy, asked about");
+        let mut empty = FolderUploads::default();
+        empty.folder_created(&path(&["Empty"]), 100);
+        empty.tick(100 + REMEMBER_SECONDS, FolderChoice::Ask, IDLE);
+        assert!(empty.copies.is_empty(), "never anything uploaded: forgotten");
     }
 
     #[test]

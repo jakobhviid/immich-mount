@@ -46,9 +46,9 @@ const UPLOAD_STAY: Duration = Duration::from_secs(10);
 const UPLOAD_FOLDERS: &str = "upload-folders";
 /// The name the record of each copied folder is kept under in the store (`FolderUploads`).
 const FOLDER_COPIES: &str = "folder-copies";
-/// How long a folder copied into Upload stays once it is empty and untouched, as on Linux: long enough for a copy
-/// that paused between files to go on into it.
-const FOLDER_STAY: Duration = Duration::from_secs(30);
+/// How long a folder copied into Upload stays once it is empty and untouched, as on Linux: as long as its copy is
+/// remembered, so a copy that paused between files (on a question about a file Immich does not take) can go on into it.
+const FOLDER_STAY: Duration = Duration::from_secs(immich_mount_core::folder_uploads::REMEMBER_SECONDS);
 /// Where the extension leaves the questions about settled copies for the app, in the library's directory.
 const QUESTIONS_FILE: &str = "folder-questions.json";
 /// The app's answers, one file each (`folder-answer-<copy>.json`), which the extension takes and removes.
