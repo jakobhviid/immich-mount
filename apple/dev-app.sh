@@ -6,7 +6,11 @@
 # keeps that sign-in. It never updates itself. Its extension is switched on once, with Enable at the top of its
 # location's Finder window or in System Settings' list of file providers, as the release's is.
 #
-#   apple/dev-app.sh        build, install and start (about two minutes; the bridge's build is most of it)
+#   apple/dev-app.sh            build, install and start (about two minutes; the bridge's build is most of it)
+#   apple/dev-app.sh --remove   sign it out (its Finder location goes with it), quit it, and delete it
+#
+# Deleting the app alone leaves its Finder location: macOS keeps a provider's location until the app removes it, and
+# serves it from any copy it still knows of, this script's build output among them.
 #
 # Signing needs the login keychain, which an SSH session cannot reach: from SSH, run apple/dev-app.command in the
 # developer's session (`open -a Terminal apple/dev-app.command`, the mac-dev skill), and read apple/build/dev-app.log.
@@ -15,6 +19,30 @@ cd "$(dirname "$0")"
 export DEVELOPER_DIR=${DEVELOPER_DIR:-/Applications/Xcode.app/Contents/Developer}
 built="build/DevData/Build/Products/Debug/Immich Mount Dev.app"
 installed="/Applications/Immich Mount Dev.app"
+lsregister=/System/Library/Frameworks/CoreServices.framework/Frameworks/LaunchServices.framework/Support/lsregister
+
+if [ "${1:-}" = "--remove" ]; then
+    for app in "$installed" "$built"; do
+        [ -d "$app" ] || continue
+        open -n "$app" --args -signOut YES
+        for _ in $(seq 1 30); do
+            ls "$HOME/Library/CloudStorage" | grep -q '^ImmichMountDev-' || break
+            sleep 1
+        done
+        break
+    done
+    pkill -f "Immich Mount Dev.app/Contents/" || true
+    for app in "$installed" "$built"; do
+        if [ -d "$app" ]; then "$lsregister" -u "$app"; fi
+    done
+    rm -rf "$installed" build/DevData
+    if ls "$HOME/Library/CloudStorage" | grep -q '^ImmichMountDev-'; then
+        echo "removed Immich Mount Dev, but its Finder location is still there: sign out did not finish" >&2
+        exit 1
+    fi
+    echo "removed Immich Mount Dev, signed out, with its Finder location"
+    exit 0
+fi
 
 ./build-rust.sh debug
 xcodegen -q

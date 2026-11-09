@@ -55,6 +55,10 @@ Traps (verified on macOS 27.0.1 with Xcode 27.2):
   "encountered an error". `killall fileproviderd` (it runs as the user, and launchd starts it again at once) clears
   the job, and the next request starts the extension from the new path (verified on macOS 27.0.1). Before deleting a
   build, unregister it: `lsregister -u <app>` (in LaunchServices.framework's `Support/`).
+- **Deleting the Dev app leaves its Finder location** in the sidebar: macOS keeps a provider's location until the app
+  removes it (by signing out), and serves it from any copy it still knows of. Deleted from Applications, the Dev
+  build ran on from `apple/build/DevData/` (seen on macOS 27.2). `apple/dev-app.sh --remove` signs it out first,
+  quits it, unregisters both copies and deletes them.
 - **notarytool's keychain profile is not found while the screen is locked** ("No Keychain password item found",
   with the maintainer away, two hours after it worked; seen on macOS 27.0.1), though the login keychain's signing key
   still is. An unattended release build notarizes with the API key file instead: `NOTARY_KEY=<.p8>
