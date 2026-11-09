@@ -736,7 +736,7 @@ where
             let inode = self.inodes.lock().expect("inode table lock").assign(node, staged_kind(&file), parent_record.path.join(&name), true);
             return reply.entry(&Duration::ZERO, &self.staged_attributes(inode, id, &file), self.generation);
         }
-        if let Some(key) = self.uploads.as_ref().and_then(|uploads| uploads.staging.find_folder(&parent_key, &name)) {
+        if let Some(key) = self.uploads.as_ref().and_then(|uploads| uploads.staging.look_up_folder(&parent_key, &name)) {
             let node = MountNode::Tree(key);
             let inode = self.inodes.lock().expect("inode table lock").assign(node.clone(), EntryKind::Folder, parent_record.path.join(&name), true);
             return reply.entry(&Duration::ZERO, &self.attributes(inode, &node, &EntryKind::Folder), self.generation);

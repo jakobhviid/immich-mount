@@ -46,9 +46,12 @@ const UPLOAD_STAY: Duration = Duration::from_secs(10);
 const UPLOAD_FOLDERS: &str = "upload-folders";
 /// The name the record of each copied folder is kept under in the store (`FolderUploads`).
 const FOLDER_COPIES: &str = "folder-copies";
-/// How long a folder copied into Upload stays once it is empty and untouched, as on Linux: as long as its copy is
-/// remembered, so a copy that paused between files (on a question about a file Immich does not take) can go on into it.
-const FOLDER_STAY: Duration = Duration::from_secs(immich_mount_core::folder_uploads::REMEMBER_SECONDS);
+/// How long a folder copied into Upload stays once it is empty and untouched, when macOS says it holds nothing the
+/// system has not handed over (its pending set): long enough for the last files to leave.
+const FOLDER_STAY: Duration = Duration::from_secs(20);
+/// How long it stays when macOS does not say: as long as its copy is remembered, so a copy Finder is still writing
+/// (a large file, which the extension hears of only once it is whole) is never taken from under it.
+const FOLDER_STAY_UNSURE: Duration = Duration::from_secs(immich_mount_core::folder_uploads::REMEMBER_SECONDS);
 /// Where the extension leaves the questions about settled copies for the app, in the library's directory.
 const QUESTIONS_FILE: &str = "folder-questions.json";
 /// The app's answers, one file each (`folder-answer-<copy>.json`), which the extension takes and removes.
@@ -548,7 +551,7 @@ where
     /// listed now (the server busy, or the budget spent) is listed at a later poll; a change is never seen once and
     /// then lost. Deletions are settled once every touched folder was listed again, so a node that only moved, to a
     /// folder not listed yet, is not deleted.
-    async fn poll(&self) -> Result<bool, BridgeError>
+    async fn poll(&self, pending: Option<&[String]>) -> Result<bool, BridgeError>
     where
         Source: AlbumTarget,
     {
@@ -587,7 +590,7 @@ where
         } else {
             log::info!("deletions wait until every changed folder is listed again");
         }
-        self.follow_folder_copies().await?;
+        self.follow_folder_copies(pending).await?;
         Ok(self.store().journal_anchor().map_err(failed)? != before)
     }
 
@@ -809,7 +812,7 @@ where
 
     /// The copied folders' part of a poll: take the app's answers, move the copies along, make their albums, leave the
     /// app the questions and what came of the albums, and record the folders that are done leaving.
-    async fn follow_folder_copies(&self) -> Result<(), BridgeError>
+    async fn follow_folder_copies(&self, pending: Option<&[String]>) -> Result<(), BridgeError>
     where
         Source: AlbumTarget,
     {
@@ -828,7 +831,7 @@ where
             }
         }
         self.leave_questions();
-        self.record_folder_departures(now)
+        self.record_folder_departures(now, pending)
     }
 
     /// The copies whose albums are due, taken.
@@ -905,11 +908,14 @@ where
         write_whole(&files.join(format!("{NOTICE_FILE_PREFIX}{stamp}.json")), &serde_json::to_string(notice).unwrap_or_default());
     }
 
-    /// Record in the journal the copied folders that are done: empty, untouched for `FOLDER_STAY`, and with nothing
-    /// in them uploading, leaving, or kept by the system after it did not upload. The deepest go first.
-    fn record_folder_departures(&self, now: u64) -> Result<(), BridgeError> {
+    /// Record in the journal the copied folders that are done: empty, untouched for a while, and with nothing in them
+    /// uploading, leaving, kept by the system after it did not upload, or pending in the system. `pending` holds the
+    /// folders macOS still holds items in that it has not handed over; when it is not known, they stay as long as
+    /// their copy is remembered. The deepest go first.
+    fn record_folder_departures(&self, now: u64, pending: Option<&[String]>) -> Result<(), BridgeError> {
         let leaving: Vec<String> = leaving_upload(self.store().kept_state(LEAVING_UPLOAD).as_deref()).into_iter().map(|leaving| leaving.parent).collect();
-        let stay = FOLDER_STAY.as_secs();
+        let stay = if pending.is_some() { FOLDER_STAY } else { FOLDER_STAY_UNSURE }.as_secs();
+        let pending = pending.unwrap_or_default();
         self.store()
             .update_state(UPLOAD_FOLDERS, |kept| {
                 let mut folders = upload_folders(kept);
@@ -921,6 +927,7 @@ where
                             let top = NodeKey::from_storage_key(&record.key).and_then(|key| key.upload_path().and_then(<[String]>::first).cloned());
                             now >= record.touched.saturating_add(stay)
                                 && record.waiting.is_empty()
+                                && !pending.contains(&record.key)
                                 && !folders.iter().any(|other| other.parent == record.key)
                                 && !leaving.contains(&record.key)
                                 && !top.is_some_and(|top| self.folders.busy(&top))
@@ -1219,11 +1226,12 @@ impl Library {
     }
 
     /// Ask the server what changed, and record in the journal what changed for the folders the system holds.
-    /// Returns whether anything did.
-    pub async fn poll(&self, cancel: Option<Arc<Cancel>>) -> Result<bool, BridgeError> {
+    /// `pending` names the folders holding items macOS has not handed over yet (its pending set), `None` when it did
+    /// not say: a copied folder leaves Upload soon only once it holds none. Returns whether anything changed.
+    pub async fn poll(&self, pending: Option<Vec<String>>, cancel: Option<Arc<Cancel>>) -> Result<bool, BridgeError> {
         let answers = self.answers();
         let polling = answers.clone();
-        let result = cancellable(cancel, async move { polling.poll().await }).await;
+        let result = cancellable(cancel, async move { polling.poll(pending.as_deref()).await }).await;
         // Albums are made in tasks of their own: the system cancels a poll it no longer waits for, and album work cut
         // short there would wait for the next one.
         for copy in answers.take_albums_due() {
@@ -1925,11 +1933,11 @@ mod tests {
             answers.list(folder).await.unwrap();
         }
         let shown = answers.current_anchor().unwrap();
-        assert!(!answers.poll().await.unwrap(), "nothing changed yet");
+        assert!(!answers.poll(None).await.unwrap(), "nothing changed yet");
         assert_eq!(answers.store().kept_state(POLL_MEMORY).as_deref(), Some("seen"), "the poll's memory is kept");
 
         answers.source.second_photo.store(true, Ordering::SeqCst);
-        assert!(answers.poll().await.unwrap(), "the month changed, and the system holds it");
+        assert!(answers.poll(None).await.unwrap(), "the month changed, and the system holds it");
         let batch = answers.changes_since(&shown, 100).unwrap();
         assert_eq!(batch.deleted, Vec::<String>::new());
         assert_eq!(batch.updated.len(), 1);
@@ -2060,9 +2068,14 @@ mod tests {
         // Day 1 leaves once its photo left and it stayed untouched; Trip stays, holding the refused file.
         let before = answers.current_anchor().unwrap();
         answers.record_departures(seconds_since_epoch(SystemTime::now() + UPLOAD_STAY)).unwrap();
-        answers.record_folder_departures(later + FOLDER_STAY.as_secs()).unwrap();
+        let soon = seconds_since_epoch(SystemTime::now()) + FOLDER_STAY.as_secs();
+        answers.record_folder_departures(soon, None).unwrap();
+        assert_eq!(answers.changes_since(&before, 100).unwrap().deleted, std::slice::from_ref(&item.identifier), "unsure: the folder stays");
+        answers.record_folder_departures(soon, Some(std::slice::from_ref(&day.identifier))).unwrap();
+        assert_eq!(answers.changes_since(&before, 100).unwrap().deleted.len(), 1, "macOS holds something in it: it stays");
+        answers.record_folder_departures(soon, Some(&[])).unwrap();
         let deleted = answers.changes_since(&before, 100).unwrap().deleted;
-        assert_eq!(deleted, [item.identifier.clone(), day.identifier.clone()]);
+        assert_eq!(deleted, [item.identifier.clone(), day.identifier.clone()], "nothing pending: it goes soon");
         assert_eq!(answers.item(&trip.identifier).await, Ok(trip.clone()));
         // Deleted in Finder, with the file that did not upload, it is forgotten.
         answers.delete_folder(&trip.identifier).unwrap();
@@ -2076,14 +2089,14 @@ mod tests {
         for folder in ["root", "section|Photos", "year|2024", "month|2024-03"] {
             answers.list(folder).await.unwrap();
         }
-        answers.poll().await.unwrap();
+        answers.poll(None).await.unwrap();
         let shown = answers.current_anchor().unwrap();
         answers.source.second_photo.store(true, Ordering::SeqCst);
         answers.source.months_fail.store(true, Ordering::SeqCst);
-        assert!(!answers.poll().await.unwrap(), "the month could not be listed again");
+        assert!(!answers.poll(None).await.unwrap(), "the month could not be listed again");
         assert!(answers.store().folders_to_relist().contains(&NodeKey::TimelineMonth(YearMonth { year: 2024, month: 3 })));
         answers.source.months_fail.store(false, Ordering::SeqCst);
-        assert!(answers.poll().await.unwrap(), "the server tells of the change only once, and the next poll still lists it");
+        assert!(answers.poll(None).await.unwrap(), "the server tells of the change only once, and the next poll still lists it");
         assert_eq!(answers.changes_since(&shown, 100).unwrap().updated[0].content_version, "asset-2");
         assert!(answers.store().folders_to_relist().is_empty());
     }

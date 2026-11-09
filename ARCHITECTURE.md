@@ -827,18 +827,24 @@ folders may become albums named by their paths (SPEC.md, "Folders copied into Up
 - **Folders in the system's terms (macOS):** a copied folder is an item of its own (`upload-folder|Trip|Day 1`),
   kept in the store until it leaves, and listed in its parent and the working set, so the system keeps it however
   it enumerates; its uploaded files are answered for from the departures list, as files in Upload are. It leaves
-  once it is empty, untouched for 10 minutes, and holds nothing the system keeps: a file counts from the moment it
-  arrives until it uploads, and a refused folder inside it counts too. Such a folder stays, and may be deleted in
-  Finder, which forgets it. Upload and the copied folders take changes to their times and such (the system passes
+  20 seconds after its last file, once it is empty and holds nothing the extension knows of (a file counts from the
+  moment it arrives until it uploads, and a refused folder inside it counts too) and nothing in macOS's pending set:
+  Finder may still be writing a large file into it, which the extension hears of only once it is whole, and taking
+  the folder from under that copy could cost a moved file. The extension reads the pending set before each poll;
+  where macOS does not say (within 5 seconds), the folder stays 10 minutes. A folder that keeps something stays, and
+  may be deleted in Finder, which forgets it. **Not chosen:** 10 minutes always, which left empty folders in Upload
+  long enough to puzzle (the maintainer's call). Upload and the copied folders take changes to their times and such (the system passes
   on each change on disk as files come and go) and keep them as they are: refused, the system marked Upload as
   failing and tried again without end (seen on the maintainer's Mac, macOS 27.2). Finder's `.DS_Store` is no photo
   and keeps no folder.
 - **Folders on Linux:** the staging area keeps each folder with the time something last arrived in it, and they go
-  per copy: once no file is in any of the copy's folders and nothing arrived in any of them for 10 minutes, as long
-  as the copy is remembered. Files stops at a file Immich does not take until someone answers Skip All, and with a
-  30-second stay the rest of such a copy failed with "No such file or directory" (verified in a GNOME 50 VM); and
-  Dolphin and rsync make every folder of a copy before its first file, so one folder at a time, a folder waiting
-  for its turn went while the copy was busy elsewhere (found by the adversarial review). A file that did not upload
+  per copy: once no file is in any of the copy's folders and nothing arrived in any of them for 10 seconds, about as
+  soon as the last file has left. Folder by folder, one waiting for its turn went while the copy was busy elsewhere,
+  since Dolphin and rsync make every folder of a copy before its first file (found by the adversarial review). A gone
+  folder is remembered for 10 minutes, unseen, and a path lookup brings it back: Files stops at a file Immich does not
+  take until someone answers Skip All, and with the folder gone for good the rest of such a copy failed with "No
+  such file or directory" (verified in a GNOME 50 VM). **Not chosen:** keeping the empty folders shown for those 10
+  minutes, which left them in Upload long enough to puzzle (the maintainer's call). A file that did not upload
   is kept under its folder's path in `not-uploaded/`, so two `IMG_0001.JPG` from two folders stay apart, no name
   leads out of that folder, and where a folder of that path cannot be made the file is kept at the top. Times and
   modes set on a folder (`cp -a`, GIO) are taken and ignored, as a staged file's are, and no file may take a

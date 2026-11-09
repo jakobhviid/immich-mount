@@ -37,7 +37,7 @@ async fn signing_in_takes_a_key_or_a_password_and_refuses_a_wrong_key() {
     let directory = tempfile::tempdir().unwrap();
     let library = Library::open(env("IMMICH_URL"), session.credential.clone(), directory.path().display().to_string(), String::new()).unwrap();
     assert_eq!(library.list("root".into(), None).await.unwrap().len(), 5, "a session browses as a key does");
-    assert!(!library.poll(None).await.unwrap(), "a session's first poll, through the sync stream, takes note only");
+    assert!(!library.poll(None, None).await.unwrap(), "a session's first poll, through the sync stream, takes note only");
     drop(library);
     end_session(env("IMMICH_URL"), session.credential.clone()).await;
     let ended = Library::open(env("IMMICH_URL"), session.credential, directory.path().join("again").display().to_string(), String::new()).unwrap();
@@ -117,19 +117,19 @@ async fn the_archive_holds_what_immich_archived_and_follows_it() {
     let archived = files_under(&library, "section|Archive").await;
     assert_eq!(archived.len(), 1, "the seed's one archived photo");
     assert!(archived[0].parent_identifier.starts_with("group-month|section%7CArchive|"), "in a year and a month folder");
-    assert!(!library.poll(None).await.unwrap(), "the first poll takes note only");
+    assert!(!library.poll(None, None).await.unwrap(), "the first poll takes note only");
 
     // A photo archived in Immich arrives at the next poll, and leaves again when it is unarchived.
     let timeline = files_under(&library, "section|Photos").await;
     let photo = timeline[0].content_version.clone();
     update_assets(&[&photo], serde_json::json!({ "visibility": "archive" })).await;
-    assert!(library.poll(None).await.unwrap(), "the poll sees the archive change");
+    assert!(library.poll(None, None).await.unwrap(), "the poll sees the archive change");
     let archived: Vec<String> = files_under(&library, "section|Archive").await.into_iter().map(|item| item.content_version).collect();
     assert_eq!(archived.len(), 2);
     assert!(archived.contains(&photo));
     assert_eq!(client.asset(&photo).await.unwrap().visibility, immich_api::Visibility::Archive);
     update_assets(&[&photo], serde_json::json!({ "visibility": "timeline" })).await;
-    assert!(library.poll(None).await.unwrap(), "and sees it unarchived");
+    assert!(library.poll(None, None).await.unwrap(), "and sees it unarchived");
     assert_eq!(files_under(&library, "section|Archive").await.len(), 1);
 }
 
@@ -145,7 +145,7 @@ async fn favorites_hold_what_immich_marked_archived_ones_too() {
     let sections: Vec<String> = library.list("root".into(), None).await.unwrap().into_iter().map(|item| item.name).collect();
     assert_eq!(sections, ["Photos", "Albums", "People", "Places", "Favorites", "Upload"]);
     assert!(files_under(&library, "section|Favorites").await.is_empty(), "the seed marks no favorites");
-    assert!(!library.poll(None).await.unwrap(), "the first poll takes note only");
+    assert!(!library.poll(None, None).await.unwrap(), "the first poll takes note only");
 
     // One photo from the timeline and the archived one, marked in Immich: both arrive at the next poll, as both show
     // on Immich's Favorites page.
@@ -157,14 +157,14 @@ async fn favorites_hold_what_immich_marked_archived_ones_too() {
         .id
         .clone();
     update_assets(&[&photo, &archived], serde_json::json!({ "isFavorite": true })).await;
-    assert!(library.poll(None).await.unwrap(), "the poll sees the favorites change");
+    assert!(library.poll(None, None).await.unwrap(), "the poll sees the favorites change");
     let mut favorites: Vec<String> = files_under(&library, "section|Favorites").await.into_iter().map(|item| item.content_version).collect();
     favorites.sort();
     let mut expected = vec![photo.clone(), archived.clone()];
     expected.sort();
     assert_eq!(favorites, expected);
     update_assets(&[&photo, &archived], serde_json::json!({ "isFavorite": false })).await;
-    assert!(library.poll(None).await.unwrap(), "and sees them unmarked");
+    assert!(library.poll(None, None).await.unwrap(), "and sees them unmarked");
     assert!(files_under(&library, "section|Favorites").await.is_empty());
 }
 

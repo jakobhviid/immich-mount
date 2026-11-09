@@ -265,8 +265,8 @@ folders in the drive keep their English names.
   notification that stays on screen on Linux, a dialog on the Mac):
   **Make Albums** gives each folder that holds photos an album named by its path (`Trip`, `Trip › Day 1`), dated if
   the name is taken (`Trip - 2026-11-09`); **Timeline Only**, or dismissing it, makes none. Files stops at a file
-  Immich does not take and asks: choose **Skip All** to go on with the photos. The empty folders leave Upload 10
-  minutes after the copy. To decide once for all copies:
+  Immich does not take and asks: choose **Skip All** to go on with the photos. The folders leave Upload soon after
+  their photos. To decide once for all copies:
 
   ```sh
   immich-mount configure set uploads.folders albums      # always make the albums; `timeline` never; `ask` asks

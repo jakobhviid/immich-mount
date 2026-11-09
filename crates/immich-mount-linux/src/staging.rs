@@ -15,9 +15,10 @@
 //!   go to the not-uploaded folder under their own names: Dolphin's move (KIO) deletes its source although the close
 //!   failed. Only what the user dropped is deleted: a cancelled copy that ends short, an empty file, a file removed or
 //!   replaced in Upload, an uploaded file's receipt.
-//! - **Folders copied into Upload** hold their files here the same way, under the folder's path below Upload. A
-//!   folder stays while anything is in it, and goes once it has been empty and untouched for a while; a file kept
-//!   because it did not upload keeps its path in the not-uploaded folder.
+//! - **Folders copied into Upload** hold their files here the same way, under the folder's path below Upload. A copy's
+//!   folders go together, soon after the copy is done and empty, and are remembered a while without being shown, so a
+//!   copy that only paused finds its folder again; a file kept because it did not upload keeps its path in the
+//!   not-uploaded folder.
 
 use std::collections::HashMap;
 use std::os::unix::fs::{DirBuilderExt, FileExt, OpenOptionsExt};
@@ -31,11 +32,13 @@ use tokio::sync::watch;
 /// How long an uploaded file stays in Upload after its upload, as a receipt: copy tools set its times right after
 /// closing it (GIO, KIO, rsync), and those must find it. Then it goes: Immich has it, in its date folder.
 pub const RECEIPT_LIFETIME: Duration = Duration::from_secs(10);
-/// How long a folder copied into Upload stays once nothing is in it and nothing touched it: as long as its copy is
-/// remembered, so a copy that paused between files (Files waiting on its question about a file Immich does not take)
-/// can go on into it. Gone sooner, the rest of that copy failed with "No such file or directory" (seen in a GNOME 50
-/// VM).
-pub const FOLDER_LINGER: Duration = Duration::from_secs(immich_mount_core::folder_uploads::REMEMBER_SECONDS);
+/// How long a copy's folders stay shown once none holds a file and nothing arrived in any of them: as long as a copy
+/// takes to settle, so they go about as soon as their last file has.
+pub const FOLDER_LINGER: Duration = Duration::from_secs(immich_mount_core::folder_uploads::SETTLE_SECONDS);
+/// How long a copy's folders are remembered once gone, unseen: a copy that only paused (Files waiting on its question
+/// about a file Immich does not take, which can take minutes) looks its folder up again, and finds it. Gone for good,
+/// the rest of that copy failed with "No such file or directory" (seen in a GNOME 50 VM).
+pub const FOLDER_MEMORY: Duration = Duration::from_secs(immich_mount_core::folder_uploads::REMEMBER_SECONDS);
 
 /// An upload's outcome as the closing program sees it: success, or an error number.
 pub type UploadResult = Result<(), i32>;
@@ -141,6 +144,8 @@ struct Inner {
     files: HashMap<u64, StagedFile>,
     handles: HashMap<u64, Handle>,
     folders: HashMap<NodeKey, StagedFolder>,
+    /// Folders of copies that are done, unseen, by when they went: looked up again, they come back.
+    gone: HashMap<NodeKey, (StagedFolder, Instant)>,
     next_file: u64,
     next_handle: u64,
 }
@@ -152,10 +157,9 @@ impl Inner {
         let now = Instant::now();
         let mut current = folder.upload_path().map(<[String]>::to_vec).unwrap_or_default();
         while !current.is_empty() {
-            self.folders
-                .entry(NodeKey::UploadFolder(current.clone()))
-                .and_modify(|staged| staged.touched = now)
-                .or_insert(StagedFolder { made: SystemTime::now(), touched: now });
+            let key = NodeKey::UploadFolder(current.clone());
+            let made = self.gone.remove(&key).map_or_else(SystemTime::now, |(folder, _)| folder.made);
+            self.folders.entry(key).and_modify(|staged| staged.touched = now).or_insert(StagedFolder { made, touched: now });
             current.pop();
         }
     }
@@ -327,8 +331,15 @@ impl Staging {
             .map(|(top, _)| top)
             .collect();
         if !gone.is_empty() {
-            inner.folders.retain(|key, _| top_of(key).is_none_or(|top| !gone.iter().any(|copy| copy == top)));
+            let leaving: Vec<NodeKey> =
+                inner.folders.keys().filter(|key| top_of(key).is_some_and(|top| gone.iter().any(|copy| copy == top))).cloned().collect();
+            for key in leaving {
+                if let Some(folder) = inner.folders.remove(&key) {
+                    inner.gone.insert(key, (folder, now));
+                }
+            }
         }
+        inner.gone.retain(|_, (_, went)| now.duration_since(*went) < FOLDER_MEMORY);
         inner
     }
 
@@ -660,14 +671,26 @@ impl Staging {
         if file_named || inner.folders.contains_key(&key) {
             return Err(libc::EEXIST);
         }
+        // A folder of a copy that went comes back (keeping when it was made): made again, it is the same folder.
         inner.touch(&key);
         Ok(key)
     }
 
-    /// The folder named `name` inside `parent`, if there is one.
+    /// The folder named `name` inside `parent`, if one is shown.
     pub fn find_folder(&self, parent: &NodeKey, name: &str) -> Option<NodeKey> {
         let key = parent.upload_child(name)?;
         self.lock().folders.contains_key(&key).then_some(key)
+    }
+
+    /// The folder named `name` inside `parent`, as a path lookup finds it: one shown, or one of a copy that went, which
+    /// comes back for a copy that only paused.
+    pub fn look_up_folder(&self, parent: &NodeKey, name: &str) -> Option<NodeKey> {
+        let key = parent.upload_child(name)?;
+        let mut inner = self.lock();
+        if inner.gone.contains_key(&key) {
+            inner.touch(&key);
+        }
+        inner.folders.contains_key(&key).then_some(key)
     }
 
     /// The folders inside `parent`, by name, with when each was made.
@@ -946,7 +969,12 @@ mod tests {
         assert!(!staging.busy_under("Trip"));
         assert_eq!(names(&trip), ["Day 1"], "the receipt is still there");
         staging.age(RECEIPT_LIFETIME + linger);
-        assert!(names(&NodeKey::Upload).is_empty(), "empty and untouched: Day 1 goes, and Trip after it");
+        assert!(names(&NodeKey::Upload).is_empty(), "empty and untouched: the copy's folders go");
+        assert_eq!(staging.find_folder(&NodeKey::Upload, "Trip"), None);
+        // A copy that only paused looks its folders up again, and they come back, from the top down.
+        assert_eq!(staging.look_up_folder(&NodeKey::Upload, "Trip"), Some(trip.clone()));
+        assert_eq!(staging.look_up_folder(&trip, "Day 1"), Some(day.clone()));
+        assert_eq!(names(&trip), ["Day 1"]);
 
         let empty = staging.create_folder(&NodeKey::Upload, "Empty").unwrap();
         assert_eq!(staging.remove_folder(&empty), Ok(()));

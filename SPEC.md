@@ -325,10 +325,14 @@ cameras. Clashes are detected case-insensitively, after Unicode NFC normalisatio
   reached, or is busy, is tried again a minute later, for up to a day; an album made whose answer was lost is found
   again by its name and first photo, never made twice. Any other failure (no permission, signed out, a request the
   server refused) is told in a notification, and the copy stays in the timeline only.
-- **The folders leave Upload** with the rest of their copy, once none of them holds a file and nothing arrived in
-  any of them for 10 minutes, as long as the copy is remembered: their files leave as single files do, and a copy
-  that paused (Files stops at a file Immich does not take until Skip or Skip All), or one whose folders were all
-  made first (Dolphin, rsync), can go on into its folders. An empty one may be removed before then.
+- **The folders leave Upload soon after their copy,** about as soon as their last file has (their files leave as
+  single files do):
+  - **On Linux** a copy's folders go together, once none of them holds a file and nothing arrived in any of them for
+    10 seconds. For 10 minutes after, a gone folder looked up by its path comes back, so a copy that only paused
+    (Files stops at a file Immich does not take until Skip or Skip All) goes on into it.
+  - **On macOS** a folder goes 20 seconds after its last file, once macOS says it holds nothing the extension has not
+    been handed (Finder may still be writing a large file into it). Where macOS does not say, it stays 10 minutes.
+  - An empty one may be removed before then.
 - **Files stops at a file it cannot copy** (one Immich does not take) and asks; Skip All goes on with the rest. A
   copy with nothing uploaded yet waits for its first upload before it is asked about.
 - **Hidden folders** (a name starting with `.`: a thumbnail cache, a version-control folder) are refused, without a

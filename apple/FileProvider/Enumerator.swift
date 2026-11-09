@@ -12,11 +12,14 @@ final class Enumerator: NSObject, NSFileProviderEnumerator {
 
     private let container: NSFileProviderItemIdentifier
     private let library: Library
+    /// The location, for macOS's pending set (`PendingItems`).
+    private let domain: NSFileProviderDomain
     private var task: Task<Void, Never>?
     /// Stops this enumerator's request in the bridge when the system invalidates it.
     private let cancel = Cancel()
 
-    init(container: NSFileProviderItemIdentifier, library: Library) {
+    init(container: NSFileProviderItemIdentifier, library: Library, domain: NSFileProviderDomain) {
+        self.domain = domain
         self.container = container
         self.library = library
     }
@@ -62,7 +65,7 @@ final class Enumerator: NSObject, NSFileProviderEnumerator {
             observer.finishEnumeratingChanges(upTo: anchor, moreComing: false)
             return
         }
-        let (library, cancel) = (library, cancel)
+        let (library, cancel, domain) = (library, cancel, domain)
         let limit = UInt32(clamping: max(observer.suggestedBatchSize ?? Enumerator.batchSize, 1))
         task = Task {
             do {
@@ -70,7 +73,8 @@ final class Enumerator: NSObject, NSFileProviderEnumerator {
                 // The server is asked once the system has caught up; while changes wait, it comes back for them.
                 if from == (try library.currentAnchor()) {
                     do {
-                        _ = try await library.poll(cancel: cancel)
+                        let pending = await PendingItems.folders(in: domain)
+                        _ = try await library.poll(pending: pending, cancel: cancel)
                         var version = Enumerator.version.withLock { $0 }
                         if version == nil {
                             let asked = try? await library.serverVersion()

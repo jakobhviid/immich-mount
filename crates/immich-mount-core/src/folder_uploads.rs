@@ -24,8 +24,9 @@ pub const SETTLE_SECONDS: u64 = 10;
 pub const QUESTION_SECONDS: u64 = 24 * 60 * 60;
 /// How long a finished copy is remembered: a folder of the same name copied in meanwhile joins it, as the rest of a
 /// copy that paused. A copy with nothing uploaded yet waits this long for its first upload (a file manager may wait on
-/// a question, such as Files' "Skip All" for a file Immich does not take), and the platforms keep a copied folder
-/// this long once empty, so a copy that paused can go on into it.
+/// a question, such as Files' "Skip All" for a file Immich does not take). Linux remembers a gone folder this long,
+/// unseen, so a copy that paused can go on into it, and macOS keeps one this long where it does not say whether it
+/// still holds something for it.
 pub const REMEMBER_SECONDS: u64 = 10 * 60;
 /// How long album work that failed for a while (the server unreachable or busy) waits before it is tried again.
 pub const RETRY_SECONDS: u64 = 60;
@@ -229,7 +230,12 @@ impl FolderCopy {
             folder: self.top.clone(),
             uploaded: self.uploaded(),
             not_uploaded: self.folders.iter().map(|folder| folder.not_uploaded).sum(),
-            albums: self.folders.iter().filter(|folder| !folder.assets.is_empty()).map(|folder| album_name(&folder.path)).collect(),
+            albums: {
+                // In the folders' order, whatever order they arrived in (Dolphin made Day 2 first).
+                let mut paths: Vec<&Vec<String>> = self.folders.iter().filter(|folder| !folder.assets.is_empty()).map(|folder| &folder.path).collect();
+                paths.sort();
+                paths.into_iter().map(|path| album_name(path)).collect()
+            },
         }
     }
 }

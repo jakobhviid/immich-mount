@@ -68,7 +68,7 @@ final class FileProviderExtension: NSObject, NSFileProviderReplicatedExtension, 
                     request: NSFileProviderRequest) throws -> NSFileProviderEnumerator {
         guard let library else { throw NSFileProviderError(.notAuthenticated) }
         followConfig(library)
-        return Enumerator(container: containerItemIdentifier, library: library)
+        return Enumerator(container: containerItemIdentifier, library: library, domain: domain)
     }
 
     /// Follow config.toml once the app's Settings window changed it; the app then asks the system to list everything
