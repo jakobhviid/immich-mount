@@ -288,6 +288,112 @@ tests on a server built with `up.sh --ml`.
    originals byte-identical to Immich's checksums, and a copy into Upload uploaded before `cp` returned. The release
    check on Fedora GNOME (`lab/check/run.sh gnome --binary`) passed every line with the branch's daemon and CLI.
 
+## Open in Immich, and Immich Gallery on the Mac
+
+Right-click items that open what the file manager shows somewhere else. **Open in Immich** opens it in Immich's own
+web app, on every platform: Files, Dolphin and Finder. On the Mac, while
+[Immich Gallery](https://github.com/IGOLz/ImmichGallery) (MIT, macOS only, a native Immich client) is installed, the
+two apps also point to each other: a photo, album, person or place found in Finder opens in the gallery, and one in
+the gallery shows in Finder. Neither app signs in for the other: the links carry Immich's ids, so they work when both
+are signed in to the same server and account.
+
+**What each item knows.** An item's key is its whole path in keys (`asset|<folder>|<id>` in storage form, with the
+folder's own key inside, escaped), so a photo knows the album, person or place it is listed in, and the links keep
+that context. Albums, people and Assets have ids; places have only names in Immich (SPEC, "Content":
+`/search/suggestions`).
+
+| Item | Its key | Open in Immich | Show in Immich Gallery (Mac) |
+|---|---|---|---|
+| A photo in Photos | `asset\|month\|…\|<id>` (or `day\|…`) | `/photos/<id>` | `photo/<id>`, in All Photos |
+| A photo in an album | `asset\|album\|<album>\|<id>`, or inside its date groups | `/albums/<album>/photos/<id>` | the album, opened on the photo |
+| A photo in a person | `asset\|person\|<person>\|<id>`, or inside its date groups | `/people/<person>/photos/<id>` | the person, opened on the photo |
+| A photo in Favorites or Archive | `asset\|section\|Favorites\|<id>`, or inside its date groups | `/favorites/photos/<id>`, `/archive/photos/<id>` | that page, opened on the photo |
+| An album, a person | `album\|<id>`, `person\|<id>` | `/albums/<id>`, `/people/<id>` | its page |
+| A city, or a photo in one | `city\|<country>\|<city>` | `/search?query={"city":…,"country":…}` | the gallery's city page, which goes by the city's name alone |
+| A country | `country\|<country>` | `/search?query={"country":…}` | not offered: the gallery has no country page |
+| A year, a month, a day, a section, Upload | | not offered: Immich has no page for it | not offered |
+
+The web addresses are the routes Immich's web app defines
+([`web/src/lib/route.ts`](https://github.com/immich-app/immich/blob/main/web/src/lib/route.ts) and
+[`web/src/routes/(user)/`](https://github.com/immich-app/immich/tree/main/web/src/routes/(user))), on the address
+Immich Mount signed in with (`server.url`, without `/api`). Its Places page links a city the same way, as a search.
+Searches are the least stable of these links: the search page takes its filters as JSON in the address, in the shape
+of the metadata search. The gallery's links are `immichgallery://` (`immichgallery-dev://` for its Dev build), read by
+[`Shared/WidgetFeed.swift`](https://github.com/IGOLz/ImmichGallery/blob/main/Shared/WidgetFeed.swift); only `photo/<id>`
+(and `memory/<id>`) exist, so the others come with the gallery's half below.
+
+**The link, in the core.** One function in `immich-mount-core` turns a key and the server's address into the web
+address, or none, so every platform gives the same link for the same item. It is plain Rust, tested on Linux.
+
+**Other apps, the same way.** Immich Gallery is the first of a general pattern: Immich Mount looks for an app it
+knows, and offers links to it only while it is installed. Each known app is one entry: how to find it (its bundle id
+on the Mac, its desktop file or URL scheme handler on Linux), the link it takes for each kind of item (or none), and
+the menu item's name ("Show in …"). The core turns a key into each app's link, as for the web app, and each
+platform's menu items show the entries that are installed and take a link for that item. An app that wants to point
+back adds its own hook, as the gallery's half does, with links into Immich Mount. Immich's web app is the one entry
+that needs no app: it is offered whenever there is a web address.
+
+**In Files and Dolphin,** on one item at a time inside the mount, and nowhere else. The daemon knows which key every
+path has, so it answers for the menu items: a D-Bus method `WebLink(path s) → (url s)` (empty when the item has no web
+address), and `immich-mount web <path>`, which opens the address in the browser (`xdg-open`) or prints it with
+`--json`.
+- **Files:** a Nautilus extension (`libnautilus-extension-4`, Nautilus 43 and later), shipped in
+  `immich-mount-gnome`, which offers Open in Immich on items under the mount point and asks the daemon for the link.
+- **Dolphin:** a service menu (`/usr/share/kio/servicemenus/`), shipped in `immich-mount-kde`, which runs
+  `immich-mount web %f`, shown only inside the mount through `X-KDE-ShowIfDBusCall` on the daemon, or, if that cannot
+  see the selection, a file item action plugin (`KAbstractFileItemActionPlugin`).
+- **Flatpak impact:** file manager extensions are files on the host, which a Flatpak cannot install. The D-Bus
+  method and the command work from one; the menu items would need a host package beside it.
+
+**In Finder,** on one item at a time, as File Provider custom actions (`NSExtensionFileProviderActions`), Finder's own
+way to put an item in a location's right-click menu, offered by each action's activation rule. The extension hands
+each action to the menu bar app: the identifier goes into the App Group and a Darwin notification wakes the app; the
+bridge turns the identifier into the link, and the app opens it.
+
+**In the gallery,** a hook there: Show in Immich Mount in the menus of its photos (grid and viewer), albums (the
+Albums page and the sidebar), people and places, while Immich Mount is installed, opening `immich-mount://` links
+(`asset/<id>`, with the album or person the photo is shown in, `album/<id>`, `person/<id>`, `city/<name>`,
+`country/<name>`). The app takes the link, the bridge finds the item's identifier, the system gives its place in
+Finder (`getUserVisibleURL`), and Finder opens with it selected. Folders are found by identifier, never by name, so a
+renamed or numbered folder (`Anna-1`) is found all the same.
+- **A photo** shows where the gallery shows it: in its album or person, in Favorites or Archive while that section is
+  on, and otherwise in Photos (its year and month, and its day when `grouping.photos` splits the month), or Archive
+  when it is archived.
+- **An album, a person or a country** shows its folder. **A city** shows its folder when one country has a city of
+  that name, and Places otherwise, since the gallery's city page has no country.
+- **Nothing to show:** an id the signed-in account cannot see, a person the People section leaves out (hidden or
+  unnamed), or a section that is off, gets a message saying so.
+- Any web page can open these links, so they take only ids and names and only show a file or folder, as the
+  gallery's own links do.
+
+Steps:
+1. **Open in Immich,** first. It needs nothing from the gallery and tries most of the rest: the link in the core for
+   every kind of item; on the Mac the custom actions and their activation rules, and the hand-off to the menu bar app
+   (and starting it when it is not running); on Linux the daemon's answer and the menu items in Files and Dolphin.
+2. **Show in Immich Gallery for a photo in Photos,** on the gallery's existing link. It adds what step 1 cannot try:
+   finding the gallery (each build prefers the gallery of its own kind: `dev.igol.ImmichGallery`,
+   `dev.igol.ImmichGallery.Dev`), and offering the action only while it is installed. Finder decides from the item
+   alone, so items carry a marker in `userInfo` while a gallery that takes their link is installed, matched by the
+   activation rule, and the app has the system fetch the items again when that changes (at launch, and when the
+   gallery is seen launching).
+3. **The gallery's half,** upstream as an issue and a pull request, the way the maintainer contributes to it: the
+   links for albums, people, places and photos in context, and Show in Immich Mount. Then the rest of Show in Immich
+   Gallery, marked per kind of item for a gallery version that takes the link, and Immich Mount's links and the reveal
+   in Finder.
+
+Open, to settle on each desktop:
+- **Mac:** the menu bar app runs only while it is open or a login item. Can the extension start it when it is not,
+  or open the link itself (`NSWorkspace` from a non-UI File Provider extension), so the app is not needed? Failing
+  both, the actions work while the app runs, and otherwise the extension posts a notification asking to open it
+  (step 1).
+- **Dolphin:** whether `X-KDE-ShowIfDBusCall` is given the selected items, so the service menu shows only inside the
+  mount, or the plugin is needed (step 1).
+- **Files:** the C extension is built for one `libnautilus-extension-4`; whether one build serves every supported
+  Nautilus, or each distribution's package builds its own (step 1).
+- **Mac:** how soon Finder offers or drops an action after the gallery is installed or removed (step 2).
+- **Mac:** whether `getUserVisibleURL` finds an item in a folder Finder has never listed, through `item(for:)` up the
+  parents, or the folder has to be listed first (step 3).
+
 ## Package repositories
 
 The real fix for updates on Linux (ARCHITECTURE.md, "Updates on Linux"): with a repository behind the packages, GNOME
@@ -357,7 +463,7 @@ These are the options for when that is not enough on a real server, with what ea
 | **Offline albums** | Pin chosen albums in the cache, showing the size first. Never the whole library |
 | **A loopback sign-in redirect** | The RFC 8252 norm, but the admin must register it at the identity provider. An option for servers without mobile sign-in configured |
 | **GNOME Shell search provider** | Immich smart search in the Activities overview: a Linux-only extra |
-| **Nautilus extension** | "Show in Immich" and similar menu items |
+| **Nautilus extension, beyond Open in Immich** | More menu items in Files, once Open in Immich (above) brings the extension |
 | **Several servers or accounts** | The cache already separates accounts, so this is additive |
 | **"Move to Trash" mapped to Immich's trash** | It makes a library-wide change one keystroke away in a file manager. Needs careful thought first |
 | **Folder names in the user's language** | The interface is translated (ARCHITECTURE, "Translations"), the folders are not: a section's or a month's name is part of the mount's contract (SPEC, "Names"), and a path that changes with the desktop's language breaks scripts, links and bookmarks |
