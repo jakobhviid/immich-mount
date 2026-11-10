@@ -412,16 +412,35 @@ impl qobject::Backend {
                     "kind": kind,
                     "key": setting.key,
                     "title": preferences::title(setting),
+                    "link": preferences::link(setting).unwrap_or_default(),
                     "value": preferences::current_value(setting),
                     "choices": choices,
                 }));
+            }
+            if *prefix == "crosslink" {
+                for (app, shown) in preferences::crosslink_apps() {
+                    rows.push(serde_json::json!({
+                        "kind": "app",
+                        "key": app.id,
+                        "title": app.name,
+                        "icon": app.icon.unwrap_or_default(),
+                        "value": shown.to_string(),
+                    }));
+                }
             }
         }
         QString::from(&serde_json::Value::Array(rows).to_string())
     }
 
     pub fn store_setting(mut self: Pin<&mut Self>, key: &QString, value: &QString) -> QString {
-        match preferences::change(&key.to_string(), &value.to_string()) {
+        // An app found for Show in is stored by its desktop entry id, into crosslink.hidden.
+        let key = key.to_string();
+        let outcome = if key.ends_with(".desktop") {
+            preferences::show_app(&key, value.to_string() == "true")
+        } else {
+            preferences::change(&key, &value.to_string())
+        };
+        match outcome {
             Ok(restart) => {
                 self.as_mut().rust_mut().settings_changed |= restart;
                 QString::default()

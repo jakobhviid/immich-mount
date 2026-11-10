@@ -42,5 +42,31 @@
 	<string>$(AppIdentifierPrefix)$(IMMICH_IDENTITY)</string>
 	<key>ImmichMountUninstall</key>
 	<true/>
+	<key>CFBundleURLTypes</key>
+	<array>
+		<dict>
+			<key>CFBundleURLName</key>
+			<string>immich-crosslink</string>
+			<key>CFBundleTypeRole</key>
+			<string>Viewer</string>
+			<key>CFBundleURLSchemes</key>
+			<array>
+				<string>immich-crosslink</string>
+			</array>
+		</dict>
+	</array>
+	<key>ImmichCrosslink</key>
+	<dict>
+		<key>Version</key>
+		<string>0.2</string>
+		<key>Shows</key>
+		<array>
+			<string>asset</string>
+			<string>album</string>
+			<string>person</string>
+			<string>place</string>
+			<string>page</string>
+		</array>
+	</dict>
 </dict>
 </plist>

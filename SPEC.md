@@ -398,6 +398,63 @@ Both are offered on one item at a time, inside the mount, for items with a web a
   ask with a 250 ms limit, never starting the daemon. It finds the item from the folder listings it has, so a path the
   file manager shows needs no request to the server. With no daemon answering, the items are not offered.
 
+### Links from other apps (immich-crosslink)
+
+Immich Mount takes part in [immich-crosslink](https://jakob.hviid.phd/immich-crosslink/), draft 0.2: other Immich
+apps on the computer can ask it to show a photo, album, person or place, and it shows the item in the file manager,
+selected.
+- **Announcing:** the launcher entry registers the scheme (`MimeType=…;x-scheme-handler/immich-crosslink;`) and
+  announces `X-Immich-Crosslink-Version=0.2` and `X-Immich-Crosslink-Shows=asset;album;person;place;page;`. A link
+  reaches `immich-mount app %u`, which hands it to the daemon (`ShowLink`) without opening the app.
+- **Reading:** a link is *invalid* (another scheme, a host, no `server` or one that is not an `http` or `https`
+  address, an id that is not a UUID, a malformed search), *cannot show* (a path or a search the protocol does not
+  define), or names an item. The server must be the signed-in one (scheme, host without case, port, a default port
+  the same as none), and the user too where the link names one and the credential may read the account's id.
+- **Where it shows:** where the link says: a photo in its album, person, city, Favorites or Archive, in the date
+  folders it falls in there; `/photos/<id>` in Photos, in its month (or day) folder, or in Archive when the photo is
+  archived and that section is on. An album, a person, a city (also by its name alone, as Immich's Places page
+  links it) and a country show as their folders, a section as its folder at the top.
+- **Nothing to show** gets a notification, and nothing else happens:
+
+  | Result | Notification |
+  |---|---|
+  | Immich crosslink off | "Immich crosslink is off": turn it on in the settings |
+  | Invalid | "This link cannot be opened": not a valid Immich link |
+  | Cannot show | "Nothing to show": no place for what it points to |
+  | Another server | "Not signed in to *host*" |
+  | Another user | "Another Immich account" |
+  | Not in the drive (an id the account cannot see, a hidden person, a section that is off) | "Nothing to show": the drive does not show it |
+  | Not mounted | "Immich Mount is not mounted": mount it, then open the link again |
+
+- **On the Mac** the app's Info.plist announces the same (`ImmichCrosslink`: `Version` `0.2`, `Shows` the five
+  kinds) and declares the scheme (`CFBundleURLTypes`). The menu bar app takes the link, without opening a window
+  when a link started it, and Finder selects the item (`getUserVisibleURL`, then `activateFileViewerSelecting`),
+  listing the folders above it first where Finder never has. The results and notifications are Linux's; signed out,
+  a link gets "Not signed in", and clicking "Immich crosslink is off" opens the app's settings.
+- **The default handler:** several apps may take the scheme. Immich Mount never makes itself the default: apps that
+  take part send a link to one app by name, and a link opened in a browser or with `xdg-open` or `open` goes to the
+  app the system chose, which the user can change (`xdg-mime default dev.hviid.ImmichMount.desktop
+  x-scheme-handler/immich-crosslink`).
+- **Only showing:** any web page can open a link, so a link only ever selects a file or folder. Nothing is fetched
+  but the item's folder listings and, for a photo, its details (`GET /assets/{id}`); nothing is downloaded,
+  uploaded, changed or deleted, and nothing asks.
+
+### Show in other apps
+
+Beside Open in Immich and Copy Immich Link, **Show in *app*** sends the item's crosslink to another app that takes
+part in immich-crosslink, which shows it there.
+- **Which apps:** those whose desktop entry takes the scheme and announces draft 0.2 (`X-Immich-Crosslink-Version`)
+  and the item's kind (`X-Immich-Crosslink-Shows`), less Immich Mount itself and the ones switched off in the
+  settings (`crosslink.hidden`). A photo's kind is `asset` wherever it is listed; an album's `album`, a person's
+  `person`, a city's or a country's `place`, a section's `page`. Each is named and drawn by its desktop entry.
+- **Sending:** the crosslink, with the signed-in user's id when known, goes to that app alone (GIO's
+  `g_app_info_launch_uris` in Files, `KIO::ApplicationLauncherJob` in Dolphin), never to the scheme's default.
+- **Off:** with `crosslink.enabled` off, no Show in items; Open in Immich and Copy Immich Link stay.
+- **The settings** (Other Apps, in both apps): the **Immich crosslink** switch with "What is this?", a link to the
+  protocol, and under it each app found, by its name and icon, with a switch.
+- The menus ask the daemon's `Links`; against a daemon without it they offer Open in Immich and Copy Immich Link
+  only.
+
 ## Signing in and credentials
 
 | Method | Offered when | Desktop | Headless | Stored |
@@ -456,6 +513,8 @@ table in the Core drives validation, `immich-mount configure`, and the app's set
 | `uploads.folders` | `ask`, `timeline`, `albums` | `ask` | What a folder copied into Upload becomes besides its uploads: asked each time once the copy has settled, the timeline only, or an album of each folder too ("Folders copied into Upload") |
 | `thumbnails.sharp` | bool | `true` | Also seed 1024 px thumbnails from `preview` |
 | `thumbnails.safety_net` | bool | `true` | Refuse thumbnailer reads of originals |
+| `crosslink.enabled` | bool | `true` | Immich crosslink: show in the file manager what another app links to, and offer Show in *app* (Links to Immich). Off, a link from another app only gets a notification saying so. Labelled "Immich crosslink" in the apps, in English in every language, with a link to the protocol |
+| `crosslink.hidden` | ids separated by `;` | none | The apps left out of Show in *app*, by desktop entry id (`org.example.Photos.desktop`) or bundle id; the apps show a switch per app found instead |
 | `updates.check` | bool | `true` | Tell, once per version, when a new release is out: a notification and a line on the tray's menu (ARCHITECTURE.md, "Updates on Linux"). Only packages from the download page look; Homebrew's installs are left to `brew upgrade`. Linux only: the Mac app has Sparkle's own setting |
 | `credential.file` | path | none | Headless only: a 0600 file holding the credential |
 
@@ -476,6 +535,7 @@ One binary: the daemon and the command line.
 | `immich-mount status` | Connection state, server and its version, account, credential, mount point, cache usage |
 | `immich-mount doctor` | A read-only health check (see WORKFLOWS) |
 | `immich-mount configure list \| keys \| get \| set \| unset` | Reads and writes settings |
+| `immich-mount show <link>` | Shows in the file manager, selected, the item an `immich-crosslink:` link or an address of Immich's web app on the signed-in server names (Links to Immich), and prints its path. With `--json` it prints `{"link": …, "result": …, "path": …, "message": …}` and selects nothing. A link it cannot show exits non-zero with the reason |
 | `immich-mount web [--copy] <path>` | Opens the item at `path` in Immich's web app, in the default browser (`xdg-open`), or with `--copy` puts its web address on the clipboard (Links to Immich). With `--json` it prints `{"path": …, "url": …}` and opens nothing. A path outside the mount, an item Immich has no page for, and a mount that is not running each exit non-zero, saying which. `--copy` hands the address to Plasma's clipboard (Klipper) where it runs, else to `wl-copy` on Wayland or `xclip` or `xsel` on X11, which keep it after the command ends |
 | `immich-mount completions <shell>` | Shell completions |
 
@@ -512,6 +572,8 @@ The app ID is `dev.hviid.ImmichMount`. The daemon owns the bus name `dev.hviid.I
 | `Mount()`, `Unmount()` | methods | `Unmount()` unmounts, which stops the daemon (an eject). *(`Mount()` is not built: the daemon only lives while mounted, so the app and `immich-mount mount` start the user service.)* |
 | `Refresh(path s)` | method | Read folders from Immich again on their next visit (the whole tree, whatever the path) |
 | `ClearCache()` | method | Empty the content cache, except Assets being read |
+| `Links(path s) → (web s, crosslink s, kind s, hidden s)` | method | The links of the item at `path` for the menus: its web address, its crosslink (empty while `crosslink.enabled` is off), its kind (`asset`, `album`, `person`, `place`, `page`) and the apps left out (`crosslink.hidden`); all empty where `WebLink` is |
+| `ShowLink(link s, select b, notify b) → (result s, detail s)` | method | The item a crosslink or a web address names (Links to Immich): `show` with its path, or `invalid`, `cannot-show`, `other-server` with its host, `other-user`, `not-found`, `off` or `unreachable`. With `select` the file manager shows it selected (`org.freedesktop.FileManager1.ShowItems`); with `notify` a notification says why not |
 | `WebLink(path s) → (url s)` | method | The web address in Immich of the item at `path` (Links to Immich); empty for a path outside the mount or an item Immich has no page for. A path through a symlink to the mount's folder (`/home` on Fedora's atomic desktops) counts |
 | `StateChanged(state s, message s)` | signal | Sent when the connection state changes; a desktop notification says the same once |
 

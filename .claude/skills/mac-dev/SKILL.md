@@ -80,6 +80,14 @@ Traps (verified on macOS 27.0.1 with Xcode 27.2):
   `open -n ... -signInServer` then starts a second instance beside it. Quit the first (`pkill -f "Immich Mount
   Dev.app/Contents/MacOS"`) before signing in with launch arguments, or the window stays up for anyone at the Mac to
   sign in with.
+- **`open <crosslink>` goes to the scheme's default handler,** which may be another app that takes crosslinks
+  (Immich Gallery Dev was the default on 2026-11-10), or a build left in `apple/build/`. Send a link to the Dev app
+  alone with `open -a "/Applications/Immich Mount Dev.app" <link>`; choosing the default handler is the maintainer's
+  setting, never ours. The app logs each link's result (`a received link: show <identifier>`, `category == "app"`);
+  the path it selected is logged private.
+- **Settings cannot be written from SSH** (the App Group is closed to it, above): `-setPreference <key>=<value>`
+  changes one, then quit that instance. It has the system read every item again, and for a few seconds after,
+  `getUserVisibleURL` may fail with "database is locked" (`SqliteErrorDomain` 5; seen on macOS 27.2).
 - **zsh aborts a command whose glob matches nothing** ("no matches found"), and the rest of an SSH command line with
   it. Run cleanup scripts through `bash -s`.
 
@@ -166,6 +174,8 @@ app="/Applications/Immich Mount Dev.app"
 open -n "$app" --args -signInServer http://127.0.0.1:2283 -signInAPIKey <key>
 open -n "$app" --args -signOut YES       # its Finder location, account and store go; the release's stay
 open -n "$app" --args -settingsPane 1    # Settings, on a pane (0 General, 1 Folders, 2 Account)
+open -n "$app" --args -setPreference crosslink.enabled=false   # change one setting, as the Settings window does
+open -a "$app" 'immich-crosslink:///albums/<id>?server=http%3A%2F%2F127.0.0.1%3A2283'   # a link, to this app alone
 pkill -f "Immich Mount Dev.app/Contents/MacOS"   # quit it; no Apple events, so no Automation prompt
 ```
 

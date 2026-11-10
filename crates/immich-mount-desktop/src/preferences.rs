@@ -17,11 +17,25 @@ pub const GROUPS: &[(&str, &str)] = &[
     ("uploads", "Uploads"),
     ("thumbnails", "Thumbnails"),
     ("cache", "Cache"),
+    ("crosslink", "Other Apps"),
     ("updates", "Updates"),
 ];
 
-/// A setting's title in the user's language: its description in the core's table, translated.
+/// The protocol behind `crosslink.enabled`, linked beside its switch so it is clear what it is (immich-crosslink,
+/// "Settings": the same label and link in every app that takes part).
+pub const CROSSLINK_PAGE: &str = "https://jakob.hviid.phd/immich-crosslink/";
+
+/// The page a setting's row links to, if any.
+pub fn link(setting: &Setting) -> Option<&'static str> {
+    (setting.key == "crosslink.enabled").then_some(CROSSLINK_PAGE)
+}
+
+/// A setting's title in the user's language: its description in the core's table, translated. Immich crosslink's
+/// switch carries the protocol's name, in English in every language.
 pub fn title(setting: &Setting) -> &'static str {
+    if setting.key == "crosslink.enabled" {
+        return "Immich crosslink";
+    }
     tr(setting.description)
 }
 
@@ -30,9 +44,38 @@ pub fn choice_label(word: &str) -> &str {
     tr(settings::choice_label(word))
 }
 
-/// The settings of one group, in table order.
+/// The settings of one group, in table order. The apps left out of Show in are not a row of their own: each app found
+/// has its switch (`crosslink_apps`).
 pub fn settings_in(prefix: &str) -> impl Iterator<Item = &'static Setting> + '_ {
-    SETTINGS.iter().filter(move |setting| setting.key.split('.').next() == Some(prefix))
+    SETTINGS.iter().filter(move |setting| setting.key.split('.').next() == Some(prefix) && setting.key != "crosslink.hidden")
+}
+
+/// The other apps that take crosslinks, each with whether Show in offers it (immich-crosslink, "Settings").
+pub fn crosslink_apps() -> Vec<(immich_mount_linux::crosslink_apps::CrosslinkApp, bool)> {
+    let hidden = stored("crosslink.hidden");
+    immich_mount_linux::crosslink_apps::installed()
+        .into_iter()
+        .map(|app| {
+            let shown = !immich_mount_linux::crosslink_apps::is_hidden(&hidden, &app.id);
+            (app, shown)
+        })
+        .collect()
+}
+
+/// Offer an app in Show in, or leave it out. `Ok(true)`: the daemon restarts to see it, as for any setting.
+pub fn show_app(id: &str, shown: bool) -> Result<bool, String> {
+    let hidden = immich_mount_linux::crosslink_apps::set_hidden(&stored("crosslink.hidden"), id, !shown);
+    if hidden.is_empty() {
+        // No app left out: the key goes, since a text setting takes no empty value.
+        unset("crosslink.hidden")?;
+        return Ok(true);
+    }
+    change("crosslink.hidden", &hidden)
+}
+
+/// One setting's stored value, or empty.
+fn stored(key: &str) -> String {
+    settings::stored_values(&config_text(&Paths::from_environment())).unwrap_or_default().get(key).cloned().unwrap_or_default()
 }
 
 fn config_text(paths: &Paths) -> String {
@@ -56,6 +99,17 @@ pub fn drive_name() -> &'static str {
 pub fn store(key: &str, value: &str) -> Result<(), String> {
     let paths = Paths::from_environment();
     let updated = settings::set_value(&config_text(&paths), key, value).map_err(|error| error.to_string())?;
+    write_config(&paths, updated)
+}
+
+/// Remove one value, so its default applies again.
+fn unset(key: &str) -> Result<(), String> {
+    let paths = Paths::from_environment();
+    let updated = settings::unset_value(&config_text(&paths), key).map_err(|error| error.to_string())?;
+    write_config(&paths, updated)
+}
+
+fn write_config(paths: &Paths, updated: String) -> Result<(), String> {
     std::fs::create_dir_all(&paths.config_directory).map_err(|error| error.to_string())?;
     let temporary = paths.config_file().with_extension("toml.tmp");
     std::fs::write(&temporary, updated).map_err(|error| error.to_string())?;

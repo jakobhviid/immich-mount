@@ -943,9 +943,43 @@ Open in Immich and Copy Immich Link take an item from the file manager to its pa
   is fetched, and a web address on the signed-in server to its item. The protocol's own test links
   (`crates/immich-mount-core/tests/crosslink-links.json`, copied at the commit its test names) are run as they are:
   the links made byte for byte, and every result reached.
-- **Flatpak impact:** the D-Bus member and the command work from a Flatpak (the command needs the session bus and
+- **Receiving a crosslink** (Linux): the launcher entry takes the scheme, so a link starts `immich-mount app %u`,
+  which hands it to the daemon's `ShowLink` and ends; the app's window never opens. The daemon reads it with the
+  core's `receive` (the protocol's checks, the server, the user), finds the item where the drive shows it
+  (`Tree::locate`: a photo's date folders come from the Asset's details, an archived photo of the timeline is looked
+  for in Archive), names its path (`Tree::path_of`) and asks the file manager to select it through
+  `org.freedesktop.FileManager1.ShowItems`, which Files and Dolphin both answer (verified in Fedora 44's GNOME 50 and
+  Plasma 6 VMs, and Plasma's `xdg-open` passes the link on without asking).
+  - **The daemon, not the app:** it alone knows the names it handed out, and it already runs while the drive is
+    mounted; starting a GUI to select a file would flash a window.
+  - **Only showing:** any web page can open a registered scheme, so a link is a stranger's. The daemon fetches the
+    folder listings and a photo's details and nothing else, and every way it ends is a selection or a sentence.
+  - **The user** is read with the email at start (`GET /users/me`), so a link from another account's view is not
+    shown as if it were this one's; an API key that may not read the account skips that check, as the protocol
+    allows.
+  - **The setting** is read at start, as every setting is; the apps restart the daemon when it changes.
+- **Receiving on the Mac:** the menu bar app takes the URL (`application(_:open:)`) and asks the bridge's
+  `show_link`, which runs the same checks and `Tree::locate` and `Tree::path_of` as the daemon, with a tree of its
+  own over the app's connection: the library's store belongs to the extension, and keys do not depend on the names
+  it keeps. The app then asks the system for the item's place (`NSFileProviderManager.getUserVisibleURL`) and has
+  Finder select it. The system lists the folders above an item Finder never showed by itself, about a second for a
+  photo three folders down (verified on macOS 27.2); right after every item was read again it can fail once with a
+  locked database, so the app asks twice. The user's id is read only for a link that carries one.
+- **Show in *app*:** the menus find the apps themselves, through their toolkit's own index of desktop entries
+  (GIO's `g_app_info_get_all_for_type`, KDE's `KApplicationTrader`), and read the announcement from the entry, so an
+  app's name and icon are the system's and the link goes to that app alone, as the protocol asks. The daemon gives
+  what only it knows, in one call (`Links`): the item's web address, crosslink and kind, and the apps switched off.
+  The settings list the apps from the same entries (`crosslink_apps.rs`, by the desktop entry specification's
+  rules: the user's folder first, a subfolder's name in the id), so both apps' settings show what the menus offer.
+  - **Not chosen: Immich Mount as the scheme's default handler.** Apps that take part never use the default, so it
+    matters only to links opened in a browser or with `xdg-open`, and with two apps installed, which should get them
+    is the user's choice. A package taking it over would also take it from the other app's users.
+  - **An older daemon** answers `Links` with an unknown method; the menus then ask `WebLink` and offer no Show in
+    items, so a newer extension never breaks against a daemon not yet restarted after an upgrade.
+- **Flatpak impact:** the D-Bus members and the command work from a Flatpak (the command needs the session bus and
   `xdg-open`, which the OpenURI portal answers); the file managers' menu items are files on the host, which a
-  Flatpak cannot install.
+  Flatpak cannot install. A Flatpak exports its launcher entry with the scheme, so it can take crosslinks; selecting
+  the item needs `--talk-name=org.freedesktop.FileManager1`.
 
 ## Signing in
 

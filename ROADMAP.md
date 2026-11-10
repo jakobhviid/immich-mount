@@ -379,9 +379,19 @@ words are in every catalog.
 
 Immich Mount takes crosslinks, and shows their item in the file manager, selected.
 
-**Built so far, in the core:** reading a crosslink to its result and a web address to its item (`links.rs`), and
-finding the item's key where the mount shows it and its path from the mount point (`Tree::locate`, `Tree::path_of`,
-with the Asset fetched by `LibrarySource::asset` for its date folders), each unit tested. The rest below is to do.
+**Built on Linux:** SPEC.md, "Links from other apps", and ARCHITECTURE.md, "Links to Immich", have it: the launcher
+entry announces draft 0.2 and takes the scheme, the daemon's `ShowLink` selects the item through
+`org.freedesktop.FileManager1`, `immich-mount show`, the `crosslink.enabled` switch (Other Apps, in both apps'
+settings) and every refusal's notification in all 20 languages. **Verified** (2026-11-10, lab server v3.3.6): in
+the Fedora 44 GNOME and Plasma VMs, `xdg-open` of a crosslink selected the right file or folder in Files and Dolphin
+for a photo in Photos, in an album, a person and a city (also inside date folders), an album, a person, a city, a
+country and a section, without opening the app; another server, another user, an invalid link, `/tags`, an archived
+photo with Archive off, the switch off and an unmounted drive each only notified. **Built on the Mac** too (SPEC.md,
+"Links from other apps"): on macOS 27.2, links opened with `open -a` selected an album, a photo in Photos, in an
+album and in a city, a person, a city and the Albums section in Finder, including folders Finder had never listed;
+another server, another user, an invalid link and the switch off only notified, and a link that started the app
+opened no window. **Left:** a `/photos/<id>` that lands in a day folder, which the seeded months are too small to
+make.
 
 - **Announcing and registering:** on Linux, the launcher entry (`packaging/desktop/dev.hviid.ImmichMount.desktop.in`)
   announces `X-Immich-Crosslink-Version=0.2` and `X-Immich-Crosslink-Shows=asset;album;person;place;page;`, and
@@ -413,6 +423,15 @@ with the Asset fetched by `LibrarySource::asset` for its date folders), each uni
   scheme, so it can take crosslinks.
 
 ### Step 3: Show in other apps
+
+**Built on Linux** (SPEC.md, "Show in other apps"; ARCHITECTURE.md, "Links to Immich"): Files (C and Python) and
+Dolphin offer Show in *app* from the daemon's `Links`, and both apps' settings list the apps found with a switch each.
+**Verified** (2026-11-10) in the Fedora 44 GNOME and Plasma VMs with three test apps (every kind, `album;` only, and
+one announcing 0.1): an album folder offered both 0.2 apps, everything else only the every-kind one, the 0.1 app
+never; each received exactly the item's crosslink with `&user=`; `crosslink.hidden` removed one app and
+`crosslink.enabled` off removed every Show in item while Open in Immich stayed; against a daemon with only `WebLink`
+the menus offered Open and Copy alone. The Python extension did the same on Bazzite 44. **Left:** the Mac (below);
+for a second or so after the daemon starts, an item in a folder it has not listed yet gets no items.
 
 Immich Mount finds the other installed apps that take crosslinks, and offers **Show in *app*** for each, on the items
 step 1 offers.

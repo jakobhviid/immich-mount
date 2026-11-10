@@ -89,11 +89,12 @@ Kirigami.ApplicationWindow {
                         required property var modelData
                         Kirigami.FormData.isSection: modelData.kind === "section"
                         Kirigami.FormData.label: modelData.kind === "section" ? modelData.title
-                            : (modelData.kind === "bool" ? "" : modelData.title + ":")
+                            : (modelData.kind === "bool" || modelData.kind === "app" ? "" : modelData.title + ":")
                         sourceComponent: {
                             switch (modelData.kind) {
                             case "section": return sectionRow
                             case "bool": return switchRow
+                            case "app": return appRow
                             case "choice": return choiceRow
                             default: return textRow
                             }
@@ -101,10 +102,37 @@ Kirigami.ApplicationWindow {
                         Component { id: sectionRow; Kirigami.Separator {} }
                         Component {
                             id: switchRow
-                            Controls.Switch {
-                                text: row.modelData.title
-                                checked: row.modelData.value === "true"
-                                onToggled: preferences.store(row.modelData.key, checked ? "true" : "false")
+                            RowLayout {
+                                Controls.Switch {
+                                    text: row.modelData.title
+                                    checked: row.modelData.value === "true"
+                                    onToggled: preferences.store(row.modelData.key, checked ? "true" : "false")
+                                }
+                                // Immich crosslink's switch links to the protocol, so it is clear what it is.
+                                Kirigami.UrlButton {
+                                    visible: row.modelData.link.length > 0
+                                    url: row.modelData.link
+                                    text: i18n("What is this?")
+                                }
+                            }
+                        }
+                        Component {
+                            id: appRow
+                            // An app that takes crosslinks, by its desktop entry's name and icon, offered in Show in.
+                            RowLayout {
+                                Controls.Switch {
+                                    Accessible.name: row.modelData.title
+                                    checked: row.modelData.value === "true"
+                                    onToggled: preferences.store(row.modelData.key, checked ? "true" : "false")
+                                }
+                                // The switch draws no icon, so the app's own is shown beside its name.
+                                Kirigami.Icon {
+                                    source: row.modelData.icon
+                                    visible: row.modelData.icon.length > 0
+                                    implicitWidth: Kirigami.Units.iconSizes.small
+                                    implicitHeight: Kirigami.Units.iconSizes.small
+                                }
+                                Controls.Label { text: row.modelData.title }
                             }
                         }
                         Component {

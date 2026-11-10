@@ -118,7 +118,10 @@ JPEGs: `fixtures`, then `open <name> <dir>` (cold cache, settle, screenshot, who
   that test thumbnails.
 - **Notifications:** GNOME drops a notification whose `desktop-entry` hint names an app it did not come from, and
   shows no banner for the app that has focus; its message list (click the clock) shows what arrived. A test
-  notification from a script: `gdbus call ... Notify ... "int32 -1"` (a bare `-1` reads as an option).
+  notification from a script: `gdbus call ... Notify ... "int32 -1"` (a bare `-1` reads as an option). To read what
+  was sent, run `dbus-monitor --session "interface=org.freedesktop.Notifications,member=Notify"` into a file from a
+  `systemd-run --user` unit: each notification shows twice, as sent and as the shell passes it on (count those whose
+  destination is `org.freedesktop.Notifications`), and a log emptied while it runs reads as binary (`grep -a`).
 - **`pkill -f immich-mount-gnome` inside `in-session sh -c`** kills its own shell; match the process name with
   `pkill -x immich-mount-gn` (15 characters).
 - **The VMs run under `LANG=C.UTF-8`,** where gettext ignores `LANGUAGE`, so `LANGUAGE=da` shows English. To see
@@ -144,6 +147,11 @@ JPEGs: `fixtures`, then `open <name> <dir>` (cold cache, settle, screenshot, who
   sourced. To try such a script, do what `startplasma` does: `/bin/sh /usr/libexec/plasma-sourceenv.sh <script>`
   prints the environment it makes, and `dbus-update-activation-environment --systemd NAME=value` hands a variable to
   the apps started next; `systemctl --user unset-environment NAME` takes it back.
+- **Pushing a binary over a running one** fails with "text file busy": push it beside (`immich-mount.new`) and `mv`
+  it into place, then restart the daemon (`systemctl --user try-restart immich-mount`).
+- **`run-in-session.sh` without `-d` lacks the user manager's environment** (`KDE_SESSION_VERSION`,
+  `XDG_CURRENT_DESKTOP`), so `xdg-open` there takes its generic path instead of `kde-open`. Open links with
+  `run-in-session.sh -d xdg-open <link>`, as an app of the session would.
 - **Harmless noise:** "Error registering session with GDM", and `xdg-desktop-portal` failing because
   `graphical-session.target` is inactive.
 

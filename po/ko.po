@@ -10,6 +10,14 @@ msgstr ""
 "Content-Type: text/plain; charset=UTF-8\n"
 "Content-Transfer-Encoding: 8bit\n"
 
+#: crates/immich-mount/src/commands.rs:421
+msgid "Immich Mount is not mounted"
+msgstr "Immich Mount가 마운트되지 않음"
+
+#: crates/immich-mount/src/commands.rs:422
+msgid "Mount it from Immich Mount, then open the link again."
+msgstr "Immich Mount에서 드라이브를 마운트한 다음 링크를 다시 여십시오."
+
 #: crates/immich-mount/src/online.rs:392
 msgid "Immich is not mounted"
 msgstr "Immich가 마운트되지 않음"
@@ -18,20 +26,84 @@ msgstr "Immich가 마운트되지 않음"
 msgid "The keyring stayed locked. Open Immich Mount, or run “immich-mount mount”, to try again."
 msgstr "키링이 잠긴 상태로 남아 있습니다. 다시 시도하려면 Immich Mount를 열거나 “immich-mount mount”를 실행하십시오."
 
-#: crates/immich-mount-linux/src/daemon.rs:321
+#: crates/immich-mount-linux/src/daemon.rs:366
+#: apple/App/ReceivedLinks.swift:65
+msgid "Immich crosslink is off"
+msgstr "Immich crosslink가 꺼져 있음"
+
+#: crates/immich-mount-linux/src/daemon.rs:366
+#: apple/App/ReceivedLinks.swift:65
+msgid "Turn it on in Immich Mount's settings to show what other apps link to."
+msgstr "다른 앱이 링크하는 대상을 표시하려면 Immich Mount의 기본 설정에서 켜십시오."
+
+#: crates/immich-mount-linux/src/daemon.rs:367
+#: apple/App/ReceivedLinks.swift:67
+msgid "This link cannot be opened"
+msgstr "이 링크를 열 수 없음"
+
+#: crates/immich-mount-linux/src/daemon.rs:367
+#: apple/App/ReceivedLinks.swift:67
+msgid "It is not a valid Immich link."
+msgstr "유효한 Immich 링크가 아닙니다."
+
+#: crates/immich-mount-linux/src/daemon.rs:368
+#: crates/immich-mount-linux/src/daemon.rs:372
+#: apple/App/ReceivedLinks.swift:69
+#: apple/App/ReceivedLinks.swift:75
+msgid "Nothing to show"
+msgstr "표시할 항목 없음"
+
+#: crates/immich-mount-linux/src/daemon.rs:368
+#: apple/App/ReceivedLinks.swift:69
+msgid "Immich Mount has no place for what this link points to."
+msgstr "Immich Mount에는 이 링크가 가리키는 대상을 표시할 곳이 없습니다."
+
+#: crates/immich-mount-linux/src/daemon.rs:369
+#: apple/App/ReceivedLinks.swift:71
+msgid "Not signed in to {host}"
+msgstr "{host}에 로그인되지 않음"
+
+#: crates/immich-mount-linux/src/daemon.rs:369
+#: apple/App/ReceivedLinks.swift:71
+msgid "Immich Mount is signed in to another Immich server."
+msgstr "Immich Mount가 다른 Immich 서버에 로그인되어 있습니다."
+
+#: crates/immich-mount-linux/src/daemon.rs:370
+#: apple/App/ReceivedLinks.swift:73
+msgid "Another Immich account"
+msgstr "다른 Immich 계정"
+
+#: crates/immich-mount-linux/src/daemon.rs:370
+#: apple/App/ReceivedLinks.swift:73
+msgid "The link is for another account than the one Immich Mount is signed in with."
+msgstr "이 링크는 Immich Mount가 로그인한 계정이 아닌 다른 계정의 링크입니다."
+
+#: crates/immich-mount-linux/src/daemon.rs:373
+#: apple/App/ReceivedLinks.swift:76
+msgid "The drive does not show this. It may be hidden, in a section that is switched off, or not shared with you."
+msgstr "드라이브에 이 항목이 표시되지 않습니다. 숨겨져 있거나, 꺼진 섹션에 있거나, 사용자와 공유되지 않았을 수 있습니다."
+
+#: crates/immich-mount-linux/src/daemon.rs:375
+#: crates/immich-mount-linux/src/daemon.rs:422
+#: apple/App/ReceivedLinks.swift:78
 msgid "Immich is unreachable"
 msgstr "Immich에 연결할 수 없음"
 
-#: crates/immich-mount-linux/src/daemon.rs:322
+#: crates/immich-mount-linux/src/daemon.rs:375
+#: apple/App/ReceivedLinks.swift:78
+msgid "The Immich server cannot be reached. Try the link again later."
+msgstr "Immich 서버에 연결할 수 없습니다. 나중에 링크를 다시 시도하십시오."
+
+#: crates/immich-mount-linux/src/daemon.rs:423
 msgid "The Immich server cannot be reached. Files you opened before stay available."
 msgstr "Immich 서버에 연결할 수 없습니다. 이전에 연 파일은 계속 사용할 수 있습니다."
 
-#: crates/immich-mount-linux/src/daemon.rs:325
+#: crates/immich-mount-linux/src/daemon.rs:426
 #: crates/immich-mount-linux/src/tray.rs:70
 msgid "Signed out of Immich"
 msgstr "Immich에서 로그아웃됨"
 
-#: crates/immich-mount-linux/src/daemon.rs:326
+#: crates/immich-mount-linux/src/daemon.rs:427
 msgid "Immich no longer accepts this sign-in. Open Immich Mount to sign in again."
 msgstr "Immich가 더 이상 이 로그인을 허용하지 않습니다. 다시 로그인하려면 Immich Mount를 여십시오."
 
@@ -56,13 +128,13 @@ msgid "Files not uploaded: {count}"
 msgstr "업로드되지 않은 파일: {count}"
 
 #: crates/immich-mount-linux/src/folders.rs:213
-#: crates/immich-mount-core/src/settings.rs:91
+#: crates/immich-mount-core/src/settings.rs:93
 #: apple/App/FolderCopies.swift:83
 msgid "Make Albums"
 msgstr "앨범 만들기"
 
 #: crates/immich-mount-linux/src/folders.rs:213
-#: crates/immich-mount-core/src/settings.rs:90
+#: crates/immich-mount-core/src/settings.rs:92
 #: apple/App/FolderCopies.swift:84
 msgid "Timeline Only"
 msgstr "타임라인만"
@@ -140,33 +212,33 @@ msgid "Immich takes photos and videos only."
 msgstr "Immich는 사진과 동영상만 받습니다."
 
 #: crates/immich-mount-linux/src/tray.rs:68
-#: apple/App/ImmichMountApp.swift:609
+#: apple/App/ImmichMountApp.swift:642
 msgid "Connected to {server}"
 msgstr "{server}에 연결됨"
 
 #: crates/immich-mount-linux/src/tray.rs:69
-#: apple/App/ImmichMountApp.swift:609
+#: apple/App/ImmichMountApp.swift:642
 msgid "{server} is not reachable"
 msgstr "{server}에 연결할 수 없음"
 
 #: crates/immich-mount-linux/src/tray.rs:71
-#: apple/App/ImmichMountApp.swift:608
+#: apple/App/ImmichMountApp.swift:641
 msgid "Signed in to {server}"
 msgstr "{server}에 로그인됨"
 
 #: crates/immich-mount-linux/src/tray.rs:79
-#: apple/App/ImmichMountApp.swift:617
+#: apple/App/ImmichMountApp.swift:650
 msgid "Server version: Immich {version}"
 msgstr "서버 버전: Immich {version}"
 
 #: crates/immich-mount-linux/src/tray.rs:82
-#: apple/App/ImmichMountApp.swift:620
+#: apple/App/ImmichMountApp.swift:653
 msgid "Signed in as: {account}"
 msgstr "로그인 계정: {account}"
 
 #: crates/immich-mount-linux/src/tray.rs:85
-#: crates/immich-mount-kde/qml/Main.qml:383
-#: crates/immich-mount-kde/qml/Main.qml:404
+#: crates/immich-mount-kde/qml/Main.qml:411
+#: crates/immich-mount-kde/qml/Main.qml:432
 msgid "Open in Dolphin"
 msgstr "Dolphin에서 열기"
 
@@ -196,23 +268,23 @@ msgstr "드라이브"
 
 #: crates/immich-mount-desktop/src/preferences.rs:13
 #: crates/immich-mount-gnome/src/window.blp:144
-#: crates/immich-mount-kde/qml/Main.qml:364
-#: apple/App/SettingsView.swift:168
+#: crates/immich-mount-kde/qml/Main.qml:392
+#: apple/App/SettingsView.swift:205
 msgid "Sections"
 msgstr "섹션"
 
 #: crates/immich-mount-desktop/src/preferences.rs:14
-#: apple/App/SettingsView.swift:170
+#: apple/App/SettingsView.swift:207
 msgid "Date Folders"
 msgstr "날짜 폴더"
 
 #: crates/immich-mount-desktop/src/preferences.rs:16
-#: apple/App/SettingsView.swift:194
+#: apple/App/SettingsView.swift:231
 msgid "Files"
 msgstr "파일"
 
 #: crates/immich-mount-desktop/src/preferences.rs:17
-#: apple/App/SettingsView.swift:183
+#: apple/App/SettingsView.swift:220
 msgid "Uploads"
 msgstr "업로드"
 
@@ -226,6 +298,10 @@ msgid "Cache"
 msgstr "캐시"
 
 #: crates/immich-mount-desktop/src/preferences.rs:20
+msgid "Other Apps"
+msgstr "다른 앱"
+
+#: crates/immich-mount-desktop/src/preferences.rs:21
 msgid "Updates"
 msgstr "업데이트"
 
@@ -315,14 +391,14 @@ msgid "AI Disclosure"
 msgstr "AI 사용 고지"
 
 #: crates/immich-mount-gnome/src/main.rs:117
-#: crates/immich-mount-kde/qml/Main.qml:175
-#: apple/App/ImmichMountApp.swift:465
+#: crates/immich-mount-kde/qml/Main.qml:203
+#: apple/App/ImmichMountApp.swift:498
 msgid "Parts of this project were written with the assistance of AI coding agents. All changes are reviewed by the maintainer."
 msgstr "이 프로젝트의 일부는 AI 코딩 에이전트의 도움을 받아 작성되었습니다. 모든 변경 사항은 관리자가 검토합니다."
 
 #: crates/immich-mount-gnome/src/main.rs:81
 #: crates/immich-mount-kde/qml/Main.qml:71
-#: crates/immich-mount-kde/qml/Main.qml:198
+#: crates/immich-mount-kde/qml/Main.qml:226
 msgid "Preferences"
 msgstr "기본 설정"
 
@@ -334,8 +410,13 @@ msgstr "키보드 바로 가기"
 msgid "Quit"
 msgstr "종료"
 
+#: crates/immich-mount-gnome/src/preferences.rs:25
+#: crates/immich-mount-kde/qml/Main.qml:115
+msgid "What is this?"
+msgstr "이것은 무엇입니까?"
+
 #: crates/immich-mount-gnome/src/window.rs:267
-#: crates/immich-mount-kde/qml/Main.qml:321
+#: crates/immich-mount-kde/qml/Main.qml:349
 msgid "Continue in your browser"
 msgstr "브라우저에서 계속하십시오"
 
@@ -360,12 +441,12 @@ msgid "Signed in, but the status could not be read"
 msgstr "로그인했지만 상태를 읽을 수 없음"
 
 #: crates/immich-mount-gnome/src/window.rs:425
-#: crates/immich-mount-kde/qml/Main.qml:398
+#: crates/immich-mount-kde/qml/Main.qml:426
 msgid "Signed Out of Immich"
 msgstr "Immich에서 로그아웃됨"
 
 #: crates/immich-mount-gnome/src/window.rs:425
-#: crates/immich-mount-kde/qml/Main.qml:399
+#: crates/immich-mount-kde/qml/Main.qml:427
 msgid "Sign in again to keep browsing. Your caches are kept."
 msgstr "계속 탐색하려면 다시 로그인하십시오. 캐시는 유지됩니다."
 
@@ -375,12 +456,12 @@ msgid "Your Library Is in Files"
 msgstr "라이브러리가 ‘파일’에 있습니다"
 
 #: crates/immich-mount-gnome/src/window.rs:426
-#: crates/immich-mount-kde/qml/Main.qml:400
+#: crates/immich-mount-kde/qml/Main.qml:428
 msgid "Browse it like any folder. Originals download only when you open them."
 msgstr "다른 폴더처럼 탐색하십시오. 원본은 열 때만 다운로드됩니다."
 
 #: crates/immich-mount-gnome/src/window.rs:427
-#: crates/immich-mount-kde/qml/Main.qml:398
+#: crates/immich-mount-kde/qml/Main.qml:426
 msgid "Not Mounted"
 msgstr "마운트되지 않음"
 
@@ -402,7 +483,7 @@ msgid "Your Immich Library in Files"
 msgstr "‘파일’에서 보는 Immich 라이브러리"
 
 #: crates/immich-mount-gnome/src/window.blp:34
-#: crates/immich-mount-kde/qml/Main.qml:237
+#: crates/immich-mount-kde/qml/Main.qml:265
 msgid "Browse your photos and videos as a drive. Originals download only when you open them."
 msgstr "사진과 동영상을 드라이브처럼 탐색하십시오. 원본은 열 때만 다운로드됩니다."
 
@@ -415,15 +496,15 @@ msgid "_Continue"
 msgstr "계속(_C)"
 
 #: crates/immich-mount-gnome/src/window.blp:70
-#: crates/immich-mount-kde/qml/Main.qml:212
-#: crates/immich-mount-kde/qml/Main.qml:295
+#: crates/immich-mount-kde/qml/Main.qml:240
+#: crates/immich-mount-kde/qml/Main.qml:323
 #: apple/App/ContentView.swift:141
 #: apple/App/ContentView.swift:145
 msgid "Sign In"
 msgstr "로그인"
 
 #: crates/immich-mount-gnome/src/window.blp:78
-#: crates/immich-mount-kde/qml/Main.qml:276
+#: crates/immich-mount-kde/qml/Main.qml:304
 msgid "Opens your browser, where you sign in as usual, with a passkey or a password manager."
 msgstr "브라우저가 열리면 패스키나 암호 관리자를 사용해 평소처럼 로그인합니다."
 
@@ -436,12 +517,12 @@ msgid "For two-factor sign-in, use your server's single sign-on instead."
 msgstr "2단계 인증으로 로그인하려면 대신 서버의 통합 인증(SSO)을 사용하십시오."
 
 #: crates/immich-mount-gnome/src/window.blp:96
-#: crates/immich-mount-kde/qml/Main.qml:285
+#: crates/immich-mount-kde/qml/Main.qml:313
 msgid "Email"
 msgstr "이메일"
 
 #: crates/immich-mount-gnome/src/window.blp:101
-#: crates/immich-mount-kde/qml/Main.qml:289
+#: crates/immich-mount-kde/qml/Main.qml:317
 msgid "Password"
 msgstr "암호"
 
@@ -479,12 +560,12 @@ msgstr "연도와 월별 타임라인"
 
 #: crates/immich-mount-gnome/src/window.blp:174
 #: crates/immich-mount-gnome/src/window.blp:322
-#: crates/immich-mount-kde/qml/Main.qml:371
+#: crates/immich-mount-kde/qml/Main.qml:399
 msgid "Location"
 msgstr "위치"
 
 #: crates/immich-mount-gnome/src/window.blp:177
-#: crates/immich-mount-kde/qml/Main.qml:374
+#: crates/immich-mount-kde/qml/Main.qml:402
 msgid "Folder"
 msgstr "폴더"
 
@@ -546,16 +627,22 @@ msgstr "키보드 바로 가기(_K)"
 msgid "_About Immich Mount"
 msgstr "Immich Mount 정보(_A)"
 
-#: crates/immich-mount-gnome/nautilus/immich-mount-nautilus.c:100
-#: crates/immich-mount-gnome/nautilus/immich-mount-nautilus.py:99
-#: crates/immich-mount-kde/dolphin/immich-mount-dolphin.cpp:86
+#: crates/immich-mount-gnome/nautilus/immich-mount-nautilus.c:169
+#: crates/immich-mount-gnome/nautilus/immich-mount-nautilus.py:129
+#: crates/immich-mount-kde/dolphin/immich-mount-dolphin.cpp:154
+msgid "Show in {app}"
+msgstr "{app}에서 보기"
+
+#: crates/immich-mount-gnome/nautilus/immich-mount-nautilus.c:208
+#: crates/immich-mount-gnome/nautilus/immich-mount-nautilus.py:150
+#: crates/immich-mount-kde/dolphin/immich-mount-dolphin.cpp:134
 #: apple/FileProvider/Info.plist (NSExtensionFileProviderActionName)
 msgid "Open in Immich"
 msgstr "Immich에서 열기"
 
-#: crates/immich-mount-gnome/nautilus/immich-mount-nautilus.c:102
-#: crates/immich-mount-gnome/nautilus/immich-mount-nautilus.py:101
-#: crates/immich-mount-kde/dolphin/immich-mount-dolphin.cpp:93
+#: crates/immich-mount-gnome/nautilus/immich-mount-nautilus.c:210
+#: crates/immich-mount-gnome/nautilus/immich-mount-nautilus.py:152
+#: crates/immich-mount-kde/dolphin/immich-mount-dolphin.cpp:141
 #: apple/FileProvider/Info.plist (NSExtensionFileProviderActionName)
 msgid "Copy Immich Link"
 msgstr "Immich 링크 복사"
@@ -568,188 +655,188 @@ msgstr "썸네일 표시"
 msgid "Lets Dolphin preview files up to 100 MB on remote locations, this drive included. Thumbnails come from the server; no original is downloaded."
 msgstr "Dolphin이 이 드라이브를 포함한 원격 위치에서 최대 100MB의 파일을 미리 볼 수 있게 합니다. 썸네일은 서버에서 가져오며 원본은 다운로드되지 않습니다."
 
-#: crates/immich-mount-kde/qml/Main.qml:143
-#: crates/immich-mount-kde/qml/Main.qml:204
+#: crates/immich-mount-kde/qml/Main.qml:171
+#: crates/immich-mount-kde/qml/Main.qml:232
 msgid "About"
 msgstr "정보"
 
-#: crates/immich-mount-kde/qml/Main.qml:155
+#: crates/immich-mount-kde/qml/Main.qml:183
 msgid "Your Immich photos and videos as a drive in Dolphin. By Jakob Hviid, under the MIT license."
 msgstr "Immich 사진과 동영상을 Dolphin의 드라이브로 표시합니다. 제작: Jakob Hviid, MIT 라이선스."
 
-#: crates/immich-mount-kde/qml/Main.qml:160
+#: crates/immich-mount-kde/qml/Main.qml:188
 #: apple/App/Info.plist (NSHumanReadableCopyright)
 msgid "Immich Mount is an independent, unofficial project. It is not affiliated with, endorsed by, or sponsored by the Immich project or FUTO. “Immich” is used only to describe the server this software works with, and remains the mark of its owner."
 msgstr "Immich Mount는 독립적인 비공식 프로젝트입니다. Immich 프로젝트나 FUTO와 제휴 관계가 없으며, 이들의 보증이나 후원을 받지 않습니다. “Immich”는 이 소프트웨어가 함께 작동하는 서버를 설명하는 데에만 사용되며, 여전히 그 소유자의 상표입니다."
 
-#: crates/immich-mount-kde/qml/Main.qml:162
+#: crates/immich-mount-kde/qml/Main.qml:190
 msgid "Credits"
 msgstr "크레딧"
 
-#: crates/immich-mount-kde/qml/Main.qml:168
+#: crates/immich-mount-kde/qml/Main.qml:196
 msgid "Inspired by {project}"
 msgstr "{project}에서 영감을 받음"
 
-#: crates/immich-mount-kde/qml/Main.qml:169
+#: crates/immich-mount-kde/qml/Main.qml:197
 msgid "The Immich API layer: {project}"
 msgstr "Immich API 계층: {project}"
 
-#: crates/immich-mount-kde/qml/Main.qml:171
-#: apple/App/ImmichMountApp.swift:464
+#: crates/immich-mount-kde/qml/Main.qml:199
+#: apple/App/ImmichMountApp.swift:497
 msgid "AI disclosure"
 msgstr "AI 사용 고지"
 
-#: crates/immich-mount-kde/qml/Main.qml:180
+#: crates/immich-mount-kde/qml/Main.qml:208
 msgid "Website: {link}"
 msgstr "웹사이트: {link}"
 
-#: crates/immich-mount-kde/qml/Main.qml:181
+#: crates/immich-mount-kde/qml/Main.qml:209
 msgid "Source code: {link}"
 msgstr "소스 코드: {link}"
 
-#: crates/immich-mount-kde/qml/Main.qml:191
+#: crates/immich-mount-kde/qml/Main.qml:219
 #: apple/App/ContentView.swift:123
 msgid "Back"
 msgstr "뒤로"
 
-#: crates/immich-mount-kde/qml/Main.qml:211
+#: crates/immich-mount-kde/qml/Main.qml:239
 msgid "Connect"
 msgstr "서버 연결"
 
-#: crates/immich-mount-kde/qml/Main.qml:213
+#: crates/immich-mount-kde/qml/Main.qml:241
 msgid "Continue in Your Browser"
 msgstr "브라우저에서 계속"
 
-#: crates/immich-mount-kde/qml/Main.qml:214
+#: crates/immich-mount-kde/qml/Main.qml:242
 msgid "Your Library in Dolphin"
 msgstr "Dolphin에서 보는 라이브러리"
 
-#: crates/immich-mount-kde/qml/Main.qml:236
+#: crates/immich-mount-kde/qml/Main.qml:264
 msgid "Your Immich Library in Dolphin"
 msgstr "Dolphin에서 보는 Immich 라이브러리"
 
-#: crates/immich-mount-kde/qml/Main.qml:243
+#: crates/immich-mount-kde/qml/Main.qml:271
 msgid "Server address:"
 msgstr "서버 주소:"
 
-#: crates/immich-mount-kde/qml/Main.qml:244
+#: crates/immich-mount-kde/qml/Main.qml:272
 msgid "Server address"
 msgstr "서버 주소"
 
-#: crates/immich-mount-kde/qml/Main.qml:252
+#: crates/immich-mount-kde/qml/Main.qml:280
 #: apple/App/ContentView.swift:137
 msgid "Continue"
 msgstr "계속"
 
-#: crates/immich-mount-kde/qml/Main.qml:282
+#: crates/immich-mount-kde/qml/Main.qml:310
 msgid "Email and password"
 msgstr "이메일과 암호"
 
-#: crates/immich-mount-kde/qml/Main.qml:285
+#: crates/immich-mount-kde/qml/Main.qml:313
 #: apple/App/ContentView.swift:99
 msgid "Email:"
 msgstr "이메일:"
 
-#: crates/immich-mount-kde/qml/Main.qml:288
+#: crates/immich-mount-kde/qml/Main.qml:316
 #: apple/App/ContentView.swift:100
 msgid "Password:"
 msgstr "암호:"
 
-#: crates/immich-mount-kde/qml/Main.qml:300
-#: crates/immich-mount-kde/qml/Main.qml:304
+#: crates/immich-mount-kde/qml/Main.qml:328
+#: crates/immich-mount-kde/qml/Main.qml:332
 msgid "API key"
 msgstr "API 키"
 
-#: crates/immich-mount-kde/qml/Main.qml:303
+#: crates/immich-mount-kde/qml/Main.qml:331
 msgid "Key:"
 msgstr "키:"
 
-#: crates/immich-mount-kde/qml/Main.qml:309
+#: crates/immich-mount-kde/qml/Main.qml:337
 msgid "Sign In With Key"
 msgstr "키로 로그인"
 
-#: crates/immich-mount-kde/qml/Main.qml:322
+#: crates/immich-mount-kde/qml/Main.qml:350
 msgid "Sign in there. When your browser asks to open Immich Mount, allow it."
 msgstr "브라우저에서 로그인하십시오. 브라우저가 Immich Mount를 열지 물으면 허용하십시오."
 
-#: crates/immich-mount-kde/qml/Main.qml:325
+#: crates/immich-mount-kde/qml/Main.qml:353
 msgid "Open the Sign-In Page Again"
 msgstr "로그인 페이지 다시 열기"
 
-#: crates/immich-mount-kde/qml/Main.qml:336
+#: crates/immich-mount-kde/qml/Main.qml:364
 msgid "No browser could be opened. Open this address in one:"
 msgstr "브라우저를 열 수 없습니다. 이 주소를 브라우저에서 여십시오:"
 
-#: crates/immich-mount-kde/qml/Main.qml:343
+#: crates/immich-mount-kde/qml/Main.qml:371
 msgid "Sign-in address"
 msgstr "로그인 주소"
 
-#: crates/immich-mount-kde/qml/Main.qml:373
+#: crates/immich-mount-kde/qml/Main.qml:401
 msgid "Folder:"
 msgstr "폴더:"
 
-#: crates/immich-mount-kde/qml/Main.qml:378
+#: crates/immich-mount-kde/qml/Main.qml:406
 msgid "Dolphin"
 msgstr "Dolphin"
 
-#: crates/immich-mount-kde/qml/Main.qml:398
+#: crates/immich-mount-kde/qml/Main.qml:426
 msgid "Your Library Is in Dolphin"
 msgstr "라이브러리가 Dolphin에 있습니다"
 
-#: crates/immich-mount-kde/qml/Main.qml:401
+#: crates/immich-mount-kde/qml/Main.qml:429
 msgid "Mount it to browse your library in Dolphin."
 msgstr "마운트하면 Dolphin에서 라이브러리를 탐색할 수 있습니다."
 
-#: crates/immich-mount-kde/qml/Main.qml:404
+#: crates/immich-mount-kde/qml/Main.qml:432
 msgid "Sign In Again"
 msgstr "다시 로그인"
 
-#: crates/immich-mount-kde/qml/Main.qml:404
+#: crates/immich-mount-kde/qml/Main.qml:432
 msgid "Mount"
 msgstr "마운트"
 
-#: crates/immich-mount-kde/qml/Main.qml:412
+#: crates/immich-mount-kde/qml/Main.qml:440
 #: apple/App/ContentView.swift:105
 msgid "Server:"
 msgstr "서버:"
 
-#: crates/immich-mount-kde/qml/Main.qml:413
+#: crates/immich-mount-kde/qml/Main.qml:441
 msgid "Account:"
 msgstr "계정:"
 
-#: crates/immich-mount-kde/qml/Main.qml:414
+#: crates/immich-mount-kde/qml/Main.qml:442
 msgid "Credential:"
 msgstr "자격 증명:"
 
-#: crates/immich-mount-kde/qml/Main.qml:415
+#: crates/immich-mount-kde/qml/Main.qml:443
 msgid "Connection:"
 msgstr "연결:"
 
-#: crates/immich-mount-kde/qml/Main.qml:416
+#: crates/immich-mount-kde/qml/Main.qml:444
 msgid "Cache:"
 msgstr "캐시:"
 
-#: crates/immich-mount-kde/qml/Main.qml:417
+#: crates/immich-mount-kde/qml/Main.qml:445
 msgid "Location:"
 msgstr "위치:"
 
-#: crates/immich-mount-kde/qml/Main.qml:418
+#: crates/immich-mount-kde/qml/Main.qml:446
 msgid "Uploading:"
 msgstr "업로드 중:"
 
-#: crates/immich-mount-kde/qml/Main.qml:419
+#: crates/immich-mount-kde/qml/Main.qml:447
 msgid "Dolphin:"
 msgstr "Dolphin:"
 
-#: crates/immich-mount-kde/qml/Main.qml:424
+#: crates/immich-mount-kde/qml/Main.qml:452
 msgid "Unmount"
 msgstr "마운트 해제"
 
-#: crates/immich-mount-kde/qml/Main.qml:431
+#: crates/immich-mount-kde/qml/Main.qml:459
 msgid "Disconnect"
 msgstr "연결 해제"
 
-#: crates/immich-mount-kde/qml/Main.qml:443
+#: crates/immich-mount-kde/qml/Main.qml:471
 msgid "Immich Mount is an independent, unofficial project. It is not affiliated with, endorsed by, or sponsored by the Immich project or FUTO."
 msgstr "Immich Mount는 독립적인 비공식 프로젝트입니다. Immich 프로젝트나 FUTO와 제휴 관계가 없으며, 이들의 보증이나 후원을 받지 않습니다."
 
@@ -834,7 +921,7 @@ msgid "Show the Upload folder, and upload what is copied into it"
 msgstr "Upload 폴더를 표시하고 그 안에 복사한 항목 업로드"
 
 #: crates/immich-mount-core/src/settings.rs:71
-#: apple/App/SettingsView.swift:180
+#: apple/App/SettingsView.swift:217
 msgid "Folders copied into Upload"
 msgstr "Upload에 복사한 폴더"
 
@@ -847,56 +934,64 @@ msgid "Refuse thumbnailer reads of originals"
 msgstr "썸네일 생성기의 원본 읽기 거부"
 
 #: crates/immich-mount-core/src/settings.rs:74
+msgid "Show what other apps link to (Immich crosslink)"
+msgstr "다른 앱이 링크하는 대상 표시 (Immich crosslink)"
+
+#: crates/immich-mount-core/src/settings.rs:75
+msgid "Apps left out of Show in, by their desktop entry or bundle id, separated by ;"
+msgstr "‘보기’에서 뺄 앱, 데스크톱 항목 또는 번들 ID로, ;로 구분"
+
+#: crates/immich-mount-core/src/settings.rs:76
 msgid "Tell me when a new version is out"
 msgstr "새 버전이 나오면 알림"
 
-#: crates/immich-mount-core/src/settings.rs:75
+#: crates/immich-mount-core/src/settings.rs:77
 msgid "Headless only: a 0600 file holding the credential"
 msgstr "헤드리스 전용: 자격 증명을 담은 0600 파일"
 
-#: crates/immich-mount-core/src/settings.rs:81
+#: crates/immich-mount-core/src/settings.rs:83
 msgid "Never"
 msgstr "안 함"
 
-#: crates/immich-mount-core/src/settings.rs:82
+#: crates/immich-mount-core/src/settings.rs:84
 msgid "From 500 Items"
 msgstr "500개 항목부터"
 
-#: crates/immich-mount-core/src/settings.rs:83
+#: crates/immich-mount-core/src/settings.rs:85
 msgid "Always"
 msgstr "항상"
 
-#: crates/immich-mount-core/src/settings.rs:84
+#: crates/immich-mount-core/src/settings.rs:86
 msgid "Year in the Name (2023 - Trip)"
 msgstr "이름에 연도 포함 (2023 - 여행)"
 
-#: crates/immich-mount-core/src/settings.rs:85
+#: crates/immich-mount-core/src/settings.rs:87
 msgid "Year Folders (2023/Trip)"
 msgstr "연도 폴더 (2023/여행)"
 
-#: crates/immich-mount-core/src/settings.rs:86
+#: crates/immich-mount-core/src/settings.rs:88
 msgid "Name Only (Trip)"
 msgstr "이름만 (여행)"
 
-#: crates/immich-mount-core/src/settings.rs:87
+#: crates/immich-mount-core/src/settings.rs:89
 msgid "Date and Time Taken"
 msgstr "촬영 날짜 및 시간"
 
-#: crates/immich-mount-core/src/settings.rs:88
+#: crates/immich-mount-core/src/settings.rs:90
 msgid "Original File Names"
 msgstr "원본 파일 이름"
 
-#: crates/immich-mount-core/src/settings.rs:89
+#: crates/immich-mount-core/src/settings.rs:91
 msgid "Ask Each Time"
 msgstr "매번 묻기"
 
 #: apple/App/ContentView.swift:19
-#: apple/App/SettingsView.swift:277
+#: apple/App/SettingsView.swift:314
 msgid "Move Immich Mount to Applications"
 msgstr "Immich Mount를 ‘응용 프로그램’ 폴더로 이동"
 
 #: apple/App/ContentView.swift:20
-#: apple/App/SettingsView.swift:278
+#: apple/App/SettingsView.swift:315
 msgid "Finder's location runs from the Applications folder. Quit Immich Mount, drag it into Applications, then open it from there."
 msgstr "Finder의 위치는 ‘응용 프로그램’ 폴더에서 실행해야 작동합니다. Immich Mount를 종료하고 ‘응용 프로그램’으로 드래그한 다음 그곳에서 여십시오."
 
@@ -937,116 +1032,121 @@ msgid "Use System Settings Instead"
 msgstr "대신 ‘시스템 설정’ 사용"
 
 #: apple/App/ContentView.swift:167
-#: apple/App/ImmichMountApp.swift:423
-#: apple/App/SettingsView.swift:258
+#: apple/App/ImmichMountApp.swift:456
+#: apple/App/SettingsView.swift:295
 msgid "Open in Finder"
 msgstr "Finder에서 열기"
 
-#: apple/App/ImmichMountApp.swift:180
+#: apple/App/ImmichMountApp.swift:209
 msgid "Sign out of Immich Mount?"
 msgstr "Immich Mount에서 로그아웃하겠습니까?"
 
-#: apple/App/ImmichMountApp.swift:181
+#: apple/App/ImmichMountApp.swift:210
 msgid "Immich Mount leaves Finder, together with the photos and videos downloaded to this Mac. Your library on the server stays as it is."
 msgstr "Immich Mount가 이 Mac에 다운로드된 사진 및 동영상과 함께 Finder에서 제거됩니다. 서버의 라이브러리는 그대로 유지됩니다."
 
-#: apple/App/ImmichMountApp.swift:183
+#: apple/App/ImmichMountApp.swift:212
 msgid "Files in Upload that have not reached Immich: {count}. They stay on this Mac, and Finder shows where once you have signed out."
 msgstr "Upload에 있지만 Immich에 전달되지 않은 파일: {count}. 이 파일들은 이 Mac에 남으며, 로그아웃하면 Finder가 그 위치를 표시합니다."
 
-#: apple/App/ImmichMountApp.swift:187
+#: apple/App/ImmichMountApp.swift:216
 msgid "Sign Out"
 msgstr "로그아웃"
 
-#: apple/App/ImmichMountApp.swift:188
+#: apple/App/ImmichMountApp.swift:217
 msgid "Cancel"
 msgstr "취소"
 
-#: apple/App/ImmichMountApp.swift:203
+#: apple/App/ImmichMountApp.swift:232
 msgid "Still signed in"
 msgstr "여전히 로그인되어 있음"
 
-#: apple/App/ImmichMountApp.swift:204
+#: apple/App/ImmichMountApp.swift:233
 msgid "Finder's location could not be removed, so Immich Mount stays signed in: {error}"
 msgstr "Finder의 위치를 제거할 수 없어 Immich Mount가 로그인 상태로 유지됩니다: {error}"
 
-#: apple/App/ImmichMountApp.swift:454
+#: apple/App/ImmichMountApp.swift:487
 msgid "Your Immich photos and videos as a drive in Finder. By Jakob Hviid, under the MIT license."
 msgstr "Immich 사진과 동영상을 Finder의 드라이브로 표시합니다. 제작: Jakob Hviid, MIT 라이선스."
 
-#: apple/App/ImmichMountApp.swift:455
+#: apple/App/ImmichMountApp.swift:488
 msgid "Website"
 msgstr "웹사이트"
 
-#: apple/App/ImmichMountApp.swift:457
+#: apple/App/ImmichMountApp.swift:490
 msgid "Source code"
 msgstr "소스 코드"
 
-#: apple/App/ImmichMountApp.swift:460
+#: apple/App/ImmichMountApp.swift:493
 msgid "Inspired by"
 msgstr "영감을 준 프로젝트"
 
-#: apple/App/ImmichMountApp.swift:462
+#: apple/App/ImmichMountApp.swift:495
 msgid "The Immich API layer"
 msgstr "Immich API 계층"
 
-#: apple/App/ImmichMountApp.swift:625
+#: apple/App/ImmichMountApp.swift:658
 msgid "Last checked: {time}"
 msgstr "마지막 확인: {time}"
 
-#: apple/App/ImmichMountApp.swift:627
+#: apple/App/ImmichMountApp.swift:660
 msgid "Reason: {reason}"
 msgstr "이유: {reason}"
 
-#: apple/App/ImmichMountApp.swift:627
+#: apple/App/ImmichMountApp.swift:660
 msgid "none given"
 msgstr "제공되지 않음"
 
-#: apple/App/ImmichMountApp.swift:725
+#: apple/App/ImmichMountApp.swift:758
 msgid "The login item could not be changed: {error}"
 msgstr "로그인 항목을 변경할 수 없음: {error}"
 
-#: apple/App/ImmichMountApp.swift:759
+#: apple/App/ImmichMountApp.swift:792
 msgid "The server sent an address that cannot be opened."
 msgstr "서버가 열 수 없는 주소를 보냈습니다."
 
-#: apple/App/ImmichMountApp.swift:846
+#: apple/App/ImmichMountApp.swift:885
 msgid "Finder does not show Immich yet. Is the extension switched on in System Settings? ({error})"
 msgstr "Finder에 아직 Immich가 표시되지 않습니다. ‘시스템 설정’에서 확장 프로그램이 켜져 있습니까? ({error})"
 
 #: apple/App/ImmichMountApp.swift:46
-#: apple/App/ImmichMountApp.swift:434
+#: apple/App/ImmichMountApp.swift:467
 msgid "About Immich Mount"
 msgstr "Immich Mount 정보"
 
 #: apple/App/ImmichMountApp.swift:49
-#: apple/App/ImmichMountApp.swift:427
+#: apple/App/ImmichMountApp.swift:460
 msgid "Check for Updates…"
 msgstr "업데이트 확인…"
 
 #: apple/App/ImmichMountApp.swift:54
-#: apple/App/ImmichMountApp.swift:425
+#: apple/App/ImmichMountApp.swift:458
 msgid "Settings…"
 msgstr "설정…"
 
-#: apple/App/ImmichMountApp.swift:412
-#: apple/App/SettingsView.swift:236
+#: apple/App/ImmichMountApp.swift:445
+#: apple/App/SettingsView.swift:273
 msgid "Sign In…"
 msgstr "로그인…"
 
-#: apple/App/ImmichMountApp.swift:414
-#: apple/App/SettingsView.swift:256
+#: apple/App/ImmichMountApp.swift:447
+#: apple/App/SettingsView.swift:293
 msgid "Switch On in Finder…"
 msgstr "Finder에서 켜기…"
 
-#: apple/App/ImmichMountApp.swift:430
-#: apple/App/SettingsView.swift:261
+#: apple/App/ImmichMountApp.swift:463
+#: apple/App/SettingsView.swift:298
 msgid "Sign Out…"
 msgstr "로그아웃…"
 
-#: apple/App/ImmichMountApp.swift:435
+#: apple/App/ImmichMountApp.swift:468
 msgid "Quit Immich Mount"
 msgstr "Immich Mount 종료"
+
+#: apple/App/ReceivedLinks.swift:18
+#: apple/App/SettingsView.swift:272
+msgid "Not signed in"
+msgstr "로그인하지 않음"
 
 #: apple/App/SettingsView.swift:14
 msgid "General"
@@ -1056,43 +1156,39 @@ msgstr "일반"
 msgid "Folders"
 msgstr "폴더"
 
-#: apple/App/SettingsView.swift:189
+#: apple/App/SettingsView.swift:226
 msgid "Folder names"
 msgstr "폴더 이름"
 
-#: apple/App/SettingsView.swift:192
+#: apple/App/SettingsView.swift:229
 msgid "File names"
 msgstr "파일 이름"
 
-#: apple/App/SettingsView.swift:235
-msgid "Not signed in"
-msgstr "로그인하지 않음"
-
-#: apple/App/SettingsView.swift:125
+#: apple/App/SettingsView.swift:128
 msgid "Open at login"
 msgstr "로그인 시 열기"
 
-#: apple/App/SettingsView.swift:127
+#: apple/App/SettingsView.swift:130
 msgid "Check for updates automatically"
 msgstr "자동으로 업데이트 확인"
 
-#: apple/App/SettingsView.swift:133
+#: apple/App/SettingsView.swift:136
 msgid "While Immich Mount runs, in the menu bar, changes in Immich reach Finder within seconds. Updates come from jakob.hviid.phd, signed by the project and notarized by Apple."
 msgstr "Immich Mount가 메뉴 막대에서 실행되는 동안 Immich의 변경 사항이 몇 초 안에 Finder에 반영됩니다. 업데이트는 jakob.hviid.phd에서 제공되며, 프로젝트가 서명하고 Apple이 공증합니다."
 
-#: apple/App/SettingsView.swift:174
+#: apple/App/SettingsView.swift:211
 msgid "Date folders are day folders inside each month in Photos, and year and month folders in the other sections."
 msgstr "날짜 폴더는 Photos에서는 각 월 안의 일별 폴더이고, 다른 섹션에서는 연도 및 월 폴더입니다."
 
-#: apple/App/SettingsView.swift:175
+#: apple/App/SettingsView.swift:212
 msgid "Photos and videos copied into Upload are added to Immich."
 msgstr "Upload에 복사한 사진과 동영상은 Immich에 추가됩니다."
 
-#: apple/App/SettingsView.swift:185
+#: apple/App/SettingsView.swift:222
 msgid "Every photo and video in them is added to Immich. An album is named by its folder's path, such as Trip › Day 1."
 msgstr "그 안의 모든 사진과 비디오가 Immich에 추가됩니다. 앨범 이름은 폴더 경로를 따릅니다(예: 여행 › 1일차)."
 
-#: apple/App/SettingsView.swift:196
+#: apple/App/SettingsView.swift:233
 msgid "Finder lists Immich again after each change."
 msgstr "변경할 때마다 Finder가 Immich 목록을 다시 불러옵니다."
 

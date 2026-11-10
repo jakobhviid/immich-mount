@@ -35,6 +35,8 @@ const CHANGE_POLL: Duration = Duration::from_secs(10);
 /// How long finding a path's item for its web address may take: a folder the file manager shows is listed already, so
 /// this is reached only for a path typed by hand, while the server is slow.
 const WEB_LINK_LIMIT: Duration = Duration::from_secs(10);
+/// How long finding a received link's item may take: a photo's details and up to four folder listings.
+const SHOW_LINK_LIMIT: Duration = Duration::from_secs(20);
 
 #[derive(Debug, thiserror::Error)]
 pub enum DaemonError {
@@ -122,6 +124,8 @@ pub struct ServerInfo {
     pub version: Option<String>,
     /// The signed-in account's email, when the credential may read it.
     pub account: Option<String>,
+    /// The signed-in user's Immich id, when the credential may read it: a crosslink for another user is refused.
+    pub user_id: Option<String>,
 }
 
 /// Mount the library at `mount_point` and serve it until stopped. `account_cache` holds this account's metadata store,
@@ -177,6 +181,7 @@ where
     let store = MetadataStore::open(&account_cache.join("metadata.redb")).map_err(|error| prepare_error(account_cache, error.to_string()))?;
     let (sharp_thumbnails, safety_net, cache_limit_bytes) = (config.sharp_thumbnails, config.thumbnail_safety_net, config.cache_limit_bytes);
     let (uploads_enabled, upload_folders, drive_name) = (config.uploads_enabled, config.upload_folders, config.mount_name);
+    let (crosslink_enabled, crosslink_hidden) = (config.crosslink_enabled, config.crosslink_hidden.clone());
     let tree = Arc::new(Tree::new(source.clone(), store, config));
     let content_directory = account_cache.join("content");
     let seeder = Seeder::new(Arc::new(source.clone()), thumbnail_directory, account_cache, sharp_thumbnails)
@@ -229,6 +234,40 @@ where
             refresh: Box::new(move || refresh_tree.forget_all()),
             clear_cache: Box::new(move || clear_cache.clear()),
             unmount: Box::new(move || unmount(&unmount_point, false)),
+            show_link: Box::new({
+                let (tree, mount_point, server_url, user_id) = (tree.clone(), mount_point.to_path_buf(), server.url.clone(), server.user_id.clone());
+                move |link, select, notify| {
+                    let (tree, mount_point, server_url, user_id) = (tree.clone(), mount_point.clone(), server_url.clone(), user_id.clone());
+                    Box::pin(async move {
+                        let (result, detail) = show_link(&tree, &link, &mount_point, &server_url, user_id.as_deref(), crosslink_enabled, select).await;
+                        if notify && result != "show" {
+                            let (summary, body) = refusal_message(result, &detail);
+                            crate::notify::notify(&summary, &body).await;
+                        }
+                        (result.to_owned(), detail)
+                    })
+                }
+            }),
+            links: Box::new({
+                let (tree, mount_point, server_url, user_id) = (tree.clone(), mount_point.to_path_buf(), server.url.clone(), server.user_id.clone());
+                move |path| {
+                    let (tree, names, server_url, user_id) = (tree.clone(), crate::mounts::names_below(&path, &mount_point), server_url.clone(), user_id.clone());
+                    let hidden = crosslink_hidden.clone();
+                    Box::pin(async move {
+                        let names = names?;
+                        let names: Vec<&str> = names.iter().map(String::as_str).collect();
+                        let key = tokio::time::timeout(WEB_LINK_LIMIT, tree.key_at(&names)).await.ok()?.ok()??;
+                        let web = immich_mount_core::links::web_address(&server_url, &key)?;
+                        let kind = immich_mount_core::links::kind(&key)?.as_str().to_owned();
+                        let crosslink = if crosslink_enabled {
+                            immich_mount_core::links::crosslink(&server_url, user_id.as_deref(), &key).unwrap_or_default()
+                        } else {
+                            String::new()
+                        };
+                        Some((web, crosslink, kind, hidden))
+                    })
+                }
+            }),
             web_link: Box::new({
                 let (tree, mount_point, server_url) = (tree.clone(), mount_point.to_path_buf(), server.url.clone());
                 move |path| {
@@ -274,6 +313,68 @@ where
     drop(session);
     drop(connection);
     Ok(reason)
+}
+
+/// A received link's result and detail (`dbus::Actions::show_link`): the item's path, selected in the file manager
+/// with `select`. Only ever shows: nothing is fetched but the item's listings and, for a photo, its details.
+async fn show_link<Source, Names>(
+    tree: &Tree<Arc<Source>, Names>,
+    link: &str,
+    mount_point: &Path,
+    server_url: &str,
+    user_id: Option<&str>,
+    enabled: bool,
+    select: bool,
+) -> (&'static str, String)
+where
+    Source: LibrarySource + 'static,
+    Names: immich_mount_core::tree::NameMemory + 'static,
+{
+    if !enabled {
+        return ("off", String::new());
+    }
+    let item = match immich_mount_core::links::receive(link, server_url, user_id) {
+        Ok(item) => item,
+        Err(immich_mount_core::links::Refusal::OtherServer(host)) => return ("other-server", host),
+        Err(refusal) => return (refusal.as_str(), String::new()),
+    };
+    let found = async {
+        let Some(key) = tree.locate(&item).await? else { return Ok(None) };
+        tree.path_of(&key).await
+    };
+    let names = match tokio::time::timeout(SHOW_LINK_LIMIT, found).await {
+        Ok(Ok(Some(names))) => names,
+        Ok(Ok(None)) | Ok(Err(SourceError::NotFound)) => return ("not-found", String::new()),
+        Ok(Err(error)) => {
+            log::info!("a received link could not be followed: {error}");
+            return ("unreachable", String::new());
+        }
+        Err(_) => return ("unreachable", String::new()),
+    };
+    let path = names.iter().fold(mount_point.to_path_buf(), |path, name| path.join(name));
+    if select {
+        if let Err(error) = crate::dbus::show_in_file_manager(&path).await {
+            log::warn!("could not show {} in the file manager: {error}", path.display());
+        }
+    }
+    ("show", path.display().to_string())
+}
+
+/// The notification for a received link that shows nothing, in the user's language.
+pub fn refusal_message(result: &str, detail: &str) -> (String, String) {
+    let (summary, body) = match result {
+        "off" => (tr("Immich crosslink is off"), tr("Turn it on in Immich Mount's settings to show what other apps link to.")),
+        "invalid" => (tr("This link cannot be opened"), tr("It is not a valid Immich link.")),
+        "cannot-show" => (tr("Nothing to show"), tr("Immich Mount has no place for what this link points to.")),
+        "other-server" => (tr("Not signed in to {host}"), tr("Immich Mount is signed in to another Immich server.")),
+        "other-user" => (tr("Another Immich account"), tr("The link is for another account than the one Immich Mount is signed in with.")),
+        "not-found" => (
+            tr("Nothing to show"),
+            tr("The drive does not show this. It may be hidden, in a section that is switched off, or not shared with you."),
+        ),
+        _ => (tr("Immich is unreachable"), tr("The Immich server cannot be reached. Try the link again later.")),
+    };
+    (summary.replace("{host}", detail), body.to_owned())
 }
 
 /// Poll for changes for as long as the daemon runs, and forget the listings they touch. The freshness windows stay

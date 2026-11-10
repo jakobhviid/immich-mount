@@ -9,7 +9,7 @@ use std::rc::Rc;
 
 use adw::prelude::*;
 use immich_mount_core::settings::{Kind, Setting};
-use immich_mount_desktop::preferences::{change, choice_label, current_value, restart_daemon, settings_in, title, GROUPS};
+use immich_mount_desktop::preferences::{change, choice_label, crosslink_apps, current_value, link, restart_daemon, settings_in, show_app, title, GROUPS};
 use immich_mount_linux::i18n::tr;
 
 /// Build the dialog. `report` shows a refusal to the user.
@@ -20,7 +20,26 @@ pub fn dialog(report: impl Fn(&str) + Clone + 'static) -> adw::PreferencesDialog
         let group = adw::PreferencesGroup::builder().title(tr(heading)).build();
         for setting in settings_in(prefix) {
             let current = current_value(setting);
-            group.add(&row(setting, &current, changed.clone(), report.clone()));
+            let widget = row(setting, &current, changed.clone(), report.clone());
+            if let (Some(page), Some(action_row)) = (link(setting), widget.downcast_ref::<adw::ActionRow>()) {
+                let button = gtk::LinkButton::with_label(page, tr("What is this?"));
+                button.set_valign(gtk::Align::Center);
+                action_row.add_suffix(&button);
+            }
+            group.add(&widget);
+        }
+        if *prefix == "crosslink" {
+            for (app, shown) in crosslink_apps() {
+                let app_row = adw::SwitchRow::builder().title(app.name.as_str()).active(shown).build();
+                // An app without an icon gets the generic one, so every name lines up.
+                app_row.add_prefix(&gtk::Image::from_icon_name(app.icon.as_deref().unwrap_or("application-x-executable")));
+                let (changed, report) = (changed.clone(), report.clone());
+                app_row.connect_active_notify(move |app_row| match show_app(&app.id, app_row.is_active()) {
+                    Ok(restart) => changed.set(changed.get() || restart),
+                    Err(message) => report(&message),
+                });
+                group.add(&app_row);
+            }
         }
         page.add(&group);
     }

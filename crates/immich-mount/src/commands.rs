@@ -381,3 +381,46 @@ pub fn open_in_browser(url: &str) -> Result<()> {
     anyhow::ensure!(status.success(), "xdg-open could not open {url}");
     Ok(())
 }
+
+#[derive(Serialize)]
+pub struct ShowReport {
+    pub link: String,
+    /// `show`, or why not: `invalid`, `cannot-show`, `other-server`, `other-user`, `not-found`, `off`, `unreachable`.
+    pub result: String,
+    /// Where the item is in the mount, when it is shown.
+    pub path: Option<String>,
+    /// Why nothing is shown, in a sentence.
+    pub message: Option<String>,
+}
+
+/// What the running daemon makes of a received link; with `select`, the file manager shows it, and with `notify` a
+/// notification says why not.
+pub fn show(link: &str, select: bool, notify: bool) -> Result<ShowReport> {
+    let runtime = tokio::runtime::Builder::new_current_thread().enable_all().build()?;
+    let (result, detail) = runtime
+        .block_on(immich_mount_linux::dbus::show_link(link, select, notify))
+        .context("the mount is not running; start it with `immich-mount mount`")?;
+    let message = (result != "show").then(|| {
+        let (summary, body) = immich_mount_linux::daemon::refusal_message(&result, &detail);
+        format!("{summary}: {body}")
+    });
+    let path = (result == "show").then_some(detail);
+    Ok(ShowReport { link: link.to_owned(), result, path, message })
+}
+
+/// Whether the app was handed a crosslink: one argument with the immich-crosslink scheme.
+pub fn is_crosslink(arguments: &[String]) -> bool {
+    matches!(arguments, [link] if link.split_once(':').is_some_and(|(scheme, _)| scheme.eq_ignore_ascii_case(immich_mount_core::links::CROSSLINK_SCHEME)))
+}
+
+/// A crosslink from the launcher: the daemon shows it, or notifies why not; with no daemon, a notification says so.
+pub fn receive_link(link: &str) -> Result<()> {
+    if show(link, true, true).is_err() {
+        let runtime = tokio::runtime::Builder::new_current_thread().enable_all().build()?;
+        runtime.block_on(immich_mount_linux::notify::notify(
+            immich_mount_linux::i18n::tr("Immich Mount is not mounted"),
+            immich_mount_linux::i18n::tr("Mount it from Immich Mount, then open the link again."),
+        ));
+    }
+    Ok(())
+}

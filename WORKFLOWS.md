@@ -195,6 +195,28 @@ Photos' year, month and day folders, the year folders above albums, and Upload h
 have no link; `web` says so and exits non-zero, as it does for a path outside the mount or when the mount is not
 running.
 
+**From other apps:** an Immich app that takes part in [immich-crosslink](https://jakob.hviid.phd/immich-crosslink/)
+can ask Immich Mount to show a photo, album, person or place, and the file manager opens on it, selected. When it
+cannot (another server, something the drive does not show), a notification says why. **Immich crosslink** in the
+settings (under Other Apps) turns it off. From a terminal, for a crosslink or an address of Immich's web app:
+
+```sh
+immich-mount show 'https://photos.example.org/albums/0f8c2b4a-7d6e-4f1a-8b9c-3e2d1a0b9c8d'
+immich-mount show --json 'immich-crosslink:///people/5b7d9f1e-3a2c-4e6b-8d0f-1c3e5a7b9d2f?server=https%3A%2F%2Fphotos.example.org'
+```
+
+```json
+{
+  "link": "immich-crosslink:///people/5b7d9f1e-3a2c-4e6b-8d0f-1c3e5a7b9d2f?server=https%3A%2F%2Fphotos.example.org",
+  "result": "show",
+  "path": "/home/you/Immich/People/Alice",
+  "message": null
+}
+```
+
+`result` is `show`, or why not: `invalid`, `cannot-show`, `other-server`, `other-user`, `not-found`, `off` or
+`unreachable`, with `message` saying it in a sentence.
+
 ## 4. Status
 
 **At a glance:** while the drive is mounted, Immich Mount's icon sits in the tray, in KDE Plasma's system tray and in
@@ -243,6 +265,7 @@ within about 10 seconds. `account.email` appears only when the credential may re
 | Thumbnails | `$HOME/.cache/thumbnails` is writable |
 | Location | The mount point is under `$HOME` and not hidden (otherwise it will not show in the sidebar), and, outside KDE, that Files lists it: by itself, or as a bookmark where home is reached through a symlink |
 | Dolphin previews | On KDE: whether Dolphin may preview files on the mount (KIO counts it as remote, where previews are off until `MaximumRemoteSize` allows them), with the `kwriteconfig6` line that turns them on (the KDE app's **Show thumbnails** switch does the same) |
+| Dolphin links | With Homebrew's cask on Plasma: that the login script putting Open in Immich's plugin on `QT_PLUGIN_PATH` is there, and whether this session has it yet (otherwise log out and in) |
 
 The loop for scripts: act, run `immich-mount doctor --json`, decide from the counts, act again.
 

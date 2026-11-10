@@ -37,6 +37,29 @@ pub async fn web_link(path: &str) -> Option<String> {
     proxy.call("WebLink", &(path,)).await.ok()
 }
 
+/// What the running daemon makes of a received link (`ShowLink`); `None` when no daemon answers.
+pub async fn show_link(link: &str, select: bool, notify: bool) -> Option<(String, String)> {
+    let connection = zbus::Connection::session().await.ok()?;
+    let proxy = zbus::Proxy::new(&connection, BUS_NAME, OBJECT_PATH, INTERFACE).await.ok()?;
+    proxy.call("ShowLink", &(link, select, notify)).await.ok()
+}
+
+/// Select `path` in the file manager, through the freedesktop interface Files and Dolphin both answer.
+pub async fn show_in_file_manager(path: &std::path::Path) -> Result<(), String> {
+    let connection = zbus::Connection::session().await.map_err(|error| error.to_string())?;
+    let proxy = zbus::Proxy::new(&connection, "org.freedesktop.FileManager1", "/org/freedesktop/FileManager1", "org.freedesktop.FileManager1")
+        .await
+        .map_err(|error| error.to_string())?;
+    let uri = file_uri(path).ok_or("the path is not UTF-8")?;
+    proxy.call::<_, _, ()>("ShowItems", &(vec![uri], "")).await.map_err(|error| error.to_string())
+}
+
+/// A local path as a `file://` URI, each name encoded.
+fn file_uri(path: &std::path::Path) -> Option<String> {
+    let text = path.to_str()?;
+    Some(format!("file://{}", text.split('/').map(immich_mount_core::links::encode_component).collect::<Vec<_>>().join("/")))
+}
+
 /// The connection state, as SPEC names it.
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub enum State {
@@ -60,6 +83,13 @@ impl State {
 /// The answer to a web link request, which may list a folder to find the item.
 pub type WebLinkFuture = Pin<Box<dyn Future<Output = Option<String>> + Send>>;
 
+/// The answer to a received link: its result, and the path shown (or the server's host, for another server).
+pub type ShowLinkFuture = Pin<Box<dyn Future<Output = (String, String)> + Send>>;
+
+/// An item's links for the menus: its web address, its crosslink (empty while Immich crosslink is off), its kind, and
+/// the apps left out of Show in; `None` for a path outside the mount or an item Immich has no page for.
+pub type LinksFuture = Pin<Box<dyn Future<Output = Option<(String, String, String, String)>> + Send>>;
+
 /// What the daemon can do on request; the daemon wires each to its tree, cache and mount.
 pub struct Actions {
     /// Bytes the content cache holds, and its limit.
@@ -77,6 +107,11 @@ pub struct Actions {
     /// The web address in Immich of the item at a path, `None` for a path outside the mount or an item Immich has no
     /// page for (ROADMAP.md, "Open in Immich").
     pub web_link: Box<dyn Fn(std::path::PathBuf) -> WebLinkFuture + Send + Sync>,
+    /// Find a received link's item in the mount, and with `select` show it in the file manager or say why not
+    /// (ROADMAP.md, "Show in Immich Mount").
+    pub show_link: Box<dyn Fn(String, bool, bool) -> ShowLinkFuture + Send + Sync>,
+    /// An item's links for Show in *app* (ROADMAP.md, "Show in other apps").
+    pub links: Box<dyn Fn(std::path::PathBuf) -> LinksFuture + Send + Sync>,
 }
 
 /// The served object.
@@ -150,6 +185,21 @@ impl Daemon {
     /// for the item. The menu items in Files and Dolphin ask this.
     async fn web_link(&self, path: String) -> String {
         (self.actions.web_link)(path.into()).await.unwrap_or_default()
+    }
+
+    /// Show the item a crosslink or an Immich web address names: `(result, detail)`, the result `show` with the
+    /// item's path, or why not (`invalid`, `cannot-show`, `other-server` with its host, `other-user`, `not-found`,
+    /// `off`, `unreachable`). With `select`, the file manager shows the item selected; with `notify`, a notification
+    /// says why not, for a link opened from another app.
+    async fn show_link(&self, link: String, select: bool, notify: bool) -> (String, String) {
+        (self.actions.show_link)(link, select, notify).await
+    }
+
+    /// The links of the item at `path`, for the menus' Show in *app*: `(web address, crosslink, kind, hidden apps)`,
+    /// the crosslink empty while Immich crosslink is off and the hidden apps separated by `;`; all empty for a path
+    /// outside the mount or an item Immich has no page for.
+    async fn links(&self, path: String) -> (String, String, String, String) {
+        (self.actions.links)(path.into()).await.unwrap_or_default()
     }
 
     /// `StateChanged(state, message)`; named apart in Rust from the `State` property's own change signal.

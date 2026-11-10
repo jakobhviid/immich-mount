@@ -53,7 +53,7 @@ enum FolderCopies {
     }
 
     /// Whether the app may post notifications, asking macOS the first time.
-    private static func allowed() async -> Bool {
+    static func allowed() async -> Bool {
         let center = UNUserNotificationCenter.current()
         switch await center.notificationSettings().authorizationStatus {
         case .notDetermined:

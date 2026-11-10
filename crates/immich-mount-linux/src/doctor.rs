@@ -61,6 +61,24 @@ fn dolphin_previews(paths: &Paths) -> Option<Check> {
     })
 }
 
+/// Homebrew's cask puts Dolphin's Open in Immich in a folder of its own, which Dolphin finds through `QT_PLUGIN_PATH`
+/// once a Plasma login script has set it (ARCHITECTURE.md, "Links to Immich"). Only reported where that plugin is.
+fn dolphin_links(paths: &Paths) -> Option<Check> {
+    let folder = paths.home.join(".local/lib/immich-mount/plugins");
+    if !folder.join("kf6/kfileitemaction/immich-mount-dolphin.so").exists() {
+        return None;
+    }
+    let script = paths.home.join(".config/plasma-workspace/env/immich-mount.sh");
+    let on_path = std::env::var("QT_PLUGIN_PATH").is_ok_and(|value| std::env::split_paths(&value).any(|entry| entry == folder));
+    Some(if !script.exists() {
+        check("dolphin-links", Status::Warning, format!("{} is missing, so Dolphin does not find Open in Immich", script.display()), Some("Reinstall the cask: brew reinstall --cask immich-mount"))
+    } else if on_path || !kde::is_running() {
+        check("dolphin-links", Status::Ok, "Dolphin finds Open in Immich", None)
+    } else {
+        check("dolphin-links", Status::Warning, "Dolphin offers Open in Immich from the next login", Some("Log out and in again"))
+    })
+}
+
 pub fn local_checks(paths: &Paths, mount_point: &Path) -> Vec<Check> {
     let mut checks = Vec::new();
 
@@ -123,6 +141,9 @@ pub fn local_checks(paths: &Paths, mount_point: &Path) -> Vec<Check> {
             Some("Fix the permissions of ~/.cache/thumbnails"),
         )
     });
+    if let Some(links) = dolphin_links(paths) {
+        checks.push(links);
+    }
     if let Some(dolphin) = dolphin_previews(paths) {
         checks.push(dolphin);
     }

@@ -6,6 +6,7 @@
 
 pub mod caller;
 pub mod clipboard;
+pub mod crosslink_apps;
 pub mod credentials;
 pub mod daemon;
 pub mod dbus;

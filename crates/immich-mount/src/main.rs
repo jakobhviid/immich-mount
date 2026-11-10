@@ -90,6 +90,12 @@ enum Command {
         /// A photo, video or folder in the mount
         path: PathBuf,
     },
+    /// Show in the file manager, selected, what an immich-crosslink link or an Immich web address on the signed-in
+    /// server names. With --json, print where it is and select nothing
+    Show {
+        /// An immich-crosslink: link, or the address of a page in Immich's web app
+        link: String,
+    },
     /// Print shell completions
     Completions {
         /// The shell to generate completions for
@@ -232,7 +238,21 @@ fn main() -> ExitCode {
             completions::print_completions(shell);
             ExitCode::SUCCESS
         }
+        // A crosslink comes from the launcher's scheme handler: it is shown, or a notification says why not, and the
+        // app does not open.
+        Some(Command::App { arguments }) if commands::is_crosslink(&arguments) => finish(commands::receive_link(&arguments[0])),
         Some(Command::App { arguments }) => finish(Err(app::open(&arguments))),
+        Some(Command::Show { link }) => finish(commands::show(&link, !json, false).and_then(|report| {
+            if json {
+                print_json(&report);
+            } else if let Some(path) = &report.path {
+                println!("{path}");
+            }
+            match report.result.as_str() {
+                "show" => Ok(()),
+                _ => anyhow::bail!("{}", report.message.as_deref().unwrap_or(&report.result)),
+            }
+        })),
         // The app first; the command line where there is no display to show it on.
         None if app::has_display() => finish(Err(app::open(&[]))),
         None => finish(Cli::command().print_help().map_err(anyhow::Error::from)),

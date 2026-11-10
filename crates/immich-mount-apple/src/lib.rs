@@ -1393,6 +1393,8 @@ pub struct SettingsPanes {
     pub file_naming: Preference,
     /// What a folder copied into Upload becomes (`uploads.folders`).
     pub upload_folders: Preference,
+    /// Immich crosslink's switch (`crosslink.enabled`), in the General pane.
+    pub crosslink: Preference,
 }
 
 /// One section of the drive, as a row of the Folders pane.
@@ -1471,6 +1473,7 @@ pub fn settings_panes(config: String) -> Result<SettingsPanes, BridgeError> {
         album_layout: preference("albums.layout")?,
         file_naming: preference("files.naming")?,
         upload_folders: preference("uploads.folders")?,
+        crosslink: preference("crosslink.enabled")?,
     })
 }
 
@@ -1622,6 +1625,106 @@ pub async fn end_session(server: String, credential: Credential) {
     .await;
     if let Err(error) = ended {
         log::info!("the session was not ended on the server: {error}");
+    }
+}
+
+// Received links (ROADMAP.md, "Open in Immich, and links between apps", step 2): the app takes a crosslink, or a web
+// address on the signed-in server, and has Finder show its item. The app has no metadata store (only the extension
+// opens it), so it finds the item's key with a tree of its own; keys do not depend on the names kept there, and the
+// key's storage key is the item's identifier in the extension.
+
+/// What came of a received link: Linux's results, with the item to show or the host the link names.
+#[derive(Debug, Clone, PartialEq, Eq, uniffi::Record)]
+pub struct ShowLinkOutcome {
+    /// `show`, `invalid`, `cannot-show`, `other-server`, `other-user`, `not-found`, `off` or `unreachable`, as Linux's
+    /// daemon answers.
+    pub result: String,
+    /// The item's identifier, for `show`.
+    pub identifier: Option<String>,
+    /// The host (and port) the link names, for `other-server`; empty otherwise.
+    pub detail: String,
+}
+
+impl ShowLinkOutcome {
+    fn refused(result: &str) -> ShowLinkOutcome {
+        ShowLinkOutcome { result: result.to_owned(), identifier: None, detail: String::new() }
+    }
+}
+
+/// How long finding a received link's item may take, as on Linux.
+const SHOW_LINK_LIMIT: Duration = Duration::from_secs(20);
+
+/// Where the account's library shows what `link` names, read and checked as immich-crosslink's receivers must: the
+/// server must be the signed-in one, and so must the user when the link names one and the account may read its own
+/// id. `config` is the text of `config.toml`: with `crosslink.enabled` off, nothing is read. Only ever finds: nothing is
+/// fetched but listings and, for a photo, its details.
+#[uniffi::export]
+pub async fn show_link(server: String, credential: Credential, config: String, link: String) -> ShowLinkOutcome {
+    let finding = on_runtime(async move {
+        let server = normalised_address(&server);
+        let config = parse_config(&config)?;
+        let enabled = config.crosslink_enabled;
+        let client = Client::new(&server, Some(credential.for_client()), USER_AGENT).map_err(failed)?;
+        let source = Arc::new(ImmichSource::new(client));
+        let asking = source.clone();
+        // An API key without `user.read` cannot tell its id: the link's user is then not checked.
+        let user_id = async move { tokio::time::timeout(SIGN_IN_LIMIT, asking.client().me()).await.ok()?.ok().map(|me| me.id) };
+        let tree = Tree::new(source, immich_mount_core::tree::InMemoryNames::default(), config);
+        Ok(follow_link(&tree, &link, &server, enabled, user_id).await)
+    })
+    .await;
+    finding.unwrap_or_else(|error| {
+        log::info!("a received link was not followed: {error}");
+        ShowLinkOutcome::refused("unreachable")
+    })
+}
+
+/// `show_link`'s work, on any tree. `user_id` is asked only for a link that names a user.
+async fn follow_link<Source, Names>(
+    tree: &Tree<Source, Names>,
+    link: &str,
+    server: &str,
+    enabled: bool,
+    user_id: impl Future<Output = Option<String>>,
+) -> ShowLinkOutcome
+where
+    Source: LibrarySource,
+    Names: NameMemory,
+{
+    if !enabled {
+        return ShowLinkOutcome::refused("off");
+    }
+    let refused = |refusal: links::Refusal| match refusal {
+        links::Refusal::OtherServer(host) => ShowLinkOutcome { detail: host, ..ShowLinkOutcome::refused("other-server") },
+        refusal => ShowLinkOutcome::refused(refusal.as_str()),
+    };
+    let mut item = match links::receive(link, server, None) {
+        Ok(item) => item,
+        Err(refusal) => return refused(refusal),
+    };
+    if matches!(links::read_crosslink(link.trim()), links::Reading::Show(links::Crosslink { user_id: Some(_), .. })) {
+        if let Some(user_id) = user_id.await {
+            item = match links::receive(link, server, Some(&user_id)) {
+                Ok(item) => item,
+                Err(refusal) => return refused(refusal),
+            };
+        }
+    }
+    // Its path from the root as well, as Linux finds it: a folder the root no longer lists (a section switched off)
+    // still has its key. The system finds the item's place itself (`getUserVisibleURL`), listing the folders above
+    // it where they were never listed.
+    let found = async {
+        let Some(key) = tree.locate(&item).await? else { return Ok(None) };
+        Ok(tree.path_of(&key).await?.map(|_| key))
+    };
+    match tokio::time::timeout(SHOW_LINK_LIMIT, found).await {
+        Ok(Ok(Some(key))) => ShowLinkOutcome { result: "show".to_owned(), identifier: Some(key.storage_key()), detail: String::new() },
+        Ok(Ok(None)) | Ok(Err(SourceError::NotFound)) => ShowLinkOutcome::refused("not-found"),
+        Ok(Err(error)) => {
+            log::info!("a received link could not be followed: {error}");
+            ShowLinkOutcome::refused("unreachable")
+        }
+        Err(_) => ShowLinkOutcome::refused("unreachable"),
     }
 }
 
@@ -2054,6 +2157,7 @@ mod tests {
         assert_eq!((panes.album_layout.key.as_str(), panes.album_layout.value.as_str()), ("albums.layout", "year-prefix"));
         assert!(matches!(&panes.album_layout.kind, PreferenceKind::Choice { options } if options[1].label == "Year Folders (2023/Trip)"));
         assert_eq!(panes.file_naming.key, "files.naming");
+        assert_eq!((panes.crosslink.key.as_str(), &panes.crosslink.kind, panes.crosslink.value.as_str()), ("crosslink.enabled", &PreferenceKind::Toggle, "true"));
         let changed = set_preference("# mine\n".into(), "albums.layout".into(), "flat".into()).unwrap();
         assert!(changed.contains("# mine") && settings_panes(changed).unwrap().album_layout.value == "flat");
         assert!(set_preference(String::new(), "albums.layout".into(), "sideways".into()).is_err());
@@ -2273,5 +2377,153 @@ mod tests {
         assert!(Arc::ptr_eq(&first, &again), "the store is opened once");
         drop((first, again));
         assert!(Library::open("lab.example".into(), key("key"), path, "bad = [".into()).is_err(), "a config that does not parse");
+    }
+
+    // Received links: a library with one photo in March 2024, in the album Trip, in Aarhus, Denmark, and one person,
+    // with the UUIDs links carry.
+    const LINKED_SERVER: &str = "https://photos.example.com";
+    const LINKED_PHOTO: &str = "4f3c2b1a-0000-4000-8000-000000000001";
+    const LINKED_ALBUM: &str = "4f3c2b1a-0000-4000-8000-000000000002";
+    const LINKED_PERSON: &str = "4f3c2b1a-0000-4000-8000-000000000003";
+    const SIGNED_IN_USER: &str = "4f3c2b1a-0000-4000-8000-0000000000aa";
+
+    #[derive(Default)]
+    struct LinkedLibrary {
+        /// Every request takes an hour, as on a server that drops requests.
+        silent: bool,
+    }
+
+    fn linked_photo() -> Asset {
+        Asset { id: LINKED_PHOTO.into(), city: Some("Aarhus".into()), country: Some("Denmark".into()), ..photo() }
+    }
+
+    impl LinkedLibrary {
+        async fn answer<Answer>(&self, answer: Answer) -> Result<Answer, SourceError> {
+            if self.silent {
+                tokio::time::sleep(Duration::from_secs(3600)).await;
+            }
+            Ok(answer)
+        }
+    }
+
+    impl LibrarySource for LinkedLibrary {
+        async fn timeline_months(&self) -> Result<Vec<(YearMonth, u32)>, SourceError> {
+            self.answer(vec![(YearMonth { year: 2024, month: 3 }, 1)]).await
+        }
+        async fn month_assets(&self, _month: YearMonth) -> Result<Vec<Asset>, SourceError> {
+            self.answer(vec![linked_photo()]).await
+        }
+        async fn albums(&self) -> Result<Vec<Album>, SourceError> {
+            self.answer(vec![Album { id: LINKED_ALBUM.into(), name: "Trip".into(), year: Some(2024), created_at: Utc::now() }]).await
+        }
+        async fn album_assets(&self, _album_id: &str) -> Result<Vec<Asset>, SourceError> {
+            self.answer(vec![linked_photo()]).await
+        }
+        async fn people(&self) -> Result<Vec<Person>, SourceError> {
+            self.answer(vec![Person { id: LINKED_PERSON.into(), name: "Ada".into(), is_hidden: false, created_at: Utc::now() }]).await
+        }
+        async fn person_assets(&self, _person_id: &str) -> Result<Vec<Asset>, SourceError> {
+            self.answer(vec![linked_photo()]).await
+        }
+        async fn countries(&self) -> Result<Vec<String>, SourceError> {
+            self.answer(vec!["Denmark".into()]).await
+        }
+        async fn cities(&self, _country: &str) -> Result<Vec<String>, SourceError> {
+            self.answer(vec!["Aarhus".into()]).await
+        }
+        async fn city_assets(&self, _country: &str, _city: &str) -> Result<Vec<Asset>, SourceError> {
+            self.answer(vec![linked_photo()]).await
+        }
+        async fn archive_assets(&self) -> Result<Vec<Asset>, SourceError> {
+            self.answer(vec![]).await
+        }
+        async fn favorite_assets(&self) -> Result<Vec<Asset>, SourceError> {
+            self.answer(vec![]).await
+        }
+        async fn asset(&self, asset_id: &str) -> Result<Asset, SourceError> {
+            if asset_id == LINKED_PHOTO { self.answer(linked_photo()).await } else { Err(SourceError::NotFound) }
+        }
+    }
+
+    fn linked_tree(config: &str) -> Tree<LinkedLibrary, InMemoryNames> {
+        Tree::new(LinkedLibrary::default(), InMemoryNames::default(), Config::from_toml(config).unwrap())
+    }
+
+    /// `show_link`'s outcome on the linked library, for the signed-in user.
+    async fn follow(tree: &Tree<LinkedLibrary, InMemoryNames>, link: &str) -> ShowLinkOutcome {
+        follow_link(tree, link, LINKED_SERVER, true, async { Some(SIGNED_IN_USER.to_owned()) }).await
+    }
+
+    fn crosslink_to(node: &NodeKey) -> String {
+        links::crosslink(LINKED_SERVER, Some(SIGNED_IN_USER), node).unwrap()
+    }
+
+    fn shows(node: NodeKey) -> ShowLinkOutcome {
+        ShowLinkOutcome { result: "show".into(), identifier: Some(node.storage_key()), detail: String::new() }
+    }
+
+    #[tokio::test]
+    async fn a_received_link_names_the_item_where_finder_shows_it() {
+        let tree = linked_tree("");
+        let album = NodeKey::Album(LINKED_ALBUM.into());
+        let person = NodeKey::Person(LINKED_PERSON.into());
+        let city = NodeKey::City { country: "Denmark".into(), city: "Aarhus".into() };
+        let march = NodeKey::TimelineMonth(YearMonth { year: 2024, month: 3 });
+        let in_folder = |folder: &NodeKey| NodeKey::Asset { parent: Box::new(folder.clone()), asset_id: LINKED_PHOTO.into() };
+        for (node, said) in [
+            (album.clone(), "an album"),
+            (person.clone(), "a person"),
+            (city.clone(), "a city"),
+            (NodeKey::Section(SectionKey::Albums), "a section"),
+            (in_folder(&march), "a photo in Photos"),
+            (in_folder(&album), "a photo in an album"),
+            (in_folder(&person), "a photo of a person"),
+            (in_folder(&city), "a photo in a city"),
+        ] {
+            assert_eq!(follow(&tree, &crosslink_to(&node)).await, shows(node), "{said}");
+        }
+        let web = links::web_address(LINKED_SERVER, &album).unwrap();
+        assert_eq!(follow(&tree, &web).await, shows(album), "a web address on the signed-in server");
+    }
+
+    #[tokio::test]
+    async fn a_received_link_that_shows_nothing_says_why() {
+        let tree = linked_tree("[sections]\npeople = false\n");
+        let album = NodeKey::Album(LINKED_ALBUM.into());
+        let elsewhere = links::crosslink("https://other.example:8443", None, &album).unwrap();
+        assert_eq!(
+            follow(&tree, &elsewhere).await,
+            ShowLinkOutcome { detail: "other.example:8443".into(), ..ShowLinkOutcome::refused("other-server") }
+        );
+        let refused = |result: &str| ShowLinkOutcome::refused(result);
+        assert_eq!(follow(&tree, "immich-crosslink://host/albums/x").await, refused("invalid"));
+        assert_eq!(follow(&tree, "https://example.com/albums").await.result, "other-server", "a web address elsewhere");
+        let search = format!("immich-crosslink:///search?query=%7B%22make%22%3A%22Canon%22%7D&server={}", links::encode_component(LINKED_SERVER));
+        assert_eq!(follow(&tree, &search).await, refused("cannot-show"));
+        let someone_else = links::crosslink(LINKED_SERVER, Some(LINKED_PERSON), &album).unwrap();
+        assert_eq!(follow(&tree, &someone_else).await, refused("other-user"));
+        let unknown_id = follow_link(&tree, &someone_else, LINKED_SERVER, true, async { None }).await;
+        assert_eq!(unknown_id, shows(album), "the user is not checked when the account cannot read its id");
+        let march = NodeKey::TimelineMonth(YearMonth { year: 2024, month: 3 });
+        let gone = NodeKey::Asset { parent: Box::new(march), asset_id: LINKED_ALBUM.into() };
+        assert_eq!(follow(&tree, &crosslink_to(&gone)).await, refused("not-found"), "a photo the account cannot see");
+        let hidden = crosslink_to(&NodeKey::Person(LINKED_PERSON.into()));
+        assert_eq!(follow(&tree, &hidden).await, refused("not-found"), "a section that is off");
+    }
+
+    #[tokio::test]
+    async fn with_crosslink_off_a_link_is_not_read() {
+        let tree = linked_tree("");
+        let link = crosslink_to(&NodeKey::Album(LINKED_ALBUM.into()));
+        let outcome = follow_link(&tree, &link, LINKED_SERVER, false, async { panic!("the user was asked") }).await;
+        assert_eq!(outcome, ShowLinkOutcome::refused("off"));
+        assert!(!parse_config("[crosslink]\nenabled = false\n").unwrap().crosslink_enabled);
+    }
+
+    #[tokio::test(start_paused = true)]
+    async fn a_received_link_waits_a_limited_time() {
+        let tree = Tree::new(LinkedLibrary { silent: true }, InMemoryNames::default(), Config::from_toml("").unwrap());
+        let link = crosslink_to(&NodeKey::Album(LINKED_ALBUM.into()));
+        assert_eq!(follow(&tree, &link).await, ShowLinkOutcome::refused("unreachable"));
     }
 }

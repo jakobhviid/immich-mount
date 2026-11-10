@@ -289,6 +289,67 @@ pub fn read_crosslink(link: &str) -> Reading {
     }
 }
 
+/// Why a received link shows nothing, each told to the user in a sentence (immich-crosslink, "Receiving").
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub enum Refusal {
+    /// Not a crosslink, or one the protocol calls invalid; a web address that is not Immich's.
+    Invalid,
+    /// A valid link to something Immich Mount has no place for.
+    CannotShow,
+    /// A link for a server this account is not signed in to, named by its host.
+    OtherServer(String),
+    /// A link for another user of the signed-in server.
+    OtherUser,
+}
+
+impl Refusal {
+    /// The result's name, as the command line's JSON and the D-Bus answer write it.
+    pub fn as_str(&self) -> &'static str {
+        match self {
+            Refusal::Invalid => "invalid",
+            Refusal::CannotShow => "cannot-show",
+            Refusal::OtherServer(_) => "other-server",
+            Refusal::OtherUser => "other-user",
+        }
+    }
+}
+
+/// The item a received link names for this account: a crosslink, or a web address of Immich's web app. The server
+/// must be the signed-in one, and so must the user where both the link and the account know it. Nothing is fetched:
+/// whether the account can see the item is the tree's to find (`Tree::locate`).
+pub fn receive(link: &str, server_url: &str, user_id: Option<&str>) -> Result<ImmichItem, Refusal> {
+    let link = link.trim();
+    let is_crosslink = link.split_once(':').is_some_and(|(scheme, _)| scheme.eq_ignore_ascii_case(CROSSLINK_SCHEME));
+    if !is_crosslink {
+        let origin = normalise_server(split_origin(link).ok_or(Refusal::Invalid)?.0).ok_or(Refusal::Invalid)?;
+        let server = server_address(server_url);
+        let (server_origin, _) = split_origin(&server).ok_or(Refusal::Invalid)?;
+        if !same_server(&origin, server_origin) {
+            return Err(Refusal::OtherServer(host_of(&origin)));
+        }
+        return read_web_address(link, server_url).ok_or(Refusal::CannotShow);
+    }
+    match read_crosslink(link) {
+        Reading::Invalid => Err(Refusal::Invalid),
+        Reading::CannotShow => Err(Refusal::CannotShow),
+        Reading::Show(crosslink) => {
+            if !same_server(&crosslink.server, &server_address(server_url)) {
+                return Err(Refusal::OtherServer(host_of(&crosslink.server)));
+            }
+            match (crosslink.user_id.as_deref(), user_id) {
+                (Some(linked), Some(signed_in)) if !linked.eq_ignore_ascii_case(signed_in) => Err(Refusal::OtherUser),
+                _ => Ok(crosslink.item),
+            }
+        }
+    }
+}
+
+/// The host (and port) of a normalised server address, as a message names it.
+fn host_of(server: &str) -> String {
+    let rest = server.split_once("://").map_or(server, |(_, rest)| rest);
+    rest.split('/').next().unwrap_or(rest).to_owned()
+}
+
 /// The item a web address on the signed-in server names; `None` for another server, or a path the protocol does not
 /// define or that is not valid.
 pub fn read_web_address(address: &str, server_url: &str) -> Option<ImmichItem> {
@@ -766,6 +827,27 @@ mod tests {
         assert_eq!(normalise_server("http://[::1]:80").as_deref(), Some("http://[::1]"));
         for refused in ["photos.example.com", "ftp://photos.example.com", "https://", "https://host:", "https://host:x", "https://u@host", "https://host/?a"] {
             assert_eq!(normalise_server(refused), None, "{refused}");
+        }
+    }
+
+    #[test]
+    fn a_received_link_must_be_for_this_server_and_user() {
+        let crosslink_to = |server: &str, user: &str| format!("immich-crosslink:///albums/{ALBUM}?server={}{user}", encode_component(server));
+        let album = Ok(ImmichItem::Album(ALBUM.to_owned()));
+        assert_eq!(receive(&crosslink_to(SERVER, ""), "https://photos.example.com/api", Some(PERSON)), album);
+        assert_eq!(receive(&crosslink_to(SERVER, &format!("&user={PERSON}")), SERVER, Some(&PERSON.to_uppercase())), album);
+        assert_eq!(receive(&crosslink_to(SERVER, &format!("&user={PERSON}")), SERVER, None), album, "an account that may not read its id");
+        assert_eq!(receive(&crosslink_to(SERVER, &format!("&user={ASSET}")), SERVER, Some(PERSON)), Err(Refusal::OtherUser));
+        assert_eq!(
+            receive(&crosslink_to("http://nas.local:2283", ""), SERVER, None),
+            Err(Refusal::OtherServer("nas.local:2283".to_owned()))
+        );
+        assert_eq!(receive(&format!("{SERVER}/albums/{ALBUM}"), SERVER, None), album, "a web address");
+        assert_eq!(receive(&format!("https://other.example.com/albums/{ALBUM}"), SERVER, None), Err(Refusal::OtherServer("other.example.com".to_owned())));
+        assert_eq!(receive(&format!("{SERVER}/admin"), SERVER, None), Err(Refusal::CannotShow));
+        assert_eq!(receive(&format!("immich-crosslink:///tags?server={}", encode_component(SERVER)), SERVER, None), Err(Refusal::CannotShow));
+        for invalid in ["", "nonsense", "immich-crosslink://host/albums", "file:///home/me", "immich://asset?id=1"] {
+            assert_eq!(receive(invalid, SERVER, None), Err(Refusal::Invalid), "{invalid}");
         }
     }
 

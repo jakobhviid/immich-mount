@@ -29,7 +29,7 @@ enum SettingsPane: Int, CaseIterable {
     /// height.
     var defaultHeight: CGFloat {
         switch self {
-        case .general: 200
+        case .general: 260
         case .folders: 640
         case .account: 330
         }
@@ -83,22 +83,25 @@ final class SettingsModel: ObservableObject {
         }
     }
 
-    func isOn(_ preference: Preference) -> Binding<Bool> {
-        Binding(get: { preference.value == "true" }, set: { self.change(preference.key, to: $0 ? "true" : "false") })
+    func isOn(_ preference: Preference, relist: Bool = true) -> Binding<Bool> {
+        Binding(get: { preference.value == "true" },
+                set: { self.change(preference.key, to: $0 ? "true" : "false", relist: relist) })
     }
 
     func choice(_ preference: Preference) -> Binding<String> {
         Binding(get: { preference.value }, set: { self.change(preference.key, to: $0) })
     }
 
-    /// Keep one value, then have the system list every folder again, by the new rules.
-    func change(_ key: String, to value: String) {
+    /// Keep one value, then, unless it changes nothing Finder shows, have the system list every folder again, by the
+    /// new rules.
+    func change(_ key: String, to value: String, relist: Bool = true) {
         do {
             let updated = try setPreference(config: AppGroup.configText, key: key, value: value)
             try FileManager.default.createDirectory(at: AppGroup.container, withIntermediateDirectories: true)
             try updated.write(to: AppGroup.configFile, atomically: true, encoding: .utf8)
             panes = try settingsPanes(config: updated)
             message = nil
+            guard relist else { return }
             Task {
                 do {
                     try await NSFileProviderManager(for: FinderLocation.domain)?.reimportItems(below: .rootContainer)
@@ -112,7 +115,7 @@ final class SettingsModel: ObservableObject {
     }
 }
 
-/// Opening at login, updates, and the Upload folder.
+/// Opening at login, updates, and Immich crosslink.
 struct GeneralPane: View {
     @EnvironmentObject private var model: AppModel
     @EnvironmentObject private var settings: SettingsModel
@@ -133,9 +136,43 @@ struct GeneralPane: View {
                 Text("While Immich Mount runs, in the menu bar, changes in Immich reach Finder within seconds. Updates come from jakob.hviid.phd, signed by the project and notarized by Apple.")
                     .foregroundStyle(.secondary)
             }
+            if let crosslink = settings.panes?.crosslink {
+                CrosslinkSection(crosslink: crosslink)
+            }
             Refusal()
         }
         .formStyle(.grouped)
+    }
+}
+
+/// Immich crosslink (ROADMAP.md, "Open in Immich, and links between apps"): the protocol's switch, named and linked as
+/// in every app that takes part, so its name stays in English. Off, a link another app sends only gets a notification
+/// saying so. It changes nothing Finder lists.
+private struct CrosslinkSection: View {
+    @EnvironmentObject private var settings: SettingsModel
+    let crosslink: Preference
+
+    private static let page = URL(string: "https://jakob.hviid.phd/immich-crosslink/")!
+
+    var body: some View {
+        Section {
+            LabeledContent {
+                Toggle(isOn: settings.isOn(crosslink, relist: false)) {
+                    Text(verbatim: "Immich crosslink")
+                }
+                .labelsHidden()
+                .toggleStyle(.switch)
+                .accessibilityHint(tr(crosslink.title))
+            } label: {
+                HStack(spacing: 8) {
+                    Text(verbatim: "Immich crosslink")
+                    Link(destination: Self.page) {
+                        Text(verbatim: "jakob.hviid.phd/immich-crosslink")
+                    }
+                    .help(tr(crosslink.title))
+                }
+            }
+        }
     }
 }
 

@@ -433,9 +433,13 @@ pub fn daemon(paths: &Paths) -> Result<Option<StopReason>> {
     }
     let account_cache = paths.account_cache(&account_name(&client));
     // Shown by the apps; an API key without `user.read` is simply not named.
-    let account = version.is_some().then(|| runtime.block_on(client.my_email()).ok()).flatten();
+    // The id checks a crosslink's user; the full record is read first, and the email alone where it does not decode.
+    let (account, user_id) = match version.is_some().then(|| runtime.block_on(client.me()).ok()).flatten() {
+        Some(me) => (Some(me.email), Some(me.id)),
+        None => (version.is_some().then(|| runtime.block_on(client.my_email()).ok()).flatten(), None),
+    };
     let source = Arc::new(ImmichSource::new(client));
-    let server = daemon::ServerInfo { url: server_url, version, account };
+    let server = daemon::ServerInfo { url: server_url, version, account, user_id };
     let updates = crate::updates::wanted(&config).then(|| (crate::updates::check(), paths.state_directory.join("update-told")));
     match daemon::serve(source, server, config, &mount_point, &account_cache, &paths.thumbnail_directory, &paths.not_uploaded_directory(), updates, &runtime) {
         // Another daemon serves it (the packages' service and Homebrew's both on): this one leaves cleanly, so its

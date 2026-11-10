@@ -14,10 +14,10 @@ include(KDECMakeSettings)
 include(KDECompilerSettings NO_POLICY_SCOPE)
 
 find_package(Qt6 6.6 REQUIRED COMPONENTS Core DBus Gui Widgets)
-find_package(KF6 6.0 REQUIRED COMPONENTS CoreAddons I18n KIO)
+find_package(KF6 6.0 REQUIRED COMPONENTS Config CoreAddons I18n KIO Service)
 
 kcoreaddons_add_plugin(immich-mount-dolphin SOURCES immich-mount-dolphin.cpp INSTALL_NAMESPACE "kf6/kfileitemaction")
-target_link_libraries(immich-mount-dolphin PRIVATE Qt6::DBus Qt6::Gui Qt6::Widgets KF6::CoreAddons KF6::I18n
-                      KF6::KIOGui KF6::KIOWidgets)
+target_link_libraries(immich-mount-dolphin PRIVATE Qt6::DBus Qt6::Gui Qt6::Widgets KF6::ConfigCore KF6::CoreAddons KF6::I18n
+                      KF6::KIOGui KF6::KIOWidgets KF6::Service)
 # Only the libraries it calls, so a package depends on no more of KF6 than that.
 target_link_options(immich-mount-dolphin PRIVATE "LINKER:--as-needed")

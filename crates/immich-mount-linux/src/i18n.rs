@@ -34,7 +34,7 @@ pub fn locale_directory() -> Option<PathBuf> {
 
 /// The catalogs to try, most wanted first, by gettext's rules: `LANGUAGE`'s list, unless the locale is C, then the
 /// first of `LC_ALL`, `LC_MESSAGES` and `LANG` that is set. Each as `da_DK`, then `da`.
-fn languages(variable: &dyn Fn(&str) -> Option<String>) -> Vec<String> {
+pub(crate) fn languages(variable: &dyn Fn(&str) -> Option<String>) -> Vec<String> {
     let locale = ["LC_ALL", "LC_MESSAGES", "LANG"].iter().find_map(|name| variable(name).filter(|value| !value.is_empty()));
     let Some(locale) = locale else { return Vec::new() };
     if locale == "C" || locale == "POSIX" || locale.starts_with("C.") {

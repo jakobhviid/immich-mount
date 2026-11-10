@@ -76,6 +76,11 @@ final class AppDelegate: NSObject, NSApplicationDelegate, SPUUpdaterDelegate,
     private var setUp: AnyCancellable?
     /// Whether macOS started the app as a login item, read from the launch event before it is gone.
     private var launchedAtLogin = false
+    /// Whether macOS started the app to open a link another app sent (`ReceivedLinks`): it shows the link's item, and
+    /// no window of its own. Told by the launch event, or by the link arriving while the app still sets up.
+    private var launchedForLink = false
+    /// Whether the app has decided which window, if any, it opens at launch.
+    private var finishedLaunching = false
     /// Whether this is the first run of this build: after an update (Sparkle's, or Homebrew's), the app comes back as
     /// it was, in the menu bar alone. Told by the build the app last ran, which it keeps; an update from a build that
     /// kept none counts too, as a first install is signed out and opens the sign-in window anyway.
@@ -94,6 +99,17 @@ final class AppDelegate: NSObject, NSApplicationDelegate, SPUUpdaterDelegate,
         UserDefaults.standard.set(build, forKey: Self.lastBuildKey)
         launchedAtLogin = launch?.eventID == kAEOpenApplication
             && launch?.paramDescriptor(forKeyword: keyAEPropData)?.enumCodeValue == keyAELaunchedAsLogInItem
+        launchedForLink = launch?.eventClass == AEEventClass(kInternetEventClass) && launch?.eventID == AEEventID(kAEGetURL)
+    }
+
+    /// Links another app sent, through the `immich-crosslink` scheme the Info.plist declares.
+    func application(_ application: NSApplication, open urls: [URL]) {
+        if !finishedLaunching {
+            launchedForLink = true
+        }
+        for url in urls {
+            Task { await ReceivedLinks.show(url) }
+        }
     }
 
     func applicationDidFinishLaunching(_ notification: Notification) {
@@ -123,7 +139,10 @@ final class AppDelegate: NSObject, NSApplicationDelegate, SPUUpdaterDelegate,
         // what is left to do, or Settings.
         Task {
             await model.refreshState()
-            if !Installation.isInApplications || model.server == nil || model.locationSwitchedOff {
+            defer { finishedLaunching = true }
+            if launchedForLink && model.server != nil {
+                return
+            } else if !Installation.isInApplications || model.server == nil || model.locationSwitchedOff {
                 if !launchedAtLogin || model.server == nil { showWindow() }
             } else if !launchedAtLogin && !launchedAfterUpdate {
                 showSettings()
@@ -143,6 +162,16 @@ final class AppDelegate: NSObject, NSApplicationDelegate, SPUUpdaterDelegate,
     nonisolated func userNotificationCenter(_ center: UNUserNotificationCenter, willPresent notification: UNNotification,
                                             withCompletionHandler completionHandler: @escaping (UNNotificationPresentationOptions) -> Void) {
         completionHandler([.banner, .list])
+    }
+
+    /// A notification clicked: the one saying Immich crosslink is off opens Settings where it is switched on.
+    nonisolated func userNotificationCenter(_ center: UNUserNotificationCenter, didReceive response: UNNotificationResponse,
+                                            withCompletionHandler completionHandler: @escaping () -> Void) {
+        let opensSettings = response.notification.request.content.userInfo[ReceivedLinks.opensSettings] as? Bool == true
+        Task { @MainActor in
+            if opensSettings { AppDelegate.shared?.showSettings(on: .general) }
+            completionHandler()
+        }
     }
 
     /// Sparkle's scheduled update alerts come without a window of the app's in front: they bring the app forward, so
@@ -254,7 +283,11 @@ final class AppDelegate: NSObject, NSApplicationDelegate, SPUUpdaterDelegate,
     /// Settings, in a window of the app's own, so the menu, the app menu and reopening all reach it: a toolbar of
     /// panes, titled by the pane shown, opening on the pane last used, and sized by each pane, so it neither
     /// resizes nor minimises, as Apple's Human Interface Guidelines ask for a settings window.
-    func showSettings() {
+    func showSettings(on pane: SettingsPane? = nil) {
+        if let pane {
+            UserDefaults.standard.set(pane.rawValue, forKey: SettingsTabController.lastPaneKey)
+            (settingsWindow?.contentViewController as? SettingsTabController)?.selectedTabViewItemIndex = pane.rawValue
+        }
         if settingsWindow == nil {
             let panes = SettingsTabController(model: model)
             let window = NSWindow(contentViewController: panes)
@@ -332,7 +365,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate, SPUUpdaterDelegate,
 /// SwiftUI content's layout instead was laid out again without end on macOS 27.
 final class SettingsTabController: NSTabViewController {
     /// The pane last chosen, in the app's own defaults.
-    private static let lastPaneKey = "SettingsPane"
+    static let lastPaneKey = "SettingsPane"
     private static let width: CGFloat = 520
     /// The tallest the window grows for a pane; beyond it the pane scrolls.
     private static let tallest: CGFloat = 720
@@ -813,11 +846,17 @@ final class AppModel: ObservableObject {
     #if DEBUG
     /// For driving a development build from a script (the `mac-dev` skill), with launch arguments: `-signOut YES`
     /// signs out, and `-signInServer <address>` with `-signInAPIKey <key>`, or `-signInEmail` and
-    /// `-signInPassword`, signs in when nobody is. Not in release builds.
+    /// `-signInPassword`, signs in when nobody is; `-setPreference <key>=<value>` changes one setting, as the Settings
+    /// window does. Not in release builds.
     func followLaunchArguments() async {
         let arguments = UserDefaults.standard
         if arguments.bool(forKey: "signOut") {
             try? await signOut()
+        }
+        if let preference = arguments.string(forKey: "setPreference"), let equals = preference.firstIndex(of: "=") {
+            let settings = SettingsModel()
+            settings.change(String(preference[..<equals]), to: String(preference[preference.index(after: equals)...]))
+            logger.notice("set \(preference, privacy: .public): \(settings.message ?? "done", privacy: .public)")
         }
         guard server == nil, let address = arguments.string(forKey: "signInServer") else { return }
         await check(address: address)
