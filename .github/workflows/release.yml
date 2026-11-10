@@ -79,7 +79,7 @@ jobs:
       - name: Build dependencies
         run: |
           dnf install -y -q git gcc gcc-c++ cargo rust clippy gtk4-devel libadwaita-devel blueprint-compiler nautilus-devel rpm-build python3 \
-            qt6-qtbase-devel qt6-qtdeclarative-devel cmake extra-cmake-modules kf6-kio-devel
+            qt6-qtbase-devel qt6-qtdeclarative-devel cmake extra-cmake-modules kf6-kio-devel kf6-ki18n-devel
       - uses: actions/checkout@v5
         with:
           fetch-depth: 0
@@ -128,6 +128,8 @@ jobs:
           cp target/release/immich-mount-gnome target/release/immich-mount-kde LICENSE packaging/icons/*.svg "$app/"
           # Dolphin's plugin, which finds the translations beside itself too, in share/locale.
           cp "$kde/immich-mount-dolphin.so" "$app/"
+          # With the cask, Dolphin finds the plugin through QT_PLUGIN_PATH, which this Plasma login script sets.
+          cp crates/immich-mount-kde/dolphin/immich-mount-plasma-env.sh "$app/"
           # Files' Open in Immich for nautilus-python, as the cask cannot write Nautilus's own folder in /usr.
           cp crates/immich-mount-gnome/nautilus/immich-mount-nautilus.py "$app/"
           python3 po/i18n.py desktop packaging/desktop/dev.hviid.ImmichMount.desktop.in "$app/dev.hviid.ImmichMount.desktop"

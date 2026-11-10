@@ -71,7 +71,7 @@ jobs:
       - name: Build dependencies
         run: |
           dnf install -y -q git gcc gcc-c++ cargo rust clippy gtk4-devel libadwaita-devel blueprint-compiler nautilus-devel \
-            qt6-qtbase-devel qt6-qtdeclarative-devel cmake extra-cmake-modules kf6-kio-devel
+            qt6-qtbase-devel qt6-qtdeclarative-devel cmake extra-cmake-modules kf6-kio-devel kf6-ki18n-devel
       - uses: actions/checkout@v5
       - name: Green gate for the apps - clippy (warnings are errors) and tests
         run: |
