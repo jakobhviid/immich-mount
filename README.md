@@ -31,6 +31,8 @@ without downloading the library first.
   other folder is a read-only view of the library. A move never loses a photo: the file manager keeps the source
   until Immich has the file, and anything that fails to upload is kept.
 - **Changes in Immich show within seconds,** in an open folder after a refresh.
+- **Open in Immich:** right-click a photo, album, person or place to open its page in Immich's web app, or copy
+  its link. A photo opens in the album, person or place you found it in.
 - **One app, native on each desktop:** it opens in GTK and libadwaita on GNOME and in Kirigami on KDE Plasma, to sign
   in, choose what to show, and see the status. A tray icon shows how it is connected, in KDE Plasma's system tray and
   in GNOME's top bar where the AppIndicator extension is on.
@@ -203,7 +205,8 @@ procedures in `.claude/skills/`.
   rest of the API from **[ImmichGallery](https://github.com/IGOLz/ImmichGallery)** and **[Mimick](https://github.com/nicx17/mimick)**.
 - The Mac app switches its Finder location on the way **[Proton Drive](https://github.com/ProtonDriveApps/mac-drive)**
   does, with Finder's own Enable button.
-- **[Immich](https://github.com/immich-app/immich)**, the server all of this talks to.
+- **[Immich](https://github.com/immich-app/immich)**, the server all of this talks to; Open in Immich follows its
+  web app's own paths.
 - The photographers on **Wikimedia Commons** whose freely licensed photos fill the test server and the screenshots
   ([credited one by one](lab/immich-server/fixtures/ATTRIBUTION.md)).
 

@@ -155,6 +155,20 @@ system without one of its files for a moment, `bootc usr-overlay` makes `/usr` w
   the daemon takes the first close for the end of the copy.
 - **Measure each folder with its pages out of memory** (`echo 3 > /proc/sys/vm/drop_caches` as root, the file
   manager closed): reads the kernel answers from memory never reach the daemon, and the measurement shows nothing.
+- **No right click in Plasma out of the box:** `up.sh` pushes `act.py` but not `click.py`, and Bazzite has neither
+  pywayland nor the protocol XML, and its KWin (6.7) offers fake input only to programs whose desktop file asks for
+  it ("KWin offers no fake input to this program"). For a session that needs it: `python3 -m pip install --user
+  pywayland` as tester; fetch `wayland.xml` (freedesktop's wayland repository, `protocol/`) and `fake-input.xml`
+  (KDE's plasma-wayland-protocols, `src/protocols/`) into the home and point a copy of `click.py` at them; add
+  `~/.local/share/applications/lab-python-fakeinput.desktop` with `Exec=/usr/bin/python3.14` and
+  `X-KDE-Wayland-Interfaces=org_kde_kwin_fake_input`, run `kbuildsycoca6`, and call `/usr/bin/python3.14 click.py
+  x y right` (the real path, not the `python3` link). Dolphin's context menu items are not on the accessibility
+  bus: click them by position from a screenshot.
+- **A context menu in Files:** a right click through the shell's virtual pointer (`notify_button` with
+  `BUTTON_SECONDARY`) selects the item but opens no menu; `/opt/exp/input.sh click` on the item, then `input.sh key
+  Menu`, does.
+- **`wl-copy` through `run-in-session.sh` never returns:** it forks a server that keeps the clipboard and holds the
+  pipe open. Redirect its output (`wl-copy ... >/dev/null 2>&1`), or end it with `pkill -u tester wl-copy`.
 - **Harmless:** `ublue-os-media-automount.service` fails on every boot (a bootc install writes no `/etc/fstab`
   entries); the VM's empty root disk shows as a blank device under Dolphin's Devices.
 - **A dead guest's journal:** stop the VM, remove its `bazzite` disk device, attach its volume to another VM (the

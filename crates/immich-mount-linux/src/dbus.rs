@@ -5,6 +5,8 @@
 //! The daemon lives while it is mounted: unmounting (here or by eject) stops it, and the user service or the app
 //! starts it again (ARCHITECTURE.md, "The daemon's lifecycle").
 
+use std::future::Future;
+use std::pin::Pin;
 use std::sync::{Arc, Mutex};
 
 use zbus::object_server::SignalEmitter;
@@ -28,6 +30,13 @@ pub async fn uploads_in_flight() -> Vec<(String, String, u64)> {
     proxy.get_property("Uploads").await.unwrap_or_default()
 }
 
+/// The running daemon's web address for the item at `path`, empty when it has none; `None` when no daemon answers.
+pub async fn web_link(path: &str) -> Option<String> {
+    let connection = zbus::Connection::session().await.ok()?;
+    let proxy = zbus::Proxy::new(&connection, BUS_NAME, OBJECT_PATH, INTERFACE).await.ok()?;
+    proxy.call("WebLink", &(path,)).await.ok()
+}
+
 /// The connection state, as SPEC names it.
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub enum State {
@@ -48,6 +57,9 @@ impl State {
     }
 }
 
+/// The answer to a web link request, which may list a folder to find the item.
+pub type WebLinkFuture = Pin<Box<dyn Future<Output = Option<String>> + Send>>;
+
 /// What the daemon can do on request; the daemon wires each to its tree, cache and mount.
 pub struct Actions {
     /// Bytes the content cache holds, and its limit.
@@ -62,6 +74,9 @@ pub struct Actions {
     pub clear_cache: Box<dyn Fn() + Send + Sync>,
     /// Unmount, which stops the daemon.
     pub unmount: Box<dyn Fn() -> Result<(), String> + Send + Sync>,
+    /// The web address in Immich of the item at a path, `None` for a path outside the mount or an item Immich has no
+    /// page for (ROADMAP.md, "Open in Immich").
+    pub web_link: Box<dyn Fn(std::path::PathBuf) -> WebLinkFuture + Send + Sync>,
 }
 
 /// The served object.
@@ -129,6 +144,12 @@ impl Daemon {
 
     fn unmount(&self) -> zbus::fdo::Result<()> {
         (self.actions.unmount)().map_err(zbus::fdo::Error::Failed)
+    }
+
+    /// The web address in Immich of the item at `path`; empty when the path is outside the mount or Immich has no page
+    /// for the item. The menu items in Files and Dolphin ask this.
+    async fn web_link(&self, path: String) -> String {
+        (self.actions.web_link)(path.into()).await.unwrap_or_default()
     }
 
     /// `StateChanged(state, message)`; named apart in Rust from the `State` property's own change signal.

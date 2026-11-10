@@ -1,4 +1,5 @@
-# The KDE app, from a binary built in the same Fedora release (release.yml, "fedora-apps"); nothing is compiled here.
+# The KDE app and its Dolphin plugin, from binaries built in the same Fedora release (release.yml, "fedora-apps");
+# nothing is compiled here.
 # rpmbuild -bb --define "pkg_version <version>" --define "payload <directory>" immich-mount-kde.spec
 %global debug_package %{nil}
 %global source_date_epoch_from_changelog 0
@@ -20,7 +21,8 @@ Requires:       xdg-utils
 %description
 Signs in to a self-hosted Immich server (single sign-on in the browser, email and
 password, or an API key), keeps the credential in KWallet or another keyring, and
-starts the mount that shows the library in Dolphin.
+starts the mount that shows the library in Dolphin. Its Dolphin plugin offers
+Open in Immich and Copy Immich Link on the drive's photos, albums, people and places.
 
 Immich Mount is an independent, unofficial project. It is not affiliated with,
 endorsed by, or sponsored by the Immich project or FUTO. "Immich" is used only to
@@ -28,10 +30,12 @@ describe the server this software works with, and remains the mark of its owner.
 
 %install
 install -Dm755 %{payload}/immich-mount-kde %{buildroot}%{_bindir}/immich-mount-kde
+install -Dm755 %{payload}/immich-mount-dolphin.so %{buildroot}%{_libdir}/qt6/plugins/kf6/kfileitemaction/immich-mount-dolphin.so
 install -Dm644 %{payload}/LICENSE %{buildroot}%{_licensedir}/%{name}/LICENSE
 install -Dm644 %{payload}/THIRD-PARTY-LICENSES.md %{buildroot}%{_licensedir}/%{name}/THIRD-PARTY-LICENSES.md
 
 %files
 %{_bindir}/immich-mount-kde
+%{_libdir}/qt6/plugins/kf6/kfileitemaction/immich-mount-dolphin.so
 %license %{_licensedir}/%{name}/LICENSE
 %license %{_licensedir}/%{name}/THIRD-PARTY-LICENSES.md

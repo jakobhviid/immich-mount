@@ -79,6 +79,11 @@ pub trait LibrarySource: Send + Sync {
     fn archive_assets(&self) -> impl Future<Output = Result<Vec<Asset>, SourceError>> + Send;
     /// The Assets marked as favorites, archived ones included.
     fn favorite_assets(&self) -> impl Future<Output = Result<Vec<Asset>, SourceError>> + Send;
+    /// One Asset by id, for a link that names it; `NotFound` when the account cannot see it, or it is trashed or
+    /// hidden. A source without it finds nothing.
+    fn asset(&self, _asset_id: &str) -> impl Future<Output = Result<Asset, SourceError>> + Send {
+        async { Err(SourceError::NotFound) }
+    }
     /// What changed since the last call, in the library and in the sections `watched` names. The first call only takes
     /// note of the current state, as does the first call that watches a section.
     fn changes(&self, _watched: Watched) -> impl Future<Output = Result<LibraryChanges, SourceError>> + Send {
@@ -120,6 +125,9 @@ impl<Shared: LibrarySource> LibrarySource for std::sync::Arc<Shared> {
     }
     async fn favorite_assets(&self) -> Result<Vec<Asset>, SourceError> {
         self.as_ref().favorite_assets().await
+    }
+    async fn asset(&self, asset_id: &str) -> Result<Asset, SourceError> {
+        self.as_ref().asset(asset_id).await
     }
     async fn changes(&self, watched: Watched) -> Result<LibraryChanges, SourceError> {
         self.as_ref().changes(watched).await

@@ -10,6 +10,7 @@ use std::time::{Duration, Instant};
 
 use chrono::{DateTime, Utc};
 
+use crate::links::ImmichItem;
 use crate::layout::{
     album_folder_base, album_year_folder, day_folder_name, month_folder_name, year_folder_name, AlbumLayout,
     GroupingMode, Section,
@@ -454,6 +455,115 @@ impl<Source: LibrarySource, Names: NameMemory> Tree<Source, Names> {
         Ok(self.list(parent).await?.into_iter().find(|entry| entry.name == name))
     }
 
+    /// The key of the item a link names, where this mount shows it (ROADMAP.md, "Show in Immich Mount"); `None` where
+    /// it shows it nowhere: a section that is off, a person the People section leaves out, an id the account cannot
+    /// see, a photo that is not in the folder the link names. A photo's date folders come from the Asset itself; a
+    /// photo of the timeline that is archived shows in Archive when that section is on.
+    pub async fn locate(&self, item: &ImmichItem) -> Result<Option<NodeKey>, SourceError> {
+        let ImmichItem::Asset { within, asset_id } = item else {
+            return self.locate_folder(item).await;
+        };
+        let asset = match self.source.asset(asset_id).await {
+            Ok(asset) => asset,
+            Err(SourceError::NotFound) => return Ok(None),
+            Err(error) => return Err(error),
+        };
+        match within.as_deref() {
+            None => match self.find_asset(NodeKey::Section(SectionKey::Photos), &asset).await? {
+                Some(key) => Ok(Some(key)),
+                None => self.find_asset(NodeKey::Section(SectionKey::Archive), &asset).await,
+            },
+            Some(folder) => match self.locate_folder(folder).await? {
+                Some(folder) => self.find_asset(folder, &asset).await,
+                None => Ok(None),
+            },
+        }
+    }
+
+    /// The key of a folder a link names, when this mount lists it.
+    async fn locate_folder(&self, item: &ImmichItem) -> Result<Option<NodeKey>, SourceError> {
+        let key = match (item.folder_key(), item) {
+            (Some(key), _) => key,
+            // Immich's Places page names a city alone; the first country listing it is taken.
+            (None, ImmichItem::City { country: None, city }) => {
+                let mut found = None;
+                for country in self.source.countries().await? {
+                    if self.source.cities(&country).await?.iter().any(|listed| listed == city) {
+                        found = Some(NodeKey::City { country, city: city.clone() });
+                        break;
+                    }
+                }
+                match found {
+                    Some(key) => key,
+                    None => return Ok(None),
+                }
+            }
+            (None, _) => return Ok(None),
+        };
+        Ok(self.entry_of(&key).await?.map(|_| key))
+    }
+
+    /// The Asset's key inside `folder` (a section, an album, a person, a city), going down the date folders it falls
+    /// in; `None` when the folder is not shown, or does not hold it.
+    async fn find_asset(&self, folder: NodeKey, asset: &Asset) -> Result<Option<NodeKey>, SourceError> {
+        if self.entry_of(&folder).await?.is_none() {
+            return Ok(None);
+        }
+        let mut folder = folder;
+        loop {
+            let entries = match self.list(&folder).await {
+                Ok(entries) => entries,
+                Err(SourceError::NotFound) => return Ok(None),
+                Err(error) => return Err(error),
+            };
+            let target = NodeKey::Asset { parent: Box::new(folder.clone()), asset_id: asset.id.clone() };
+            if entries.iter().any(|entry| entry.node == target) {
+                return Ok(Some(target));
+            }
+            match entries.into_iter().find(|entry| holds_date_of(&entry.node, asset)) {
+                Some(entry) => folder = entry.node,
+                None => return Ok(None),
+            }
+        }
+    }
+
+    /// The names from the root down to `node`, as the file manager shows them; `None` when a folder on the way no
+    /// longer lists the next.
+    pub async fn path_of(&self, node: &NodeKey) -> Result<Option<Vec<String>>, SourceError> {
+        let mut names = Vec::new();
+        let mut current = node.clone();
+        while current != NodeKey::Root {
+            match self.entry_of(&current).await? {
+                Some((parent, entry)) => {
+                    names.push(entry.name);
+                    current = parent;
+                }
+                None => return Ok(None),
+            }
+        }
+        names.reverse();
+        Ok(Some(names))
+    }
+
+    /// The key of the entry at `names` below the root, one folder or file name each; `None` when a name is not
+    /// there. Each folder is looked up in the listing at hand however old, as the file manager that asks has just
+    /// shown it, and read from the source only when there is none. Names are kept per folder, so an old listing still
+    /// gives the item the name means.
+    pub async fn key_at(&self, names: &[&str]) -> Result<Option<NodeKey>, SourceError> {
+        let mut node = NodeKey::Root;
+        for name in names {
+            let entries = match self.stale_listing(&node) {
+                Some(entries) => entries,
+                None => self.list(&node).await?,
+            };
+            match entries.into_iter().find(|entry| entry.name == *name) {
+                Some(entry) => node = entry.node,
+                None => return Ok(None),
+            }
+        }
+        Ok(Some(node))
+    }
+
     async fn list_uncached(&self, node: &NodeKey) -> Result<Vec<Entry>, SourceError> {
         match node {
             NodeKey::Root => Ok(self.root_entries()),
@@ -655,6 +765,18 @@ impl<Source: LibrarySource, Names: NameMemory> Tree<Source, Names> {
     }
 }
 
+/// Whether a date folder holds the Asset's date: its year, month or day, in the timeline or in an album, person,
+/// place or section.
+fn holds_date_of(node: &NodeKey, asset: &Asset) -> bool {
+    let month = YearMonth { year: asset.year(), month: asset.month() };
+    match node {
+        NodeKey::TimelineYear(year) | NodeKey::GroupYear { year, .. } => *year == asset.year(),
+        NodeKey::TimelineMonth(folder_month) | NodeKey::GroupMonth { month: folder_month, .. } => *folder_month == month,
+        NodeKey::TimelineDay(folder_month, day) => *folder_month == month && *day == asset.day(),
+        _ => false,
+    }
+}
+
 fn folder(name: String, node: NodeKey) -> Entry {
     Entry { name, node, kind: EntryKind::Folder }
 }
@@ -727,6 +849,9 @@ mod tests {
         async fn favorite_assets(&self) -> Result<Vec<Asset>, SourceError> {
             Ok(self.find(&self.favorites))
         }
+        async fn asset(&self, asset_id: &str) -> Result<Asset, SourceError> {
+            self.assets.iter().find(|asset| asset.id == asset_id).cloned().ok_or(SourceError::NotFound)
+        }
     }
 
     fn asset(id: &str, original: &str, day: u32, second: u32, uploaded_minute: u32) -> Asset {
@@ -773,6 +898,89 @@ mod tests {
         assert!(is_touched(&archive_month, &archived) && !is_touched(&NodeKey::TimelineMonth(march), &archived));
         let favorited = LibraryChanges { favorites_changed: true, ..Default::default() };
         assert!(is_touched(&NodeKey::Section(SectionKey::Favorites), &favorited) && !is_touched(&archive_month, &favorited));
+    }
+
+    #[tokio::test]
+    async fn a_path_of_names_gives_the_key_it_shows() {
+        let library = FakeLibrary { assets: vec![asset("a", "IMG_1.JPG", 15, 7, 1)], ..Default::default() };
+        let tree = tree(library, Config::from_toml("").unwrap());
+        assert_eq!(tree.key_at(&[]).await.unwrap(), Some(NodeKey::Root));
+        let year = tree.list(&NodeKey::Section(SectionKey::Photos)).await.unwrap().remove(0);
+        let month = tree.list(&year.node).await.unwrap().remove(0);
+        let file = tree.list(&month.node).await.unwrap().remove(0);
+        let names = ["Photos", year.name.as_str(), month.name.as_str(), file.name.as_str()];
+        assert_eq!(tree.key_at(&names).await.unwrap(), Some(file.node));
+        assert_eq!(tree.key_at(&["Photos", year.name.as_str(), "nothing here"]).await.unwrap(), None);
+        assert_eq!(tree.key_at(&["Places", "Denmark", "Odense"]).await.unwrap(), Some(NodeKey::City { country: "Denmark".into(), city: "Odense".into() }));
+    }
+
+    fn linked_library() -> FakeLibrary {
+        let created = Utc.with_ymd_and_hms(2024, 1, 1, 0, 0, 0).unwrap();
+        FakeLibrary {
+            assets: vec![asset("a", "IMG_1.JPG", 15, 7, 1), asset("b", "IMG_2.JPG", 16, 8, 2)],
+            albums: vec![(Album { id: "trip".into(), name: "Trip".into(), year: Some(2024), created_at: created }, vec!["a".into()])],
+            people: vec![
+                (Person { id: "ann".into(), name: "Ann".into(), is_hidden: false, created_at: created }, vec!["b".into()]),
+                (Person { id: "hid".into(), name: "Hidden".into(), is_hidden: true, created_at: created }, vec!["b".into()]),
+            ],
+            archived: vec!["b".into()],
+            ..Default::default()
+        }
+    }
+
+    fn photo(asset_id: &str, within: Option<ImmichItem>) -> ImmichItem {
+        ImmichItem::Asset { within: within.map(Box::new), asset_id: asset_id.into() }
+    }
+
+    #[tokio::test]
+    async fn a_link_finds_its_item_where_the_mount_shows_it() {
+        let mut config = Config::from_toml("").unwrap();
+        config.grouping_albums = GroupingMode::Always;
+        let tree = tree(linked_library(), config);
+        let march = YearMonth { year: 2024, month: 3 };
+        let in_album = tree.locate(&photo("a", Some(ImmichItem::Album("trip".into())))).await.unwrap().unwrap();
+        let album_month = NodeKey::GroupMonth { base: Box::new(NodeKey::Album("trip".into())), month: march };
+        assert_eq!(in_album, NodeKey::Asset { parent: Box::new(album_month), asset_id: "a".into() }, "down the album's date folders");
+        let names = tree.path_of(&in_album).await.unwrap().unwrap();
+        assert_eq!(&names[..3], ["Albums", "2024 - Trip", "2024"]);
+        assert_eq!(tree.key_at(&names.iter().map(String::as_str).collect::<Vec<_>>()).await.unwrap(), Some(in_album), "the path leads back");
+        let in_timeline = tree.locate(&photo("a", None)).await.unwrap().unwrap();
+        assert_eq!(in_timeline, NodeKey::Asset { parent: Box::new(NodeKey::TimelineMonth(march)), asset_id: "a".into() });
+        assert_eq!(
+            tree.locate(&photo("b", Some(ImmichItem::Person("ann".into())))).await.unwrap(),
+            Some(NodeKey::Asset { parent: Box::new(NodeKey::Person("ann".into())), asset_id: "b".into() })
+        );
+        let odense = ImmichItem::City { country: None, city: "Odense".into() };
+        assert_eq!(tree.locate(&odense).await.unwrap(), Some(NodeKey::City { country: "Denmark".into(), city: "Odense".into() }), "a city by its name alone");
+        assert_eq!(tree.path_of(&NodeKey::Section(SectionKey::Places)).await.unwrap(), Some(vec!["Places".to_owned()]));
+    }
+
+    #[tokio::test]
+    async fn a_link_to_what_the_mount_does_not_show_finds_nothing() {
+        let tree = tree(linked_library(), Config::from_toml("").unwrap());
+        let nothing = [
+            photo("a", Some(ImmichItem::Person("ann".into()))),
+            photo("missing", None),
+            ImmichItem::Person("hid".into()),
+            ImmichItem::Album("gone".into()),
+            ImmichItem::Section(SectionKey::Archive),
+            photo("b", Some(ImmichItem::Section(SectionKey::Archive))),
+            ImmichItem::City { country: Some("Denmark".into()), city: "Aarhus".into() },
+        ];
+        for item in nothing {
+            assert_eq!(tree.locate(&item).await.unwrap(), None, "{item:?}");
+        }
+        let mut config = Config::from_toml("").unwrap();
+        config.show_archive = true;
+        let with_archive = super::tests::tree(linked_library(), config);
+        assert_eq!(
+            with_archive.locate(&photo("b", Some(ImmichItem::Section(SectionKey::Archive)))).await.unwrap(),
+            Some(NodeKey::Asset {
+                parent: Box::new(NodeKey::GroupMonth { base: Box::new(NodeKey::Section(SectionKey::Archive)), month: YearMonth { year: 2024, month: 3 } }),
+                asset_id: "b".into()
+            }),
+            "shown once the section is on, in its date folders"
+        );
     }
 
     #[tokio::test]

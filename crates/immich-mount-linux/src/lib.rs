@@ -5,6 +5,7 @@
 //! interface (ARCHITECTURE.md, "Crates").
 
 pub mod caller;
+pub mod clipboard;
 pub mod credentials;
 pub mod daemon;
 pub mod dbus;

@@ -519,6 +519,18 @@ impl LibrarySource for ImmichSource {
         self.note_outcome(&outcome);
         outcome
     }
+
+    async fn asset(&self, asset_id: &str) -> Result<Asset, SourceError> {
+        self.check_online()?;
+        let outcome = self.client.asset(asset_id).await.map_err(source_error);
+        self.note_outcome(&outcome);
+        let asset = outcome?;
+        if is_shown(&asset) {
+            Ok(to_asset(asset))
+        } else {
+            Err(SourceError::NotFound)
+        }
+    }
 }
 
 impl ContentSource for ImmichSource {

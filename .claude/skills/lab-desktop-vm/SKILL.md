@@ -102,6 +102,15 @@ JPEGs: `fixtures`, then `open <name> <dir>` (cold cache, settle, screenshot, who
   enough for the key to repeat: turn repeat off first (`gsettings set org.gnome.desktop.peripherals.keyboard repeat
   false` in the session), or Files fills its search with the key. A key whose release was lost stays held; send its
   release alone. Files' grid view swallows Alt+Up; its bottom bar's back and forward buttons, clicked, always work.
+- **Files' context menu:** `exp/input.sh` has no right click; with the item selected (`nautilus --select <path>`,
+  which selects one file however many are given), `input.sh key Escape` then `key Menu` opens it (the Escape takes
+  the dropped first event). Resize the window to the screen first, or a menu opened upward is cut off. A second
+  item joins the selection by a Ctrl+click: one Eval each for `Clutter.KEY_Control_L` pressed, the button pressed
+  and released, and the key released.
+- **There is no browser:** to see the address something opens, make a `.desktop` entry whose `Exec` appends `%u` to
+  a file, and `gio mime x-scheme-handler/http <entry>.desktop` (and `https`). The clipboard reads back through the
+  shell: an Eval of `St.Clipboard.get_default().get_text(St.ClipboardType.CLIPBOARD, (c, text) => { global._clip =
+  text; })`, then a second Eval of `global._clip`.
 - **`gio info` hides `filesystem::*`** unless given `-f`.
 - **gvfs coalesces a quick unmount and remount,** keeping the old volume and its name. Wait until the mount is gone
   from `gio mount -l` before mounting again.
@@ -127,6 +136,14 @@ JPEGs: `fixtures`, then `open <name> <dir>` (cold cache, settle, screenshot, who
   fake input protocol, as KDE Connect does; any other click on the screen closes the menu. Its lines are also on
   D-Bus (`gdbus call --session --dest dev.hviid.ImmichMount.Daemon --object-path /MenuBar --method
   com.canonical.dbusmenu.GetLayout -- 0 -1 "[]"`), and `Event` clicks one (`-- 4 clicked "<int32 0>" 0`).
+- **Dolphin's context menu** is not on the accessibility bus, and its file items offer no actions there.
+  `in-session click.py <x> <y> right` opens it on the item at that place (the first item of a folder in icon view
+  is at 567 270 on the 1440 by 900 screen, the next ones 149 px right and 119 px down), and a screenshot shows it.
+  Selecting two items needs Ctrl held, which the fake input protocol also sends (`keyboard_key(29, ...)`).
+- **The Plasma session is not started by `startplasma`,** so `~/.config/plasma-workspace/env/*.sh` is never
+  sourced. To try such a script, do what `startplasma` does: `/bin/sh /usr/libexec/plasma-sourceenv.sh <script>`
+  prints the environment it makes, and `dbus-update-activation-environment --systemd NAME=value` hands a variable to
+  the apps started next; `systemctl --user unset-environment NAME` takes it back.
 - **Harmless noise:** "Error registering session with GDM", and `xdg-desktop-portal` failing because
   `graphical-session.target` is inactive.
 

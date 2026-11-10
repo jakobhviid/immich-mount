@@ -41,6 +41,27 @@
 		<string>$(TeamIdentifierPrefix)$(IMMICH_IDENTITY)</string>
 		<key>NSExtensionFileProviderSupportsEnumeration</key>
 		<true/>
+		<!-- Finder's Open in Immich and Copy Immich Link, on one item with a web address (FileProviderItem's userInfo).
+		     Finder looks their names up in the extension's Localizable.strings, made from po/ by po/i18n.py. -->
+		<key>NSExtensionFileProviderActions</key>
+		<array>
+			<dict>
+				<key>NSExtensionFileProviderActionIdentifier</key>
+				<string>dev.hviid.ImmichMount.open-in-immich</string>
+				<key>NSExtensionFileProviderActionName</key>
+				<string>Open in Immich</string>
+				<key>NSExtensionFileProviderActionActivationRule</key>
+				<string>fileproviderItems.@count == 1 AND SUBQUERY(fileproviderItems, $item, $item.userInfo.hasWebLink == YES).@count == 1</string>
+			</dict>
+			<dict>
+				<key>NSExtensionFileProviderActionIdentifier</key>
+				<string>dev.hviid.ImmichMount.copy-link</string>
+				<key>NSExtensionFileProviderActionName</key>
+				<string>Copy Immich Link</string>
+				<key>NSExtensionFileProviderActionActivationRule</key>
+				<string>fileproviderItems.@count == 1 AND SUBQUERY(fileproviderItems, $item, $item.userInfo.hasWebLink == YES).@count == 1</string>
+			</dict>
+		</array>
 	</dict>
 	<key>ImmichMountAppGroup</key>
 	<string>$(TeamIdentifierPrefix)$(IMMICH_IDENTITY)</string>

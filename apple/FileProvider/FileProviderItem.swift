@@ -36,6 +36,10 @@ final class FileProviderItem: NSObject, NSFileProviderItem {
     var creationDate: Date? { item.taken }
     var contentModificationDate: Date? { item.taken }
 
+    /// What Finder's actions are offered by (the activation rules in Info.plist): `hasWebLink`, for Open in Immich and
+    /// Copy Immich Link.
+    var userInfo: [AnyHashable: Any]? { ["hasWebLink": item.hasWebLink] }
+
     var itemVersion: NSFileProviderItemVersion {
         NSFileProviderItemVersion(contentVersion: Data(item.contentVersion.utf8), metadataVersion: Data(item.version.utf8))
     }

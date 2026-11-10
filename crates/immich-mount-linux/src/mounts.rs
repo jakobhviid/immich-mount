@@ -30,6 +30,32 @@ pub fn canonical_mount_point(path: &Path) -> PathBuf {
     }
 }
 
+/// The names from the mount point down to `path`, empty for the mount point itself; `None` for a path outside the
+/// mount, relative, with `..` in it, or not UTF-8. `mount_point` is canonical (`canonical_mount_point`); `path` may
+/// reach it another way, such as through `/home` on Fedora Atomic. Only folders outside the mount are resolved, so
+/// the mount is never touched.
+pub fn names_below(path: &Path, mount_point: &Path) -> Option<Vec<String>> {
+    use std::path::Component;
+    if !path.is_absolute() || path.components().any(|component| component == Component::ParentDir) {
+        return None;
+    }
+    let cleaned: PathBuf = path.components().filter(|component| *component != Component::CurDir).collect();
+    let below = match cleaned.strip_prefix(mount_point) {
+        Ok(below) => below.to_path_buf(),
+        Err(_) => {
+            // The highest folder of the mount's name whose parent is the mount's parent: never one inside the mount.
+            let mut ancestors: Vec<&Path> = cleaned.ancestors().collect();
+            ancestors.reverse();
+            let reached = ancestors
+                .into_iter()
+                .filter(|ancestor| ancestor.file_name().is_some() && ancestor.file_name() == mount_point.file_name())
+                .find(|ancestor| canonical_mount_point(ancestor) == mount_point)?;
+            cleaned.strip_prefix(reached).ok()?.to_path_buf()
+        }
+    };
+    below.components().map(|component| component.as_os_str().to_str().map(str::to_owned)).collect()
+}
+
 /// Whether an Immich FUSE mount is listed at `path` in this process's mount table.
 pub fn is_listed(path: &Path) -> bool {
     let Ok(table) = std::fs::read_to_string("/proc/self/mountinfo") else {
@@ -112,6 +138,23 @@ fn run_with_timeout(mut command: Command, timeout: Duration) -> Result<(), Strin
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    #[test]
+    fn names_below_the_mount_point_by_any_way_there() {
+        let home = tempfile::tempdir().unwrap();
+        let real = home.path().join("var-home");
+        std::fs::create_dir(&real).unwrap();
+        std::os::unix::fs::symlink(&real, home.path().join("home")).unwrap();
+        let mount_point = canonical_mount_point(&real.join("Immich"));
+        let names = |path: PathBuf| names_below(&path, &mount_point);
+        assert_eq!(names(real.join("Immich")), Some(vec![]));
+        assert_eq!(names(real.join("Immich/Albums/Trip/a b.jpg")), Some(vec!["Albums".into(), "Trip".into(), "a b.jpg".into()]));
+        assert_eq!(names(home.path().join("home/Immich/Albums/./Trip")), Some(vec!["Albums".into(), "Trip".into()]), "through the link");
+        assert_eq!(names(real.join("Immich/Albums/Immich/x")), Some(vec!["Albums".into(), "Immich".into(), "x".into()]));
+        assert_eq!(names(real.join("Other/Immich")), None);
+        assert_eq!(names(real.join("Immich/../secret")), None);
+        assert_eq!(names(PathBuf::from("Immich/Albums")), None);
+    }
 
     #[test]
     fn a_mount_by_fusermount3_and_one_by_root_both_count() {

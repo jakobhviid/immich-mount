@@ -71,6 +71,15 @@ Traps (verified on macOS 27.0.1 with Xcode 27.2):
   control that app, and accepting widens what every SSH session may do: a laptop setting this skill must not touch.
   Quit the Dev app with `pkill -f "Immich Mount Dev.app/Contents/MacOS"` (a signal needs no permission; macOS cuts
   process names at 15 characters, so `pkill -x` misses it), and ask the maintainer what is on screen.
+- **SSH may not read the location or the App Group:** on macOS 27.2 (seen on 2026-11-10), `ls` of
+  `~/Library/CloudStorage/<location>` and of `~/Library/Group Containers/<group>` from SSH answers "Operation not
+  permitted", the release's location too, so nothing over SSH can list a folder, read a file there or leave a file for
+  the extension. Granting sshd access is a laptop setting: not ours. `fileproviderctl evaluate <path>` (below) still
+  works on items the system already knows, and the unified log shows what the extension did.
+- **`dev-app.sh` starts the app,** which shows its sign-in window on the maintainer's screen when nobody is signed in;
+  `open -n ... -signInServer` then starts a second instance beside it. Quit the first (`pkill -f "Immich Mount
+  Dev.app/Contents/MacOS"`) before signing in with launch arguments, or the window stays up for anyone at the Mac to
+  sign in with.
 - **zsh aborts a command whose glob matches nothing** ("no matches found"), and the rest of an SSH command line with
   it. Run cleanup scripts through `bash -s`.
 
@@ -137,7 +146,9 @@ socat TCP-LISTEN:2283,bind=127.0.0.1,reuseaddr,fork \
 ssh -N -o ExitOnForwardFailure=yes -o ServerAliveInterval=30 -R 127.0.0.1:2283:127.0.0.1:2283 "$MAC_HOST" &
 ```
 
-On the Mac the server is then `http://127.0.0.1:2283` (verified). Background jobs end after two hours, the tunnels
+The `incus exec` side needs `socat` in the server's container (`apt-get install -y socat` there, the
+`lab-immich-server` skill); without it each connection ends at once ("Command not found" in socat's output, an empty
+reply on the Mac). On the Mac the server is then `http://127.0.0.1:2283` (verified). Background jobs end after two hours, the tunnels
 with them; `lab/mac/check.sh` opens its own when nothing answers there, and closes them at its end. The tunnel starts an `incus exec` per connection,
 which is slow when many open at once: a request that times out makes the extension take the server as offline for
 45 seconds ("the server was unreachable moments ago"), as Linux does, so run checks one at a time. Loopback is not the local network, so macOS's
@@ -183,9 +194,16 @@ the extension switched on; it works through the checkout's `apple/build/check/`,
   extension is switched on: `fileproviderctl dump | grep -A4 '^domain: dev.hviid' | grep enabled`. macOS 27's
   `fileproviderctl` also has `diagnose`, `evaluate` and `check`.
 - **The location on disk:** `~/Library/CloudStorage/ImmichMount-ImmichMount` (the drive's name, `mount.name`,
-  without spaces), which SSH can list and read (verified).
+  without spaces), which SSH could list and read on macOS 27.0.1, and may not on 27.2 (Traps).
 - **Thumbnails as Finder asks for them:** `xcrun swift lab/mac/thumbnail.swift <file>` (QLThumbnailGenerator).
   `qlmanage -t` reads the file itself, which downloads the original: no test of the extension's thumbnails.
+- **Finder's actions on an item** (Open in Immich, Copy Immich Link): `cd` into the location and run
+  `fileproviderctl evaluate <path>`; it prints the item as the system holds it (its `userInfo` among it) and each
+  action's activation rule with YES or NO, which is what Finder's menu offers. Only for items the system already knows
+  (a folder Finder or an enumeration listed); a path it does not know is "Couldn't find a file". It takes one path,
+  so a rule about several selected items is not evaluated there. Each action the extension performs logs the address
+  it opened or copied (`category == "extension"`), and `pbpaste` over SSH reads the session's pasteboard, so a copy
+  can be checked (and replaces whatever the maintainer had copied).
 - **Info-level lines** (downloads, listings) show only with `/usr/bin/log show --info`.
 - **The app's windows,** when one "does not appear": `xcrun swift lab/mac/windows.swift` lists each window's layer,
   bounds and whether it is on screen, without Screen Recording permission (it reads no names or images). A window

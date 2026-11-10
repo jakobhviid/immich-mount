@@ -117,8 +117,10 @@ review covering safety, correctness, and docs against behaviour.
 Build on Fedora 44, or in a Fedora 44 toolbox (the easy way on an immutable host such as Silverblue or CoreOS:
 `toolbox create -r 44 immich-mount`).
 - **Packages:** `gcc`, `cargo`, `rust`, `clippy` and `rustfmt`. The GNOME app also needs `gtk4-devel`,
-  `libadwaita-devel` and `blueprint-compiler`, and the KDE app `gcc-c++`, `qt6-qtbase-devel` and
-  `qt6-qtdeclarative-devel`.
+  `libadwaita-devel` and `blueprint-compiler`, and its Files extension `nautilus-devel` (in a toolbox it installs
+  only with `dnf install --allowerasing`, which swaps `systemd-standalone-tmpfiles` for systemd). The KDE app needs
+  `gcc-c++`, `qt6-qtbase-devel` and `qt6-qtdeclarative-devel`, and its Dolphin plugin `kf6-kio-devel`,
+  `extra-cmake-modules` and `cmake`.
 - **Mounting** needs `/dev/fuse` and a setuid `fusermount3` (package `fuse3`). The daemon can be mounted and tested
   on the development host directly.
 - **A global cargo linker the toolbox lacks** (zig through `cargo-zigbuild`, say, on a host without a C toolchain)

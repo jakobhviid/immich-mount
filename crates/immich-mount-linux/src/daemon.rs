@@ -32,6 +32,9 @@ const UNINSTALL_GRACE: Duration = Duration::from_secs(120);
 /// How often the daemon asks Immich what changed, so a change made elsewhere shows within seconds. Unchanged, that
 /// costs two 304 answers, and for a session an empty sync stream.
 const CHANGE_POLL: Duration = Duration::from_secs(10);
+/// How long finding a path's item for its web address may take: a folder the file manager shows is listed already, so
+/// this is reached only for a path typed by hand, while the server is slow.
+const WEB_LINK_LIMIT: Duration = Duration::from_secs(10);
 
 #[derive(Debug, thiserror::Error)]
 pub enum DaemonError {
@@ -226,6 +229,18 @@ where
             refresh: Box::new(move || refresh_tree.forget_all()),
             clear_cache: Box::new(move || clear_cache.clear()),
             unmount: Box::new(move || unmount(&unmount_point, false)),
+            web_link: Box::new({
+                let (tree, mount_point, server_url) = (tree.clone(), mount_point.to_path_buf(), server.url.clone());
+                move |path| {
+                    let (tree, names, server_url) = (tree.clone(), crate::mounts::names_below(&path, &mount_point), server_url.clone());
+                    Box::pin(async move {
+                        let names = names?;
+                        let names: Vec<&str> = names.iter().map(String::as_str).collect();
+                        let key = tokio::time::timeout(WEB_LINK_LIMIT, tree.key_at(&names)).await.ok()?.ok()??;
+                        immich_mount_core::links::web_address(&server_url, &key)
+                    })
+                }
+            }),
         }
     };
     let mount_text = mount_point.display().to_string();

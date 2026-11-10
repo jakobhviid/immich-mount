@@ -78,8 +78,8 @@ jobs:
     steps:
       - name: Build dependencies
         run: |
-          dnf install -y -q git gcc gcc-c++ cargo rust clippy gtk4-devel libadwaita-devel blueprint-compiler rpm-build python3 \
-            qt6-qtbase-devel qt6-qtdeclarative-devel
+          dnf install -y -q git gcc gcc-c++ cargo rust clippy gtk4-devel libadwaita-devel blueprint-compiler nautilus-devel rpm-build python3 \
+            qt6-qtbase-devel qt6-qtdeclarative-devel cmake extra-cmake-modules kf6-kio-devel
       - uses: actions/checkout@v5
         with:
           fetch-depth: 0
@@ -107,12 +107,16 @@ jobs:
           payload="$PWD/dist/payload"
           mkdir -p "$payload"
           cp target/release/immich-mount-gnome LICENSE "$payload/"
+          # Files' Open in Immich, built against this Fedora's Nautilus.
+          crates/immich-mount-gnome/nautilus/build.sh "$payload/libimmich-mount-nautilus.so"
           python3 packaging/third-party-licenses.py "$payload/THIRD-PARTY-LICENSES.md" immich-mount-gnome
           rpmbuild -bb --define "_topdir $PWD/dist/rpmbuild" --define "pkg_version $VERSION" --define "payload $payload" \
             packaging/rpm/immich-mount-gnome.spec
           kde="$PWD/dist/payload-kde"
           mkdir -p "$kde"
           cp target/release/immich-mount-kde LICENSE "$kde/"
+          # Dolphin's Open in Immich, built against this Fedora's KF6 and Qt.
+          crates/immich-mount-kde/dolphin/build.sh "$kde/immich-mount-dolphin.so"
           python3 packaging/third-party-licenses.py "$kde/THIRD-PARTY-LICENSES.md" immich-mount-kde
           rpmbuild -bb --define "_topdir $PWD/dist/rpmbuild" --define "pkg_version $VERSION" --define "payload $kde" \
             packaging/rpm/immich-mount-kde.spec
@@ -122,6 +126,10 @@ jobs:
           app="$PWD/dist/app"
           mkdir -p "$app"
           cp target/release/immich-mount-gnome target/release/immich-mount-kde LICENSE packaging/icons/*.svg "$app/"
+          # Dolphin's plugin, which finds the translations beside itself too, in share/locale.
+          cp "$kde/immich-mount-dolphin.so" "$app/"
+          # Files' Open in Immich for nautilus-python, as the cask cannot write Nautilus's own folder in /usr.
+          cp crates/immich-mount-gnome/nautilus/immich-mount-nautilus.py "$app/"
           python3 po/i18n.py desktop packaging/desktop/dev.hviid.ImmichMount.desktop.in "$app/dev.hviid.ImmichMount.desktop"
           # The translations, where the programs look beside themselves (ARCHITECTURE.md, "Translations").
           python3 po/i18n.py mo "$app/share/locale"
@@ -148,8 +156,8 @@ jobs:
         run: |
           export DEBIAN_FRONTEND=noninteractive
           apt-get update -qq
-          apt-get install -y -qq git gcc g++ pkg-config libgtk-4-dev libadwaita-1-dev blueprint-compiler rustc cargo dpkg-dev python3 \
-            qt6-base-dev qt6-declarative-dev >/dev/null
+          apt-get install -y -qq git gcc g++ pkg-config libgtk-4-dev libadwaita-1-dev blueprint-compiler libnautilus-extension-dev rustc cargo dpkg-dev python3 \
+            qt6-base-dev qt6-declarative-dev cmake extra-cmake-modules libkf6kio-dev libkf6i18n-dev libkf6coreaddons-dev >/dev/null
       - uses: actions/checkout@v5
         with:
           fetch-depth: 0
@@ -172,6 +180,10 @@ jobs:
           cargo build --release -p immich-mount-gnome -p immich-mount-kde
           root=dist/deb-app
           install -Dm755 target/release/immich-mount-gnome "$root/usr/bin/immich-mount-gnome"
+          # Files' Open in Immich, built against this Ubuntu's Nautilus, in its extension directory.
+          extensions="$root$(pkg-config --variable=extensiondir libnautilus-extension-4)"
+          mkdir -p "$extensions"
+          crates/immich-mount-gnome/nautilus/build.sh "$extensions/libimmich-mount-nautilus.so"
           install -Dm644 LICENSE "$root/usr/share/doc/immich-mount-gnome/copyright"
           python3 packaging/third-party-licenses.py "$root/usr/share/doc/immich-mount-gnome/THIRD-PARTY-LICENSES.md" immich-mount-gnome
           mkdir -p "$root/DEBIAN"
@@ -179,13 +191,18 @@ jobs:
           dpkg-deb --root-owner-group --build "$root" "dist/immich-mount-gnome_${VERSION}_amd64.deb"
           root=dist/deb-kde
           install -Dm755 target/release/immich-mount-kde "$root/usr/bin/immich-mount-kde"
+          # Dolphin's Open in Immich, built against this Ubuntu's KF6 and Qt, in Qt's plugin folder.
+          plugins="$root/usr/lib/x86_64-linux-gnu/qt6/plugins/kf6/kfileitemaction"
+          mkdir -p "$plugins"
+          crates/immich-mount-kde/dolphin/build.sh "$plugins/immich-mount-dolphin.so"
           install -Dm644 LICENSE "$root/usr/share/doc/immich-mount-kde/copyright"
           python3 packaging/third-party-licenses.py "$root/usr/share/doc/immich-mount-kde/THIRD-PARTY-LICENSES.md" immich-mount-kde
           mkdir -p "$root/DEBIAN" debian
-          # The Qt libraries the binary links (dpkg-shlibdeps wants a debian/control), and the private QML ABI that
-          # cxx-qt's generated registration uses, which ties the package to this release's Qt.
+          # The Qt and KF6 libraries the binary and the plugin link (dpkg-shlibdeps wants a debian/control), and the
+          # private QML ABI that cxx-qt's generated registration uses, which ties the package to this release's Qt.
           echo "Source: immich-mount" > debian/control
-          shlibs=$(dpkg-shlibdeps -O -e "$root/usr/bin/immich-mount-kde" | sed 's/^shlibs:Depends=//')
+          shlibs=$(dpkg-shlibdeps -O -e "$root/usr/bin/immich-mount-kde" -e "$plugins/immich-mount-dolphin.so" |
+            sed 's/^shlibs:Depends=//')
           abi=$(dpkg-query -W -f='${Provides}' libqt6qml6 | grep -o 'qt6-declarative-private-abi (= [^)]*)')
           sed -e "s/@VERSION@/$VERSION/" -e "s/@ARCH@/amd64/" -e "s/@QT_DEPENDS@/$shlibs, $abi/" \
             packaging/deb/immich-mount-kde.control.in > "$root/DEBIAN/control"

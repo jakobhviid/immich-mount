@@ -16,6 +16,7 @@ use immich_mount_linux::daemon::StopReason;
 use immich_mount_linux::doctor::Status;
 use immich_mount_linux::paths::Paths;
 use serde::Serialize;
+use std::path::PathBuf;
 use std::process::ExitCode;
 
 /// The daemon's exit status after an upgrade (EX_TEMPFAIL), on which its user service starts the new version.
@@ -80,6 +81,15 @@ enum Command {
     Unmount,
     /// Remove the credential and every cache (settings are kept)
     Logout,
+    /// Open the item at a path in the mount in Immich's web app, in the default browser. With --json, print its web
+    /// address and open nothing
+    Web {
+        /// Put the address on the clipboard instead of opening it
+        #[arg(long)]
+        copy: bool,
+        /// A photo, video or folder in the mount
+        path: PathBuf,
+    },
     /// Print shell completions
     Completions {
         /// The shell to generate completions for
@@ -205,6 +215,18 @@ fn main() -> ExitCode {
                     println!("removed {}", path.display());
                 }
             }
+        })),
+        Some(Command::Web { copy, path }) => finish(commands::web(&paths, &path).and_then(|report| {
+            if json {
+                print_json(&report);
+            } else if copy {
+                immich_mount_linux::clipboard::copy(&report.url).map_err(anyhow::Error::msg)?;
+                println!("copied {}", report.url);
+            } else {
+                commands::open_in_browser(&report.url)?;
+                println!("opened {}", report.url);
+            }
+            Ok(())
         })),
         Some(Command::Completions { shell }) => {
             completions::print_completions(shell);

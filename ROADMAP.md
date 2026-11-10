@@ -344,7 +344,7 @@ kinds.
   Asset's `localDateTime` (`GET /assets/{id}`) to find its month, its day where `grouping.photos` splits the month, and
   its date groups where the folder's mode makes them.
 
-One module in `immich-mount-core` (`links.rs`) holds the map both ways, with no platform code: a key to its Immich
+One module in `immich-mount-core` (`links.rs`, built, with the protocol's test links passing) holds the map both ways, with no platform code: a key to its Immich
 path and kind, an Immich path to a key (given the Asset's date where needed), the web address and crosslink of a path,
 and reading a crosslink into one of the protocol's three results (show, cannot show, invalid). Every platform uses it,
 so the same item gives the same link everywhere. Unit tests cover every row of the table both ways, escaping (`|`,
@@ -358,55 +358,30 @@ given result.
 
 On one item at a time, inside the mount and nowhere else, two menu items: **Open in Immich** opens the item's web
 address in the default browser, and **Copy Immich Link** puts it on the clipboard. Offered only for items with an
-Immich path.
-
-- **The daemon** (Linux) knows every path's key: it walks the path from the mount point with the tree's `lookup`, as
-  the FUSE layer does. It answers on D-Bus (`crates/immich-mount-linux/src/dbus.rs`, interface
-  `dev.hviid.ImmichMount.Daemon1`): `WebLink(path s) → (url s)`, empty when the item has none or the path is outside
-  the mount, and `HasWebLink(uris as) → (b)`, true for exactly one `file://` URI with a web address, for Dolphin's
-  check below.
-- **The command** (`crates/immich-mount/src/commands.rs`): `immich-mount web <path>` opens the web address with
-  `xdg-open`; `--copy` puts it on the clipboard instead; `--json` prints `{"path":…,"url":…}` and opens nothing. A path
-  outside the mount, or one without a web address, exits non-zero, saying which. On the Mac there is no command
-  (ROADMAP, M7, "Open").
-- **Files:** a Nautilus extension in C (`libnautilus-extension-4`, Nautilus 43 and later), built and shipped in
-  `immich-mount-gnome` (`packaging/rpm`, `packaging/deb`), installed in Nautilus's extension directory. Its
-  `NautilusMenuProvider` offers the two items when one item is selected under the daemon's `MountPoint` and
-  `WebLink` (called with a 250 ms timeout) gives an address; it never offers them outside the mount, and offers
-  nothing when the daemon does not answer. It opens the address with `g_app_info_launch_default_for_uri` and copies
-  with GDK's clipboard. About 200 lines; no other dependency.
-- **Dolphin:** a service menu (`/usr/share/kio/servicemenus/dev.hviid.ImmichMount.desktop`), shipped in
-  `immich-mount-kde`, with the two actions running `immich-mount web %f` and `immich-mount web --copy %f`, shown only
-  where `X-KDE-ShowIfDBusCall=dev.hviid.ImmichMount.Daemon /dev/hviid/ImmichMount/Daemon
-  dev.hviid.ImmichMount.Daemon1 HasWebLink` answers true. If KIO does not pass the selection to that call (open
-  question below), a file item action plugin (`KAbstractFileItemActionPlugin`, C++, KF6) does the same, and step 3
-  needs it anyway.
-- **Finder:** two File Provider custom actions in the extension's Info.plist (`NSExtensionFileProviderActions`, in
-  `apple/FileProvider/Info.plist`), `dev.hviid.ImmichMount.open-in-immich` and `dev.hviid.ImmichMount.copy-link`, each
-  with the activation rule `fileproviderItems.@count == 1 AND SUBQUERY(fileproviderItems, $item,
-  $item.userInfo.hasWebLink == YES).@count == 1`. The bridge's `Item` (`crates/immich-mount-apple/src/lib.rs`) gains
-  `has_web_link`, which `FileProviderItem` returns in `userInfo`; `ITEM_FORMAT` goes from 4 to 5, so the app has the
-  system read every item again once, as for any format change. The extension's `performAction` hands the action to
-  the menu bar app: it writes `{action, identifier}` to a file in the App Group's `actions/` folder and posts the Darwin
-  notification `dev.hviid.ImmichMount.action`; the app reads the file, gets the address from the bridge
-  (`Library.web_link(identifier)`), and opens it with `NSWorkspace` or puts it on the pasteboard. At launch the app
-  also handles any file left in `actions/`. Whether the extension can start the app, or open the address itself, is
-  the first thing to try on the Mac (open questions).
-- **Words:** "Open in Immich" and "Copy Immich Link", in every catalog (`po/` and the Mac's), and in DESIGN.md's words
-  section.
-- **Docs:** SPEC (the command, the D-Bus members, the Files and Dolphin items, "In Finder"), WORKFLOWS (the command and
-  its JSON), ARCHITECTURE (the link map in the core, the menu bar app hand-off, the Nautilus extension and the service
-  menu, and why), README (the feature), CREDITS (Immich's web routes and mobile deep links define the paths; learned
-  from, nothing copied).
-- **Done when:** in the GNOME and Plasma VMs (`lab/check/run.sh`) the items show on a photo in Photos, in an album, in
-  a person and in a city, on an album and a city folder, open the right page on the lab server, and do not show on a
-  month folder, in Upload, or outside the mount; on the maintainer's Mac the same in Finder. Flatpak impact: the
-  Nautilus extension and the service menu are files on the host, which a Flatpak cannot install; the D-Bus members
-  and the command work from one.
+Immich path. **Built:** SPEC.md, "Links to Immich" and "In Finder", and ARCHITECTURE.md, "Links to Immich", have what
+it is and why; the daemon's `WebLink` on D-Bus, `immich-mount web`, a Nautilus extension in C (and in Python for
+Homebrew's cask), a Dolphin file item action plugin, and the File Provider extension's own actions in Finder. The
+words are in every catalog.
+- **Verified** (2026-11-10, the lab server on v3.3.6): in the Fedora 44 GNOME VM (Nautilus 50.4) and the Plasma VM,
+  with the daemon built from the branch, the items showed on a photo in Photos, in an album, in a person and in a city,
+  and on an album and a city folder; each opened the address `immich-mount web --json` gives, and Copy Immich Link
+  left it on the clipboard (in Dolphin also after Dolphin quit). They did not show on a month folder, in Upload, in a
+  folder copied into Upload, outside the mount, for two items, or (Files) with the daemon stopped, when the menu still
+  opened at once. On Bazzite 44 GNOME the Python extension did the same through `/home`, in Danish from the cask's
+  catalogs, and stayed quiet beside the C extension; on Bazzite 44 KDE the plugin built on Fedora 44 loaded from the
+  home folder through `QT_PLUGIN_PATH`. On the maintainer's Mac (macOS 27.2) the maintainer opened albums and photos
+  from Finder; over SSH, `fileproviderctl evaluate` offered the actions on the sections and refused them on Upload,
+  a year and a month folder, and the extension put an address on the pasteboard.
+- **Left:** Homebrew's cask installs the Python extension, the plugin and its Plasma login script (the tap's change
+  waits for the maintainer); a release check line for the items (`lab/check/`).
 
 ### Step 2: Show in Immich Mount, from any app
 
 Immich Mount takes crosslinks, and shows their item in the file manager, selected.
+
+**Built so far, in the core:** reading a crosslink to its result and a web address to its item (`links.rs`), and
+finding the item's key where the mount shows it and its path from the mount point (`Tree::locate`, `Tree::path_of`,
+with the Asset fetched by `LibrarySource::asset` for its date folders), each unit tested. The rest below is to do.
 
 - **Announcing and registering:** on Linux, the launcher entry (`packaging/desktop/dev.hviid.ImmichMount.desktop.in`)
   announces `X-Immich-Crosslink-Version=0.2` and `X-Immich-Crosslink-Shows=asset;album;person;place;page;`, and
@@ -489,14 +464,6 @@ switch per app), and Copy Link. Immich Mount is
 then one of the apps it finds, and Show in Immich Mount in the gallery is step 2.
 
 ### Open, to settle on each desktop
-- **Mac (step 1):** the menu bar app runs only while it is open or a login item. Can the extension start it when it
-  is not, or open the address itself (`NSWorkspace` from a non-UI File Provider extension), so the app is not needed?
-  Failing both, the actions work while the app runs, and otherwise the extension posts a notification asking to open
-  it.
-- **Dolphin (step 1):** whether `X-KDE-ShowIfDBusCall` is given the selected items, so the service menu shows only
-  inside the mount, or the plugin comes in step 1.
-- **Files (step 1):** whether one build of the extension serves every supported Nautilus, or each distribution's
-  package builds its own.
 - **Mac (step 2):** whether `getUserVisibleURL` finds an item in a folder Finder has never listed, through
   `item(for:)` up the parents, or the folder has to be listed first.
 - **Mac (step 3):** how soon Finder offers or drops an action after an app is installed or removed.

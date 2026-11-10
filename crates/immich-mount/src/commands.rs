@@ -332,3 +332,52 @@ fn remove_from_keyring() -> bool {
         }
     }
 }
+
+#[derive(Serialize)]
+pub struct WebReport {
+    pub path: PathBuf,
+    pub url: String,
+}
+
+/// The web address in Immich of the item at `path`, which the running daemon finds (ROADMAP.md, "Open in Immich").
+pub fn web(paths: &Paths, path: &std::path::Path) -> Result<WebReport> {
+    let path = absolute(path)?;
+    let mount_point = mounts::canonical_mount_point(&mount_point(paths)?);
+    if mounts::names_below(&path, &mount_point).is_none() {
+        anyhow::bail!("{} is not inside the mount at {}", path.display(), mount_point.display());
+    }
+    let path_text = path.to_str().context("the path is not UTF-8")?;
+    let runtime = tokio::runtime::Builder::new_current_thread().enable_all().build()?;
+    let url = runtime
+        .block_on(immich_mount_linux::dbus::web_link(path_text))
+        .context("the mount is not running; start it with `immich-mount mount`")?;
+    if url.is_empty() {
+        anyhow::bail!("Immich has no page for {} (only photos, albums, people, places and the sections have one)", path.display());
+    }
+    Ok(WebReport { path, url })
+}
+
+/// `path` from the current folder, with `.` and `..` taken away by name. The current folder is resolved already, and
+/// the mount holds no links, so this names the same file as the path does.
+fn absolute(path: &std::path::Path) -> Result<PathBuf> {
+    use std::path::Component;
+    let joined = std::env::current_dir().context("reading the current folder")?.join(path);
+    let mut cleaned = PathBuf::new();
+    for component in joined.components() {
+        match component {
+            Component::CurDir => {}
+            Component::ParentDir => {
+                cleaned.pop();
+            }
+            other => cleaned.push(other),
+        }
+    }
+    Ok(cleaned)
+}
+
+/// Open an address in the default browser.
+pub fn open_in_browser(url: &str) -> Result<()> {
+    let status = std::process::Command::new("xdg-open").arg(url).status().context("running xdg-open")?;
+    anyhow::ensure!(status.success(), "xdg-open could not open {url}");
+    Ok(())
+}

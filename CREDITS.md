@@ -35,6 +35,10 @@ between the two. Thank you, Kartax.
 AGPL-3.0. Immich Mount is an unofficial, independent client: it talks to the Immich REST API and contains no Immich
 code.
 
+Open in Immich links to the paths of Immich's web app (`web/src/lib/route.ts` and `web/src/routes/(user)/`), which
+its mobile app also takes as deep links (`mobile/lib/services/deep_link.service.dart`). We learned the paths and the
+search's JSON from them; nothing is copied.
+
 > Immich Mount is an independent, unofficial project. It is not affiliated with, endorsed by, or sponsored by the
 > Immich project or FUTO. "Immich" is used only to describe the server this software works with, and remains the
 > mark of its owner.

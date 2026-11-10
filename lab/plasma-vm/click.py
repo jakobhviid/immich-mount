@@ -1,7 +1,8 @@
 #!/usr/bin/env python3
 """Click the Plasma VM's screen at x y through KWin's fake input protocol (org_kde_kwin_fake_input, the one KDE
 Connect uses): the headless KWin reads no input devices, so this is how a click reaches what the accessibility bus
-cannot press, such as the system tray's icons. Run in the session (in-session click.py x y), as tester."""
+cannot press, such as the system tray's icons, or a right click that opens Dolphin's menu on an item. Run in the
+session (in-session click.py x y [right]), as tester."""
 import subprocess
 import sys
 import time
@@ -19,8 +20,9 @@ sys.path.insert(0, str(BINDINGS))
 from pywayland.client import Display  # noqa: E402
 from fake_input import OrgKdeKwinFakeInput  # noqa: E402
 
-BUTTON_LEFT = 0x110
+BUTTONS = {"left": 0x110, "right": 0x111}
 x, y = float(sys.argv[1]), float(sys.argv[2])
+button = BUTTONS[sys.argv[3] if len(sys.argv) > 3 else "left"]
 display = Display()
 display.connect()
 registry = display.get_registry()
@@ -41,9 +43,9 @@ fake.authenticate("lab click", "clicks for the lab's checks")
 fake.pointer_motion_absolute(x, y)
 display.roundtrip()
 time.sleep(0.1)
-fake.button(BUTTON_LEFT, 1)
+fake.button(button, 1)
 display.roundtrip()
 time.sleep(0.05)
-fake.button(BUTTON_LEFT, 0)
+fake.button(button, 0)
 display.roundtrip()
 display.disconnect()

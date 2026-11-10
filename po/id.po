@@ -18,20 +18,20 @@ msgstr "Immich tidak dikaitkan"
 msgid "The keyring stayed locked. Open Immich Mount, or run “immich-mount mount”, to try again."
 msgstr "Ring kunci tetap terkunci. Buka Immich Mount atau jalankan “immich-mount mount” untuk mencoba lagi."
 
-#: crates/immich-mount-linux/src/daemon.rs:306
+#: crates/immich-mount-linux/src/daemon.rs:321
 msgid "Immich is unreachable"
 msgstr "Immich tidak dapat dijangkau"
 
-#: crates/immich-mount-linux/src/daemon.rs:307
+#: crates/immich-mount-linux/src/daemon.rs:322
 msgid "The Immich server cannot be reached. Files you opened before stay available."
 msgstr "Server Immich tidak dapat dijangkau. Berkas yang pernah Anda buka tetap tersedia."
 
-#: crates/immich-mount-linux/src/daemon.rs:310
+#: crates/immich-mount-linux/src/daemon.rs:325
 #: crates/immich-mount-linux/src/tray.rs:70
 msgid "Signed out of Immich"
 msgstr "Telah keluar dari Immich"
 
-#: crates/immich-mount-linux/src/daemon.rs:311
+#: crates/immich-mount-linux/src/daemon.rs:326
 msgid "Immich no longer accepts this sign-in. Open Immich Mount to sign in again."
 msgstr "Immich tidak lagi menerima proses masuk ini. Buka Immich Mount untuk masuk lagi."
 
@@ -545,6 +545,20 @@ msgstr "Pintasan papan _ketik"
 #: crates/immich-mount-gnome/src/window.blp:372
 msgid "_About Immich Mount"
 msgstr "_Tentang Immich Mount"
+
+#: crates/immich-mount-gnome/nautilus/immich-mount-nautilus.c:100
+#: crates/immich-mount-gnome/nautilus/immich-mount-nautilus.py:99
+#: crates/immich-mount-kde/dolphin/immich-mount-dolphin.cpp:86
+#: apple/FileProvider/Info.plist (NSExtensionFileProviderActionName)
+msgid "Open in Immich"
+msgstr "Buka di Immich"
+
+#: crates/immich-mount-gnome/nautilus/immich-mount-nautilus.c:102
+#: crates/immich-mount-gnome/nautilus/immich-mount-nautilus.py:101
+#: crates/immich-mount-kde/dolphin/immich-mount-dolphin.cpp:93
+#: apple/FileProvider/Info.plist (NSExtensionFileProviderActionName)
+msgid "Copy Immich Link"
+msgstr "Salin Tautan Immich"
 
 #: crates/immich-mount-kde/qml/Main.qml:53
 msgid "Show thumbnails"

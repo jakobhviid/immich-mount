@@ -9,6 +9,7 @@ pub mod content;
 pub mod folder_uploads;
 pub mod immich;
 pub mod layout;
+pub mod links;
 pub mod model;
 pub mod naming;
 pub mod settings;

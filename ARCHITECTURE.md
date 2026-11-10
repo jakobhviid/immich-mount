@@ -871,6 +871,82 @@ folders may become albums named by their paths (SPEC.md, "Folders copied into Up
   instead (`AddNotification`, and the portal's own `ActionInvoked`), which carries buttons too. The record kept in
   the account's cache follows `XDG_CACHE_HOME`.
 
+## Links to Immich
+
+Open in Immich and Copy Immich Link take an item from the file manager to its page in Immich's web app (SPEC.md,
+"Links to Immich").
+
+- **The map is in the core** (`immich-mount-core/src/links.rs`): a key to its Immich path, the path to a web address
+  and to a crosslink (ROADMAP.md, "Open in Immich, and links between apps"). Every platform asks it, so an item gives
+  the same link in Files, Dolphin, Finder and the terminal, and the tests cover it once.
+  - **The key is enough:** an Asset's key holds the folder it is listed in (`asset|<folder key>|<id>`), so a photo's
+    link keeps its album, person or city without asking Immich anything.
+  - **Immich's own paths, not ours:** they are what Immich's web app and its mobile app's deep links already take,
+    and they are the immich-crosslink protocol's, so one map serves the browser and the other apps.
+  - **The search is Immich's JSON byte for byte** (`JSON.stringify`, then `encodeURIComponent`), tested against what
+    a browser writes, so the address is the one Immich itself would make. The country is added to a city's search,
+    which Immich's Places page leaves out, because the folder knows it and two cities of one name differ.
+  - **Folders without a page have no link,** rather than the nearest page: Photos' year, month and day folders,
+    the year folders above albums, Upload. A link that opened the timeline at large from a month folder would look
+    like it had failed.
+- **On Linux the daemon answers** (`WebLink` on its D-Bus interface): it alone knows which key a
+  path means, through the names it handed out. It walks the path from the mount point through the folder listings
+  it has, however old (`Tree::key_at`), and reads a folder from Immich only when it has none: the file manager asking
+  has just shown the folder, and names are kept per folder, so an old listing still gives the item a name means. A
+  menu therefore costs no request to the server. A path that reaches the mount through a symlink in its parent
+  folders (`/home` to `/var/home`) counts; the daemon resolves only the folders outside the mount, never the mount
+  itself, which it serves.
+  - **Not chosen: an extended attribute on each file** (`user.immich.url`) for the menus to read: every file
+    manager would read it on every item it lists, and a folder's link would need one too, where the daemon is asked
+    only for the one item right-clicked.
+- **The command** (`immich-mount web`) asks the running daemon, as the menus do, and opens the address with
+  `xdg-open`, which every desktop answers. **Copying** from a command that ends at once is the hard part: on Wayland,
+  and on X11, the program that set the clipboard serves it, and the text is gone when it exits. So the command hands
+  the text to a program that stays: Plasma's clipboard (Klipper, over D-Bus) where it runs, else `wl-copy`, `xclip`
+  or `xsel`, which keep serving it in the background. A file manager extension running inside the file manager sets
+  the clipboard itself.
+- **Files: a Nautilus extension in C** (`crates/immich-mount-gnome/nautilus/`), about 140 lines on
+  `libnautilus-extension-4` and GTK 4, which Nautilus has loaded already. It sends one selected `file://` item to
+  the daemon's `WebLink` (250 ms limit, `NO_AUTO_START`) and offers the items when an address comes back, so the
+  daemon alone decides what is in the mount; the extension never reads `MountPoint`. A call takes about 3 ms (GNOME
+  50 VM). It opens through GIO with GDK's launch context, so the browser comes to the front on Wayland, and copies
+  with GDK's clipboard, which it owns for as long as Files runs.
+  - **Built in each package's own job,** for its own distribution: one build would load on Fedora 44 (Nautilus 50.4)
+    and Ubuntu 26.04 (Nautilus 50.2) alike, but the extension folder differs, each job builds on its distribution
+    anyway, and an API change then fails that build rather than a menu at run time.
+  - **Homebrew's cask: the same in Python.** Nautilus loads C extensions only from its own folder in `/usr`, which is
+    read-only on Bazzite and the atomic desktops, and reads no other (`nautilus-module.c`). nautilus-python, which
+    Bazzite ships (4.1.0, with GSConnect's and Steam's extensions), loads from the home folder, so the cask installs
+    `immich-mount-nautilus.py` there. It asks for Nautilus 4.1 (Bazzite has only that typelib) and falls back to 4.0,
+    reads the catalogs beside the cask's programs, and stays quiet where the C extension is installed, so a machine
+    with both shows one pair (verified on Bazzite 44 with both).
+- **Dolphin: a file item action plugin** (`crates/immich-mount-kde/dolphin/`, `KAbstractFileItemActionPlugin`, C++ on
+  KF6), asking `WebLink` the same way and copying with Qt's clipboard, inside Dolphin.
+  - **Not chosen: a service menu.** It can only run a command, and its one way to show only on some items,
+    `X-KDE-ShowIfDBusCall`, was deprecated in KF 5.76 and is gone from KF6 (absent at 6.0.0; a probe menu with it
+    showed everywhere in Plasma 6). Shown on every file on the computer, Open in Immich would mostly say there is
+    nothing to open. The plugin also lets Show in *app* list a changing set of apps (step 3 of the roadmap's
+    section).
+  - **Homebrew's cask:** KIO finds plugins only on Qt's plugin path, which a home folder is not on. The cask links the
+    plugin under `~/.local/lib/qt6/plugins` and adds a Plasma login script (`~/.config/plasma-workspace/env/`), which
+    startplasma sources, putting that folder on `QT_PLUGIN_PATH`; the items appear from the next login. Bazzite's
+    Qt 6.11 and KF 6.31 match Fedora 44's, where the cask's programs are built (verified on Bazzite 44 KDE).
+- **Finder: the File Provider extension's own actions** (SPEC.md, "In Finder"). The extension opens the address and
+  sets the pasteboard itself (verified on macOS 27.2), so the actions work while the menu bar app is not running.
+  Finder decides from each item's `userInfo` whether to offer them, so the bridge's items carry `hasWebLink`, and
+  the item format went up to 5 for it (the app has the system read every item again once).
+  - **Not chosen: handing the action to the menu bar app** (a file in the App Group and a Darwin notification), the
+    plan while it was unknown whether a non-UI extension may open a URL: it would have failed whenever the app was
+    not running.
+- **Reading links back** (for showing an item from a crosslink, step 2 of the roadmap's section) is in the same
+  module: a crosslink reads to one of immich-crosslink's three results (show, cannot show, invalid) before anything
+  is fetched, and a web address on the signed-in server to its item. The protocol's own test links
+  (`crates/immich-mount-core/tests/crosslink-links.json`, copied at the commit its test names) are run as they are:
+  the links made byte for byte, and every result reached.
+- **Flatpak impact:** the D-Bus member and the command work from a Flatpak (the command needs the session bus and
+  `xdg-open`, which the OpenURI portal answers); the file managers' menu items are files on the host, which a
+  Flatpak cannot install.
+
 ## Signing in
 
 **Sign-in is a button that opens the user's own browser, like Immich's mobile app.**

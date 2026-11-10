@@ -1,0 +1,11 @@
+{
+    "KPlugin": {
+        "Description": "Open in Immich and Copy Immich Link, for items on the Immich drive",
+        "Icon": "dev.hviid.ImmichMount",
+        "MimeTypes": [
+            "application/octet-stream",
+            "inode/directory"
+        ],
+        "Name": "Immich Mount"
+    }
+}

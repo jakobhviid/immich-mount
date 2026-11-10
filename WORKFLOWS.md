@@ -174,6 +174,27 @@ on: in the app's settings under Sections, or `immich-mount configure set section
 `sections.archive`). They follow Immich within seconds: a photo you mark or archive there appears, and leaves when
 you unmark or unarchive it. Favorites holds archived favorites too, as Immich's Favorites page does.
 
+**Open in Immich** and **Copy Immich Link** take a photo, album, person or place from the mount to its page in
+Immich's web app (SPEC.md, "Links to Immich"). A photo opens where you found it: in its album, person or city, or in
+the timeline from Photos. From a terminal:
+
+```sh
+immich-mount web ~/Immich/Albums/2023\ -\ Summer\ trip            # opens the album in the browser
+immich-mount web --copy ~/Immich/People/Alice/2024-03-15\ 14.32.07.jpg   # puts its address on the clipboard
+immich-mount web --json ~/Immich/Places/Denmark/Aarhus
+```
+
+```json
+{
+  "path": "/home/you/Immich/Places/Denmark/Aarhus",
+  "url": "https://photos.example.org/search?query=%7B%22city%22%3A%22Aarhus%22%2C%22country%22%3A%22Denmark%22%7D"
+}
+```
+
+Photos' year, month and day folders, the year folders above albums, and Upload have no page in Immich, so they
+have no link; `web` says so and exits non-zero, as it does for a path outside the mount or when the mount is not
+running.
+
 ## 4. Status
 
 **At a glance:** while the drive is mounted, Immich Mount's icon sits in the tray, in KDE Plasma's system tray and in

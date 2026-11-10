@@ -70,13 +70,17 @@ jobs:
     steps:
       - name: Build dependencies
         run: |
-          dnf install -y -q git gcc gcc-c++ cargo rust clippy gtk4-devel libadwaita-devel blueprint-compiler \
-            qt6-qtbase-devel qt6-qtdeclarative-devel
+          dnf install -y -q git gcc gcc-c++ cargo rust clippy gtk4-devel libadwaita-devel blueprint-compiler nautilus-devel \
+            qt6-qtbase-devel qt6-qtdeclarative-devel cmake extra-cmake-modules kf6-kio-devel
       - uses: actions/checkout@v5
       - name: Green gate for the apps - clippy (warnings are errors) and tests
         run: |
           cargo clippy -p immich-mount-gnome -p immich-mount-kde --all-targets -- -D warnings
           cargo test -p immich-mount-gnome -p immich-mount-kde
+      - name: Files' extension (warnings are errors)
+        run: crates/immich-mount-gnome/nautilus/build.sh "$RUNNER_TEMP/libimmich-mount-nautilus.so"
+      - name: Dolphin's plugin (warnings are errors)
+        run: crates/immich-mount-kde/dolphin/build.sh "$RUNNER_TEMP/immich-mount-dolphin.so"
 
   macos:
     # The macOS edition (ARCHITECTURE.md, "The macOS edition"): the portable crates' and the bridge's clippy and tests

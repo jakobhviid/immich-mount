@@ -18,20 +18,20 @@ msgstr "Immich no está montado"
 msgid "The keyring stayed locked. Open Immich Mount, or run “immich-mount mount”, to try again."
 msgstr "El depósito de claves siguió bloqueado. Abre Immich Mount o ejecuta «immich-mount mount» para volver a intentarlo."
 
-#: crates/immich-mount-linux/src/daemon.rs:306
+#: crates/immich-mount-linux/src/daemon.rs:321
 msgid "Immich is unreachable"
 msgstr "No se puede acceder a Immich"
 
-#: crates/immich-mount-linux/src/daemon.rs:307
+#: crates/immich-mount-linux/src/daemon.rs:322
 msgid "The Immich server cannot be reached. Files you opened before stay available."
 msgstr "No se puede acceder al servidor de Immich. Los archivos que abriste antes siguen disponibles."
 
-#: crates/immich-mount-linux/src/daemon.rs:310
+#: crates/immich-mount-linux/src/daemon.rs:325
 #: crates/immich-mount-linux/src/tray.rs:70
 msgid "Signed out of Immich"
 msgstr "Sesión de Immich cerrada"
 
-#: crates/immich-mount-linux/src/daemon.rs:311
+#: crates/immich-mount-linux/src/daemon.rs:326
 msgid "Immich no longer accepts this sign-in. Open Immich Mount to sign in again."
 msgstr "Immich ya no acepta este inicio de sesión. Abre Immich Mount para volver a iniciar sesión."
 
@@ -545,6 +545,20 @@ msgstr "Atajos de _teclado"
 #: crates/immich-mount-gnome/src/window.blp:372
 msgid "_About Immich Mount"
 msgstr "_Acerca de Immich Mount"
+
+#: crates/immich-mount-gnome/nautilus/immich-mount-nautilus.c:100
+#: crates/immich-mount-gnome/nautilus/immich-mount-nautilus.py:99
+#: crates/immich-mount-kde/dolphin/immich-mount-dolphin.cpp:86
+#: apple/FileProvider/Info.plist (NSExtensionFileProviderActionName)
+msgid "Open in Immich"
+msgstr "Abrir en Immich"
+
+#: crates/immich-mount-gnome/nautilus/immich-mount-nautilus.c:102
+#: crates/immich-mount-gnome/nautilus/immich-mount-nautilus.py:101
+#: crates/immich-mount-kde/dolphin/immich-mount-dolphin.cpp:93
+#: apple/FileProvider/Info.plist (NSExtensionFileProviderActionName)
+msgid "Copy Immich Link"
+msgstr "Copiar enlace de Immich"
 
 #: crates/immich-mount-kde/qml/Main.qml:53
 msgid "Show thumbnails"

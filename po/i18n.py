@@ -5,7 +5,7 @@ one `<language>.po` per language, made from `immich-mount.pot`, which this tool 
     po/i18n.py extract            write immich-mount.pot from the sources, and bring every .po in line with it
     po/i18n.py check              fail when the template is stale or a translation drops a placeholder (CI runs it)
     po/i18n.py mo DIRECTORY       compile DIRECTORY/<language>/LC_MESSAGES/immich-mount.mo, for Linux
-    po/i18n.py apple DIRECTORY    write DIRECTORY/<language>.lproj/Localizable.strings, for the Mac app
+    po/i18n.py apple DIRECTORY    write DIRECTORY/<language>.lproj/Localizable.strings, for the Mac app and its extension
     po/i18n.py desktop IN OUT     write the desktop entry IN with its Comment and Keywords in every language, as OUT
 
 The text in English is the key (gettext's msgid) on every platform, and `{name}` marks a value filled in at run
@@ -48,8 +48,11 @@ SOURCES = [
     ("crates/immich-mount-desktop/src/*.rs", [TR, TITLE_ROW]),
     ("crates/immich-mount-gnome/src/*.rs", [TR, TITLE_ROW]),
     ("crates/immich-mount-gnome/src/*.blp", [r"\b_\(\s*" + LITERAL]),
+    ("crates/immich-mount-gnome/nautilus/*.c", [r"\bdgettext\(\s*TEXT_DOMAIN,\s*" + LITERAL]),
+    ("crates/immich-mount-gnome/nautilus/*.py", [r"\btranslate\(\s*" + LITERAL]),
     ("crates/immich-mount-kde/src/*.rs", [TR, TITLE_ROW]),
     ("crates/immich-mount-kde/qml/*.qml", [r"\bi18n\(\s*" + LITERAL]),
+    ("crates/immich-mount-kde/dolphin/*.cpp", [r'\bi18nd\(\s*"immich-mount",\s*' + LITERAL]),
     ("crates/immich-mount-core/src/settings.rs", [r"description: " + LITERAL, r'"[A-Za-z0-9-]+" => ' + LITERAL]),
     ("crates/immich-mount-apple/src/lib.rs", [TITLE_ROW]),
     ("apple/App/*.swift", [TR, r"\b(?:" + SWIFT_VIEWS + r")\(\s*" + LITERAL]),
@@ -67,6 +70,11 @@ DESKTOP_ENTRY_KEYS = ("Comment", "Keywords")
 # The Mac app's texts the system shows from its Info.plist: the About panel's notice, and the Local Network prompt.
 INFO_PLIST = ROOT / "apple/App/Info.plist"
 INFO_PLIST_KEYS = ("NSHumanReadableCopyright", "NSLocalNetworkUsageDescription")
+
+# The File Provider extension's actions, which Finder names from its Info.plist. Finder looks their names up in the
+# extension's Localizable.strings, by the English name, rather than in InfoPlist.strings; the extension carries the
+# app's tables for that.
+FILE_PROVIDER_PLIST = ROOT / "apple/FileProvider/Info.plist"
 
 
 def unescape(text):
@@ -110,6 +118,8 @@ def extract():
         found.setdefault(value, []).append(f"packaging/desktop/dev.hviid.ImmichMount.desktop.in ({key})")
     for key, value in info_plist_texts().items():
         found.setdefault(value, []).append(f"apple/App/Info.plist ({key})")
+    for name in file_provider_action_names():
+        found.setdefault(name, []).append("apple/FileProvider/Info.plist (NSExtensionFileProviderActionName)")
     return found, problems
 
 
@@ -117,6 +127,14 @@ def info_plist_texts():
     with INFO_PLIST.open("rb") as file:
         values = plistlib.load(file)
     return {key: values[key] for key in INFO_PLIST_KEYS if key in values}
+
+
+def file_provider_action_names():
+    """The names of the extension's Finder actions. Its Info.plist holds build settings (`$(...)`), which plistlib
+    reads as the strings they are."""
+    with FILE_PROVIDER_PLIST.open("rb") as file:
+        extension = plistlib.load(file).get("NSExtension", {})
+    return [action["NSExtensionFileProviderActionName"] for action in extension.get("NSExtensionFileProviderActions", [])]
 
 
 def desktop_entry_lines(path):

@@ -9,7 +9,8 @@ Homepage: https://github.com/jakobhviid/immich-mount
 Description: Immich Mount's KDE Plasma interface: sign in, status and settings for the Immich drive in Dolphin
  Signs in to a self-hosted Immich server (single sign-on in the browser, email and
  password, or an API key), keeps the credential in KWallet or another keyring, and
- starts the mount that shows the library in Dolphin.
+ starts the mount that shows the library in Dolphin. Its Dolphin plugin offers
+ Open in Immich and Copy Immich Link on the drive's photos, albums, people and places.
  .
  Immich Mount is an independent, unofficial project. It is not affiliated with,
  endorsed by, or sponsored by the Immich project or FUTO. "Immich" is used only to

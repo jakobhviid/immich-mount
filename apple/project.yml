@@ -89,6 +89,10 @@ targets:
       - build/Generated
       # The app's icon, for System Settings' list of file providers.
       - App/Assets.xcassets
+      # The app's texts, for the names of Finder's actions, which Finder looks up in the extension's
+      # Localizable.strings.
+      - path: build/Localization
+        buildPhase: resources
     settings:
       base:
         PRODUCT_BUNDLE_IDENTIFIER: $(IMMICH_IDENTITY).FileProvider

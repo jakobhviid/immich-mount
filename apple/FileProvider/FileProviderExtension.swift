@@ -13,7 +13,7 @@ final class FileProviderExtension: NSObject, NSFileProviderReplicatedExtension, 
 
     private let domain: NSFileProviderDomain
     /// `nil` while nobody is signed in: every request then says so, and the app asks for a sign-in.
-    private let library: Library?
+    let library: Library?
 
     required init(domain: NSFileProviderDomain) {
         self.domain = domain

@@ -1,0 +1,312 @@
+{
+  "draft": "0.2",
+  "about": "Test links for immich-crosslink. 'make': for each item and server, the Immich path and the link a sender must make, byte for byte. 'read': for each link, the result a receiver must reach (show, cannot-show or invalid), assuming it announces every kind; for 'show', the kind, the Immich path (ids in lower case), the server address (normalized) and the user. See docs/test-links.md.",
+  "make": [
+    {
+      "name": "an asset",
+      "item": {
+        "kind": "asset",
+        "asset": "3f1c2b9e-7a4d-4c1e-9b2a-5d6e7f8a9b0c"
+      },
+      "server": "https://photos.example.com",
+      "path": "/photos/3f1c2b9e-7a4d-4c1e-9b2a-5d6e7f8a9b0c",
+      "link": "immich-crosslink:///photos/3f1c2b9e-7a4d-4c1e-9b2a-5d6e7f8a9b0c?server=https%3A%2F%2Fphotos.example.com"
+    },
+    {
+      "name": "an asset in an album, with the user",
+      "item": {
+        "kind": "asset",
+        "asset": "3f1c2b9e-7a4d-4c1e-9b2a-5d6e7f8a9b0c",
+        "album": "b2a1c3d4-e5f6-4a7b-8c9d-0e1f2a3b4c5d"
+      },
+      "server": "https://photos.example.com",
+      "user": "0a1b2c3d-4e5f-4a6b-8c7d-9e0f1a2b3c4d",
+      "path": "/albums/b2a1c3d4-e5f6-4a7b-8c9d-0e1f2a3b4c5d/photos/3f1c2b9e-7a4d-4c1e-9b2a-5d6e7f8a9b0c",
+      "link": "immich-crosslink:///albums/b2a1c3d4-e5f6-4a7b-8c9d-0e1f2a3b4c5d/photos/3f1c2b9e-7a4d-4c1e-9b2a-5d6e7f8a9b0c?server=https%3A%2F%2Fphotos.example.com&user=0a1b2c3d-4e5f-4a6b-8c7d-9e0f1a2b3c4d"
+    },
+    {
+      "name": "an asset in a person",
+      "item": {
+        "kind": "asset",
+        "asset": "3f1c2b9e-7a4d-4c1e-9b2a-5d6e7f8a9b0c",
+        "person": "9c8b7a6d-5e4f-4a3b-9c2d-1e0f9a8b7c6d"
+      },
+      "server": "https://photos.example.com",
+      "path": "/people/9c8b7a6d-5e4f-4a3b-9c2d-1e0f9a8b7c6d/photos/3f1c2b9e-7a4d-4c1e-9b2a-5d6e7f8a9b0c",
+      "link": "immich-crosslink:///people/9c8b7a6d-5e4f-4a3b-9c2d-1e0f9a8b7c6d/photos/3f1c2b9e-7a4d-4c1e-9b2a-5d6e7f8a9b0c?server=https%3A%2F%2Fphotos.example.com"
+    },
+    {
+      "name": "an asset in a city",
+      "item": {
+        "kind": "asset",
+        "asset": "3f1c2b9e-7a4d-4c1e-9b2a-5d6e7f8a9b0c",
+        "city": "Aarhus",
+        "country": "Denmark"
+      },
+      "server": "https://photos.example.com",
+      "path": "/search/photos/3f1c2b9e-7a4d-4c1e-9b2a-5d6e7f8a9b0c?query=%7B%22city%22%3A%22Aarhus%22%2C%22country%22%3A%22Denmark%22%7D",
+      "link": "immich-crosslink:///search/photos/3f1c2b9e-7a4d-4c1e-9b2a-5d6e7f8a9b0c?query=%7B%22city%22%3A%22Aarhus%22%2C%22country%22%3A%22Denmark%22%7D&server=https%3A%2F%2Fphotos.example.com"
+    },
+    {
+      "name": "an album",
+      "item": {
+        "kind": "album",
+        "album": "b2a1c3d4-e5f6-4a7b-8c9d-0e1f2a3b4c5d"
+      },
+      "server": "https://photos.example.com",
+      "path": "/albums/b2a1c3d4-e5f6-4a7b-8c9d-0e1f2a3b4c5d",
+      "link": "immich-crosslink:///albums/b2a1c3d4-e5f6-4a7b-8c9d-0e1f2a3b4c5d?server=https%3A%2F%2Fphotos.example.com"
+    },
+    {
+      "name": "a person",
+      "item": {
+        "kind": "person",
+        "person": "9c8b7a6d-5e4f-4a3b-9c2d-1e0f9a8b7c6d"
+      },
+      "server": "https://photos.example.com",
+      "path": "/people/9c8b7a6d-5e4f-4a3b-9c2d-1e0f9a8b7c6d",
+      "link": "immich-crosslink:///people/9c8b7a6d-5e4f-4a3b-9c2d-1e0f9a8b7c6d?server=https%3A%2F%2Fphotos.example.com"
+    },
+    {
+      "name": "a city",
+      "item": {
+        "kind": "place",
+        "city": "Aarhus",
+        "country": "Denmark"
+      },
+      "server": "https://photos.example.com",
+      "path": "/search?query=%7B%22city%22%3A%22Aarhus%22%2C%22country%22%3A%22Denmark%22%7D",
+      "link": "immich-crosslink:///search?query=%7B%22city%22%3A%22Aarhus%22%2C%22country%22%3A%22Denmark%22%7D&server=https%3A%2F%2Fphotos.example.com"
+    },
+    {
+      "name": "a city with letters outside ASCII and a slash",
+      "item": {
+        "kind": "place",
+        "city": "Århus/Øst",
+        "country": "Danmark"
+      },
+      "server": "https://photos.example.com",
+      "path": "/search?query=%7B%22city%22%3A%22%C3%85rhus%2F%C3%98st%22%2C%22country%22%3A%22Danmark%22%7D",
+      "link": "immich-crosslink:///search?query=%7B%22city%22%3A%22%C3%85rhus%2F%C3%98st%22%2C%22country%22%3A%22Danmark%22%7D&server=https%3A%2F%2Fphotos.example.com"
+    },
+    {
+      "name": "a country",
+      "item": {
+        "kind": "place",
+        "country": "Denmark"
+      },
+      "server": "https://photos.example.com",
+      "path": "/search?query=%7B%22country%22%3A%22Denmark%22%7D",
+      "link": "immich-crosslink:///search?query=%7B%22country%22%3A%22Denmark%22%7D&server=https%3A%2F%2Fphotos.example.com"
+    },
+    {
+      "name": "the timeline, on a server with a port and a path",
+      "item": {
+        "kind": "page",
+        "page": "photos"
+      },
+      "server": "http://nas.local:2283/immich",
+      "path": "/photos",
+      "link": "immich-crosslink:///photos?server=http%3A%2F%2Fnas.local%3A2283%2Fimmich"
+    }
+  ],
+  "read": [
+    {
+      "name": "an asset",
+      "link": "immich-crosslink:///photos/3f1c2b9e-7a4d-4c1e-9b2a-5d6e7f8a9b0c?server=https%3A%2F%2Fphotos.example.com",
+      "result": "show",
+      "kind": "asset",
+      "path": "/photos/3f1c2b9e-7a4d-4c1e-9b2a-5d6e7f8a9b0c",
+      "server": "https://photos.example.com"
+    },
+    {
+      "name": "an asset in an album",
+      "link": "immich-crosslink:///albums/b2a1c3d4-e5f6-4a7b-8c9d-0e1f2a3b4c5d/photos/3f1c2b9e-7a4d-4c1e-9b2a-5d6e7f8a9b0c?server=https%3A%2F%2Fphotos.example.com",
+      "result": "show",
+      "kind": "asset",
+      "path": "/albums/b2a1c3d4-e5f6-4a7b-8c9d-0e1f2a3b4c5d/photos/3f1c2b9e-7a4d-4c1e-9b2a-5d6e7f8a9b0c",
+      "server": "https://photos.example.com"
+    },
+    {
+      "name": "an asset in Favorites",
+      "link": "immich-crosslink:///favorites/photos/3f1c2b9e-7a4d-4c1e-9b2a-5d6e7f8a9b0c?server=https%3A%2F%2Fphotos.example.com",
+      "result": "show",
+      "kind": "asset",
+      "path": "/favorites/photos/3f1c2b9e-7a4d-4c1e-9b2a-5d6e7f8a9b0c",
+      "server": "https://photos.example.com"
+    },
+    {
+      "name": "an asset in Archive",
+      "link": "immich-crosslink:///archive/photos/3f1c2b9e-7a4d-4c1e-9b2a-5d6e7f8a9b0c?server=https%3A%2F%2Fphotos.example.com",
+      "result": "show",
+      "kind": "asset",
+      "path": "/archive/photos/3f1c2b9e-7a4d-4c1e-9b2a-5d6e7f8a9b0c",
+      "server": "https://photos.example.com"
+    },
+    {
+      "name": "an album",
+      "link": "immich-crosslink:///albums/b2a1c3d4-e5f6-4a7b-8c9d-0e1f2a3b4c5d?server=https%3A%2F%2Fphotos.example.com",
+      "result": "show",
+      "kind": "album",
+      "path": "/albums/b2a1c3d4-e5f6-4a7b-8c9d-0e1f2a3b4c5d",
+      "server": "https://photos.example.com"
+    },
+    {
+      "name": "a person",
+      "link": "immich-crosslink:///people/9c8b7a6d-5e4f-4a3b-9c2d-1e0f9a8b7c6d?server=https%3A%2F%2Fphotos.example.com",
+      "result": "show",
+      "kind": "person",
+      "path": "/people/9c8b7a6d-5e4f-4a3b-9c2d-1e0f9a8b7c6d",
+      "server": "https://photos.example.com"
+    },
+    {
+      "name": "a city",
+      "link": "immich-crosslink:///search?query=%7B%22city%22%3A%22Aarhus%22%2C%22country%22%3A%22Denmark%22%7D&server=https%3A%2F%2Fphotos.example.com",
+      "result": "show",
+      "kind": "place",
+      "path": "/search?query=%7B%22city%22%3A%22Aarhus%22%2C%22country%22%3A%22Denmark%22%7D",
+      "server": "https://photos.example.com"
+    },
+    {
+      "name": "a city without its country, as Immich's Places page links it",
+      "link": "immich-crosslink:///search?query=%7B%22city%22%3A%22Aarhus%22%7D&server=https%3A%2F%2Fphotos.example.com",
+      "result": "show",
+      "kind": "place",
+      "path": "/search?query=%7B%22city%22%3A%22Aarhus%22%7D",
+      "server": "https://photos.example.com"
+    },
+    {
+      "name": "a country",
+      "link": "immich-crosslink:///search?query=%7B%22country%22%3A%22Denmark%22%7D&server=https%3A%2F%2Fphotos.example.com",
+      "result": "show",
+      "kind": "place",
+      "path": "/search?query=%7B%22country%22%3A%22Denmark%22%7D",
+      "server": "https://photos.example.com"
+    },
+    {
+      "name": "a page",
+      "link": "immich-crosslink:///places?server=https%3A%2F%2Fphotos.example.com",
+      "result": "show",
+      "kind": "page",
+      "path": "/places",
+      "server": "https://photos.example.com"
+    },
+    {
+      "name": "the user is kept",
+      "link": "immich-crosslink:///photos/3f1c2b9e-7a4d-4c1e-9b2a-5d6e7f8a9b0c?server=https%3A%2F%2Fphotos.example.com&user=0a1b2c3d-4e5f-4a6b-8c7d-9e0f1a2b3c4d",
+      "result": "show",
+      "kind": "asset",
+      "path": "/photos/3f1c2b9e-7a4d-4c1e-9b2a-5d6e7f8a9b0c",
+      "server": "https://photos.example.com",
+      "user": "0a1b2c3d-4e5f-4a6b-8c7d-9e0f1a2b3c4d"
+    },
+    {
+      "name": "the server unencoded",
+      "link": "immich-crosslink:///photos/3f1c2b9e-7a4d-4c1e-9b2a-5d6e7f8a9b0c?server=https://photos.example.com",
+      "result": "show",
+      "kind": "asset",
+      "path": "/photos/3f1c2b9e-7a4d-4c1e-9b2a-5d6e7f8a9b0c",
+      "server": "https://photos.example.com"
+    },
+    {
+      "name": "the server in capitals, with its default port and a trailing slash",
+      "link": "immich-crosslink:///photos/3f1c2b9e-7a4d-4c1e-9b2a-5d6e7f8a9b0c?server=https%3A%2F%2FPhotos.Example.com%3A443%2F",
+      "result": "show",
+      "kind": "asset",
+      "path": "/photos/3f1c2b9e-7a4d-4c1e-9b2a-5d6e7f8a9b0c",
+      "server": "https://photos.example.com",
+      "note": "the server compares equal to https://photos.example.com"
+    },
+    {
+      "name": "an id in capitals",
+      "link": "immich-crosslink:///photos/3F1C2B9E-7A4D-4C1E-9B2A-5D6E7F8A9B0C?server=https%3A%2F%2Fphotos.example.com",
+      "result": "show",
+      "kind": "asset",
+      "path": "/photos/3f1c2b9e-7a4d-4c1e-9b2a-5d6e7f8a9b0c",
+      "server": "https://photos.example.com",
+      "note": "UUIDs are case-insensitive; the receiver uses lower case"
+    },
+    {
+      "name": "a parameter this draft does not define is ignored",
+      "link": "immich-crosslink:///photos/3f1c2b9e-7a4d-4c1e-9b2a-5d6e7f8a9b0c?server=https%3A%2F%2Fphotos.example.com&color=blue",
+      "result": "show",
+      "kind": "asset",
+      "path": "/photos/3f1c2b9e-7a4d-4c1e-9b2a-5d6e7f8a9b0c",
+      "server": "https://photos.example.com"
+    },
+    {
+      "name": "an app's own parameter is ignored",
+      "link": "immich-crosslink:///photos/3f1c2b9e-7a4d-4c1e-9b2a-5d6e7f8a9b0c?server=https%3A%2F%2Fphotos.example.com&dev.example.photos.view=grid",
+      "result": "show",
+      "kind": "asset",
+      "path": "/photos/3f1c2b9e-7a4d-4c1e-9b2a-5d6e7f8a9b0c",
+      "server": "https://photos.example.com"
+    },
+    {
+      "name": "a path this draft does not define",
+      "link": "immich-crosslink:///tags?server=https%3A%2F%2Fphotos.example.com",
+      "result": "cannot-show",
+      "note": "valid, but not a path of draft 0.2"
+    },
+    {
+      "name": "Immich mobile's memory path",
+      "link": "immich-crosslink:///memory?server=https%3A%2F%2Fphotos.example.com",
+      "result": "cannot-show",
+      "note": "valid, but not a path of draft 0.2"
+    },
+    {
+      "name": "a search by something other than a place",
+      "link": "immich-crosslink:///search?query=%7B%22make%22%3A%22Canon%22%7D&server=https%3A%2F%2Fphotos.example.com",
+      "result": "cannot-show",
+      "note": "a search with keys other than city and country is not a path of draft 0.2"
+    },
+    {
+      "name": "a path with a trailing slash",
+      "link": "immich-crosslink:///photos/3f1c2b9e-7a4d-4c1e-9b2a-5d6e7f8a9b0c/?server=https%3A%2F%2Fphotos.example.com",
+      "result": "cannot-show",
+      "note": "paths match exactly"
+    },
+    {
+      "name": "a host",
+      "link": "immich-crosslink://photos.example.com/photos/3f1c2b9e-7a4d-4c1e-9b2a-5d6e7f8a9b0c?server=https%3A%2F%2Fphotos.example.com",
+      "result": "invalid",
+      "note": "the host must be empty"
+    },
+    {
+      "name": "no server",
+      "link": "immich-crosslink:///photos/3f1c2b9e-7a4d-4c1e-9b2a-5d6e7f8a9b0c",
+      "result": "invalid",
+      "note": "server is required"
+    },
+    {
+      "name": "an empty server",
+      "link": "immich-crosslink:///photos/3f1c2b9e-7a4d-4c1e-9b2a-5d6e7f8a9b0c?server=",
+      "result": "invalid",
+      "note": "server is required"
+    },
+    {
+      "name": "a server that is not an absolute URL",
+      "link": "immich-crosslink:///photos/3f1c2b9e-7a4d-4c1e-9b2a-5d6e7f8a9b0c?server=photos.example.com",
+      "result": "invalid",
+      "note": "the server address is an absolute http or https URL"
+    },
+    {
+      "name": "an id that is not a UUID",
+      "link": "immich-crosslink:///photos/1234?server=https%3A%2F%2Fphotos.example.com",
+      "result": "invalid",
+      "note": "ids are UUIDs"
+    },
+    {
+      "name": "a malformed search",
+      "link": "immich-crosslink:///search?query=%7B%22city%22%3A&server=https%3A%2F%2Fphotos.example.com",
+      "result": "invalid",
+      "note": "the search is not valid JSON"
+    },
+    {
+      "name": "Immich mobile's own scheme",
+      "link": "immich://asset?id=3f1c2b9e-7a4d-4c1e-9b2a-5d6e7f8a9b0c",
+      "result": "invalid",
+      "note": "not a crosslink"
+    }
+  ]
+}

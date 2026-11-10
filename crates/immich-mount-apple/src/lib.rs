@@ -16,6 +16,7 @@ use std::time::{Duration, Instant, SystemTime};
 use immich_api::{ApiError, Client, Credential as ApiCredential};
 use immich_mount_core::folder_uploads::{make_albums, tried_again, AlbumProgress, AlbumTarget, FolderEvent, FolderUploads};
 use immich_mount_core::immich::ImmichSource;
+use immich_mount_core::links;
 use immich_mount_core::settings::{self, choice_label, Config, Kind, SETTINGS};
 use immich_mount_core::sign_in::{self, normalised_address, BrowserSignIn};
 use immich_mount_core::source::{LibrarySource, SourceError, ThumbnailKind, ThumbnailSource};
@@ -70,7 +71,9 @@ const RELIST_BUDGET: Duration = Duration::from_secs(20);
 /// version changes, so the format is part of every version: raising it, with the app's reimport, has the system take
 /// every item again (ARCHITECTURE.md, "The macOS edition", "Content").
 /// 4: folders carry the time the location was set up, where they carried none (Finder showed 1 January 1970).
-const ITEM_FORMAT: u32 = 4;
+/// 5: items say whether they have a web address (`has_web_link`), which Finder's Open in Immich and Copy Immich Link
+/// are offered by.
+const ITEM_FORMAT: u32 = 5;
 /// How long the server check keeps trying a connection that fails: macOS may refuse sockets while its Local Network
 /// prompt waits for an answer (Apple's TN3179).
 const LOCAL_NETWORK_PATIENCE: Duration = Duration::from_secs(30);
@@ -137,6 +140,9 @@ pub struct Item {
     pub taken: Option<SystemTime>,
     /// The content's version: an Asset's original never changes, so its id; `folder` for folders.
     pub content_version: String,
+    /// Whether the item has a web address in Immich (`links::immich_path`), so Finder offers Open in Immich and Copy
+    /// Immich Link on it. It follows from the identifier alone, so it never changes for an item.
+    pub has_web_link: bool,
     /// Changes whenever anything shown about the item (its name, size or time) changes, so the system updates it.
     pub version: String,
 }
@@ -167,6 +173,7 @@ fn root_item(set_up: SystemTime) -> Item {
         size: None,
         taken: Some(set_up),
         content_version: "folder".to_owned(),
+        has_web_link: false,
         version: String::new(),
     }
     .versioned()
@@ -188,6 +195,7 @@ fn item_for(entry: &Entry, folder: &NodeKey, set_up: SystemTime) -> Item {
         size,
         taken,
         content_version,
+        has_web_link: links::immich_path(&entry.node).is_some(),
         version: String::new(),
     }
     .versioned()
@@ -286,6 +294,7 @@ impl Leaving {
             size: self.size,
             taken: Some(SystemTime::UNIX_EPOCH + Duration::from_secs(self.taken)),
             content_version: asset_id,
+            has_web_link: false,
             version: String::new(),
         }
         .versioned()
@@ -327,6 +336,7 @@ impl UploadFolder {
             size: None,
             taken: Some(SystemTime::UNIX_EPOCH + Duration::from_secs(self.made)),
             content_version: "folder".to_owned(),
+            has_web_link: false,
             version: String::new(),
         }
         .versioned()
@@ -1126,6 +1136,8 @@ pub struct Library {
     folders: Arc<FolderFollowing>,
     /// The library's directory, where the store is and where the questions about copied folders pass.
     directory: PathBuf,
+    /// The server's address as signed in, which web addresses start with.
+    server: String,
 }
 
 /// Look at the copied folders again once a copy could have settled, rather than at the next poll, up to ten seconds
@@ -1223,6 +1235,7 @@ impl Library {
             set_up,
             folders,
             directory: directory.clone(),
+            server,
         });
         open.insert(key, Arc::downgrade(&library));
         Ok(library)
@@ -1272,6 +1285,12 @@ impl Library {
             runtime().spawn(async move { answers.make_albums(copy).await });
         }
         result
+    }
+
+    /// The item's address in Immich's web app, for Finder's Open in Immich and Copy Immich Link; `None` where Immich has
+    /// no page for it (ROADMAP.md, "Open in Immich", "The item map").
+    pub fn web_link(&self, identifier: String) -> Option<String> {
+        links::web_address(&self.server, &NodeKey::from_storage_key(&identifier)?)
     }
 
     /// The journal's anchor now, as the system's sync anchor.
@@ -1906,6 +1925,35 @@ mod tests {
         assert_eq!(photo.identifier, march_photo());
         assert_eq!((photo.is_folder, photo.size, photo.content_version.as_str()), (false, Some(11), "asset-1"));
         assert_eq!(answers.item(&photo.identifier).await.unwrap(), *photo);
+    }
+
+    #[tokio::test]
+    async fn items_say_whether_they_have_a_web_link() {
+        let answers = answers();
+        assert!(!answers.item("root").await.unwrap().has_web_link, "Immich has no page for the root");
+        let sections = answers.list("root").await.unwrap();
+        let linked: Vec<(&str, bool)> = sections.iter().map(|item| (item.name.as_str(), item.has_web_link)).collect();
+        assert_eq!(linked, [("Photos", true), ("Albums", true), ("People", true), ("Places", true), ("Upload", false)]);
+        let years = answers.list(&NodeKey::Section(SectionKey::Photos).storage_key()).await.unwrap();
+        assert!(!years[0].has_web_link, "a year folder");
+        let months = answers.list(&years[0].identifier).await.unwrap();
+        assert!(!months[0].has_web_link, "a month folder");
+        let photos = answers.list(&months[0].identifier).await.unwrap();
+        assert!(photos[0].has_web_link, "a photo in Photos");
+    }
+
+    #[test]
+    fn a_web_link_is_the_items_address_on_the_signed_in_server() {
+        let directory = tempfile::tempdir().unwrap();
+        let path = directory.path().display().to_string();
+        let library = Library::open("lab.example/".into(), Credential::ApiKey { key: "key".into() }, path, String::new()).unwrap();
+        let album = NodeKey::Album("b1e2c3d4-0000-4000-8000-000000000001".into()).storage_key();
+        assert_eq!(library.web_link(album).as_deref(), Some("https://lab.example/albums/b1e2c3d4-0000-4000-8000-000000000001"));
+        assert_eq!(library.web_link(march_photo()).as_deref(), Some("https://lab.example/photos/asset-1"));
+        assert_eq!(library.web_link("root".into()), None);
+        assert_eq!(library.web_link("upload".into()), None);
+        assert_eq!(library.web_link(NodeKey::TimelineMonth(YearMonth { year: 2024, month: 3 }).storage_key()), None);
+        assert_eq!(library.web_link("not a key".into()), None);
     }
 
     #[tokio::test]

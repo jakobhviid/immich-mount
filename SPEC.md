@@ -354,6 +354,50 @@ cameras. Clashes are detected case-insensitively, after Unicode NFC normalisatio
   A file that did not upload stays in its folder in Upload, with its reason, and the folder with it; deleting the
   folder in Finder lets both go.
 
+## Links to Immich
+
+Each item the mount shows that Immich's web app has a page for has a **web address**: the server's address
+(`server.url` without a trailing slash and without `/api`) followed by the item's **Immich path**, the path of
+Immich's web app for it (`web/src/lib/route.ts` and `web/src/routes/(user)/` in immich-app/immich, which Immich's
+mobile app also takes as deep links). A photo keeps the folder it is listed in, so its page opens in that album,
+person or place.
+
+| Item | Immich path |
+|---|---|
+| A photo in Photos (in a month or a day folder) | `/photos/<id>` |
+| A photo in an album, directly or in its year and month folders | `/albums/<album>/photos/<id>` |
+| A photo in a person, likewise | `/people/<person>/photos/<id>` |
+| A photo in Favorites or Archive, likewise | `/favorites/photos/<id>`, `/archive/photos/<id>` |
+| A photo in a city, likewise | `/search/photos/<id>?query=<q>` |
+| An album, a person, Favorites or Archive, and their year and month folders | `/albums/<album>`, `/people/<person>`, `/favorites`, `/archive` |
+| A city, and its year and month folders | `/search?query=<q>`, `q` = `{"city":"<city>","country":"<country>"}` |
+| A country | `/search?query=<q>`, `q` = `{"country":"<country>"}` |
+| Photos, Albums, People, Places | `/photos`, `/albums`, `/people`, `/places` |
+| The mount itself, Photos' year, month and day folders, the year folders above albums, Upload and everything in it | none: Immich has no page for it |
+
+- `q` is the JSON Immich's web app writes for a search: its keys in the order shown, no spaces, encoded as
+  JavaScript's `encodeURIComponent` does. City and country names are Immich's own, never the folder's name on disk.
+  Immich's Places page searches for a city by its name alone; the country is added so two cities of one name stay
+  apart.
+- The same item gives the same address on every platform: the map is in the core (`links.rs`).
+
+**Open in Immich** opens the web address in the default browser, and **Copy Immich Link** puts it on the clipboard.
+Both are offered on one item at a time, inside the mount, for items with a web address, and nowhere else:
+- **In Files:** a Nautilus extension, in the `immich-mount-gnome` package (Nautilus's extension folder, such as
+  `/usr/lib64/nautilus/extensions-4/libimmich-mount-nautilus.so`). Homebrew's cask, which cannot write there,
+  installs the same items as a nautilus-python extension (`~/.local/share/nautilus-python/extensions/`), which
+  Bazzite ships; it offers nothing where the packaged extension is installed too, so the items never show twice.
+  Items whose address is not a file (Recent, Starred) have none.
+- **In Dolphin:** a file item action plugin, in the `immich-mount-kde` package
+  (`<Qt plugins>/kf6/kfileitemaction/immich-mount-dolphin.so`). With Homebrew's cask, Dolphin finds it from the
+  next login, through `QT_PLUGIN_PATH`, which a Plasma login script sets (Files on disk).
+- **In Finder:** two actions of the File Provider extension (In Finder). They work whether the menu bar app runs or
+  not.
+- **In a terminal:** `immich-mount web <path>`, `--copy`, and `--json` (The `immich-mount` command).
+- **The daemon** answers `WebLink` on D-Bus (The daemon's D-Bus interface), which the items in Files and Dolphin
+  ask with a 250 ms limit, never starting the daemon. It finds the item from the folder listings it has, so a path the
+  file manager shows needs no request to the server. With no daemon answering, the items are not offered.
+
 ## Signing in and credentials
 
 | Method | Offered when | Desktop | Headless | Stored |
@@ -432,6 +476,7 @@ One binary: the daemon and the command line.
 | `immich-mount status` | Connection state, server and its version, account, credential, mount point, cache usage |
 | `immich-mount doctor` | A read-only health check (see WORKFLOWS) |
 | `immich-mount configure list \| keys \| get \| set \| unset` | Reads and writes settings |
+| `immich-mount web [--copy] <path>` | Opens the item at `path` in Immich's web app, in the default browser (`xdg-open`), or with `--copy` puts its web address on the clipboard (Links to Immich). With `--json` it prints `{"path": …, "url": …}` and opens nothing. A path outside the mount, an item Immich has no page for, and a mount that is not running each exit non-zero, saying which. `--copy` hands the address to Plasma's clipboard (Klipper) where it runs, else to `wl-copy` on Wayland or `xclip` or `xsel` on X11, which keep it after the command ends |
 | `immich-mount completions <shell>` | Shell completions |
 
 Global flags:
@@ -467,6 +512,7 @@ The app ID is `dev.hviid.ImmichMount`. The daemon owns the bus name `dev.hviid.I
 | `Mount()`, `Unmount()` | methods | `Unmount()` unmounts, which stops the daemon (an eject). *(`Mount()` is not built: the daemon only lives while mounted, so the app and `immich-mount mount` start the user service.)* |
 | `Refresh(path s)` | method | Read folders from Immich again on their next visit (the whole tree, whatever the path) |
 | `ClearCache()` | method | Empty the content cache, except Assets being read |
+| `WebLink(path s) → (url s)` | method | The web address in Immich of the item at `path` (Links to Immich); empty for a path outside the mount or an item Immich has no page for. A path through a symlink to the mount's folder (`/home` on Fedora's atomic desktops) counts |
 | `StateChanged(state s, message s)` | signal | Sent when the connection state changes; a desktop notification says the same once |
 
 The credential itself never crosses D-Bus.
@@ -505,6 +551,8 @@ A click on the icon shows the menu (`ItemIsMenu`), as the Mac's menu bar item do
 | The resolved home for GVfs, where home is reached through a symlink | `~/.config/systemd/user/gvfs-udisks2-volume-monitor.service.d/immich-mount.conf`, `Environment=HOME=<resolved home>`: written by the daemon as it starts, which then restarts the volume monitor, so Files lists the mount as a drive; removed by `logout` |
 | The mount in Files' sidebar, where GVfs still does not list it (GNOME app) | A line `file://<mount point> <drive's name>` in `~/.config/gtk-3.0/bookmarks`: added once by the GNOME app's setup, renamed by the daemon as it starts when `mount.name` changed (a bookmark the user titled otherwise keeps its title), removed by the daemon once the drive is listed, and by `logout` (with a bookmark of the resolved path) |
 | The sign-in redirect's handler | `x-scheme-handler/app.immich` in `~/.config/mimeapps.list`, set by the app that last started a browser sign-in |
+| Open in Immich in Files, Homebrew's cask | `~/.local/share/nautilus-python/extensions/immich-mount-nautilus.py`, removed with the cask |
+| Open in Immich in Dolphin, Homebrew's cask | The plugin linked as `~/.local/lib/qt6/plugins/kf6/kfileitemaction/immich-mount-dolphin.so`, found through `QT_PLUGIN_PATH`, which `~/.config/plasma-workspace/env/immich-mount.sh` adds to at login; both removed with the cask |
 | The version last told of (`updates.check`) | `~/.local/state/immich-mount/update-told` |
 | Logs | journald (`journalctl --user -u immich-mount`) |
 
@@ -528,6 +576,11 @@ macOS edition"). Where Finder's way differs:
   what was downloaded. A file in Upload that has not reached Immich is kept: the confirmation counts them, the
   system preserves them, and Finder opens the folder they are kept in. When the location cannot be removed, the app
   stays signed in and says why.
+- **Open in Immich and Copy Immich Link** (Links to Immich) are the File Provider extension's own actions
+  (`dev.hviid.ImmichMount.open-in-immich` and `dev.hviid.ImmichMount.copy-link`), which Finder offers on one item
+  with a web address (the item's `hasWebLink`). The extension opens the address with `NSWorkspace` or puts it on the
+  pasteboard itself, so the menu bar app need not run. Their names are translated through the extension's
+  `Localizable.strings`. There is no `web` command on the Mac.
 - **Dates:** a file has its capture time, as on Linux; a folder the time the location was set up (signing in),
   where on Linux it has the mount's.
 - **Settings:** the settings table less the Linux-only ones (`mount.*`, `cache.limit`, `thumbnails.*`), in the
