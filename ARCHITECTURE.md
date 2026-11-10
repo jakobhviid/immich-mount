@@ -974,6 +974,15 @@ Open in Immich and Copy Immich Link take an item from the file manager to its pa
   - **Not chosen: Immich Mount as the scheme's default handler.** Apps that take part never use the default, so it
     matters only to links opened in a browser or with `xdg-open`, and with two apps installed, which should get them
     is the user's choice. A package taking it over would also take it from the other app's users.
+  - **Apps that come and go** stay listed in the settings for 30 days after they were last found, so one can be
+    switched off before it comes back, and then age out with nothing to do (test apps, uninstalled ones). What was
+    seen is kept as state, not a setting, as the protocol leaves to each app: it changes whenever the settings look,
+    and is nothing a user writes. Forgetting drops the app's switch too, so a returning app starts on, as a new one
+    does. Immich Gallery keeps the same list by the same rules.
+- **Web links can be switched off** (`web.links`), apart from Immich Crosslink, as the protocol asks of every
+  participant: the daemon then leaves the web address out of `Links` and `WebLink`, and the menus, which offer each
+  part only when it is there, offer Show in *app* alone. One switch for both items, since one opens the address the
+  other copies.
   - **An older daemon** answers `Links` with an unknown method; the menus then ask `WebLink` and offer no Show in
     items, so a newer extension never breaks against a daemon not yet restarted after an upgrade.
 - **Show in *app* on the Mac:** Finder's actions are declared in the extension's Info.plist, so their names are

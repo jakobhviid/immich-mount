@@ -70,8 +70,8 @@ static GVariant *call_daemon(GDBusConnection *connection, const char *method, co
                                        G_DBUS_CALL_FLAGS_NO_AUTO_START, WEB_LINK_TIMEOUT_MS, NULL, error);
 }
 
-/* The daemon's links for a local path; NULL when the item has no web address, the path is outside the mount, or no
- * daemon answers in time. A daemon from before Links gives the web address alone. */
+/* The daemon's links for a local path; NULL when the item has neither a web address nor a crosslink, the path is
+ * outside the mount, or no daemon answers in time. A daemon from before Links gives the web address alone. */
 static ItemLinks *links_for_path(const char *path) {
     g_autoptr(GError) error = NULL;
     g_autoptr(GDBusConnection) connection = g_bus_get_sync(G_BUS_TYPE_SESSION, NULL, &error);
@@ -89,7 +89,8 @@ static ItemLinks *links_for_path(const char *path) {
             g_variant_get(web_reply, "(s)", &links->web);
         }
     }
-    if (links->web == NULL || links->web[0] == '\0') {
+    /* Outside the mount, or an item without a page, gives neither; with web.links off the web address alone is empty. */
+    if ((links->web == NULL || links->web[0] == '\0') && (links->crosslink == NULL || links->crosslink[0] == '\0')) {
         item_links_free(links);
         return NULL;
     }
@@ -205,10 +206,14 @@ static GList *get_file_items(G_GNUC_UNUSED NautilusMenuProvider *provider, GList
         return NULL;
     }
     GList *items = NULL;
-    items = g_list_append(items, menu_item("ImmichMount::OpenInImmich", dgettext(TEXT_DOMAIN, "Open in Immich"),
-                                           G_CALLBACK(open_in_immich), links->web));
-    items = g_list_append(items, menu_item("ImmichMount::CopyImmichLink", dgettext(TEXT_DOMAIN, "Copy Immich Link"),
-                                           G_CALLBACK(copy_immich_link), links->web));
+    /* The web address is empty while the setting Open in Immich and Copy Immich Link is off. */
+    if (links->web != NULL && links->web[0] != '\0') {
+        items = g_list_append(items, menu_item("ImmichMount::OpenInImmich", dgettext(TEXT_DOMAIN, "Open in Immich"),
+                                               G_CALLBACK(open_in_immich), links->web));
+        items = g_list_append(items, menu_item("ImmichMount::CopyImmichLink",
+                                               dgettext(TEXT_DOMAIN, "Copy Immich Link"), G_CALLBACK(copy_immich_link),
+                                               links->web));
+    }
     /* The crosslink is empty while Immich Crosslink is off, and then no other app is offered. */
     if (links->crosslink != NULL && links->crosslink[0] != '\0') {
         GList *apps = apps_showing(links->kind, links->hidden);

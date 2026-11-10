@@ -17,6 +17,7 @@ pub const GROUPS: &[(&str, &str)] = &[
     ("uploads", "Uploads"),
     ("thumbnails", "Thumbnails"),
     ("cache", "Cache"),
+    ("web", "Immich Web App"),
     ("crosslink", "Other Apps"),
     ("updates", "Updates"),
 ];
@@ -24,6 +25,16 @@ pub const GROUPS: &[(&str, &str)] = &[
 /// The protocol behind `crosslink.enabled`, linked beside its switch so it is clear what it is (immich-crosslink,
 /// "Settings": the same label and link in every app that takes part).
 pub const CROSSLINK_PAGE: &str = "https://jakob.hviid.phd/immich-crosslink/";
+
+/// The title of the list of apps under Immich Crosslink's switch, in the user's language.
+pub fn apps_heading() -> &'static str {
+    tr("Apps That Take Part")
+}
+
+/// A line under a setting's title, in the user's language, where one says more than the title.
+pub fn caption(setting: &Setting) -> Option<&'static str> {
+    (setting.key == "web.links").then(|| tr("Open photos, albums, people and places in Immich's web app in your browser, or copy their address."))
+}
 
 /// The page a setting's row links to, if any.
 pub fn link(setting: &Setting) -> Option<&'static str> {
@@ -50,16 +61,33 @@ pub fn settings_in(prefix: &str) -> impl Iterator<Item = &'static Setting> + '_ 
     SETTINGS.iter().filter(move |setting| setting.key.split('.').next() == Some(prefix) && setting.key != "crosslink.hidden")
 }
 
-/// The other apps that take crosslinks, each with whether Show in offers it (immich-crosslink, "Settings").
-pub fn crosslink_apps() -> Vec<(immich_mount_linux::crosslink_apps::CrosslinkApp, bool)> {
+/// The other apps that take crosslinks, installed now or seen in the last 30 days, each with whether Show in offers
+/// it (Immich Crosslink, "Settings"). Apps forgotten now lose their switch too.
+pub fn crosslink_apps() -> Vec<(immich_mount_linux::crosslink_apps::ListedApp, bool)> {
+    use immich_mount_linux::crosslink_apps;
+    let (listed, forgotten) = crosslink_apps::listed(&seen_file(), crosslink_apps::installed(), chrono::Utc::now());
+    for id in &forgotten {
+        let _ = show_app(id, true);
+    }
     let hidden = stored("crosslink.hidden");
-    immich_mount_linux::crosslink_apps::installed()
+    listed
         .into_iter()
-        .map(|app| {
-            let shown = !immich_mount_linux::crosslink_apps::is_hidden(&hidden, &app.id);
-            (app, shown)
+        .map(|listed| {
+            let shown = !crosslink_apps::is_hidden(&hidden, &listed.app.id);
+            (listed, shown)
         })
         .collect()
+}
+
+/// Forget an app that is not installed, and its switch.
+pub fn forget_app(id: &str) -> Result<bool, String> {
+    immich_mount_linux::crosslink_apps::forget(&seen_file(), id);
+    show_app(id, true)
+}
+
+/// Where the apps seen are remembered: the app's state, not a setting.
+fn seen_file() -> std::path::PathBuf {
+    Paths::from_environment().state_directory.join("crosslink-seen.json")
 }
 
 /// Offer an app in Show in, or leave it out. `Ok(true)`: the daemon restarts to see it, as for any setting.

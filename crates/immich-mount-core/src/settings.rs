@@ -71,6 +71,7 @@ pub const SETTINGS: &[Setting] = &[
     Setting { key: "uploads.folders", kind: Kind::Choice(&["ask", "timeline", "albums"]), description: "Folders copied into Upload", default: "ask" },
     Setting { key: "thumbnails.sharp", kind: Kind::Bool, description: "Also seed 1024 px thumbnails from the preview", default: "true" },
     Setting { key: "thumbnails.safety_net", kind: Kind::Bool, description: "Refuse thumbnailer reads of originals", default: "true" },
+    Setting { key: "web.links", kind: Kind::Bool, description: "Open in Immich and Copy Immich Link", default: "true" },
     Setting { key: "crosslink.enabled", kind: Kind::Bool, description: "Show what other apps link to (Immich Crosslink)", default: "true" },
     Setting { key: "crosslink.hidden", kind: Kind::Text, description: "Apps left out of Show in, by their desktop entry or bundle id, separated by ;", default: "" },
     Setting { key: "updates.check", kind: Kind::Bool, description: "Tell me when a new version is out", default: "true" },
@@ -183,6 +184,8 @@ pub struct Config {
     /// Immich Crosslink: show in the file manager what another app links to, and offer the other apps (ROADMAP.md,
     /// "Open in Immich, and links between apps").
     pub crosslink_enabled: bool,
+    /// Open in Immich and Copy Immich Link in the file managers' menus (Immich Crosslink, "Copying links").
+    pub web_links: bool,
     /// The apps left out of Show in *app*, by desktop entry or bundle id, separated by `;`.
     pub crosslink_hidden: String,
     pub credential_file: Option<String>,
@@ -236,6 +239,7 @@ impl Config {
             thumbnail_safety_net: flag("thumbnails.safety_net")?,
             update_check: flag("updates.check")?,
             crosslink_enabled: flag("crosslink.enabled")?,
+            web_links: flag("web.links")?,
             crosslink_hidden: optional("crosslink.hidden")?.unwrap_or_default(),
             credential_file: optional("credential.file")?,
         })

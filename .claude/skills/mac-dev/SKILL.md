@@ -187,6 +187,7 @@ open -n "$app" --args -signInServer http://127.0.0.1:2283 -signInAPIKey <key>
 open -n "$app" --args -signOut YES       # its Finder location, account and store go; the release's stay
 open -n "$app" --args -settingsPane 1    # Settings, on a pane (0 General, 1 Folders, 2 Account)
 open -n "$app" --args -setPreference crosslink.enabled=false   # change one setting, as the Settings window does
+open -n "$app" --args -forgetApp dev.hviid.test.Gone        # forget an app not installed, as its Forget button does
 open -a "$app" 'immich-crosslink:///albums/<id>?server=http%3A%2F%2F127.0.0.1%3A2283'   # a link, to this app alone
 pkill -f "Immich Mount Dev.app/Contents/MacOS"   # quit it; no Apple events, so no Automation prompt
 ```

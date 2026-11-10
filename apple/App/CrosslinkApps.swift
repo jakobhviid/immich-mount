@@ -7,6 +7,7 @@
 
 import AppKit
 import FileProvider
+import UniformTypeIdentifiers
 
 @MainActor
 final class CrosslinkApps: NSObject, ObservableObject {
@@ -18,8 +19,13 @@ final class CrosslinkApps: NSObject, ObservableObject {
         let name: String
         let icon: NSImage
         let shown: Bool
+        /// Seen before and not installed now: listed by its remembered name, with a Forget button.
+        let installed: Bool
         var id: String { bundleId }
     }
+
+    /// The apps seen, kept per bundle id with their names and when last seen (the app's state, not a setting).
+    static var seenFile: URL { AppGroup.container.appendingPathComponent("crosslink-seen.json") }
 
     @Published private(set) var listed: [Listed] = []
     private var targets: CrosslinkTargets?
@@ -55,10 +61,22 @@ final class CrosslinkApps: NSObject, ObservableObject {
         #endif
         let targets = crosslinkTargets(found: Self.found(), config: AppGroup.configText, development: development)
         self.targets = targets
-        listed = targets.listed.map { app in
+        let installed = targets.listed.map { app in
             Listed(bundleId: app.bundleId, name: FileManager.default.displayName(atPath: app.path).replacingOccurrences(of: ".app", with: ""),
-                   icon: NSWorkspace.shared.icon(forFile: app.path), shown: app.shown)
-        }.sorted { $0.name.localizedStandardCompare($1.name) == .orderedAscending }
+                   icon: NSWorkspace.shared.icon(forFile: app.path), shown: app.shown, installed: true)
+        }
+        // Remembered: an app away keeps its switch for 30 days (Immich Crosslink, "Participants that come and go").
+        try? FileManager.default.createDirectory(at: AppGroup.container, withIntermediateDirectories: true)
+        let remembered = rememberApps(file: Self.seenFile.path, installed: installed.map { SeenApp(bundleId: $0.bundleId, name: $0.name) },
+                                      config: AppGroup.configText)
+        let absent = remembered.absent.map { app in
+            Listed(bundleId: app.bundleId, name: app.name, icon: NSWorkspace.shared.icon(for: .application), shown: app.shown, installed: false)
+        }
+        listed = (installed + absent).sorted { $0.name.localizedStandardCompare($1.name) == .orderedAscending }
+        logger.info("Settings lists \(installed.count) apps installed and \(absent.count) not installed: \(absent.map(\.bundleId).joined(separator: ", "), privacy: .public)")
+        for bundleId in remembered.forgotten {
+            Self.dropSwitch(bundleId)
+        }
         let offers = OfferedApps(gallery: targets.gallery.map(Self.kept), others: targets.others.map(Self.kept))
         guard offers != OfferedApps.load() else { return }
         do {
@@ -75,6 +93,19 @@ final class CrosslinkApps: NSObject, ObservableObject {
                 logger.info("Finder was not asked to read the items again: \(String(describing: error), privacy: .public)")
             }
         }
+    }
+
+    /// Forget an app that is not installed, and its switch with it: should it come back, it is new again, and on.
+    func forget(_ bundleId: String) {
+        forgetApp(file: Self.seenFile.path, bundleId: bundleId)
+        Self.dropSwitch(bundleId)
+        refresh()
+    }
+
+    private static func dropSwitch(_ bundleId: String) {
+        guard let updated = try? setAppShown(config: AppGroup.configText, bundleId: bundleId, shown: true),
+              updated != AppGroup.configText else { return }
+        try? updated.write(to: AppGroup.configFile, atomically: true, encoding: .utf8)
     }
 
     private static func kept(_ app: OfferedApp) -> OfferedApps.App {

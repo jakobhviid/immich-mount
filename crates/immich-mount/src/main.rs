@@ -266,6 +266,13 @@ fn run_login(paths: &Paths, password: bool, api_key: bool, server: Option<String
         _ => online::LoginMethod::Browser,
     };
     let report = online::login(paths, method, server)?;
+    // A daemon already running holds the credential it started with; it starts again with this one. `try-restart`
+    // leaves a stopped service alone.
+    let _ = std::process::Command::new("systemctl")
+        .args(["--user", "try-restart", immich_mount_linux::service::user_service()])
+        .stdout(std::process::Stdio::null())
+        .stderr(std::process::Stdio::null())
+        .status();
     if json {
         print_json(&report);
     } else {

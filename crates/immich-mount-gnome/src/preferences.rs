@@ -9,7 +9,9 @@ use std::rc::Rc;
 
 use adw::prelude::*;
 use immich_mount_core::settings::{Kind, Setting};
-use immich_mount_desktop::preferences::{change, choice_label, crosslink_apps, current_value, link, restart_daemon, settings_in, show_app, title, GROUPS};
+use immich_mount_desktop::preferences::{
+    caption, change, choice_label, crosslink_apps, current_value, forget_app, link, restart_daemon, settings_in, show_app, title, apps_heading, GROUPS,
+};
 use immich_mount_linux::i18n::tr;
 
 /// Build the dialog. `report` shows a refusal to the user.
@@ -21,27 +23,24 @@ pub fn dialog(report: impl Fn(&str) + Clone + 'static) -> adw::PreferencesDialog
         for setting in settings_in(prefix) {
             let current = current_value(setting);
             let widget = row(setting, &current, changed.clone(), report.clone());
-            if let (Some(page), Some(action_row)) = (link(setting), widget.downcast_ref::<adw::ActionRow>()) {
-                let button = gtk::LinkButton::with_label(page, tr("Read more"));
-                button.set_valign(gtk::Align::Center);
-                action_row.add_suffix(&button);
+            if let Some(action_row) = widget.downcast_ref::<adw::ActionRow>() {
+                if let Some(page) = link(setting) {
+                    let button = gtk::LinkButton::with_label(page, tr("Read more"));
+                    // The link reads Read more and nothing else: GTK would show the address as its tooltip.
+                    button.set_has_tooltip(false);
+                    button.set_valign(gtk::Align::Center);
+                    action_row.add_suffix(&button);
+                }
+                if let Some(caption) = caption(setting) {
+                    action_row.set_subtitle(caption);
+                }
             }
             group.add(&widget);
         }
-        if *prefix == "crosslink" {
-            for (app, shown) in crosslink_apps() {
-                let app_row = adw::SwitchRow::builder().title(app.name.as_str()).active(shown).build();
-                // An app without an icon gets the generic one, so every name lines up.
-                app_row.add_prefix(&gtk::Image::from_icon_name(app.icon.as_deref().unwrap_or("application-x-executable")));
-                let (changed, report) = (changed.clone(), report.clone());
-                app_row.connect_active_notify(move |app_row| match show_app(&app.id, app_row.is_active()) {
-                    Ok(restart) => changed.set(changed.get() || restart),
-                    Err(message) => report(&message),
-                });
-                group.add(&app_row);
-            }
-        }
         page.add(&group);
+        if *prefix == "crosslink" {
+            page.add(&apps_group(changed.clone(), report.clone()));
+        }
     }
     let dialog = adw::PreferencesDialog::new();
     dialog.add(&page);
@@ -51,6 +50,42 @@ pub fn dialog(report: impl Fn(&str) + Clone + 'static) -> adw::PreferencesDialog
         }
     });
     dialog
+}
+
+/// The apps that take part in Immich Crosslink, by their names and icons, each with its switch; one not installed now
+/// is marked so, with a generic icon and a button that forgets it (Immich Crosslink, "Participants that come and go").
+fn apps_group(changed: Rc<Cell<bool>>, report: impl Fn(&str) + Clone + 'static) -> adw::PreferencesGroup {
+    let apps = crosslink_apps();
+    // With no app to list, the heading alone would say nothing.
+    let group = adw::PreferencesGroup::builder().title(apps_heading()).visible(!apps.is_empty()).build();
+    for (listed, shown) in apps {
+        let app = listed.app;
+        let app_row = adw::SwitchRow::builder().title(app.name.as_str()).active(shown).build();
+        // An app without an icon, or not installed, gets the generic one, so every name lines up.
+        let icon = app.icon.as_deref().filter(|_| listed.installed).unwrap_or("application-x-executable");
+        app_row.add_prefix(&gtk::Image::from_icon_name(icon));
+        if !listed.installed {
+            app_row.set_subtitle(tr("Not installed"));
+            let forget = gtk::Button::with_label(tr("Forget"));
+            forget.set_valign(gtk::Align::Center);
+            let (id, group, row_to_remove, changed, report) = (app.id.clone(), group.clone(), app_row.clone(), changed.clone(), report.clone());
+            forget.connect_clicked(move |_| match forget_app(&id) {
+                Ok(restart) => {
+                    changed.set(changed.get() || restart);
+                    group.remove(&row_to_remove);
+                }
+                Err(message) => report(&message),
+            });
+            app_row.add_suffix(&forget);
+        }
+        let (changed, report) = (changed.clone(), report.clone());
+        app_row.connect_active_notify(move |app_row| match show_app(&app.id, app_row.is_active()) {
+            Ok(restart) => changed.set(changed.get() || restart),
+            Err(message) => report(&message),
+        });
+        group.add(&app_row);
+    }
+    group
 }
 
 fn row(setting: &'static Setting, current: &str, changed: Rc<Cell<bool>>, report: impl Fn(&str) + 'static) -> gtk::Widget {

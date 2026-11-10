@@ -89,6 +89,11 @@ pub mod qobject {
         #[cxx_name = "storeSetting"]
         fn store_setting(self: Pin<&mut Backend>, key: &QString, value: &QString) -> QString;
 
+        /// Forget an app that took crosslinks and is not installed now: its remembered name and its switch go.
+        #[qinvokable]
+        #[cxx_name = "forgetApp"]
+        fn forget_app(self: Pin<&mut Backend>, id: &QString) -> QString;
+
         /// The preferences page closed: the daemon restarts if a setting it reads changed.
         #[qinvokable]
         #[cxx_name = "preferencesClosed"]
@@ -413,17 +418,24 @@ impl qobject::Backend {
                     "key": setting.key,
                     "title": preferences::title(setting),
                     "link": preferences::link(setting).unwrap_or_default(),
+                    "caption": preferences::caption(setting).unwrap_or_default(),
                     "value": preferences::current_value(setting),
                     "choices": choices,
                 }));
             }
             if *prefix == "crosslink" {
-                for (app, shown) in preferences::crosslink_apps() {
+                // The heading shows only over apps to list.
+                let apps = preferences::crosslink_apps();
+                if !apps.is_empty() {
+                    rows.push(serde_json::json!({ "kind": "section", "title": preferences::apps_heading() }));
+                }
+                for (listed, shown) in apps {
                     rows.push(serde_json::json!({
                         "kind": "app",
-                        "key": app.id,
-                        "title": app.name,
-                        "icon": app.icon.unwrap_or_default(),
+                        "key": listed.app.id,
+                        "title": listed.app.name,
+                        "icon": listed.app.icon.filter(|_| listed.installed).unwrap_or_default(),
+                        "installed": listed.installed,
                         "value": shown.to_string(),
                     }));
                 }
@@ -441,6 +453,16 @@ impl qobject::Backend {
             preferences::change(&key, &value.to_string())
         };
         match outcome {
+            Ok(restart) => {
+                self.as_mut().rust_mut().settings_changed |= restart;
+                QString::default()
+            }
+            Err(message) => QString::from(&message),
+        }
+    }
+
+    pub fn forget_app(mut self: Pin<&mut Self>, id: &QString) -> QString {
+        match preferences::forget_app(&id.to_string()) {
             Ok(restart) => {
                 self.as_mut().rust_mut().settings_changed |= restart;
                 QString::default()

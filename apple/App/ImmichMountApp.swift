@@ -855,7 +855,8 @@ final class AppModel: ObservableObject {
     /// For driving a development build from a script (the `mac-dev` skill), with launch arguments: `-signOut YES`
     /// signs out, and `-signInServer <address>` with `-signInAPIKey <key>`, or `-signInEmail` and
     /// `-signInPassword`, signs in when nobody is; `-setPreference <key>=<value>` changes one setting, as the Settings
-    /// window does. Not in release builds.
+    /// window does; `-forgetApp <bundle id>` forgets an app not installed, as its Forget button does. Not in release
+    /// builds.
     func followLaunchArguments() async {
         let arguments = UserDefaults.standard
         if arguments.bool(forKey: "signOut") {
@@ -865,6 +866,10 @@ final class AppModel: ObservableObject {
             let settings = SettingsModel()
             settings.change(String(preference[..<equals]), to: String(preference[preference.index(after: equals)...]))
             logger.notice("set \(preference, privacy: .public): \(settings.message ?? "done", privacy: .public)")
+        }
+        if let bundleId = arguments.string(forKey: "forgetApp") {
+            CrosslinkApps.shared.forget(bundleId)
+            logger.notice("forgot \(bundleId, privacy: .public)")
         }
         guard server == nil, let address = arguments.string(forKey: "signInServer") else { return }
         await check(address: address)

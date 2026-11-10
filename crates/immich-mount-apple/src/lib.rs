@@ -1423,7 +1423,8 @@ pub struct SettingsPanes {
     /// What a folder copied into Upload becomes (`uploads.folders`).
     pub upload_folders: Preference,
     /// Immich Crosslink's switch (`crosslink.enabled`), in the General pane.
-    pub crosslink: Preference,
+    pub crosslink: Preference,    /// Open in Immich and Copy Immich Link (`web.links`), in the General pane.
+    pub web_links: Preference,
 }
 
 /// One section of the drive, as a row of the Folders pane.
@@ -1503,6 +1504,7 @@ pub fn settings_panes(config: String) -> Result<SettingsPanes, BridgeError> {
         file_naming: preference("files.naming")?,
         upload_folders: preference("uploads.folders")?,
         crosslink: preference("crosslink.enabled")?,
+        web_links: preference("web.links")?,
     })
 }
 
@@ -1867,6 +1869,95 @@ pub fn crosslink_targets(found: Vec<FoundApp>, config: String, development: bool
         })
         .collect();
     CrosslinkTargets { gallery: gallery.filter(|gallery| !hidden(&gallery.bundle_id) && !gallery.kinds.is_empty()), others, listed }
+}
+
+/// How long an app that is not installed stays listed (Immich Crosslink, "Participants that come and go").
+const FORGET_AFTER_DAYS: i64 = 30;
+
+/// An app found installed, by the name the system gives it.
+#[derive(Debug, Clone, PartialEq, Eq, uniffi::Record)]
+pub struct SeenApp {
+    pub bundle_id: String,
+    pub name: String,
+}
+
+/// An app seen before and not installed now, listed by its remembered name.
+#[derive(Debug, Clone, PartialEq, Eq, uniffi::Record)]
+pub struct AbsentApp {
+    pub bundle_id: String,
+    pub name: String,
+    /// Whether Show in will offer it when it comes back (it is not in `crosslink.hidden`).
+    pub shown: bool,
+}
+
+/// The apps not installed now that Settings lists, and those forgotten now, whose switches go too.
+#[derive(Debug, Clone, PartialEq, Eq, uniffi::Record)]
+pub struct RememberedApps {
+    pub absent: Vec<AbsentApp>,
+    pub forgotten: Vec<String>,
+}
+
+/// What is remembered of an app seen: its name, and when it was last found installed.
+#[derive(Debug, Clone, PartialEq, Eq, serde::Serialize, serde::Deserialize)]
+struct Seen {
+    name: String,
+    last_seen: chrono::DateTime<chrono::Utc>,
+}
+
+fn read_seen(file: &Path) -> std::collections::BTreeMap<String, Seen> {
+    std::fs::read_to_string(file).ok().and_then(|text| serde_json::from_str(&text).ok()).unwrap_or_default()
+}
+
+fn write_seen(file: &Path, seen: &std::collections::BTreeMap<String, Seen>) {
+    if let Ok(text) = serde_json::to_string_pretty(seen) {
+        let temporary = file.with_extension("json.tmp");
+        if std::fs::write(&temporary, text).is_ok() {
+            let _ = std::fs::rename(&temporary, file);
+        }
+    }
+}
+
+/// Remember the apps installed now in `file` (the app's state in the App Group, not a setting), and tell the ones seen
+/// in the last 30 days that are not installed now, with their switches in `config`, and the ones forgotten now.
+#[uniffi::export]
+pub fn remember_apps(file: String, installed: Vec<SeenApp>, config: String) -> RememberedApps {
+    remember_apps_at(Path::new(&file), installed, &config, chrono::Utc::now())
+}
+
+fn remember_apps_at(file: &Path, installed: Vec<SeenApp>, config: &str, now: chrono::DateTime<chrono::Utc>) -> RememberedApps {
+    let mut seen = read_seen(file);
+    for app in &installed {
+        seen.insert(app.bundle_id.clone(), Seen { name: app.name.clone(), last_seen: now });
+    }
+    let forgotten: Vec<String> =
+        seen.iter().filter(|(_, entry)| now - entry.last_seen > chrono::Duration::days(FORGET_AFTER_DAYS)).map(|(id, _)| id.clone()).collect();
+    for id in &forgotten {
+        seen.remove(id);
+    }
+    write_seen(file, &seen);
+    let hidden = parse_config(config).map(|config| config.crosslink_hidden).unwrap_or_default();
+    let absent = seen
+        .into_iter()
+        .filter(|(id, _)| !installed.iter().any(|app| &app.bundle_id == id))
+        .map(|(id, entry)| AbsentApp { shown: !hidden.split(';').any(|hidden| hidden.trim() == id), bundle_id: id, name: entry.name })
+        .collect();
+    RememberedApps { absent, forgotten }
+}
+
+/// Forget an app that is not installed: it leaves the list (the caller puts its switch back to on).
+#[uniffi::export]
+pub fn forget_app(file: String, bundle_id: String) {
+    let file = Path::new(&file);
+    let mut seen = read_seen(file);
+    if seen.remove(&bundle_id).is_some() {
+        write_seen(file, &seen);
+    }
+}
+
+/// Whether Finder offers Open in Immich and Copy Immich Link (`web.links`); on when `config` cannot be read.
+#[uniffi::export]
+pub fn web_links_enabled(config: String) -> bool {
+    parse_config(&config).map_or(true, |config| config.web_links)
 }
 
 /// `config` with the app `bundle_id` left out of Show in (`crosslink.hidden`), or put back.
@@ -2776,5 +2867,24 @@ mod tests {
         assert_eq!(photo_in_photos(in_album.storage_key()), None);
         assert_eq!(crosslink_kind(crosslink_to(&in_album)).as_deref(), Some("asset"));
         assert_eq!(crosslink_kind("immich-crosslink://host/albums".into()), None);
+    }
+
+    #[test]
+    fn apps_seen_are_remembered_for_thirty_days() {
+        let directory = tempfile::tempdir().unwrap();
+        let file = directory.path().join("crosslink-seen.json");
+        let start = chrono::Utc::now();
+        let gallery = SeenApp { bundle_id: "org.example.Gallery".into(), name: "Gallery".into() };
+        assert_eq!(remember_apps_at(&file, vec![gallery.clone()], "", start), RememberedApps { absent: vec![], forgotten: vec![] });
+        let hidden = "[crosslink]\nhidden = \"org.example.Gallery\"\n";
+        let later = remember_apps_at(&file, vec![], hidden, start + chrono::Duration::days(29));
+        let absent = AbsentApp { bundle_id: gallery.bundle_id.clone(), name: "Gallery".into(), shown: false };
+        assert_eq!(later, RememberedApps { absent: vec![absent], forgotten: vec![] }, "not installed, its switch kept");
+        let gone = remember_apps_at(&file, vec![], hidden, start + chrono::Duration::days(31));
+        assert_eq!(gone, RememberedApps { absent: vec![], forgotten: vec![gallery.bundle_id.clone()] }, "forgotten after 30 days");
+        remember_apps_at(&file, vec![gallery.clone()], "", start);
+        forget_app(file.display().to_string(), gallery.bundle_id.clone());
+        assert!(remember_apps_at(&file, vec![], "", start).absent.is_empty(), "forgotten by hand");
+        assert!(web_links_enabled(String::new()) && !web_links_enabled("[web]\nlinks = false\n".into()));
     }
 }

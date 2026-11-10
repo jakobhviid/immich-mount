@@ -68,8 +68,8 @@ def call_daemon(connection, method, path, reply_type):
 
 
 def links_for_path(path):
-    """The daemon's (web address, crosslink, kind, hidden apps) for a local path; None when the item has no web
-    address, the path is outside the mount, or no daemon answers in time. The crosslink is empty while Immich Crosslink
+    """The daemon's (web address, crosslink, kind, hidden apps) for a local path; None when the item has neither a
+    web address nor a crosslink, the path is outside the mount, or no daemon answers in time. The crosslink is empty while Immich Crosslink
     is off; a daemon from before Links gives the web address alone."""
     try:
         connection = Gio.bus_get_sync(Gio.BusType.SESSION, None)
@@ -82,7 +82,8 @@ def links_for_path(path):
             crosslink, kind, hidden = "", "", ""
     except (GLib.Error, TypeError, UnicodeError):
         return None
-    return (web, crosslink, kind, hidden) if web else None
+    # Outside the mount, or an item without a page, gives neither; with web.links off the web address alone is empty.
+    return (web, crosslink, kind, hidden) if web or crosslink else None
 
 
 def apps_showing(kind, hidden):
@@ -147,10 +148,15 @@ class ImmichMenuProvider(GObject.GObject, Nautilus.MenuProvider):
         if links is None:
             return []
         web, crosslink, kind, hidden = links
-        open_item = Nautilus.MenuItem(name="ImmichMount::OpenInImmich", label=translate("Open in Immich"))
-        open_item.connect("activate", open_in_immich, web)
-        copy_item = Nautilus.MenuItem(name="ImmichMount::CopyImmichLink", label=translate("Copy Immich Link"))
-        copy_item.connect("activate", copy_immich_link, web)
+        items = []
+        # The web address is empty while the setting Open in Immich and Copy Immich Link is off.
+        if web:
+            open_item = Nautilus.MenuItem(name="ImmichMount::OpenInImmich", label=translate("Open in Immich"))
+            open_item.connect("activate", open_in_immich, web)
+            copy_item = Nautilus.MenuItem(name="ImmichMount::CopyImmichLink", label=translate("Copy Immich Link"))
+            copy_item.connect("activate", copy_immich_link, web)
+            items += [open_item, copy_item]
         # The crosslink is empty while Immich Crosslink is off, and then no other app is offered.
-        show_items = [show_in_item(app, crosslink) for app in apps_showing(kind, hidden)] if crosslink else []
-        return [open_item, copy_item] + show_items
+        if crosslink:
+            items += [show_in_item(app, crosslink) for app in apps_showing(kind, hidden)]
+        return items

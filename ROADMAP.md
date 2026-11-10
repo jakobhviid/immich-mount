@@ -434,8 +434,8 @@ the menus offered Open and Copy alone. The Python extension did the same on Bazz
 (SPEC.md, "In Finder"): Immich Mount Dev on macOS 27.2 found Immich Gallery Dev (announcing) and the Gallery release
 (not announcing) and two test apps, `fileproviderctl evaluate` offered the actions on Albums, an album and a photo in
 an album, hiding an app or switching crosslink off removed them, and the menu listed two apps for an album. **Left:**
-the maintainer's clicks in Finder (Show in Immich Gallery on a photo, Show in Another App… on an album) and in Immich
-Gallery Dev (Show in Immich Mount), which no command can press;
+the maintainer's clicks in Finder (Show in Immich Gallery on a photo, Show in Another App… on an album), which no
+command can press;
 for a second or so after the daemon starts, an item in a folder it has not listed yet gets no items.
 
 Immich Mount finds the other installed apps that take crosslinks, and offers **Show in *app*** for each, on the items
@@ -476,6 +476,16 @@ step 1 offers.
   another draft nowhere; each receives the right crosslink, and leaves the menus when switched off or removed; on the Mac, with Immich Gallery
   installed, Show in Immich Gallery opens the photo there. Flatpak impact: from inside a Flatpak the installed apps
   cannot be listed (the OpenURI portal only offers a chooser), so a Flatpak build would offer Show in… through it.
+
+**Agreed with Immich Gallery, and built** (2026-11-10, in the protocol's clarified draft 0.2): a switch for
+Open in Immich and Copy Immich Link apart from Immich Crosslink (`web.links`, under Immich Web App), and apps that
+come and go: listed for 30 days after they were last found, as Not installed with a Forget button. Verified in the
+Fedora 44 GNOME and Plasma VMs (web links off left only the Show in items; an uninstalled test app was listed Not
+installed, Forget removed it with its switch, and it came back new and on), and the Python extension on Bazzite. On
+the Mac too: with web links off, `fileproviderctl evaluate` refused Open and Copy and offered Show in Immich Gallery;
+a removed test app was listed Not installed and Forget removed it. How the settings' new sections look waits for the
+maintainer's glance. **Verified with Immich Gallery** on the maintainer's Mac: the Gallery's Show in Immich Mount
+reached the installed release, which selected an album and a photo in an album in Finder.
 
 ### Step 4: Immich Gallery takes crosslinks (upstream)
 

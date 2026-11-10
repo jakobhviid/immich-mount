@@ -1783,6 +1783,7 @@ dependencies = [
 name = "immich-mount-desktop"
 version = "0.0.0"
 dependencies = [
+ "chrono",
  "immich-api",
  "immich-mount-core",
  "immich-mount-linux",

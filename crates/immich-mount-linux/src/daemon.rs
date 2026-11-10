@@ -181,7 +181,7 @@ where
     let store = MetadataStore::open(&account_cache.join("metadata.redb")).map_err(|error| prepare_error(account_cache, error.to_string()))?;
     let (sharp_thumbnails, safety_net, cache_limit_bytes) = (config.sharp_thumbnails, config.thumbnail_safety_net, config.cache_limit_bytes);
     let (uploads_enabled, upload_folders, drive_name) = (config.uploads_enabled, config.upload_folders, config.mount_name);
-    let (crosslink_enabled, crosslink_hidden) = (config.crosslink_enabled, config.crosslink_hidden.clone());
+    let (crosslink_enabled, crosslink_hidden, web_links) = (config.crosslink_enabled, config.crosslink_hidden.clone(), config.web_links);
     let tree = Arc::new(Tree::new(source.clone(), store, config));
     let content_directory = account_cache.join("content");
     let seeder = Seeder::new(Arc::new(source.clone()), thumbnail_directory, account_cache, sharp_thumbnails)
@@ -257,7 +257,9 @@ where
                         let names = names?;
                         let names: Vec<&str> = names.iter().map(String::as_str).collect();
                         let key = tokio::time::timeout(WEB_LINK_LIMIT, tree.key_at(&names)).await.ok()?.ok()??;
+                        // With web links off, the address is left out and the menus offer Show in alone.
                         let web = immich_mount_core::links::web_address(&server_url, &key)?;
+                        let web = if web_links { web } else { String::new() };
                         let kind = immich_mount_core::links::kind(&key)?.as_str().to_owned();
                         let crosslink = if crosslink_enabled {
                             immich_mount_core::links::crosslink(&server_url, user_id.as_deref(), &key).unwrap_or_default()
@@ -276,7 +278,7 @@ where
                         let names = names?;
                         let names: Vec<&str> = names.iter().map(String::as_str).collect();
                         let key = tokio::time::timeout(WEB_LINK_LIMIT, tree.key_at(&names)).await.ok()?.ok()??;
-                        immich_mount_core::links::web_address(&server_url, &key)
+                        immich_mount_core::links::web_address(&server_url, &key).filter(|_| web_links)
                     })
                 }
             }),

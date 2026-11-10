@@ -88,6 +88,9 @@ JPEGs: `fixtures`, then `open <name> <dir>` (cold cache, settle, screenshot, who
 
 ## Traps
 
+- **A click to focus GNOME's Preferences dialog can toggle a switch:** once the page has scrolled, a group's heading
+  may sit where an `AdwSwitchRow` was, and the click flips it (Immich Crosslink went off this way). Focus the dialog
+  through its title bar, and read the settings back with `immich-mount configure list` after driving it.
 - **Fedora cloud VMs hang after their first kernel update** unless the boot entry is fixed. The image has no
   `grubby`, so `up.sh` fixes `/etc/kernel/cmdline` with `sed`.
 - **`incus file push` takes `<instance>/<path>`,** with `--project lab` as a flag.

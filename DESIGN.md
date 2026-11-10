@@ -95,7 +95,10 @@ Measured contrast on the website (WCAG AA asks 4.5:1 for text):
   and Finder: "Immich" there is the server's web app, where the link goes. "Immich Crosslink" is the protocol's name,
   in English in every language: its switch in the settings reads **Immich Crosslink**, with **Read more** beside it,
   a link to the protocol's page whose address is not shown. A notification about a link another app sent says "a link
-  from another app", not the protocol's name.
+  from another app", not the protocol's name. The settings' Other Apps holds, in this order, **Immich Web App** (the
+  switch **Open in Immich and Copy Immich Link**, captioned "Open photos, albums, people and places in Immich's web app
+  in your browser, or copy their address."), the Immich Crosslink switch, and **Apps That Take Part**, where an app
+  that is away reads **Not installed** beside a **Forget** button: the same words as Immich Gallery's.
 - **Buttons and titles in title case** in English, as GNOME's, KDE's and Apple's guidelines ask; labels and
   descriptions in sentence case. Translations follow their language's own conventions.
 - **No em-dashes** anywhere (AGENTS.md).

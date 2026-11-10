@@ -154,6 +154,9 @@ struct GeneralPane: View {
                 Text("While Immich Mount runs, in the menu bar, changes in Immich reach Finder within seconds. Updates come from jakob.hviid.phd, signed by the project and notarized by Apple.")
                     .foregroundStyle(.secondary)
             }
+            if let webLinks = settings.panes?.webLinks {
+                WebAppSection(webLinks: webLinks)
+            }
             if let crosslink = settings.panes?.crosslink {
                 CrosslinkSection(crosslink: crosslink)
             }
@@ -168,12 +171,20 @@ struct GeneralPane: View {
 /// saying so. It changes nothing Finder lists.
 private struct CrosslinkSection: View {
     @EnvironmentObject private var settings: SettingsModel
-    @ObservedObject private var apps = CrosslinkApps.shared
+    @ObservedObject private var found = CrosslinkApps.shared
     let crosslink: Preference
 
     private static let page = URL(string: "https://jakob.hviid.phd/immich-crosslink/")!
 
     var body: some View {
+        Group {
+            crosslinkSwitch
+            apps
+        }
+        .onAppear { CrosslinkApps.shared.refresh() }
+    }
+
+    private var crosslinkSwitch: some View {
         Section {
             LabeledContent {
                 Toggle(isOn: settings.isOn(crosslink, relist: false)) {
@@ -189,20 +200,57 @@ private struct CrosslinkSection: View {
                     .help(tr(crosslink.title))
                 }
             }
-            // The apps found, each with its switch; they mean nothing while Immich Crosslink is off.
-            ForEach(apps.listed) { app in
-                Toggle(isOn: Binding(get: { app.shown }, set: { settings.setShown(app.bundleId, $0) })) {
-                    Label {
-                        Text(verbatim: app.name)
-                    } icon: {
-                        Image(nsImage: app.icon).resizable().frame(width: 20, height: 20)
+        }
+    }
+
+    /// The apps seen, each with its switch; they mean nothing while Immich Crosslink is off. One not installed now is
+    /// listed by its remembered name for 30 days, with a Forget button. No heading while none is listed.
+    @ViewBuilder
+    private var apps: some View {
+        if !found.listed.isEmpty {
+            Section(tr("Apps That Take Part")) {
+                ForEach(found.listed) { app in
+                    HStack {
+                        Toggle(isOn: Binding(get: { app.shown }, set: { settings.setShown(app.bundleId, $0) })) {
+                            Label {
+                                if app.installed {
+                                    Text(verbatim: app.name)
+                                } else {
+                                    Text(verbatim: app.name)
+                                    Text(tr("Not installed"))
+                                }
+                            } icon: {
+                                Image(nsImage: app.icon).resizable().frame(width: 20, height: 20)
+                            }
+                        }
+                        .toggleStyle(.switch)
+                        if !app.installed {
+                            Button(tr("Forget")) { found.forget(app.bundleId) }
+                        }
                     }
+                    .disabled(crosslink.value != "true")
                 }
-                .toggleStyle(.switch)
-                .disabled(crosslink.value != "true")
             }
         }
-        .onAppear { apps.refresh() }
+    }
+}
+
+/// Immich's web app: Finder's Open in Immich and Copy Immich Link, switched together (`web.links`), apart from Immich
+/// Crosslink. Changing it has the system read the items again.
+private struct WebAppSection: View {
+    @EnvironmentObject private var settings: SettingsModel
+    let webLinks: Preference
+
+    var body: some View {
+        Section {
+            Toggle(tr("Open in Immich and Copy Immich Link"), isOn: settings.isOn(webLinks))
+                .toggleStyle(.switch)
+        } header: {
+            Text(tr("Immich Web App"))
+        } footer: {
+            Text(tr("Open photos, albums, people and places in Immich's web app in your browser, or copy their address."))
+                .foregroundStyle(.secondary)
+        }
     }
 }
 

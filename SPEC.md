@@ -382,7 +382,8 @@ person or place.
 - The same item gives the same address on every platform: the map is in the core (`links.rs`).
 
 **Open in Immich** opens the web address in the default browser, and **Copy Immich Link** puts it on the clipboard.
-Both are offered on one item at a time, inside the mount, for items with a web address, and nowhere else:
+Both are offered on one item at a time, inside the mount, for items with a web address, and nowhere else, while the
+switch **Open in Immich and Copy Immich Link** (`web.links`, under Immich Web App in the settings, on by default) is on:
 - **In Files:** a Nautilus extension, in the `immich-mount-gnome` package (Nautilus's extension folder, such as
   `/usr/lib64/nautilus/extensions-4/libimmich-mount-nautilus.so`). Homebrew's cask, which cannot write there,
   installs the same items as a nautilus-python extension (`~/.local/share/nautilus-python/extensions/`), which
@@ -451,8 +452,14 @@ part in Immich Crosslink, which shows it there.
 - **Sending:** the crosslink, with the signed-in user's id when known, goes to that app alone (GIO's
   `g_app_info_launch_uris` in Files, `KIO::ApplicationLauncherJob` in Dolphin), never to the scheme's default.
 - **Off:** with `crosslink.enabled` off, no Show in items; Open in Immich and Copy Immich Link stay.
-- **The settings** (Other Apps, in both apps): the **Immich Crosslink** switch with **Read more**, a link to the
-  protocol, and under it each app found, by its name and icon, with a switch.
+- **The settings** (in both apps, and on the Mac): under Other Apps, the **Immich Crosslink** switch with **Read
+  more**, a link to the protocol whose address is not shown; then **Apps That Take Part**, each by its name and icon
+  with a switch. An app seen before but not installed at the moment stays listed for 30 days, as **Not installed**, by its
+  remembered name and a generic icon, with its switch and a **Forget** button; forgetting it, by hand or after 30 days
+  unseen, drops its switch too, so an app that comes back is new and on. What was seen is the app's state
+  (`~/.local/state/immich-mount/crosslink-seen.json` on Linux, the App Group on the Mac), not a setting. The menus
+  offer only apps that are installed.
+- **With web links off,** the menus offer Show in *app* alone.
 - The menus ask the daemon's `Links`; against a daemon without it they offer Open in Immich and Copy Immich Link
   only.
 
@@ -514,6 +521,7 @@ table in the Core drives validation, `immich-mount configure`, and the app's set
 | `uploads.folders` | `ask`, `timeline`, `albums` | `ask` | What a folder copied into Upload becomes besides its uploads: asked each time once the copy has settled, the timeline only, or an album of each folder too ("Folders copied into Upload") |
 | `thumbnails.sharp` | bool | `true` | Also seed 1024 px thumbnails from `preview` |
 | `thumbnails.safety_net` | bool | `true` | Refuse thumbnailer reads of originals |
+| `web.links` | bool | `true` | Open in Immich and Copy Immich Link in the file managers' menus (Links to Immich); off, the daemon gives no web address and the menus offer Show in *app* alone |
 | `crosslink.enabled` | bool | `true` | Immich Crosslink: show in the file manager what another app links to, and offer Show in *app* (Links to Immich). Off, a link from another app only gets a notification saying so. Labelled "Immich Crosslink" in the apps, in English in every language, with a link to the protocol |
 | `crosslink.hidden` | ids separated by `;` | none | The apps left out of Show in *app*, by desktop entry id (`org.example.Photos.desktop`) or bundle id; the apps show a switch per app found instead |
 | `updates.check` | bool | `true` | Tell, once per version, when a new release is out: a notification and a line on the tray's menu (ARCHITECTURE.md, "Updates on Linux"). Only packages from the download page look; Homebrew's installs are left to `brew upgrade`. Linux only: the Mac app has Sparkle's own setting |
@@ -530,7 +538,7 @@ One binary: the daemon and the command line.
 | `immich-mount` | Opens the app where there is a display (as `immich-mount app`); prints this help where there is none |
 | `immich-mount app` | Opens the app in the interface native to the desktop: Kirigami on Plasma, GTK elsewhere (on Plasma GTK too, if the Kirigami one does not load) |
 | `immich-mount daemon` | Runs the daemon in the foreground (what the user service starts). Once the program it was started from is replaced by an upgrade and nothing is open or uploading, it unmounts and exits with status 75, on which the service starts the new version; once the program has been gone for two minutes (uninstalled), it unmounts, turns off the service that started it, takes the mount out of Dolphin's Places and Files' sidebar, removes the GVfs drop-in and its seeded thumbnails, and exits 0 |
-| `immich-mount login [--password \| --api-key] [--server URL]` | Signs in; prompts only on a terminal |
+| `immich-mount login [--password \| --api-key] [--server URL]` | Signs in; prompts only on a terminal. A running mount restarts with the new sign-in |
 | `immich-mount logout` | Unmounts, then removes the seeded thumbnails, the credential and the caches |
 | `immich-mount mount` / `unmount` | Mounts (starts the user service, writing it first where no install brought one and enabling it when `mount.at_login` is on, and waits up to 15 s for the mount) or unmounts (which stops the daemon, as an eject does). When something keeps the mount busy, such as a file manager window showing it, `unmount` detaches it lazily (`fusermount3 -uz`), unless the daemon has a copy into Upload in flight: then it refuses, naming the file ("… is still uploading") |
 | `immich-mount status` | Connection state, server and its version, account, credential, mount point, cache usage |

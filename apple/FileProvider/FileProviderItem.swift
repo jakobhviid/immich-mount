@@ -11,9 +11,16 @@ enum CurrentOffers {
 
     static var value: OfferedApps { offers.withLock { $0 } }
 
+    /// Whether Finder offers Open in Immich and Copy Immich Link (`web.links`), read with the offers.
+    private static let webLinks = OSAllocatedUnfairLock(initialState: webLinksEnabled(config: AppGroup.configText))
+
+    static var offersWebLinks: Bool { webLinks.withLock { $0 } }
+
     static func reload() {
         let loaded = OfferedApps.load()
         offers.withLock { $0 = loaded }
+        let enabled = webLinksEnabled(config: AppGroup.configText)
+        webLinks.withLock { $0 = enabled }
     }
 }
 
@@ -22,9 +29,12 @@ final class FileProviderItem: NSObject, NSFileProviderItem {
     /// Whether Finder offers Show in Immich Gallery and Show in Another App… on it.
     private let showInGallery: Bool
     private let showInAnother: Bool
+    /// Whether Finder offers Open in Immich and Copy Immich Link on it: it has a web address, and they are on.
+    private let showsWebLink: Bool
 
     init(_ item: Item) {
         self.item = item
+        showsWebLink = item.hasWebLink && CurrentOffers.offersWebLinks
         let offers = CurrentOffers.value
         let kind = item.hasWebLink ? itemKind(identifier: item.identifier) : nil
         showInGallery = offers.offersGallery(kind: kind, photoInPhotos: photoInPhotos(identifier: item.identifier) != nil)
@@ -58,15 +68,16 @@ final class FileProviderItem: NSObject, NSFileProviderItem {
     var contentModificationDate: Date? { item.taken }
 
     /// What Finder's actions are offered by (the activation rules in Info.plist): `hasWebLink`, for Open in Immich and
-    /// Copy Immich Link; `showInGallery` and `showInAnother`, for the Show in actions.
+    /// Copy Immich Link, unless `web.links` is off; `showInGallery` and `showInAnother`, for the Show in actions.
     var userInfo: [AnyHashable: Any]? {
-        ["hasWebLink": item.hasWebLink, "showInGallery": showInGallery, "showInAnother": showInAnother]
+        ["hasWebLink": showsWebLink, "showInGallery": showInGallery, "showInAnother": showInAnother]
     }
 
     /// The system keeps an item's details until its version changes: the Show in markers are part of it, so they
     /// follow the apps installed once the app has the system read the items again.
     var itemVersion: NSFileProviderItemVersion {
         let markers = (showInGallery ? "|gallery" : "") + (showInAnother ? "|another" : "")
+            + (item.hasWebLink && !showsWebLink ? "|no-web-links" : "")
         return NSFileProviderItemVersion(contentVersion: Data(item.contentVersion.utf8),
                                          metadataVersion: Data((item.version + markers).utf8))
     }

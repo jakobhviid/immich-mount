@@ -3,8 +3,8 @@
  *
  * A file item action plugin, since KF6 has no service menu key that asks anyone about the selection
  * (X-KDE-ShowIfDBusCall went with KF5). The daemon decides: it knows the mount point and every item's Immich page, so
- * this asks it (Links on D-Bus) and offers the items only when it gives an address. A daemon that is not running, or
- * slow, gives no items. The other apps come from the desktop entries registered for immich-crosslink, as the protocol
+ * this asks it (Links on D-Bus) and offers each item only when it gives the link that item needs. A daemon that is
+ * not running, or slow, gives no items. The other apps come from the desktop entries registered for immich-crosslink, as the protocol
  * says (https://jakob.hviid.phd/immich-crosslink/, "Finding participants"). */
 
 #include <KAbstractFileItemActionPlugin>
@@ -123,27 +123,30 @@ public:
             return {};
         }
         const Links links = linksForPath(path);
-        const QString address = links.web;
-        if (address.isEmpty()) {
+        if (links.web.isEmpty() && links.crosslink.isEmpty()) {
             return {};
         }
         // The plasma desktop's folder view gives no widget; the actions then live as long as this plugin.
         QObject *owner = parentWidget ? static_cast<QObject *>(parentWidget) : this;
+        QList<QAction *> actions;
 
-        auto *open = new QAction(QIcon::fromTheme(QStringLiteral("internet-web-browser")),
-                                 i18nd("immich-mount", "Open in Immich"), owner);
-        connect(open, &QAction::triggered, this, [address, parentWidget]() {
-            auto *job = new KIO::OpenUrlJob(QUrl(address));
-            job->setUiDelegate(KIO::createDefaultJobUiDelegate(KJobUiDelegate::AutoHandlingEnabled, parentWidget));
-            job->start();
-        });
-
-        auto *copy = new QAction(QIcon::fromTheme(QStringLiteral("edit-copy")), i18nd("immich-mount", "Copy Immich Link"),
-                                 owner);
-        connect(copy, &QAction::triggered, this, [address]() {
-            QGuiApplication::clipboard()->setText(address);
-        });
-        QList<QAction *> actions{open, copy};
+        // The web address is empty while Open in Immich and Copy Immich Link are switched off (web.links).
+        const QString address = links.web;
+        if (!address.isEmpty()) {
+            auto *open = new QAction(QIcon::fromTheme(QStringLiteral("internet-web-browser")),
+                                     i18nd("immich-mount", "Open in Immich"), owner);
+            connect(open, &QAction::triggered, this, [address, parentWidget]() {
+                auto *job = new KIO::OpenUrlJob(QUrl(address));
+                job->setUiDelegate(KIO::createDefaultJobUiDelegate(KJobUiDelegate::AutoHandlingEnabled, parentWidget));
+                job->start();
+            });
+            auto *copy = new QAction(QIcon::fromTheme(QStringLiteral("edit-copy")),
+                                     i18nd("immich-mount", "Copy Immich Link"), owner);
+            connect(copy, &QAction::triggered, this, [address]() {
+                QGuiApplication::clipboard()->setText(address);
+            });
+            actions << open << copy;
+        }
 
         if (links.crosslink.isEmpty()) {
             return actions;

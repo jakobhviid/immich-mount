@@ -69,9 +69,14 @@ Kirigami.ApplicationWindow {
         Kirigami.ScrollablePage {
             id: preferences
             title: i18n("Preferences")
-            readonly property var rows: JSON.parse(backend.preferenceRows())
+            property var rows: JSON.parse(backend.preferenceRows())
             function store(key, value) {
                 refusal.text = backend.storeSetting(key, value)
+            }
+            // A forgotten app leaves the list, so the rows are read again.
+            function forget(key) {
+                refusal.text = backend.forgetApp(key)
+                rows = JSON.parse(backend.preferenceRows())
             }
             Component.onDestruction: backend.preferencesClosed()
             header: Kirigami.InlineMessage {
@@ -102,17 +107,29 @@ Kirigami.ApplicationWindow {
                         Component { id: sectionRow; Kirigami.Separator {} }
                         Component {
                             id: switchRow
-                            RowLayout {
-                                Controls.Switch {
-                                    text: row.modelData.title
-                                    checked: row.modelData.value === "true"
-                                    onToggled: preferences.store(row.modelData.key, checked ? "true" : "false")
+                            ColumnLayout {
+                                spacing: 0
+                                RowLayout {
+                                    Controls.Switch {
+                                        text: row.modelData.title
+                                        checked: row.modelData.value === "true"
+                                        onToggled: preferences.store(row.modelData.key, checked ? "true" : "false")
+                                    }
+                                    // Immich Crosslink's switch links to the protocol as Read more, never by its address.
+                                    Kirigami.LinkButton {
+                                        visible: row.modelData.link.length > 0
+                                        text: i18n("Read more")
+                                        onClicked: Qt.openUrlExternally(row.modelData.link)
+                                    }
                                 }
-                                // Immich Crosslink's switch links to the protocol, so it is clear what it is.
-                                Kirigami.UrlButton {
-                                    visible: row.modelData.link.length > 0
-                                    url: row.modelData.link
-                                    text: i18n("Read more")
+                                // A line under the switch where its title alone says too little.
+                                Controls.Label {
+                                    visible: row.modelData.caption.length > 0
+                                    text: row.modelData.caption
+                                    wrapMode: Text.WordWrap
+                                    font: Kirigami.Theme.smallFont
+                                    opacity: 0.7
+                                    Layout.maximumWidth: Kirigami.Units.gridUnit * 22
                                 }
                             }
                         }
@@ -125,14 +142,24 @@ Kirigami.ApplicationWindow {
                                     checked: row.modelData.value === "true"
                                     onToggled: preferences.store(row.modelData.key, checked ? "true" : "false")
                                 }
-                                // The switch draws no icon, so the app's own is shown beside its name.
+                                // The switch draws no icon, so the app's own is shown beside its name; an app not
+                                // installed now has its remembered name and a generic icon.
                                 Kirigami.Icon {
-                                    source: row.modelData.icon
-                                    visible: row.modelData.icon.length > 0
+                                    source: row.modelData.icon.length > 0 ? row.modelData.icon : "application-x-executable"
                                     implicitWidth: Kirigami.Units.iconSizes.small
                                     implicitHeight: Kirigami.Units.iconSizes.small
                                 }
                                 Controls.Label { text: row.modelData.title }
+                                Controls.Label {
+                                    visible: !row.modelData.installed
+                                    text: i18n("Not installed")
+                                    opacity: 0.7
+                                }
+                                Controls.Button {
+                                    visible: !row.modelData.installed
+                                    text: i18n("Forget")
+                                    onClicked: preferences.forget(row.modelData.key)
+                                }
                             }
                         }
                         Component {

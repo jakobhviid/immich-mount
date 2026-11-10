@@ -90,6 +90,68 @@ fn read(id: &str, text: &str, languages: &[String]) -> Option<CrosslinkApp> {
     Some(CrosslinkApp { id: id.to_owned(), name, icon: values.get("Icon").cloned(), shows: list("X-Immich-Crosslink-Shows") })
 }
 
+/// How long an app that is not installed stays listed (Immich Crosslink, "Participants that come and go").
+pub const FORGET_AFTER: chrono::Duration = chrono::Duration::days(30);
+
+/// An app the settings list: installed now, or seen before and not installed (by its remembered name).
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub struct ListedApp {
+    pub app: CrosslinkApp,
+    pub installed: bool,
+}
+
+/// What is remembered of an app seen: its name, and when it was last found installed.
+#[derive(Debug, Clone, PartialEq, Eq, serde::Serialize, serde::Deserialize)]
+struct Seen {
+    name: String,
+    last_seen: chrono::DateTime<chrono::Utc>,
+}
+
+/// The apps to list: those installed, which are seen now, and those seen in the last 30 days. Remembered in
+/// `seen_file` (the app's state, not a setting). Returns the list and the ids forgotten now, whose switches go too.
+pub fn listed(seen_file: &Path, installed: Vec<CrosslinkApp>, now: chrono::DateTime<chrono::Utc>) -> (Vec<ListedApp>, Vec<String>) {
+    let mut seen: BTreeMap<String, Seen> =
+        std::fs::read_to_string(seen_file).ok().and_then(|text| serde_json::from_str(&text).ok()).unwrap_or_default();
+    for app in &installed {
+        seen.insert(app.id.clone(), Seen { name: app.name.clone(), last_seen: now });
+    }
+    let forgotten: Vec<String> = seen.iter().filter(|(_, entry)| now - entry.last_seen > FORGET_AFTER).map(|(id, _)| id.clone()).collect();
+    for id in &forgotten {
+        seen.remove(id);
+    }
+    let absent = seen
+        .iter()
+        .filter(|(id, _)| !installed.iter().any(|app| &app.id == *id))
+        .map(|(id, entry)| ListedApp { app: CrosslinkApp { id: id.clone(), name: entry.name.clone(), icon: None, shows: Vec::new() }, installed: false })
+        .collect::<Vec<_>>();
+    save(seen_file, &seen);
+    let mut listed: Vec<ListedApp> = installed.into_iter().map(|app| ListedApp { app, installed: true }).chain(absent).collect();
+    listed.sort_by_key(|listed| listed.app.name.to_lowercase());
+    (listed, forgotten)
+}
+
+/// Forget an app that is not installed: it leaves the list, and its switch with it (the caller drops it from
+/// `crosslink.hidden`).
+pub fn forget(seen_file: &Path, id: &str) {
+    let mut seen: BTreeMap<String, Seen> =
+        std::fs::read_to_string(seen_file).ok().and_then(|text| serde_json::from_str(&text).ok()).unwrap_or_default();
+    if seen.remove(id).is_some() {
+        save(seen_file, &seen);
+    }
+}
+
+fn save(seen_file: &Path, seen: &BTreeMap<String, Seen>) {
+    if let Some(folder) = seen_file.parent() {
+        let _ = std::fs::create_dir_all(folder);
+    }
+    if let Ok(text) = serde_json::to_string_pretty(seen) {
+        let temporary = seen_file.with_extension("json.tmp");
+        if std::fs::write(&temporary, text).is_ok() {
+            let _ = std::fs::rename(&temporary, seen_file);
+        }
+    }
+}
+
 /// Whether the user left `app` out of the menus (`crosslink.hidden`, desktop entry ids separated by `;`).
 pub fn is_hidden(hidden: &str, app: &str) -> bool {
     hidden.split(';').any(|id| id.trim() == app)
@@ -142,6 +204,25 @@ mod tests {
         let found = entries(&[user, system]);
         assert!(found["org.example.Gallery.desktop"].contains("Name=Mine"));
         assert!(found.contains_key("kde-viewer.desktop"));
+    }
+
+    #[test]
+    fn apps_seen_stay_listed_for_thirty_days_and_can_be_forgotten() {
+        let folder = tempfile::tempdir().unwrap();
+        let seen_file = folder.path().join("state/crosslink-seen.json");
+        let gallery = read("org.example.Gallery.desktop", GALLERY, &[]).unwrap();
+        let start = chrono::Utc::now();
+        let (listed, _) = listed(&seen_file, vec![gallery.clone()], start);
+        assert_eq!(listed, [ListedApp { app: gallery.clone(), installed: true }]);
+        let (listed, forgotten) = super::listed(&seen_file, Vec::new(), start + chrono::Duration::days(29));
+        assert_eq!((listed.len(), listed[0].installed, listed[0].app.name.as_str()), (1, false, "Gallery"), "not installed, by its name");
+        assert!(forgotten.is_empty());
+        let (listed, forgotten) = super::listed(&seen_file, Vec::new(), start + chrono::Duration::days(31));
+        assert!(listed.is_empty());
+        assert_eq!(forgotten, ["org.example.Gallery.desktop"], "forgotten after 30 days unseen");
+        super::listed(&seen_file, vec![gallery.clone()], start);
+        forget(&seen_file, "org.example.Gallery.desktop");
+        assert!(super::listed(&seen_file, Vec::new(), start).0.is_empty(), "forgotten by hand");
     }
 
     #[test]
