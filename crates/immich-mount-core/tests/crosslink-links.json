@@ -307,6 +307,85 @@
       "link": "immich://asset?id=3f1c2b9e-7a4d-4c1e-9b2a-5d6e7f8a9b0c",
       "result": "invalid",
       "note": "not a crosslink"
+    },
+    {
+      "name": "a user in capitals",
+      "link": "immich-crosslink:///photos/3f1c2b9e-7a4d-4c1e-9b2a-5d6e7f8a9b0c?server=https%3A%2F%2Fphotos.example.com&user=0A1B2C3D-4E5F-4A6B-8C7D-9E0F1A2B3C4D",
+      "result": "show",
+      "kind": "asset",
+      "path": "/photos/3f1c2b9e-7a4d-4c1e-9b2a-5d6e7f8a9b0c",
+      "server": "https://photos.example.com",
+      "user": "0a1b2c3d-4e5f-4a6b-8c7d-9e0f1a2b3c4d",
+      "note": "user ids are UUIDs, compared and given in lower case"
+    },
+    {
+      "name": "a server port with a leading zero",
+      "link": "immich-crosslink:///photos/3f1c2b9e-7a4d-4c1e-9b2a-5d6e7f8a9b0c?server=https%3A%2F%2Fphotos.example.com%3A0443",
+      "result": "show",
+      "kind": "asset",
+      "path": "/photos/3f1c2b9e-7a4d-4c1e-9b2a-5d6e7f8a9b0c",
+      "server": "https://photos.example.com",
+      "note": "ports compare as numbers: 0443 is https's default"
+    },
+    {
+      "name": "a user that is not a UUID",
+      "link": "immich-crosslink:///photos/3f1c2b9e-7a4d-4c1e-9b2a-5d6e7f8a9b0c?server=https%3A%2F%2Fphotos.example.com&user=someone",
+      "result": "invalid",
+      "note": "user is an Immich user id, a UUID"
+    },
+    {
+      "name": "an empty user",
+      "link": "immich-crosslink:///photos/3f1c2b9e-7a4d-4c1e-9b2a-5d6e7f8a9b0c?server=https%3A%2F%2Fphotos.example.com&user=",
+      "result": "invalid",
+      "note": "user is an Immich user id, a UUID"
+    },
+    {
+      "name": "a search without a query",
+      "link": "immich-crosslink:///search?server=https%3A%2F%2Fphotos.example.com",
+      "result": "cannot-show",
+      "note": "not a path of draft 0.2"
+    },
+    {
+      "name": "an empty search",
+      "link": "immich-crosslink:///search?query=%7B%7D&server=https%3A%2F%2Fphotos.example.com",
+      "result": "cannot-show",
+      "note": "a search by nothing is not a path of draft 0.2"
+    },
+    {
+      "name": "a city that is not a string",
+      "link": "immich-crosslink:///search?query=%7B%22city%22%3A1%7D&server=https%3A%2F%2Fphotos.example.com",
+      "result": "invalid",
+      "note": "city and country are strings"
+    },
+    {
+      "name": "a server with a user name",
+      "link": "immich-crosslink:///photos/3f1c2b9e-7a4d-4c1e-9b2a-5d6e7f8a9b0c?server=https%3A%2F%2Fsomeone%40photos.example.com",
+      "result": "invalid",
+      "note": "the server address has no user information"
+    },
+    {
+      "name": "a server with a query",
+      "link": "immich-crosslink:///photos/3f1c2b9e-7a4d-4c1e-9b2a-5d6e7f8a9b0c?server=https%3A%2F%2Fphotos.example.com%2F%3Fa%3Db",
+      "result": "invalid",
+      "note": "the server address has no query"
+    },
+    {
+      "name": "a server with a fragment",
+      "link": "immich-crosslink:///photos/3f1c2b9e-7a4d-4c1e-9b2a-5d6e7f8a9b0c?server=https%3A%2F%2Fphotos.example.com%2F%23top",
+      "result": "invalid",
+      "note": "the server address has no fragment"
+    },
+    {
+      "name": "a server without a host",
+      "link": "immich-crosslink:///photos/3f1c2b9e-7a4d-4c1e-9b2a-5d6e7f8a9b0c?server=https%3A%2F%2F",
+      "result": "invalid",
+      "note": "the server address has a host"
+    },
+    {
+      "name": "a server with a port that is not a number",
+      "link": "immich-crosslink:///photos/3f1c2b9e-7a4d-4c1e-9b2a-5d6e7f8a9b0c?server=https%3A%2F%2Fphotos.example.com%3Ahttps",
+      "result": "invalid",
+      "note": "a port is a number"
     }
   ]
 }

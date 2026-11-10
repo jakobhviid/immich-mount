@@ -74,6 +74,7 @@ final class FileProviderExtension: NSObject, NSFileProviderReplicatedExtension, 
     /// Follow config.toml once the app's Settings window changed it; the app then asks the system to list everything
     /// again, which comes through here first.
     private func followConfig(_ library: Library) {
+        CurrentOffers.reload()
         let config = (try? String(contentsOf: AppGroup.configFile, encoding: .utf8)) ?? ""
         do {
             if try library.applyConfig(config: config) {

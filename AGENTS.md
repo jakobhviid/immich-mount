@@ -77,7 +77,9 @@ A `BREAKING CHANGE` footer is not scanned. Mark breaking changes with `!` in the
 right away, CI tweaks. When every commit in a push carries it, the release workflow's `gate` job skips the whole
 release (no packages, no Mac build, no tap update), and `ci/version.sh` skips marked commits, so version numbers stay
 contiguous. A push that mixes marked and unmarked commits releases as usual, counting only the unmarked ones. It is
-not the breaking-change bang, which sits right before the colon (`feat!:`). The download page rebuilds by itself when
+not the breaking-change bang, which sits right before the colon (`feat!:`). A push cancels a release run still in progress (the workflow's
+concurrency), so a `!no-release` push while an earlier commit's release builds leaves that commit unreleased: wait
+for the release before pushing a marked commit, or run the cancelled run again (`gh run rerun <id>`). The download page rebuilds by itself when
 `site/` changes on `main` (the `pages` workflow), with or without a release.
 
 ## The green gate

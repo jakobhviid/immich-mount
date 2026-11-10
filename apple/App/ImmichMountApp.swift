@@ -107,14 +107,22 @@ final class AppDelegate: NSObject, NSApplicationDelegate, SPUUpdaterDelegate,
         if !finishedLaunching {
             launchedForLink = true
         }
+        let ownScheme = Bundle.main.bundleIdentifier?.lowercased()
         for url in urls {
-            Task { await ReceivedLinks.show(url) }
+            if url.scheme?.lowercased() == ownScheme {
+                // Finder's Show in Another App…, from the extension.
+                CrosslinkApps.shared.showMenu(for: url)
+            } else {
+                Task { await ReceivedLinks.show(url) }
+            }
         }
     }
 
     func applicationDidFinishLaunching(_ notification: Notification) {
         _ = updater
         followWindows()
+        // The other apps that take crosslinks, for Finder's Show in actions.
+        CrosslinkApps.shared.follow()
         // What came of a copied folder's albums is told in notifications, shown even while the app is in front.
         UNUserNotificationCenter.current().delegate = self
         // Back from Finder or System Settings, the menu and the window know at once whether the location is on.

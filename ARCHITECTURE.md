@@ -976,6 +976,16 @@ Open in Immich and Copy Immich Link take an item from the file manager to its pa
     is the user's choice. A package taking it over would also take it from the other app's users.
   - **An older daemon** answers `Links` with an unknown method; the menus then ask `WebLink` and offer no Show in
     items, so a newer extension never breaks against a daemon not yet restarted after an upgrade.
+- **Show in *app* on the Mac:** Finder's actions are declared in the extension's Info.plist, so their names are
+  fixed; a list that changes cannot be one action per app. Immich Gallery, the one app worth naming, has its own
+  action, and every other app is reached through **Show in Another App…**, which has the menu bar app show a menu.
+  The app finds the apps (an extension may not ask Launch Services about other apps' bundles from its sandbox, and the
+  app sees apps launch), writes what is offered to the App Group (`crosslink-apps.json`), and the extension marks the
+  items Finder offers each action on (`userInfo`); the markers are part of each item's version, so the app has the
+  system read the items again when the offers change. An extension shows no interface, so Show in Another App…
+  opens the app's own URL scheme, which starts the app without a window if it is not running.
+  - **The Gallery's own link** (`immichgallery://photo/<id>`, its widget's) is kept for the releases that do not
+    announce immich-crosslink; once a build announces, it gets crosslinks like any other app.
 - **Flatpak impact:** the D-Bus members and the command work from a Flatpak (the command needs the session bus and
   `xdg-open`, which the OpenURI portal answers); the file managers' menu items are files on the host, which a
   Flatpak cannot install. A Flatpak exports its launcher entry with the scheme, so it can take crosslinks; selecting

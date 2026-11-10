@@ -430,7 +430,12 @@ Dolphin offer Show in *app* from the daemon's `Links`, and both apps' settings l
 one announcing 0.1): an album folder offered both 0.2 apps, everything else only the every-kind one, the 0.1 app
 never; each received exactly the item's crosslink with `&user=`; `crosslink.hidden` removed one app and
 `crosslink.enabled` off removed every Show in item while Open in Immich stayed; against a daemon with only `WebLink`
-the menus offered Open and Copy alone. The Python extension did the same on Bazzite 44. **Left:** the Mac (below);
+the menus offered Open and Copy alone. The Python extension did the same on Bazzite 44. **Built on the Mac** too
+(SPEC.md, "In Finder"): Immich Mount Dev on macOS 27.2 found Immich Gallery Dev (announcing) and the Gallery release
+(not announcing) and two test apps, `fileproviderctl evaluate` offered the actions on Albums, an album and a photo in
+an album, hiding an app or switching crosslink off removed them, and the menu listed two apps for an album. **Left:**
+the maintainer's clicks in Finder (Show in Immich Gallery on a photo, Show in Another App… on an album) and in Immich
+Gallery Dev (Show in Immich Mount), which no command can press;
 for a second or so after the daemon starts, an item in a folder it has not listed yet gets no items.
 
 Immich Mount finds the other installed apps that take crosslinks, and offers **Show in *app*** for each, on the items

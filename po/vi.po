@@ -212,27 +212,27 @@ msgid "Immich takes photos and videos only."
 msgstr "Immich chỉ nhận ảnh và video."
 
 #: crates/immich-mount-linux/src/tray.rs:68
-#: apple/App/ImmichMountApp.swift:642
+#: apple/App/ImmichMountApp.swift:650
 msgid "Connected to {server}"
 msgstr "Đã kết nối tới {server}"
 
 #: crates/immich-mount-linux/src/tray.rs:69
-#: apple/App/ImmichMountApp.swift:642
+#: apple/App/ImmichMountApp.swift:650
 msgid "{server} is not reachable"
 msgstr "Không thể kết nối tới {server}"
 
 #: crates/immich-mount-linux/src/tray.rs:71
-#: apple/App/ImmichMountApp.swift:641
+#: apple/App/ImmichMountApp.swift:649
 msgid "Signed in to {server}"
 msgstr "Đã đăng nhập vào {server}"
 
 #: crates/immich-mount-linux/src/tray.rs:79
-#: apple/App/ImmichMountApp.swift:650
+#: apple/App/ImmichMountApp.swift:658
 msgid "Server version: Immich {version}"
 msgstr "Phiên bản máy chủ: Immich {version}"
 
 #: crates/immich-mount-linux/src/tray.rs:82
-#: apple/App/ImmichMountApp.swift:653
+#: apple/App/ImmichMountApp.swift:661
 msgid "Signed in as: {account}"
 msgstr "Đăng nhập với tư cách: {account}"
 
@@ -269,22 +269,22 @@ msgstr "Ổ đĩa"
 #: crates/immich-mount-desktop/src/preferences.rs:13
 #: crates/immich-mount-gnome/src/window.blp:144
 #: crates/immich-mount-kde/qml/Main.qml:392
-#: apple/App/SettingsView.swift:205
+#: apple/App/SettingsView.swift:237
 msgid "Sections"
 msgstr "Các phần"
 
 #: crates/immich-mount-desktop/src/preferences.rs:14
-#: apple/App/SettingsView.swift:207
+#: apple/App/SettingsView.swift:239
 msgid "Date Folders"
 msgstr "Thư mục theo ngày"
 
 #: crates/immich-mount-desktop/src/preferences.rs:16
-#: apple/App/SettingsView.swift:231
+#: apple/App/SettingsView.swift:263
 msgid "Files"
 msgstr "Tập tin"
 
 #: crates/immich-mount-desktop/src/preferences.rs:17
-#: apple/App/SettingsView.swift:220
+#: apple/App/SettingsView.swift:252
 msgid "Uploads"
 msgstr "Tải lên"
 
@@ -392,7 +392,7 @@ msgstr "Sử dụng AI"
 
 #: crates/immich-mount-gnome/src/main.rs:117
 #: crates/immich-mount-kde/qml/Main.qml:203
-#: apple/App/ImmichMountApp.swift:498
+#: apple/App/ImmichMountApp.swift:506
 msgid "Parts of this project were written with the assistance of AI coding agents. All changes are reviewed by the maintainer."
 msgstr "Một số phần của dự án này được viết với sự hỗ trợ của các tác nhân lập trình AI. Mọi thay đổi đều được người bảo trì xem xét."
 
@@ -630,6 +630,7 @@ msgstr "_Giới thiệu Immich Mount"
 #: crates/immich-mount-gnome/nautilus/immich-mount-nautilus.c:169
 #: crates/immich-mount-gnome/nautilus/immich-mount-nautilus.py:129
 #: crates/immich-mount-kde/dolphin/immich-mount-dolphin.cpp:154
+#: apple/App/CrosslinkApps.swift:126
 msgid "Show in {app}"
 msgstr "Hiện trong {app}"
 
@@ -682,7 +683,7 @@ msgid "The Immich API layer: {project}"
 msgstr "Lớp API Immich: {project}"
 
 #: crates/immich-mount-kde/qml/Main.qml:199
-#: apple/App/ImmichMountApp.swift:497
+#: apple/App/ImmichMountApp.swift:505
 msgid "AI disclosure"
 msgstr "Sử dụng AI"
 
@@ -921,7 +922,7 @@ msgid "Show the Upload folder, and upload what is copied into it"
 msgstr "Hiện thư mục Upload, và tải lên những gì được chép vào đó"
 
 #: crates/immich-mount-core/src/settings.rs:71
-#: apple/App/SettingsView.swift:217
+#: apple/App/SettingsView.swift:249
 msgid "Folders copied into Upload"
 msgstr "Thư mục sao chép vào Upload"
 
@@ -986,12 +987,12 @@ msgid "Ask Each Time"
 msgstr "Hỏi mỗi lần"
 
 #: apple/App/ContentView.swift:19
-#: apple/App/SettingsView.swift:314
+#: apple/App/SettingsView.swift:346
 msgid "Move Immich Mount to Applications"
 msgstr "Di chuyển Immich Mount vào Ứng dụng"
 
 #: apple/App/ContentView.swift:20
-#: apple/App/SettingsView.swift:315
+#: apple/App/SettingsView.swift:347
 msgid "Finder's location runs from the Applications folder. Quit Immich Mount, drag it into Applications, then open it from there."
 msgstr "Vị trí trong Finder chỉ hoạt động từ thư mục Ứng dụng. Hãy thoát Immich Mount, kéo nó vào Ứng dụng, rồi mở từ đó."
 
@@ -1032,119 +1033,119 @@ msgid "Use System Settings Instead"
 msgstr "Dùng Cài đặt hệ thống thay thế"
 
 #: apple/App/ContentView.swift:167
-#: apple/App/ImmichMountApp.swift:456
-#: apple/App/SettingsView.swift:295
+#: apple/App/ImmichMountApp.swift:464
+#: apple/App/SettingsView.swift:327
 msgid "Open in Finder"
 msgstr "Mở trong Finder"
 
-#: apple/App/ImmichMountApp.swift:209
+#: apple/App/ImmichMountApp.swift:217
 msgid "Sign out of Immich Mount?"
 msgstr "Đăng xuất khỏi Immich Mount?"
 
-#: apple/App/ImmichMountApp.swift:210
+#: apple/App/ImmichMountApp.swift:218
 msgid "Immich Mount leaves Finder, together with the photos and videos downloaded to this Mac. Your library on the server stays as it is."
 msgstr "Immich Mount sẽ rời khỏi Finder, cùng với ảnh và video đã tải xuống máy Mac này. Thư viện của bạn trên máy chủ vẫn giữ nguyên."
 
-#: apple/App/ImmichMountApp.swift:212
+#: apple/App/ImmichMountApp.swift:220
 msgid "Files in Upload that have not reached Immich: {count}. They stay on this Mac, and Finder shows where once you have signed out."
 msgstr "Tệp trong Upload chưa đến được Immich: {count}. Chúng vẫn ở trên máy Mac này, và Finder sẽ cho biết vị trí sau khi bạn đăng xuất."
 
-#: apple/App/ImmichMountApp.swift:216
+#: apple/App/ImmichMountApp.swift:224
 msgid "Sign Out"
 msgstr "Đăng xuất"
 
-#: apple/App/ImmichMountApp.swift:217
+#: apple/App/ImmichMountApp.swift:225
 msgid "Cancel"
 msgstr "Hủy"
 
-#: apple/App/ImmichMountApp.swift:232
+#: apple/App/ImmichMountApp.swift:240
 msgid "Still signed in"
 msgstr "Vẫn đăng nhập"
 
-#: apple/App/ImmichMountApp.swift:233
+#: apple/App/ImmichMountApp.swift:241
 msgid "Finder's location could not be removed, so Immich Mount stays signed in: {error}"
 msgstr "Không thể gỡ vị trí trong Finder, nên Immich Mount vẫn đăng nhập: {error}"
 
-#: apple/App/ImmichMountApp.swift:487
+#: apple/App/ImmichMountApp.swift:495
 msgid "Your Immich photos and videos as a drive in Finder. By Jakob Hviid, under the MIT license."
 msgstr "Ảnh và video Immich của bạn dưới dạng ổ đĩa trong Finder. Tác giả: Jakob Hviid, theo giấy phép MIT."
 
-#: apple/App/ImmichMountApp.swift:488
+#: apple/App/ImmichMountApp.swift:496
 msgid "Website"
 msgstr "Trang web"
 
-#: apple/App/ImmichMountApp.swift:490
+#: apple/App/ImmichMountApp.swift:498
 msgid "Source code"
 msgstr "Mã nguồn"
 
-#: apple/App/ImmichMountApp.swift:493
+#: apple/App/ImmichMountApp.swift:501
 msgid "Inspired by"
 msgstr "Lấy cảm hứng từ"
 
-#: apple/App/ImmichMountApp.swift:495
+#: apple/App/ImmichMountApp.swift:503
 msgid "The Immich API layer"
 msgstr "Lớp API Immich"
 
-#: apple/App/ImmichMountApp.swift:658
+#: apple/App/ImmichMountApp.swift:666
 msgid "Last checked: {time}"
 msgstr "Kiểm tra lần cuối: {time}"
 
-#: apple/App/ImmichMountApp.swift:660
+#: apple/App/ImmichMountApp.swift:668
 msgid "Reason: {reason}"
 msgstr "Lý do: {reason}"
 
-#: apple/App/ImmichMountApp.swift:660
+#: apple/App/ImmichMountApp.swift:668
 msgid "none given"
 msgstr "không có"
 
-#: apple/App/ImmichMountApp.swift:758
+#: apple/App/ImmichMountApp.swift:766
 msgid "The login item could not be changed: {error}"
 msgstr "Không thể thay đổi mục đăng nhập: {error}"
 
-#: apple/App/ImmichMountApp.swift:792
+#: apple/App/ImmichMountApp.swift:800
 msgid "The server sent an address that cannot be opened."
 msgstr "Máy chủ đã gửi một địa chỉ không mở được."
 
-#: apple/App/ImmichMountApp.swift:885
+#: apple/App/ImmichMountApp.swift:893
 msgid "Finder does not show Immich yet. Is the extension switched on in System Settings? ({error})"
 msgstr "Finder chưa hiển thị Immich. Tiện ích mở rộng đã được bật trong Cài đặt hệ thống chưa? ({error})"
 
 #: apple/App/ImmichMountApp.swift:46
-#: apple/App/ImmichMountApp.swift:467
+#: apple/App/ImmichMountApp.swift:475
 msgid "About Immich Mount"
 msgstr "Giới thiệu về Immich Mount"
 
 #: apple/App/ImmichMountApp.swift:49
-#: apple/App/ImmichMountApp.swift:460
+#: apple/App/ImmichMountApp.swift:468
 msgid "Check for Updates…"
 msgstr "Kiểm tra bản cập nhật…"
 
 #: apple/App/ImmichMountApp.swift:54
-#: apple/App/ImmichMountApp.swift:458
+#: apple/App/ImmichMountApp.swift:466
 msgid "Settings…"
 msgstr "Cài đặt…"
 
-#: apple/App/ImmichMountApp.swift:445
-#: apple/App/SettingsView.swift:273
+#: apple/App/ImmichMountApp.swift:453
+#: apple/App/SettingsView.swift:305
 msgid "Sign In…"
 msgstr "Đăng nhập…"
 
-#: apple/App/ImmichMountApp.swift:447
-#: apple/App/SettingsView.swift:293
+#: apple/App/ImmichMountApp.swift:455
+#: apple/App/SettingsView.swift:325
 msgid "Switch On in Finder…"
 msgstr "Bật trong Finder…"
 
-#: apple/App/ImmichMountApp.swift:463
-#: apple/App/SettingsView.swift:298
+#: apple/App/ImmichMountApp.swift:471
+#: apple/App/SettingsView.swift:330
 msgid "Sign Out…"
 msgstr "Đăng xuất…"
 
-#: apple/App/ImmichMountApp.swift:468
+#: apple/App/ImmichMountApp.swift:476
 msgid "Quit Immich Mount"
 msgstr "Thoát Immich Mount"
 
 #: apple/App/ReceivedLinks.swift:18
-#: apple/App/SettingsView.swift:272
+#: apple/App/SettingsView.swift:304
 msgid "Not signed in"
 msgstr "Chưa đăng nhập"
 
@@ -1156,39 +1157,39 @@ msgstr "Cài đặt chung"
 msgid "Folders"
 msgstr "Thư mục"
 
-#: apple/App/SettingsView.swift:226
+#: apple/App/SettingsView.swift:258
 msgid "Folder names"
 msgstr "Tên thư mục"
 
-#: apple/App/SettingsView.swift:229
+#: apple/App/SettingsView.swift:261
 msgid "File names"
 msgstr "Tên tệp"
 
-#: apple/App/SettingsView.swift:128
+#: apple/App/SettingsView.swift:146
 msgid "Open at login"
 msgstr "Mở khi đăng nhập"
 
-#: apple/App/SettingsView.swift:130
+#: apple/App/SettingsView.swift:148
 msgid "Check for updates automatically"
 msgstr "Tự động kiểm tra bản cập nhật"
 
-#: apple/App/SettingsView.swift:136
+#: apple/App/SettingsView.swift:154
 msgid "While Immich Mount runs, in the menu bar, changes in Immich reach Finder within seconds. Updates come from jakob.hviid.phd, signed by the project and notarized by Apple."
 msgstr "Khi Immich Mount chạy trên thanh menu, các thay đổi trong Immich đến Finder trong vài giây. Bản cập nhật đến từ jakob.hviid.phd, được dự án ký và được Apple công chứng."
 
-#: apple/App/SettingsView.swift:211
+#: apple/App/SettingsView.swift:243
 msgid "Date folders are day folders inside each month in Photos, and year and month folders in the other sections."
 msgstr "Thư mục theo ngày là các thư mục ngày bên trong mỗi tháng trong Photos, và các thư mục năm và tháng trong các phần khác."
 
-#: apple/App/SettingsView.swift:212
+#: apple/App/SettingsView.swift:244
 msgid "Photos and videos copied into Upload are added to Immich."
 msgstr "Ảnh và video được sao chép vào Upload sẽ được thêm vào Immich."
 
-#: apple/App/SettingsView.swift:222
+#: apple/App/SettingsView.swift:254
 msgid "Every photo and video in them is added to Immich. An album is named by its folder's path, such as Trip › Day 1."
 msgstr "Mọi ảnh và video trong đó đều được thêm vào Immich. Album được đặt tên theo đường dẫn thư mục của nó, ví dụ Chuyến đi › Ngày 1."
 
-#: apple/App/SettingsView.swift:233
+#: apple/App/SettingsView.swift:265
 msgid "Finder lists Immich again after each change."
 msgstr "Finder liệt kê lại Immich sau mỗi thay đổi."
 
@@ -1203,3 +1204,11 @@ msgstr "Immich;ảnh;hình;video;ổ đĩa;gắn kết;"
 #: apple/App/Info.plist (NSLocalNetworkUsageDescription)
 msgid "Immich Mount connects to your Immich server, which may be on your local network."
 msgstr "Immich Mount kết nối tới máy chủ Immich của bạn, có thể nằm trong mạng cục bộ."
+
+#: apple/FileProvider/Info.plist (NSExtensionFileProviderActionName)
+msgid "Show in Immich Gallery"
+msgstr "Hiện trong Immich Gallery"
+
+#: apple/FileProvider/Info.plist (NSExtensionFileProviderActionName)
+msgid "Show in Another App…"
+msgstr "Hiện trong ứng dụng khác…"

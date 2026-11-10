@@ -88,6 +88,18 @@ Traps (verified on macOS 27.0.1 with Xcode 27.2):
 - **Settings cannot be written from SSH** (the App Group is closed to it, above): `-setPreference <key>=<value>`
   changes one, then quit that instance. It has the system read every item again, and for a few seconds after,
   `getUserVisibleURL` may fail with "database is locked" (`SqliteErrorDomain` 5; seen on macOS 27.2).
+- **A sandboxed app reads another app's Info.plist only in /Applications:** `Bundle(url:)` of an app in
+  `~/Applications` or a build folder gives nothing (seen on macOS 27.2), so Immich Mount finds a crosslink
+  participant only there. A test participant (`lab/mac/crosslink-app.sh`) goes into /Applications for the check and
+  out again with `--remove` right after; nothing else of ours is installed there but the Dev app.
+- **No command performs a Finder action:** `fileproviderctl evaluate` shows whether Finder offers one, and the log
+  shows what the extension did, but the click is the maintainer's. Show in Another App… can be driven without Finder
+  (`open -a "/Applications/Immich Mount Dev.app" "dev.hviid.immichmount.dev://show-in-another-app?link=<crosslink,
+  percent-encoded>"`), but its menu then waits at the pointer for a click, holding the app's main thread; quit the
+  app (`pkill`) when nobody is there to choose.
+- **After `reimportItems`, the items of a folder carry no `userInfo`** until the folder is listed again (Finder
+  visiting it, or a received link shown there): `fileproviderctl evaluate` then offers no action on them, not even
+  Open in Immich (seen on macOS 27.2). Check the actions after Finder has listed the folder.
 - **zsh aborts a command whose glob matches nothing** ("no matches found"), and the rest of an SSH command line with
   it. Run cleanup scripts through `bash -s`.
 

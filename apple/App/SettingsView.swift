@@ -92,15 +92,33 @@ final class SettingsModel: ObservableObject {
         Binding(get: { preference.value }, set: { self.change(preference.key, to: $0) })
     }
 
+    /// Offer an app in Show in, or leave it out (`crosslink.hidden`).
+    func setShown(_ bundleId: String, _ shown: Bool) {
+        do {
+            keep(try setAppShown(config: AppGroup.configText, bundleId: bundleId, shown: shown), relist: false)
+        } catch {
+            message = describe(error)
+        }
+    }
+
     /// Keep one value, then, unless it changes nothing Finder shows, have the system list every folder again, by the
     /// new rules.
     func change(_ key: String, to value: String, relist: Bool = true) {
         do {
-            let updated = try setPreference(config: AppGroup.configText, key: key, value: value)
+            keep(try setPreference(config: AppGroup.configText, key: key, value: value), relist: relist)
+        } catch {
+            message = describe(error)
+        }
+    }
+
+    private func keep(_ updated: String, relist: Bool) {
+        do {
             try FileManager.default.createDirectory(at: AppGroup.container, withIntermediateDirectories: true)
             try updated.write(to: AppGroup.configFile, atomically: true, encoding: .utf8)
             panes = try settingsPanes(config: updated)
             message = nil
+            // Immich crosslink's settings change which apps Finder offers.
+            CrosslinkApps.shared.refresh()
             guard relist else { return }
             Task {
                 do {
@@ -150,6 +168,7 @@ struct GeneralPane: View {
 /// saying so. It changes nothing Finder lists.
 private struct CrosslinkSection: View {
     @EnvironmentObject private var settings: SettingsModel
+    @ObservedObject private var apps = CrosslinkApps.shared
     let crosslink: Preference
 
     private static let page = URL(string: "https://jakob.hviid.phd/immich-crosslink/")!
@@ -172,7 +191,20 @@ private struct CrosslinkSection: View {
                     .help(tr(crosslink.title))
                 }
             }
+            // The apps found, each with its switch; they mean nothing while Immich crosslink is off.
+            ForEach(apps.listed) { app in
+                Toggle(isOn: Binding(get: { app.shown }, set: { settings.setShown(app.bundleId, $0) })) {
+                    Label {
+                        Text(verbatim: app.name)
+                    } icon: {
+                        Image(nsImage: app.icon).resizable().frame(width: 20, height: 20)
+                    }
+                }
+                .toggleStyle(.switch)
+                .disabled(crosslink.value != "true")
+            }
         }
+        .onAppear { apps.refresh() }
     }
 }
 

@@ -457,8 +457,8 @@ impl<Source: LibrarySource, Names: NameMemory> Tree<Source, Names> {
 
     /// The key of the item a link names, where this mount shows it (ROADMAP.md, "Show in Immich Mount"); `None` where
     /// it shows it nowhere: a section that is off, a person the People section leaves out, an id the account cannot
-    /// see, a photo that is not in the folder the link names. A photo's date folders come from the Asset itself; a
-    /// photo of the timeline that is archived shows in Archive when that section is on.
+    /// see. A photo shows in the folder the link names, or in its own place where that folder is not shown or no longer
+    /// holds it: Photos, or Archive when it is archived and that section is on. Its date folders come from the Asset.
     pub async fn locate(&self, item: &ImmichItem) -> Result<Option<NodeKey>, SourceError> {
         let ImmichItem::Asset { within, asset_id } = item else {
             return self.locate_folder(item).await;
@@ -468,15 +468,18 @@ impl<Source: LibrarySource, Names: NameMemory> Tree<Source, Names> {
             Err(SourceError::NotFound) => return Ok(None),
             Err(error) => return Err(error),
         };
-        match within.as_deref() {
-            None => match self.find_asset(NodeKey::Section(SectionKey::Photos), &asset).await? {
-                Some(key) => Ok(Some(key)),
-                None => self.find_asset(NodeKey::Section(SectionKey::Archive), &asset).await,
-            },
-            Some(folder) => match self.locate_folder(folder).await? {
-                Some(folder) => self.find_asset(folder, &asset).await,
-                None => Ok(None),
-            },
+        // Where the link saw it, when the drive shows that folder and it still holds the photo; else the photo alone,
+        // in its own place, as the protocol asks of a receiver without that view.
+        if let Some(folder) = within.as_deref() {
+            if let Some(folder) = self.locate_folder(folder).await? {
+                if let Some(key) = self.find_asset(folder, &asset).await? {
+                    return Ok(Some(key));
+                }
+            }
+        }
+        match self.find_asset(NodeKey::Section(SectionKey::Photos), &asset).await? {
+            Some(key) => Ok(Some(key)),
+            None => self.find_asset(NodeKey::Section(SectionKey::Archive), &asset).await,
         }
     }
 
@@ -817,7 +820,13 @@ mod tests {
             Ok(counts.into_iter().collect())
         }
         async fn month_assets(&self, month: YearMonth) -> Result<Vec<Asset>, SourceError> {
-            Ok(self.assets.iter().filter(|asset| asset.year() == month.year && asset.month() == month.month).cloned().collect())
+            // The timeline leaves archived Assets out, as Immich's does.
+            Ok(self
+                .assets
+                .iter()
+                .filter(|asset| asset.year() == month.year && asset.month() == month.month && !self.archived.contains(&asset.id))
+                .cloned()
+                .collect())
         }
         async fn albums(&self) -> Result<Vec<Album>, SourceError> {
             Ok(self.albums.iter().map(|(album, _)| album.clone()).collect())
@@ -958,8 +967,18 @@ mod tests {
     #[tokio::test]
     async fn a_link_to_what_the_mount_does_not_show_finds_nothing() {
         let tree = tree(linked_library(), Config::from_toml("").unwrap());
+        let march = YearMonth { year: 2024, month: 3 };
+        assert_eq!(
+            tree.locate(&photo("a", Some(ImmichItem::Person("ann".into())))).await.unwrap(),
+            Some(NodeKey::Asset { parent: Box::new(NodeKey::TimelineMonth(march)), asset_id: "a".into() }),
+            "a person without the photo: the photo in its own place"
+        );
+        assert_eq!(
+            tree.locate(&photo("a", Some(ImmichItem::Album("gone".into())))).await.unwrap(),
+            Some(NodeKey::Asset { parent: Box::new(NodeKey::TimelineMonth(march)), asset_id: "a".into() }),
+            "an album the drive does not show: likewise"
+        );
         let nothing = [
-            photo("a", Some(ImmichItem::Person("ann".into()))),
             photo("missing", None),
             ImmichItem::Person("hid".into()),
             ImmichItem::Album("gone".into()),

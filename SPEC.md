@@ -412,7 +412,8 @@ selected.
   the same as none), and the user too where the link names one and the credential may read the account's id.
 - **Where it shows:** where the link says: a photo in its album, person, city, Favorites or Archive, in the date
   folders it falls in there; `/photos/<id>` in Photos, in its month (or day) folder, or in Archive when the photo is
-  archived and that section is on. An album, a person, a city (also by its name alone, as Immich's Places page
+  archived and that section is on. A photo whose folder the drive does not show, or whose folder does not hold it,
+  shows in that place of its own instead, as the protocol asks. An album, a person, a city (also by its name alone, as Immich's Places page
   links it) and a country show as their folders, a section as its folder at the top.
 - **Nothing to show** gets a notification, and nothing else happens:
 
@@ -643,6 +644,16 @@ macOS edition"). Where Finder's way differs:
   with a web address (the item's `hasWebLink`). The extension opens the address with `NSWorkspace` or puts it on the
   pasteboard itself, so the menu bar app need not run. Their names are translated through the extension's
   `Localizable.strings`. There is no `web` command on the Mac.
+- **Show in other apps** (Show in other apps): Finder's actions are fixed in the extension's Info.plist, so the apps
+  come in two actions. **Show in Immich Gallery** sends the item's crosslink to Immich Gallery where it announces
+  immich-crosslink, and to a Gallery build that does not (0.5.0) opens `immichgallery://photo/<id>`
+  (`immichgallery-dev://` for its Dev build) on a photo in Photos; never both. **Show in Another App…** has the menu
+  bar app, started if it is not running and without a window, show a menu at the pointer of the other apps that
+  announce draft 0.2 and the item's kind, by the names and icons macOS gives them, and sends the link to the one
+  chosen. The app finds the apps (`NSWorkspace.urlsForApplications(toOpen:)`) at launch, when any app launches, and
+  when a crosslink setting changes, and marks the items Finder offers the actions on; the settings list them, each
+  with a switch (`crosslink.hidden`, by bundle id). A sandboxed app reads another app's announcement only from a copy
+  in /Applications.
 - **Dates:** a file has its capture time, as on Linux; a folder the time the location was set up (signing in),
   where on Linux it has the mount's.
 - **Settings:** the settings table less the Linux-only ones (`mount.*`, `cache.limit`, `thumbnails.*`), in the

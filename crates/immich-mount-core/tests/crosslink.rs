@@ -7,7 +7,7 @@ use immich_mount_core::tree::{NodeKey, SectionKey};
 use serde_json::Value;
 
 /// The protocol's commit the copy was taken at, and its draft.
-const PROTOCOL_COMMIT: &str = "998e70f";
+const PROTOCOL_COMMIT: &str = "8a3c16e";
 const DRAFT: &str = "0.2";
 
 fn test_links() -> Value {
@@ -15,7 +15,7 @@ fn test_links() -> Value {
 }
 
 #[test]
-fn the_copy_is_of_draft_0_2_at_998e70f() {
+fn the_copy_is_of_draft_0_2_at_8a3c16e() {
     assert_eq!(test_links()["draft"], DRAFT, "copied at immich-crosslink {PROTOCOL_COMMIT}");
 }
 

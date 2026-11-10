@@ -54,6 +54,18 @@
 				<string>immich-crosslink</string>
 			</array>
 		</dict>
+		<!-- The extension's way to the app, named by the app's bundle identifier: Show in Another App… hands it the
+		     crosslink, and the app shows the menu of the other apps. -->
+		<dict>
+			<key>CFBundleURLName</key>
+			<string>$(PRODUCT_BUNDLE_IDENTIFIER)</string>
+			<key>CFBundleTypeRole</key>
+			<string>Viewer</string>
+			<key>CFBundleURLSchemes</key>
+			<array>
+				<string>$(PRODUCT_BUNDLE_IDENTIFIER)</string>
+			</array>
+		</dict>
 	</array>
 	<key>ImmichCrosslink</key>
 	<dict>
