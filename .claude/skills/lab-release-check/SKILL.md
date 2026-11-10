@@ -65,6 +65,7 @@ Show thumbnails switch does), which also checks that doctor's advice works.
 | `upload-listed` | the asset shows in its date folder (its source's month) | WORKFLOWS "Uploading" |
 | `upload-gone` | the file leaves Upload by itself within 30 s of the copy | SPEC "Uploads" |
 | `read-only` | a paste beside a photo in its month is refused as `Read-only file system`, and leaves nothing | SPEC "What the mount refuses" |
+| `links` | an album's `web --json` address, read back by `show --json`, gives the same folder; the launcher takes `x-scheme-handler/immich-crosslink`; the menu items are installed (the cask's Python extension, Dolphin plugin and login script, or the packages' extension or plugin) | SPEC "Links to Immich" |
 | `doctor` | `doctor --json`: no problem, no warning | WORKFLOWS "Doctor" |
 | `app` | the launcher's command, started in the user manager as a desktop starts it, opens `immich-mount-kde` on Plasma and `immich-mount-gnome` elsewhere, still running after 5 s | SPEC "The immich-mount command" |
 | `unmount` | `immich-mount unmount` with a process inside Photos: exit 0, detached, the service stopped | SPEC "The immich-mount command" |
@@ -73,7 +74,7 @@ Show thumbnails switch does), which also checks that doctor's advice works.
 `uninstall.sh [seconds]` reports, against WORKFLOWS "Disconnect and uninstall" and the cask's zap: no program, no
 launcher, icons or scheme handler, the daemon gone (with how long it took), nothing mounted, the unit inactive with no
 unit file or enable link, no GVfs drop-in, no bookmark or place, no thumbnail of a file on the mount, the cache and the
-settings gone or in the Trash, and the credential kept (in the keyring, or with `credential.file` in the trashed
+settings gone or in the Trash, the cask's menu items and Dolphin's login script gone, and the credential kept (in the keyring, or with `credential.file` in the trashed
 settings).
 
 ## Runtime

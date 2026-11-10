@@ -594,6 +594,37 @@ check_remount() {
   fi
 }
 
+# Open in Immich and immich-crosslink (SPEC "Links to Immich"): an album's web address, read back by `show`, leads to the
+# same folder; the launcher takes the crosslink scheme; the file manager's menu items are installed where this
+# install puts them (the packages' folders, or the cask's in the home folder).
+check_links() {
+  local album url shown handlers menus=() missing=() program
+  album=$(find "$mount_point/Albums" -mindepth 1 -maxdepth 1 -type d 2>/dev/null | head -1)
+  [ -n "$album" ] || { fail links "no album folder under $mount_point/Albums"; return; }
+  url=$(timeout 30 immich-mount web --json "$album" 2>/dev/null | json_fields url)
+  case $url in */albums/*) ;; *) fail links "web gave '${url:-nothing}' for ${album#"$mount_point"/}"; return ;; esac
+  shown=$(timeout 30 immich-mount show --json "$url" 2>/dev/null | json_fields path)
+  [ "$(readlink -f "$shown")" = "$(readlink -f "$album")" ] || { fail links "show $url gave '${shown:-nothing}', not $album"; return; }
+  handlers=$(gio mime x-scheme-handler/immich-crosslink 2>&1)
+  printf '%s\n' "$handlers" | grep -q 'dev\.hviid\.ImmichMount\.desktop' || { fail links "dev.hviid.ImmichMount.desktop does not take immich-crosslink"; return; }
+  program=$(readlink -f "$(command -v immich-mount)")
+  case $program in
+    /home/linuxbrew/*) menus=("$HOME/.local/share/nautilus-python/extensions/immich-mount-nautilus.py"
+      "$HOME/.local/lib/immich-mount/plugins/kf6/kfileitemaction/immich-mount-dolphin.so"
+      "$HOME/.config/plasma-workspace/env/immich-mount.sh") ;;
+    *) case ${XDG_CURRENT_DESKTOP:-} in
+         *KDE*) menus=(/usr/lib64/qt6/plugins/kf6/kfileitemaction/immich-mount-dolphin.so) ;;
+         *) menus=(/usr/lib64/nautilus/extensions-4/libimmich-mount-nautilus.so) ;;
+       esac ;;
+  esac
+  for menu in "${menus[@]}"; do [ -e "$menu" ] || missing+=("$menu"); done
+  if [ ${#missing[@]} -eq 0 ]; then
+    pass links "${album#"$mount_point"/} -> $url -> back; immich-crosslink taken; menus: ${menus[*]##*/}"
+  else
+    fail links "menu items not installed: ${missing[*]}"
+  fi
+}
+
 check_version
 check_launcher
 check_scheme
@@ -613,6 +644,7 @@ if choose_months; then
 else
   fail folders "no month with three files and another with a JPEG under $mount_point/Photos (found '${peek_month#"$mount_point"/}' and '${copy_month#"$mount_point"/}')"
 fi
+check_links
 check_doctor
 check_app
 check_unmount

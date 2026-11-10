@@ -44,6 +44,14 @@ done
 gio mime x-scheme-handler/app.immich 2>/dev/null | grep -q 'dev\.hviid\.ImmichMount\.desktop' && left+=("the app.immich handler")
 if [ ${#left[@]} -eq 0 ]; then pass launcher "the launcher entry, both icons and the app.immich handler are gone"; else fail launcher "still there: ${left[*]}"; fi
 
+# Open in Immich's menu items, which the cask puts in the home folder, and the folder of Dolphin's plugin.
+left=()
+for item in "$HOME/.local/share/nautilus-python/extensions/immich-mount-nautilus.py" "$HOME/.local/lib/immich-mount" \
+  "$HOME/.config/plasma-workspace/env/immich-mount.sh"; do
+  [ -e "$item" ] && left+=("$item")
+done
+if [ ${#left[@]} -eq 0 ]; then pass menus "Files' and Dolphin's menu items and Dolphin's login script are gone"; else fail menus "still there: ${left[*]}"; fi
+
 # The daemon looks every 30 seconds, leaves once its program has been gone for two minutes, and cleans up as it goes.
 started=$SECONDS
 while daemon_running && [ $((SECONDS - started)) -lt "$patience" ]; do sleep 5; done
