@@ -543,8 +543,9 @@ macOS edition"). Where Finder's way differs:
   | Credential | The Keychain, service `dev.hviid.ImmichMount`, in the app's access group |
   | The system's copy of the location: downloaded originals and what waits in Upload | `~/Library/CloudStorage/ImmichMount-<name>/`, kept by macOS |
 
-  Signing out removes all of them but what waits in Upload. Uninstalling does not sign out: sign out first, or the
-  location stays in Finder without its app.
+  Signing out removes all of them but what waits in Upload. `brew uninstall` signs out first, by running the app as
+  `Immich Mount --uninstall`, so the location leaves Finder with the app. Dragging the app to the Bin runs nothing:
+  sign out first, or the location stays in Finder without its app.
 
 ## Errors seen by programs using the mount
 

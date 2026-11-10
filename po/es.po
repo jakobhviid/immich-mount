@@ -140,27 +140,27 @@ msgid "Immich takes photos and videos only."
 msgstr "Immich solo admite fotos y vídeos."
 
 #: crates/immich-mount-linux/src/tray.rs:68
-#: apple/App/ImmichMountApp.swift:605
+#: apple/App/ImmichMountApp.swift:609
 msgid "Connected to {server}"
 msgstr "Conectado a {server}"
 
 #: crates/immich-mount-linux/src/tray.rs:69
-#: apple/App/ImmichMountApp.swift:605
+#: apple/App/ImmichMountApp.swift:609
 msgid "{server} is not reachable"
 msgstr "No se puede acceder a {server}"
 
 #: crates/immich-mount-linux/src/tray.rs:71
-#: apple/App/ImmichMountApp.swift:604
+#: apple/App/ImmichMountApp.swift:608
 msgid "Signed in to {server}"
 msgstr "Sesión iniciada en {server}"
 
 #: crates/immich-mount-linux/src/tray.rs:79
-#: apple/App/ImmichMountApp.swift:613
+#: apple/App/ImmichMountApp.swift:617
 msgid "Server version: Immich {version}"
 msgstr "Versión del servidor: Immich {version}"
 
 #: crates/immich-mount-linux/src/tray.rs:82
-#: apple/App/ImmichMountApp.swift:616
+#: apple/App/ImmichMountApp.swift:620
 msgid "Signed in as: {account}"
 msgstr "Sesión iniciada como: {account}"
 
@@ -316,7 +316,7 @@ msgstr "Uso de IA"
 
 #: crates/immich-mount-gnome/src/main.rs:117
 #: crates/immich-mount-kde/qml/Main.qml:175
-#: apple/App/ImmichMountApp.swift:461
+#: apple/App/ImmichMountApp.swift:465
 msgid "Parts of this project were written with the assistance of AI coding agents. All changes are reviewed by the maintainer."
 msgstr "Partes de este proyecto se escribieron con la ayuda de agentes de programación de IA. El responsable del proyecto revisa todos los cambios."
 
@@ -581,7 +581,7 @@ msgid "The Immich API layer: {project}"
 msgstr "La capa de la API de Immich: {project}"
 
 #: crates/immich-mount-kde/qml/Main.qml:171
-#: apple/App/ImmichMountApp.swift:460
+#: apple/App/ImmichMountApp.swift:464
 msgid "AI disclosure"
 msgstr "Uso de IA"
 
@@ -923,114 +923,114 @@ msgid "Use System Settings Instead"
 msgstr "Usar Ajustes del Sistema en su lugar"
 
 #: apple/App/ContentView.swift:167
-#: apple/App/ImmichMountApp.swift:419
+#: apple/App/ImmichMountApp.swift:423
 #: apple/App/SettingsView.swift:258
 msgid "Open in Finder"
 msgstr "Abrir en Finder"
 
-#: apple/App/ImmichMountApp.swift:176
+#: apple/App/ImmichMountApp.swift:180
 msgid "Sign out of Immich Mount?"
 msgstr "¿Cerrar sesión en Immich Mount?"
 
-#: apple/App/ImmichMountApp.swift:177
+#: apple/App/ImmichMountApp.swift:181
 msgid "Immich Mount leaves Finder, together with the photos and videos downloaded to this Mac. Your library on the server stays as it is."
 msgstr "Immich Mount desaparece de Finder, junto con las fotos y vídeos descargados en este Mac. Tu biblioteca en el servidor se queda como está."
 
-#: apple/App/ImmichMountApp.swift:179
+#: apple/App/ImmichMountApp.swift:183
 msgid "Files in Upload that have not reached Immich: {count}. They stay on this Mac, and Finder shows where once you have signed out."
 msgstr "Archivos en Upload que no han llegado a Immich: {count}. Se quedan en este Mac, y Finder muestra dónde cuando hayas cerrado la sesión."
 
-#: apple/App/ImmichMountApp.swift:183
+#: apple/App/ImmichMountApp.swift:187
 msgid "Sign Out"
 msgstr "Cerrar sesión"
 
-#: apple/App/ImmichMountApp.swift:184
+#: apple/App/ImmichMountApp.swift:188
 msgid "Cancel"
 msgstr "Cancelar"
 
-#: apple/App/ImmichMountApp.swift:199
+#: apple/App/ImmichMountApp.swift:203
 msgid "Still signed in"
 msgstr "La sesión sigue iniciada"
 
-#: apple/App/ImmichMountApp.swift:200
+#: apple/App/ImmichMountApp.swift:204
 msgid "Finder's location could not be removed, so Immich Mount stays signed in: {error}"
 msgstr "No se pudo quitar la ubicación de Finder, así que Immich Mount sigue con la sesión iniciada: {error}"
 
-#: apple/App/ImmichMountApp.swift:450
+#: apple/App/ImmichMountApp.swift:454
 msgid "Your Immich photos and videos as a drive in Finder. By Jakob Hviid, under the MIT license."
 msgstr "Tus fotos y vídeos de Immich como una unidad en Finder. Por Jakob Hviid, con licencia MIT."
 
-#: apple/App/ImmichMountApp.swift:451
+#: apple/App/ImmichMountApp.swift:455
 msgid "Website"
 msgstr "Sitio web"
 
-#: apple/App/ImmichMountApp.swift:453
+#: apple/App/ImmichMountApp.swift:457
 msgid "Source code"
 msgstr "Código fuente"
 
-#: apple/App/ImmichMountApp.swift:456
+#: apple/App/ImmichMountApp.swift:460
 msgid "Inspired by"
 msgstr "Inspirado en"
 
-#: apple/App/ImmichMountApp.swift:458
+#: apple/App/ImmichMountApp.swift:462
 msgid "The Immich API layer"
 msgstr "La capa de la API de Immich"
 
-#: apple/App/ImmichMountApp.swift:621
+#: apple/App/ImmichMountApp.swift:625
 msgid "Last checked: {time}"
 msgstr "Última comprobación: {time}"
 
-#: apple/App/ImmichMountApp.swift:623
+#: apple/App/ImmichMountApp.swift:627
 msgid "Reason: {reason}"
 msgstr "Motivo: {reason}"
 
-#: apple/App/ImmichMountApp.swift:623
+#: apple/App/ImmichMountApp.swift:627
 msgid "none given"
 msgstr "no se indicó ninguno"
 
-#: apple/App/ImmichMountApp.swift:721
+#: apple/App/ImmichMountApp.swift:725
 msgid "The login item could not be changed: {error}"
 msgstr "No se pudo cambiar el ítem de inicio: {error}"
 
-#: apple/App/ImmichMountApp.swift:755
+#: apple/App/ImmichMountApp.swift:759
 msgid "The server sent an address that cannot be opened."
 msgstr "El servidor envió una dirección que no se puede abrir."
 
-#: apple/App/ImmichMountApp.swift:842
+#: apple/App/ImmichMountApp.swift:846
 msgid "Finder does not show Immich yet. Is the extension switched on in System Settings? ({error})"
 msgstr "Finder aún no muestra Immich. ¿Está activada la extensión en Ajustes del Sistema? ({error})"
 
-#: apple/App/ImmichMountApp.swift:42
-#: apple/App/ImmichMountApp.swift:430
+#: apple/App/ImmichMountApp.swift:46
+#: apple/App/ImmichMountApp.swift:434
 msgid "About Immich Mount"
 msgstr "Acerca de Immich Mount"
 
-#: apple/App/ImmichMountApp.swift:45
-#: apple/App/ImmichMountApp.swift:423
+#: apple/App/ImmichMountApp.swift:49
+#: apple/App/ImmichMountApp.swift:427
 msgid "Check for Updates…"
 msgstr "Buscar actualizaciones…"
 
-#: apple/App/ImmichMountApp.swift:50
-#: apple/App/ImmichMountApp.swift:421
+#: apple/App/ImmichMountApp.swift:54
+#: apple/App/ImmichMountApp.swift:425
 msgid "Settings…"
 msgstr "Ajustes…"
 
-#: apple/App/ImmichMountApp.swift:408
+#: apple/App/ImmichMountApp.swift:412
 #: apple/App/SettingsView.swift:236
 msgid "Sign In…"
 msgstr "Iniciar sesión…"
 
-#: apple/App/ImmichMountApp.swift:410
+#: apple/App/ImmichMountApp.swift:414
 #: apple/App/SettingsView.swift:256
 msgid "Switch On in Finder…"
 msgstr "Activar en Finder…"
 
-#: apple/App/ImmichMountApp.swift:426
+#: apple/App/ImmichMountApp.swift:430
 #: apple/App/SettingsView.swift:261
 msgid "Sign Out…"
 msgstr "Cerrar sesión…"
 
-#: apple/App/ImmichMountApp.swift:431
+#: apple/App/ImmichMountApp.swift:435
 msgid "Quit Immich Mount"
 msgstr "Salir de Immich Mount"
 

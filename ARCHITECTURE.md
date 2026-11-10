@@ -1699,6 +1699,14 @@ Mac and in the release workflow's `macos` job:
   a scroll away inside GitHub's page.
 - **One version with Linux:** `apple/build-rust.sh` hands Xcode the release line's version (`ci/version.sh`) and the
   commit count as the build number, which grows with every release; development builds show the same.
+- **Uninstalling with Homebrew signs out:** macOS has no uninstall step (dragging an app to the Bin runs nothing),
+  and it keeps a provider's Finder location until the app removes it, so a deleted app left its location in the
+  sidebar. The cask's uninstall script runs `Immich Mount --uninstall` once the app has quit: it signs out, as Sign
+  Out does, and exits without a window. It runs only for an app whose Info.plist has `ImmichMountUninstall`, since
+  an older app would ignore the argument and start, and `brew uninstall` would wait on it. A reinstall signs in
+  again. **Not chosen:** keeping the sign-in through an uninstall, which leaves the credential and the session behind
+  an app that is gone. The cask lives in the tap (`jakobhviid/homebrew-tap`), whose pipeline bumps only its version
+  and hashes.
 
 Development builds run under a free Personal Team on the maintainer's Mac. The location's folder is
 `~/Library/CloudStorage/ImmichMount-<the drive's name without spaces>`, `ImmichMount-ImmichMount` by default.

@@ -329,9 +329,9 @@ folder is.
 - **On macOS,** **Sign Out…** in the menu bar item's menu does what `logout` does: it ends the session, and removes
   the Finder location with what was downloaded, the credential from the Keychain and the store. Files in Upload
   that have not reached Immich are kept: the confirmation counts them, and Finder opens the folder they are kept in.
-  Sign out before uninstalling (drag the app to the Bin, or `brew uninstall --cask --zap
-  jakobhviid/tap/immich-mount`): an app removed while signed in leaves its location in Finder's sidebar, its
-  credential and its session.
+  `brew uninstall --cask jakobhviid/tap/immich-mount` signs out first, so the location leaves Finder with the app
+  (`--zap` also moves its settings to the Bin). Dragging the app to the Bin runs nothing, so sign out before you do:
+  an app removed while signed in leaves its location in Finder's sidebar, its credential and its session.
 
 ## Exit codes and JSON
 

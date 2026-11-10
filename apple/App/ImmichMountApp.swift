@@ -22,6 +22,10 @@ struct ImmichMountApp: App {
 
     init() {
         startLogging()
+        // `brew uninstall` signs out before it deletes the app, and never sees a window (`Uninstall`).
+        if Uninstall.asked {
+            Uninstall.run()
+        }
     }
 
     var body: some Scene {

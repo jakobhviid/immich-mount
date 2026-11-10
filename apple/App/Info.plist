@@ -40,5 +40,7 @@
 	<string>$(TeamIdentifierPrefix)$(IMMICH_IDENTITY)</string>
 	<key>ImmichMountKeychainGroup</key>
 	<string>$(AppIdentifierPrefix)$(IMMICH_IDENTITY)</string>
+	<key>ImmichMountUninstall</key>
+	<true/>
 </dict>
 </plist>
