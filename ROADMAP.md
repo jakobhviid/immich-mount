@@ -288,111 +288,196 @@ tests on a server built with `up.sh --ml`.
    originals byte-identical to Immich's checksums, and a copy into Upload uploaded before `cp` returned. The release
    check on Fedora GNOME (`lab/check/run.sh gnome --binary`) passed every line with the branch's daemon and CLI.
 
-## Open in Immich, and Immich Gallery on the Mac
+## Open in Immich, and links between apps (immich-crosslink)
 
-Right-click items that open what the file manager shows somewhere else. **Open in Immich** opens it in Immich's own
-web app, on every platform: Files, Dolphin and Finder. On the Mac, while
-[Immich Gallery](https://github.com/IGOLz/ImmichGallery) (MIT, macOS only, a native Immich client) is installed, the
-two apps also point to each other: a photo, album, person or place found in Finder opens in the gallery, and one in
-the gallery shows in Finder. Neither app signs in for the other: the links carry Immich's ids, so they work when both
-are signed in to the same server and account.
+Right-click items in Files, Dolphin and Finder that open what the file manager shows somewhere else: in Immich's own
+web app, and in other Immich apps on the same computer. The other way round, any app can ask Immich Mount to show a
+photo, album, person or place in the file manager. Apps find each other through
+[immich-crosslink](https://github.com/jakobhviid/immich-crosslink), a small open protocol published at
+<https://jakob.hviid.phd/immich-crosslink/>: one link format, carried by the scheme `immich-crosslink:`, that any app
+can register, and that names an item the way Immich's own web app does. Immich Mount implements draft 0.1. When this
+section and the protocol differ, the protocol wins and this section is the bug. Neither app signs in for the other:
+a link carries ids and the server's address, and works when both apps are signed in to that server.
 
-**What each item knows.** An item's key is its whole path in keys (`asset|<folder>|<id>` in storage form, with the
-folder's own key inside, escaped), so a photo knows the album, person or place it is listed in, and the links keep
-that context. Albums, people and Assets have ids; places have only names in Immich (SPEC, "Content":
-`/search/suggestions`).
+Built in four steps, each usable on its own; an agent can build steps 1 to 3 from this section, SPEC and
+ARCHITECTURE. Step 4 is in another project.
 
-| Item | Its key | Open in Immich | Show in Immich Gallery (Mac) |
-|---|---|---|---|
-| A photo in Photos | `asset\|month\|…\|<id>` (or `day\|…`) | `/photos/<id>` | `photo/<id>`, in All Photos |
-| A photo in an album | `asset\|album\|<album>\|<id>`, or inside its date groups | `/albums/<album>/photos/<id>` | the album, opened on the photo |
-| A photo in a person | `asset\|person\|<person>\|<id>`, or inside its date groups | `/people/<person>/photos/<id>` | the person, opened on the photo |
-| A photo in Favorites or Archive | `asset\|section\|Favorites\|<id>`, or inside its date groups | `/favorites/photos/<id>`, `/archive/photos/<id>` | that page, opened on the photo |
-| An album, a person | `album\|<id>`, `person\|<id>` | `/albums/<id>`, `/people/<id>` | its page |
-| A city, or a photo in one | `city\|<country>\|<city>` | `/search?query={"city":…,"country":…}` | the gallery's city page, which goes by the city's name alone |
-| A country | `country\|<country>` | `/search?query={"country":…}` | not offered: the gallery has no country page |
-| A year, a month, a day, a section, Upload | | not offered: Immich has no page for it | not offered |
+### The item map
 
-The web addresses are the routes Immich's web app defines
-([`web/src/lib/route.ts`](https://github.com/immich-app/immich/blob/main/web/src/lib/route.ts) and
-[`web/src/routes/(user)/`](https://github.com/immich-app/immich/tree/main/web/src/routes/(user))), on the address
-Immich Mount signed in with (`server.url`, without `/api`). Its Places page links a city the same way, as a search.
-Searches are the least stable of these links: the search page takes its filters as JSON in the address, in the shape
-of the metadata search. The gallery's links are `immichgallery://` (`immichgallery-dev://` for its Dev build), read by
-[`Shared/WidgetFeed.swift`](https://github.com/IGOLz/ImmichGallery/blob/main/Shared/WidgetFeed.swift); only `photo/<id>`
-(and `memory/<id>`) exist, so the others come with the gallery's half below.
+An item's key (`NodeKey`, `crates/immich-mount-core/src/tree.rs`) is its whole path in keys: `storage_key` writes it
+as `asset|<folder key>|<id>`, with the folder's own key inside, escaped. So a photo knows the album, person or place it
+is listed in, and its link keeps that context. Each key maps to an **Immich path**, the path of Immich's web app for
+it (`web/src/lib/route.ts` and `web/src/routes/(user)/` in immich-app/immich, and the paths Immich's mobile app takes
+as deep links through `my.immich.app`, `mobile/lib/services/deep_link.service.dart`).
 
-**The link, in the core.** One function in `immich-mount-core` turns a key and the server's address into the web
-address, or none, so every platform gives the same link for the same item. It is plain Rust, tested on Linux.
+| Key | Immich path |
+|---|---|
+| `Asset` in `TimelineMonth` or `TimelineDay` | `/photos/<id>` |
+| `Asset` in `Album(a)`, directly or inside its `GroupYear`/`GroupMonth` | `/albums/<a>/photos/<id>` |
+| `Asset` in `Person(p)`, likewise | `/people/<p>/photos/<id>` |
+| `Asset` in `Section(Favorites)` or `Section(Archive)`, likewise | `/favorites/photos/<id>`, `/archive/photos/<id>` |
+| `Asset` in `City { country, city }`, likewise | `/search/photos/<id>?query=<q>` |
+| `Album(a)`, `Person(p)`, and a `GroupYear`/`GroupMonth` inside one | `/albums/<a>`, `/people/<p>` |
+| `City { country, city }` | `/search?query=<q>`, `q` = `{"city":"<city>","country":"<country>"}` |
+| `Country(country)` | `/search?query=<q>`, `q` = `{"country":"<country>"}` |
+| `Section(Photos)`, `Albums`, `People`, `Places`, `Favorites`, `Archive` | `/photos`, `/albums`, `/people`, `/places`, `/favorites`, `/archive` |
+| `Root`, `TimelineYear`, `TimelineMonth`, `TimelineDay`, `AlbumYear`, `Upload`, `UploadFolder`, an `Asset` in Upload | none: Immich has no page for it |
 
-**Other apps, the same way.** Immich Gallery is the first of a general pattern: Immich Mount looks for an app it
-knows, and offers links to it only while it is installed. Each known app is one entry: how to find it (its bundle id
-on the Mac, its desktop file or URL scheme handler on Linux), the link it takes for each kind of item (or none), and
-the menu item's name ("Show in …"). The core turns a key into each app's link, as for the web app, and each
-platform's menu items show the entries that are installed and take a link for that item. An app that wants to point
-back adds its own hook, as the gallery's half does, with links into Immich Mount. Immich's web app is the one entry
-that needs no app: it is offered whenever there is a web address.
+- `q` is the JSON Immich's web app writes for a search (`Route.search`: `JSON.stringify` of the metadata search, keys
+  in the order above, no spaces), encoded as `encodeURIComponent` does: every byte but `A-Z a-z 0-9 - _ . ! ~ * ' ( )`
+  as `%XX` of its UTF-8. Immich's Places page links a city with `{"city":…}` alone; the country is added because a
+  city's folder knows it, and it keeps two cities of one name apart.
+- Ids are Immich's UUIDs, written as they come. Names (cities, countries) are Immich's own strings from the key, never
+  the folder's name on disk, which may be changed to fit a file system (SPEC, "Names").
+- **A web address** is `server.url` without a trailing slash (and without `/api`), followed by the Immich path.
+- **A crosslink** is `immich-crosslink://` with an empty host, the Immich path, and the server's address:
+  `immich-crosslink:///albums/<a>/photos/<id>?server=<origin>`, where `<origin>` is `server.url` without a trailing
+  slash, encoded as above; it joins a path's own query with `&`
+  (`immich-crosslink:///search?query=<q>&server=<origin>`).
+- **Reading a link back** (step 2) is the map run backwards: an Immich path, from a crosslink or from a web address on
+  the signed-in server, gives a key. `/photos/<id>` and the paths of a photo inside an album, person or city need the
+  Asset's `localDateTime` (`GET /assets/{id}`) to find its month, its day where `grouping.photos` splits the month, and
+  its date groups where the folder's mode makes them.
 
-**In Files and Dolphin,** on one item at a time inside the mount, and nowhere else. The daemon knows which key every
-path has, so it answers for the menu items: a D-Bus method `WebLink(path s) → (url s)` (empty when the item has no web
-address), and `immich-mount web <path>`, which opens the address in the browser (`xdg-open`) or prints it with
-`--json`.
-- **Files:** a Nautilus extension (`libnautilus-extension-4`, Nautilus 43 and later), shipped in
-  `immich-mount-gnome`, which offers Open in Immich on items under the mount point and asks the daemon for the link.
-- **Dolphin:** a service menu (`/usr/share/kio/servicemenus/`), shipped in `immich-mount-kde`, which runs
-  `immich-mount web %f`, shown only inside the mount through `X-KDE-ShowIfDBusCall` on the daemon, or, if that cannot
-  see the selection, a file item action plugin (`KAbstractFileItemActionPlugin`).
-- **Flatpak impact:** file manager extensions are files on the host, which a Flatpak cannot install. The D-Bus
-  method and the command work from one; the menu items would need a host package beside it.
+One module in `immich-mount-core` (`links.rs`) holds the map both ways, with no platform code: a key to its Immich
+path, an Immich path to a key (given the Asset's date where needed), and the web address and crosslink of a path. Every
+platform uses it, so the same item gives the same link everywhere. Unit tests cover every row of the table both ways,
+escaping (`|`, `%`, spaces, non-ASCII city names), the JSON byte for byte against what Immich's web app writes, and
+paths that give no key.
 
-**In Finder,** on one item at a time, as File Provider custom actions (`NSExtensionFileProviderActions`), Finder's own
-way to put an item in a location's right-click menu, offered by each action's activation rule. The extension hands
-each action to the menu bar app: the identifier goes into the App Group and a Darwin notification wakes the app; the
-bridge turns the identifier into the link, and the app opens it.
+### Step 1: Open in Immich, and Copy Immich Link
 
-**In the gallery,** a hook there: Show in Immich Mount in the menus of its photos (grid and viewer), albums (the
-Albums page and the sidebar), people and places, while Immich Mount is installed, opening `immich-mount://` links
-(`asset/<id>`, with the album or person the photo is shown in, `album/<id>`, `person/<id>`, `city/<name>`,
-`country/<name>`). The app takes the link, the bridge finds the item's identifier, the system gives its place in
-Finder (`getUserVisibleURL`), and Finder opens with it selected. Folders are found by identifier, never by name, so a
-renamed or numbered folder (`Anna-1`) is found all the same.
-- **A photo** shows where the gallery shows it: in its album or person, in Favorites or Archive while that section is
-  on, and otherwise in Photos (its year and month, and its day when `grouping.photos` splits the month), or Archive
-  when it is archived.
-- **An album, a person or a country** shows its folder. **A city** shows its folder when one country has a city of
-  that name, and Places otherwise, since the gallery's city page has no country.
-- **Nothing to show:** an id the signed-in account cannot see, a person the People section leaves out (hidden or
-  unnamed), or a section that is off, gets a message saying so.
-- Any web page can open these links, so they take only ids and names and only show a file or folder, as the
-  gallery's own links do.
+On one item at a time, inside the mount and nowhere else, two menu items: **Open in Immich** opens the item's web
+address in the default browser, and **Copy Immich Link** puts it on the clipboard. Offered only for items with an
+Immich path.
 
-Steps:
-1. **Open in Immich,** first. It needs nothing from the gallery and tries most of the rest: the link in the core for
-   every kind of item; on the Mac the custom actions and their activation rules, and the hand-off to the menu bar app
-   (and starting it when it is not running); on Linux the daemon's answer and the menu items in Files and Dolphin.
-2. **Show in Immich Gallery for a photo in Photos,** on the gallery's existing link. It adds what step 1 cannot try:
-   finding the gallery (each build prefers the gallery of its own kind: `dev.igol.ImmichGallery`,
-   `dev.igol.ImmichGallery.Dev`), and offering the action only while it is installed. Finder decides from the item
-   alone, so items carry a marker in `userInfo` while a gallery that takes their link is installed, matched by the
-   activation rule, and the app has the system fetch the items again when that changes (at launch, and when the
-   gallery is seen launching).
-3. **The gallery's half,** upstream as an issue and a pull request, the way the maintainer contributes to it: the
-   links for albums, people, places and photos in context, and Show in Immich Mount. Then the rest of Show in Immich
-   Gallery, marked per kind of item for a gallery version that takes the link, and Immich Mount's links and the reveal
-   in Finder.
+- **The daemon** (Linux) knows every path's key: it walks the path from the mount point with the tree's `lookup`, as
+  the FUSE layer does. It answers on D-Bus (`crates/immich-mount-linux/src/dbus.rs`, interface
+  `dev.hviid.ImmichMount.Daemon1`): `WebLink(path s) → (url s)`, empty when the item has none or the path is outside
+  the mount, and `HasWebLink(uris as) → (b)`, true for exactly one `file://` URI with a web address, for Dolphin's
+  check below.
+- **The command** (`crates/immich-mount/src/commands.rs`): `immich-mount web <path>` opens the web address with
+  `xdg-open`; `--copy` puts it on the clipboard instead; `--json` prints `{"path":…,"url":…}` and opens nothing. A path
+  outside the mount, or one without a web address, exits non-zero, saying which. On the Mac there is no command
+  (ROADMAP, M7, "Open").
+- **Files:** a Nautilus extension in C (`libnautilus-extension-4`, Nautilus 43 and later), built and shipped in
+  `immich-mount-gnome` (`packaging/rpm`, `packaging/deb`), installed in Nautilus's extension directory. Its
+  `NautilusMenuProvider` offers the two items when one item is selected under the daemon's `MountPoint` and
+  `WebLink` (called with a 250 ms timeout) gives an address; it never offers them outside the mount, and offers
+  nothing when the daemon does not answer. It opens the address with `g_app_info_launch_default_for_uri` and copies
+  with GDK's clipboard. About 200 lines; no other dependency.
+- **Dolphin:** a service menu (`/usr/share/kio/servicemenus/dev.hviid.ImmichMount.desktop`), shipped in
+  `immich-mount-kde`, with the two actions running `immich-mount web %f` and `immich-mount web --copy %f`, shown only
+  where `X-KDE-ShowIfDBusCall=dev.hviid.ImmichMount.Daemon /dev/hviid/ImmichMount/Daemon
+  dev.hviid.ImmichMount.Daemon1 HasWebLink` answers true. If KIO does not pass the selection to that call (open
+  question below), a file item action plugin (`KAbstractFileItemActionPlugin`, C++, KF6) does the same, and step 3
+  needs it anyway.
+- **Finder:** two File Provider custom actions in the extension's Info.plist (`NSExtensionFileProviderActions`, in
+  `apple/FileProvider/Info.plist`), `dev.hviid.ImmichMount.open-in-immich` and `dev.hviid.ImmichMount.copy-link`, each
+  with the activation rule `fileproviderItems.@count == 1 AND SUBQUERY(fileproviderItems, $item,
+  $item.userInfo.hasWebLink == YES).@count == 1`. The bridge's `Item` (`crates/immich-mount-apple/src/lib.rs`) gains
+  `has_web_link`, which `FileProviderItem` returns in `userInfo`; `ITEM_FORMAT` goes from 4 to 5, so the app has the
+  system read every item again once, as for any format change. The extension's `performAction` hands the action to
+  the menu bar app: it writes `{action, identifier}` to a file in the App Group's `actions/` folder and posts the Darwin
+  notification `dev.hviid.ImmichMount.action`; the app reads the file, gets the address from the bridge
+  (`Library.web_link(identifier)`), and opens it with `NSWorkspace` or puts it on the pasteboard. At launch the app
+  also handles any file left in `actions/`. Whether the extension can start the app, or open the address itself, is
+  the first thing to try on the Mac (open questions).
+- **Words:** "Open in Immich" and "Copy Immich Link", in every catalog (`po/` and the Mac's), and in DESIGN.md's words
+  section.
+- **Docs:** SPEC (the command, the D-Bus members, the Files and Dolphin items, "In Finder"), WORKFLOWS (the command and
+  its JSON), ARCHITECTURE (the link map in the core, the menu bar app hand-off, the Nautilus extension and the service
+  menu, and why), README (the feature), CREDITS (Immich's web routes and mobile deep links define the paths; learned
+  from, nothing copied).
+- **Done when:** in the GNOME and Plasma VMs (`lab/check/run.sh`) the items show on a photo in Photos, in an album, in
+  a person and in a city, on an album and a city folder, open the right page on the lab server, and do not show on a
+  month folder, in Upload, or outside the mount; on the maintainer's Mac the same in Finder. Flatpak impact: the
+  Nautilus extension and the service menu are files on the host, which a Flatpak cannot install; the D-Bus members
+  and the command work from one.
 
-Open, to settle on each desktop:
-- **Mac:** the menu bar app runs only while it is open or a login item. Can the extension start it when it is not,
-  or open the link itself (`NSWorkspace` from a non-UI File Provider extension), so the app is not needed? Failing
-  both, the actions work while the app runs, and otherwise the extension posts a notification asking to open it
-  (step 1).
-- **Dolphin:** whether `X-KDE-ShowIfDBusCall` is given the selected items, so the service menu shows only inside the
-  mount, or the plugin is needed (step 1).
-- **Files:** the C extension is built for one `libnautilus-extension-4`; whether one build serves every supported
-  Nautilus, or each distribution's package builds its own (step 1).
-- **Mac:** how soon Finder offers or drops an action after the gallery is installed or removed (step 2).
-- **Mac:** whether `getUserVisibleURL` finds an item in a folder Finder has never listed, through `item(for:)` up the
-  parents, or the folder has to be listed first (step 3).
+### Step 2: Show in Immich Mount, from any app
+
+Immich Mount takes crosslinks, and shows their item in the file manager, selected.
+
+- **Registering:** on Linux, `x-scheme-handler/immich-crosslink` joins `app.immich` in the launcher entry's
+  `MimeType=` (`packaging/desktop/dev.hviid.ImmichMount.desktop.in`), whose `Exec=immich-mount app %u` already hands a
+  URL to the app; the app passes a crosslink to the daemon. On the Mac, `CFBundleURLTypes` in `apple/App/Info.plist`
+  declares `immich-crosslink`, and `AppDelegate` takes the URL (`application(_:open:)`).
+- **Reading it:** the server must be the signed-in one (scheme, host and port compared, host in lower case, a default
+  port written or not); the Immich path gives a key through the map run backwards. `immich-mount show <link>` does the
+  same from a terminal, for a crosslink or a web address on the signed-in server, and prints the path with `--json`.
+- **Showing it:** on Linux the daemon turns the key into its path (each folder's listing names its child) and calls
+  `org.freedesktop.FileManager1.ShowItems`, which Files and Dolphin both answer; on the Mac the app gets the item's
+  place from the system (`NSFileProviderManager.getUserVisibleURL(for:)`) and selects it with
+  `NSWorkspace.activateFileViewerSelecting`.
+- **Where a photo shows:** where the link says. `/photos/<id>` shows it in Photos, or in Archive when it is archived
+  and that section is on; a photo in an album, person, city, Favorites or Archive shows in that folder.
+- **Nothing to show** gets a notification saying why, and nothing else happens: another server or account, an id the
+  account cannot see, a person the People section leaves out (hidden or unnamed), a section that is off, a path with
+  no key.
+- **Safety:** any web page can open a crosslink, so Immich Mount only ever shows a file or folder from one: never
+  fetches an original, uploads, changes or deletes anything, and asks nothing.
+- **Docs:** SPEC (the scheme, the command, what is shown where, the messages), ARCHITECTURE (receiving, and why only
+  showing), WORKFLOWS.
+- **Done when:** `xdg-open` (Linux) and `open` (Mac) of a crosslink for each row of the map selects the right file or
+  folder, and a link for another server only notifies. Flatpak impact: a Flatpak exports its desktop entry with the
+  scheme, so it can take crosslinks.
+
+### Step 3: Show in other apps
+
+Immich Mount finds the other installed apps that take crosslinks, and offers **Show in *app*** for each, on the items
+step 1 offers.
+
+- **Finding them:** the apps registered for `immich-crosslink`, less Immich Mount's own builds: on the Mac
+  `NSWorkspace.urlsForApplications(toOpen:)`, on Linux GIO's `g_app_info_get_all_for_type("x-scheme-handler/immich-crosslink")`
+  (KDE's `KApplicationTrader` reads the same desktop entries). An app's name and icon come from the system (its bundle,
+  its desktop entry), never from the link.
+- **Opening one:** the crosslink, sent to that app alone: `NSWorkspace.open(_:withApplicationAt:configuration:)`,
+  `g_app_info_launch_uris`. Never the scheme's default handler, which could be any of them.
+- **Files** lists one item per app. **Dolphin** needs the file item action plugin for a list that changes. **Finder**
+  declares its actions in the Info.plist, so their names are fixed: a known app gets its own action (below), and
+  **Show in Another App…** has the menu bar app show a menu of the others at the pointer. Each is offered through a
+  `userInfo` marker while such an app is installed; the app has the system read the items again when the set changes
+  (at launch, and when it sees an app launch).
+- **Known apps:** an entry for an app that is worth naming before it takes crosslinks, or that takes its own links
+  as well: its bundle id or desktop entry, the menu item's name, and its own link per kind of item. The first is
+  **Immich Gallery** on the Mac (`dev.igol.ImmichGallery`, `dev.igol.ImmichGallery.Dev`): **Show in Immich Gallery**
+  on a photo in Photos opens `immichgallery://photo/<id>` (`immichgallery-dev://` for the Dev build), the link its
+  desktop widget uses (`Shared/WidgetFeed.swift` in IGOLz/ImmichGallery). Once the gallery takes crosslinks (step 4),
+  it is found like any other app, on every row of the map.
+- **Settings:** `crosslink.enabled` (bool, default `true`): offer links to other apps. `crosslink.hidden` (list,
+  default empty): apps left out, by bundle id or desktop entry id. In each settings window (the Mac's, GNOME's and
+  Plasma's), a switch labelled **Immich crosslink**, with a link to <https://jakob.hviid.phd/immich-crosslink/> beside
+  it, so it is clear what it is; under it the apps found, with a switch each. The label and the link are the
+  protocol's, the same in every app that takes part. Open in Immich is not affected by either.
+- **Docs:** SPEC (the items, the keys), ARCHITECTURE (finding apps, the known apps, the fixed Finder actions),
+  DESIGN (the words), README.
+- **Done when:** with two test apps registered for the scheme (a desktop entry, and a small Mac app), each is listed,
+  receives the right crosslink, and leaves the menus when switched off or removed; on the Mac, with Immich Gallery
+  installed, Show in Immich Gallery opens the photo there. Flatpak impact: from inside a Flatpak the installed apps
+  cannot be listed (the OpenURI portal only offers a chooser), so a Flatpak build would offer Show in… through it.
+
+### Step 4: Immich Gallery takes crosslinks (upstream)
+
+Not Immich Mount's work; listed because steps 2 and 3 meet it. Proposed to IGOLz/ImmichGallery as an issue and a pull
+request, as the maintainer contributes there ("Refs #N", never "Closes"): the gallery registers `immich-crosslink`,
+opens what a link names (choosing the signed-in account for its server, or saying it has none), offers Show in *app*
+for the apps it finds, with the protocol's **Immich crosslink** switch and link in its settings (on by default, a
+switch per app), and Copy Link. Immich Mount is
+then one of the apps it finds, and Show in Immich Mount in the gallery is step 2.
+
+### Open, to settle on each desktop
+- **Mac (step 1):** the menu bar app runs only while it is open or a login item. Can the extension start it when it
+  is not, or open the address itself (`NSWorkspace` from a non-UI File Provider extension), so the app is not needed?
+  Failing both, the actions work while the app runs, and otherwise the extension posts a notification asking to open
+  it.
+- **Dolphin (step 1):** whether `X-KDE-ShowIfDBusCall` is given the selected items, so the service menu shows only
+  inside the mount, or the plugin comes in step 1.
+- **Files (step 1):** whether one build of the extension serves every supported Nautilus, or each distribution's
+  package builds its own.
+- **Mac (step 2):** whether `getUserVisibleURL` finds an item in a folder Finder has never listed, through
+  `item(for:)` up the parents, or the folder has to be listed first.
+- **Mac (step 3):** how soon Finder offers or drops an action after an app is installed or removed.
 
 ## Package repositories
 
@@ -463,7 +548,7 @@ These are the options for when that is not enough on a real server, with what ea
 | **Offline albums** | Pin chosen albums in the cache, showing the size first. Never the whole library |
 | **A loopback sign-in redirect** | The RFC 8252 norm, but the admin must register it at the identity provider. An option for servers without mobile sign-in configured |
 | **GNOME Shell search provider** | Immich smart search in the Activities overview: a Linux-only extra |
-| **Nautilus extension, beyond Open in Immich** | More menu items in Files, once Open in Immich (above) brings the extension |
+| **Nautilus extension, beyond its links** | More menu items in Files, once Open in Immich and Show in *app* (above) bring the extension |
 | **Several servers or accounts** | The cache already separates accounts, so this is additive |
 | **"Move to Trash" mapped to Immich's trash** | It makes a library-wide change one keystroke away in a file manager. Needs careful thought first |
 | **Folder names in the user's language** | The interface is translated (ARCHITECTURE, "Translations"), the folders are not: a section's or a month's name is part of the mount's contract (SPEC, "Names"), and a path that changes with the desktop's language breaks scripts, links and bookmarks |
