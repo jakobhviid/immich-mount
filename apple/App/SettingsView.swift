@@ -117,7 +117,7 @@ final class SettingsModel: ObservableObject {
             try updated.write(to: AppGroup.configFile, atomically: true, encoding: .utf8)
             panes = try settingsPanes(config: updated)
             message = nil
-            // Immich crosslink's settings change which apps Finder offers.
+            // Immich Crosslink's settings change which apps Finder offers.
             CrosslinkApps.shared.refresh()
             guard relist else { return }
             Task {
@@ -133,7 +133,7 @@ final class SettingsModel: ObservableObject {
     }
 }
 
-/// Opening at login, updates, and Immich crosslink.
+/// Opening at login, updates, and Immich Crosslink.
 struct GeneralPane: View {
     @EnvironmentObject private var model: AppModel
     @EnvironmentObject private var settings: SettingsModel
@@ -163,7 +163,7 @@ struct GeneralPane: View {
     }
 }
 
-/// Immich crosslink (ROADMAP.md, "Open in Immich, and links between apps"): the protocol's switch, named and linked as
+/// Immich Crosslink (ROADMAP.md, "Open in Immich, and links between apps"): the protocol's switch, named and linked as
 /// in every app that takes part, so its name stays in English. Off, a link another app sends only gets a notification
 /// saying so. It changes nothing Finder lists.
 private struct CrosslinkSection: View {
@@ -177,21 +177,19 @@ private struct CrosslinkSection: View {
         Section {
             LabeledContent {
                 Toggle(isOn: settings.isOn(crosslink, relist: false)) {
-                    Text(verbatim: "Immich crosslink")
+                    Text(verbatim: "Immich Crosslink")
                 }
                 .labelsHidden()
                 .toggleStyle(.switch)
                 .accessibilityHint(tr(crosslink.title))
             } label: {
                 HStack(spacing: 8) {
-                    Text(verbatim: "Immich crosslink")
-                    Link(destination: Self.page) {
-                        Text(verbatim: "jakob.hviid.phd/immich-crosslink")
-                    }
+                    Text(verbatim: "Immich Crosslink")
+                    Link(tr("Read more"), destination: Self.page)
                     .help(tr(crosslink.title))
                 }
             }
-            // The apps found, each with its switch; they mean nothing while Immich crosslink is off.
+            // The apps found, each with its switch; they mean nothing while Immich Crosslink is off.
             ForEach(apps.listed) { app in
                 Toggle(isOn: Binding(get: { app.shown }, set: { settings.setShown(app.bundleId, $0) })) {
                     Label {

@@ -288,12 +288,12 @@ tests on a server built with `up.sh --ml`.
    originals byte-identical to Immich's checksums, and a copy into Upload uploaded before `cp` returned. The release
    check on Fedora GNOME (`lab/check/run.sh gnome --binary`) passed every line with the branch's daemon and CLI.
 
-## Open in Immich, and links between apps (immich-crosslink)
+## Open in Immich, and links between apps (Immich Crosslink)
 
 Right-click items in Files, Dolphin and Finder that open what the file manager shows somewhere else: in Immich's own
 web app, and in other Immich apps on the same computer. The other way round, any app can ask Immich Mount to show a
 photo, album, person or place in the file manager. Apps find each other through
-[immich-crosslink](https://github.com/jakobhviid/immich-crosslink), a small open protocol published at
+[Immich Crosslink](https://github.com/jakobhviid/immich-crosslink), a small open protocol published at
 <https://jakob.hviid.phd/immich-crosslink/>: each app announces itself in the metadata it installs (the draft it
 follows and the kinds of item it shows), registers the scheme `immich-crosslink:` that delivers links to it, and names
 an item the way Immich's own web app does. Immich Mount implements draft 0.2. When this
@@ -349,7 +349,7 @@ path and kind, an Immich path to a key (given the Asset's date where needed), th
 and reading a crosslink into one of the protocol's three results (show, cannot show, invalid). Every platform uses it,
 so the same item gives the same link everywhere. Unit tests cover every row of the table both ways, escaping (`|`,
 `%`, spaces, non-ASCII city names), the JSON byte for byte against what Immich's web app writes, and paths that give
-no key. They also run the protocol's test links: `tests/links.json` from immich-crosslink, copied into
+no key. They also run the protocol's test links: `tests/links.json` from Immich Crosslink, copied into
 `crates/immich-mount-core/tests/crosslink-links.json` at the commit of the draft implemented (named in the file's
 first test), whose `make` entries Immich Mount must write byte for byte and whose `read` entries it must read to the
 given result.
@@ -465,7 +465,7 @@ step 1 offers.
   crosslinks (step 4), it is found like any other app, for the kinds it announces.
 - **Settings:** `crosslink.enabled` (bool, default `true`): offer links to other apps. `crosslink.hidden` (list,
   default empty): apps left out, by bundle id or desktop entry id. In each settings window (the Mac's, GNOME's and
-  Plasma's), a switch labelled **Immich crosslink**, with a link to <https://jakob.hviid.phd/immich-crosslink/> beside
+  Plasma's), a switch labelled **Immich Crosslink**, with a link to <https://jakob.hviid.phd/immich-crosslink/> beside
   it, so it is clear what it is; under it the apps found, with a switch each. The label and the link are the
   protocol's, the same in every app that takes part. With the switch off, a crosslink Immich Mount receives (step 2)
   only gets a notification saying so, with a way to turn it on. Open in Immich is not affected by either.
@@ -483,14 +483,13 @@ Not Immich Mount's work; listed because steps 2 and 3 meet it. Proposed to IGOLz
 request, as the maintainer contributes there ("Refs #N", never "Closes"): the gallery announces itself and registers
 `immich-crosslink`,
 opens what a link names (choosing the signed-in account for its server, or saying it has none), offers Show in *app*
-for the apps it finds, with the protocol's **Immich crosslink** switch and link in its settings (on by default, a
+for the apps it finds, with the protocol's **Immich Crosslink** switch and link in its settings (on by default, a
 switch per app), and Copy Link. Immich Mount is
 then one of the apps it finds, and Show in Immich Mount in the gallery is step 2.
 
 ### Open, to settle on each desktop
-- **Mac (step 2):** whether `getUserVisibleURL` finds an item in a folder Finder has never listed, through
-  `item(for:)` up the parents, or the folder has to be listed first.
-- **Mac (step 3):** how soon Finder offers or drops an action after an app is installed or removed.
+- **Mac (step 3):** how soon Finder offers or drops an action after an app is installed or removed: the menu bar app
+  re-reads the items when it sees an app launch, which an install alone does not do.
 
 ## Package repositories
 

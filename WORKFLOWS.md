@@ -195,9 +195,9 @@ Photos' year, month and day folders, the year folders above albums, and Upload h
 have no link; `web` says so and exits non-zero, as it does for a path outside the mount or when the mount is not
 running.
 
-**From other apps:** an Immich app that takes part in [immich-crosslink](https://jakob.hviid.phd/immich-crosslink/)
+**From other apps:** an Immich app that takes part in [Immich Crosslink](https://jakob.hviid.phd/immich-crosslink/)
 can ask Immich Mount to show a photo, album, person or place, and the file manager opens on it, selected. When it
-cannot (another server, something the drive does not show), a notification says why. **Immich crosslink** in the
+cannot (another server, something the drive does not show), a notification says why. **Immich Crosslink** in the
 settings (under Other Apps) turns it off. From a terminal, for a crosslink or an address of Immich's web app:
 
 ```sh

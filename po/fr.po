@@ -28,18 +28,18 @@ msgstr "Le trousseau est resté verrouillé. Ouvrez Immich Mount ou lancez « i
 
 #: crates/immich-mount-linux/src/daemon.rs:366
 #: apple/App/ReceivedLinks.swift:65
-msgid "Immich crosslink is off"
-msgstr "Immich crosslink est désactivé"
+msgid "Links from other apps are off"
+msgstr "Les liens d’autres apps sont désactivés"
 
 #: crates/immich-mount-linux/src/daemon.rs:366
 #: apple/App/ReceivedLinks.swift:65
-msgid "Turn it on in Immich Mount's settings to show what other apps link to."
-msgstr "Activez-le dans les paramètres d’Immich Mount pour afficher ce vers quoi pointent les liens d’autres applications."
+msgid "Turn on Immich Crosslink in Immich Mount's settings to show what other apps link to."
+msgstr "Activez Immich Crosslink dans les réglages d’Immich Mount pour afficher ce que d’autres apps désignent."
 
 #: crates/immich-mount-linux/src/daemon.rs:367
 #: apple/App/ReceivedLinks.swift:67
-msgid "This link cannot be opened"
-msgstr "Impossible d’ouvrir ce lien"
+msgid "A link from another app cannot be opened"
+msgstr "Un lien d’une autre app ne peut pas être ouvert"
 
 #: crates/immich-mount-linux/src/daemon.rs:367
 #: apple/App/ReceivedLinks.swift:67
@@ -269,22 +269,22 @@ msgstr "Lecteur"
 #: crates/immich-mount-desktop/src/preferences.rs:13
 #: crates/immich-mount-gnome/src/window.blp:144
 #: crates/immich-mount-kde/qml/Main.qml:392
-#: apple/App/SettingsView.swift:237
+#: apple/App/SettingsView.swift:235
 msgid "Sections"
 msgstr "Sections"
 
 #: crates/immich-mount-desktop/src/preferences.rs:14
-#: apple/App/SettingsView.swift:239
+#: apple/App/SettingsView.swift:237
 msgid "Date Folders"
 msgstr "Dossiers par date"
 
 #: crates/immich-mount-desktop/src/preferences.rs:16
-#: apple/App/SettingsView.swift:263
+#: apple/App/SettingsView.swift:261
 msgid "Files"
 msgstr "Fichiers"
 
 #: crates/immich-mount-desktop/src/preferences.rs:17
-#: apple/App/SettingsView.swift:252
+#: apple/App/SettingsView.swift:250
 msgid "Uploads"
 msgstr "Envois"
 
@@ -412,8 +412,9 @@ msgstr "Quitter"
 
 #: crates/immich-mount-gnome/src/preferences.rs:25
 #: crates/immich-mount-kde/qml/Main.qml:115
-msgid "What is this?"
-msgstr "Qu’est-ce que c’est ?"
+#: apple/App/SettingsView.swift:188
+msgid "Read more"
+msgstr "En savoir plus"
 
 #: crates/immich-mount-gnome/src/window.rs:267
 #: crates/immich-mount-kde/qml/Main.qml:349
@@ -922,7 +923,7 @@ msgid "Show the Upload folder, and upload what is copied into it"
 msgstr "Afficher le dossier Upload et envoyer ce qui y est copié"
 
 #: crates/immich-mount-core/src/settings.rs:71
-#: apple/App/SettingsView.swift:249
+#: apple/App/SettingsView.swift:247
 msgid "Folders copied into Upload"
 msgstr "Dossiers copiés dans Upload"
 
@@ -935,8 +936,8 @@ msgid "Refuse thumbnailer reads of originals"
 msgstr "Refuser aux générateurs de vignettes la lecture des originaux"
 
 #: crates/immich-mount-core/src/settings.rs:74
-msgid "Show what other apps link to (Immich crosslink)"
-msgstr "Afficher ce vers quoi pointent les liens d’autres applications (Immich crosslink)"
+msgid "Show what other apps link to (Immich Crosslink)"
+msgstr "Afficher ce que d’autres apps désignent (Immich Crosslink)"
 
 #: crates/immich-mount-core/src/settings.rs:75
 msgid "Apps left out of Show in, by their desktop entry or bundle id, separated by ;"
@@ -987,12 +988,12 @@ msgid "Ask Each Time"
 msgstr "Demander à chaque fois"
 
 #: apple/App/ContentView.swift:19
-#: apple/App/SettingsView.swift:346
+#: apple/App/SettingsView.swift:344
 msgid "Move Immich Mount to Applications"
 msgstr "Déplacer Immich Mount dans Applications"
 
 #: apple/App/ContentView.swift:20
-#: apple/App/SettingsView.swift:347
+#: apple/App/SettingsView.swift:345
 msgid "Finder's location runs from the Applications folder. Quit Immich Mount, drag it into Applications, then open it from there."
 msgstr "L’emplacement dans le Finder fonctionne depuis le dossier Applications. Quittez Immich Mount, faites-le glisser dans Applications, puis ouvrez-le depuis là."
 
@@ -1034,7 +1035,7 @@ msgstr "Utiliser Réglages Système à la place"
 
 #: apple/App/ContentView.swift:167
 #: apple/App/ImmichMountApp.swift:464
-#: apple/App/SettingsView.swift:327
+#: apple/App/SettingsView.swift:325
 msgid "Open in Finder"
 msgstr "Ouvrir dans le Finder"
 
@@ -1126,17 +1127,17 @@ msgid "Settings…"
 msgstr "Réglages…"
 
 #: apple/App/ImmichMountApp.swift:453
-#: apple/App/SettingsView.swift:305
+#: apple/App/SettingsView.swift:303
 msgid "Sign In…"
 msgstr "Se connecter…"
 
 #: apple/App/ImmichMountApp.swift:455
-#: apple/App/SettingsView.swift:325
+#: apple/App/SettingsView.swift:323
 msgid "Switch On in Finder…"
 msgstr "Activer dans le Finder…"
 
 #: apple/App/ImmichMountApp.swift:471
-#: apple/App/SettingsView.swift:330
+#: apple/App/SettingsView.swift:328
 msgid "Sign Out…"
 msgstr "Se déconnecter…"
 
@@ -1145,7 +1146,7 @@ msgid "Quit Immich Mount"
 msgstr "Quitter Immich Mount"
 
 #: apple/App/ReceivedLinks.swift:18
-#: apple/App/SettingsView.swift:304
+#: apple/App/SettingsView.swift:302
 msgid "Not signed in"
 msgstr "Non connecté"
 
@@ -1157,11 +1158,11 @@ msgstr "Général"
 msgid "Folders"
 msgstr "Dossiers"
 
-#: apple/App/SettingsView.swift:258
+#: apple/App/SettingsView.swift:256
 msgid "Folder names"
 msgstr "Noms des dossiers"
 
-#: apple/App/SettingsView.swift:261
+#: apple/App/SettingsView.swift:259
 msgid "File names"
 msgstr "Noms des fichiers"
 
@@ -1177,19 +1178,19 @@ msgstr "Rechercher automatiquement les mises à jour"
 msgid "While Immich Mount runs, in the menu bar, changes in Immich reach Finder within seconds. Updates come from jakob.hviid.phd, signed by the project and notarized by Apple."
 msgstr "Tant qu’Immich Mount tourne dans la barre des menus, les modifications dans Immich arrivent dans le Finder en quelques secondes. Les mises à jour viennent de jakob.hviid.phd, signées par le projet et notariées par Apple."
 
-#: apple/App/SettingsView.swift:243
+#: apple/App/SettingsView.swift:241
 msgid "Date folders are day folders inside each month in Photos, and year and month folders in the other sections."
 msgstr "Les dossiers par date sont des dossiers par jour dans chaque mois dans Photos, et des dossiers par année et par mois dans les autres sections."
 
-#: apple/App/SettingsView.swift:244
+#: apple/App/SettingsView.swift:242
 msgid "Photos and videos copied into Upload are added to Immich."
 msgstr "Les photos et vidéos copiées dans Upload sont ajoutées à Immich."
 
-#: apple/App/SettingsView.swift:254
+#: apple/App/SettingsView.swift:252
 msgid "Every photo and video in them is added to Immich. An album is named by its folder's path, such as Trip › Day 1."
 msgstr "Chaque photo et vidéo qu’ils contiennent est ajoutée à Immich. Un album porte le chemin de son dossier, par exemple Voyage › Jour 1."
 
-#: apple/App/SettingsView.swift:265
+#: apple/App/SettingsView.swift:263
 msgid "Finder lists Immich again after each change."
 msgstr "Finder affiche de nouveau Immich après chaque modification."
 

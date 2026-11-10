@@ -882,7 +882,7 @@ Open in Immich and Copy Immich Link take an item from the file manager to its pa
   - **The key is enough:** an Asset's key holds the folder it is listed in (`asset|<folder key>|<id>`), so a photo's
     link keeps its album, person or city without asking Immich anything.
   - **Immich's own paths, not ours:** they are what Immich's web app and its mobile app's deep links already take,
-    and they are the immich-crosslink protocol's, so one map serves the browser and the other apps.
+    and they are Immich Crosslink's, so one map serves the browser and the other apps.
   - **The search is Immich's JSON byte for byte** (`JSON.stringify`, then `encodeURIComponent`), tested against what
     a browser writes, so the address is the one Immich itself would make. The country is added to a city's search,
     which Immich's Places page leaves out, because the folder knows it and two cities of one name differ.
@@ -939,7 +939,7 @@ Open in Immich and Copy Immich Link take an item from the file manager to its pa
     plan while it was unknown whether a non-UI extension may open a URL: it would have failed whenever the app was
     not running.
 - **Reading links back** (for showing an item from a crosslink, step 2 of the roadmap's section) is in the same
-  module: a crosslink reads to one of immich-crosslink's three results (show, cannot show, invalid) before anything
+  module: a crosslink reads to one of Immich Crosslink's three results (show, cannot show, invalid) before anything
   is fetched, and a web address on the signed-in server to its item. The protocol's own test links
   (`crates/immich-mount-core/tests/crosslink-links.json`, copied at the commit its test names) are run as they are:
   the links made byte for byte, and every result reached.
@@ -985,7 +985,7 @@ Open in Immich and Copy Immich Link take an item from the file manager to its pa
   system read the items again when the offers change. An extension shows no interface, so Show in Another App…
   opens the app's own URL scheme, which starts the app without a window if it is not running.
   - **The Gallery's own link** (`immichgallery://photo/<id>`, its widget's) is kept for the releases that do not
-    announce immich-crosslink; once a build announces, it gets crosslinks like any other app.
+    announce Immich Crosslink; once a build announces, it gets crosslinks like any other app.
 - **Flatpak impact:** the D-Bus members and the command work from a Flatpak (the command needs the session bus and
   `xdg-open`, which the OpenURI portal answers); the file managers' menu items are files on the host, which a
   Flatpak cannot install. A Flatpak exports its launcher entry with the scheme, so it can take crosslinks; selecting

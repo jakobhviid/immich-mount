@@ -43,7 +43,7 @@ constexpr int linksTimeoutMs = 250;
 // An item's links, as the daemon's Links gives them.
 struct Links {
     QString web;
-    // Empty while Immich crosslink is off.
+    // Empty while Immich Crosslink is off.
     QString crosslink;
     QString kind;
     // The desktop entry ids of the apps left out of Show in, separated by `;`.

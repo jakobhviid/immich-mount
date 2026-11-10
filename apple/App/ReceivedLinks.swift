@@ -9,7 +9,7 @@ import UserNotifications
 
 @MainActor
 enum ReceivedLinks {
-    /// The notification's `userInfo` key that has a click on it open Settings, where Immich crosslink is switched on.
+    /// The notification's `userInfo` key that has a click on it open Settings, where Immich Crosslink is switched on.
     nonisolated static let opensSettings = "opensSettings"
 
     static func show(_ url: URL) async {
@@ -62,9 +62,9 @@ enum ReceivedLinks {
     private static func refusal(_ result: String, detail: String) -> (String, String) {
         switch result {
         case "off":
-            return (tr("Immich crosslink is off"), tr("Turn it on in Immich Mount's settings to show what other apps link to."))
+            return (tr("Links from other apps are off"), tr("Turn on Immich Crosslink in Immich Mount's settings to show what other apps link to."))
         case "invalid":
-            return (tr("This link cannot be opened"), tr("It is not a valid Immich link."))
+            return (tr("A link from another app cannot be opened"), tr("It is not a valid Immich link."))
         case "cannot-show":
             return (tr("Nothing to show"), tr("Immich Mount has no place for what this link points to."))
         case "other-server":

@@ -28,18 +28,18 @@ msgstr "Ring kunci tetap terkunci. Buka Immich Mount atau jalankan “immich-mou
 
 #: crates/immich-mount-linux/src/daemon.rs:366
 #: apple/App/ReceivedLinks.swift:65
-msgid "Immich crosslink is off"
-msgstr "Immich crosslink nonaktif"
+msgid "Links from other apps are off"
+msgstr "Tautan dari aplikasi lain dimatikan"
 
 #: crates/immich-mount-linux/src/daemon.rs:366
 #: apple/App/ReceivedLinks.swift:65
-msgid "Turn it on in Immich Mount's settings to show what other apps link to."
-msgstr "Aktifkan di Preferensi Immich Mount untuk menampilkan hal yang ditautkan oleh aplikasi lain."
+msgid "Turn on Immich Crosslink in Immich Mount's settings to show what other apps link to."
+msgstr "Nyalakan Immich Crosslink di pengaturan Immich Mount untuk menampilkan apa yang ditautkan aplikasi lain."
 
 #: crates/immich-mount-linux/src/daemon.rs:367
 #: apple/App/ReceivedLinks.swift:67
-msgid "This link cannot be opened"
-msgstr "Tautan ini tidak dapat dibuka"
+msgid "A link from another app cannot be opened"
+msgstr "Tautan dari aplikasi lain tidak dapat dibuka"
 
 #: crates/immich-mount-linux/src/daemon.rs:367
 #: apple/App/ReceivedLinks.swift:67
@@ -269,22 +269,22 @@ msgstr "Kandar"
 #: crates/immich-mount-desktop/src/preferences.rs:13
 #: crates/immich-mount-gnome/src/window.blp:144
 #: crates/immich-mount-kde/qml/Main.qml:392
-#: apple/App/SettingsView.swift:237
+#: apple/App/SettingsView.swift:235
 msgid "Sections"
 msgstr "Bagian"
 
 #: crates/immich-mount-desktop/src/preferences.rs:14
-#: apple/App/SettingsView.swift:239
+#: apple/App/SettingsView.swift:237
 msgid "Date Folders"
 msgstr "Folder tanggal"
 
 #: crates/immich-mount-desktop/src/preferences.rs:16
-#: apple/App/SettingsView.swift:263
+#: apple/App/SettingsView.swift:261
 msgid "Files"
 msgstr "Berkas"
 
 #: crates/immich-mount-desktop/src/preferences.rs:17
-#: apple/App/SettingsView.swift:252
+#: apple/App/SettingsView.swift:250
 msgid "Uploads"
 msgstr "Unggahan"
 
@@ -412,8 +412,9 @@ msgstr "Keluar"
 
 #: crates/immich-mount-gnome/src/preferences.rs:25
 #: crates/immich-mount-kde/qml/Main.qml:115
-msgid "What is this?"
-msgstr "Apa ini?"
+#: apple/App/SettingsView.swift:188
+msgid "Read more"
+msgstr "Baca selengkapnya"
 
 #: crates/immich-mount-gnome/src/window.rs:267
 #: crates/immich-mount-kde/qml/Main.qml:349
@@ -922,7 +923,7 @@ msgid "Show the Upload folder, and upload what is copied into it"
 msgstr "Tampilkan folder Upload, dan unggah apa yang disalin ke dalamnya"
 
 #: crates/immich-mount-core/src/settings.rs:71
-#: apple/App/SettingsView.swift:249
+#: apple/App/SettingsView.swift:247
 msgid "Folders copied into Upload"
 msgstr "Folder yang disalin ke Upload"
 
@@ -935,8 +936,8 @@ msgid "Refuse thumbnailer reads of originals"
 msgstr "Tolak pembacaan berkas asli oleh pembuat gambar mini"
 
 #: crates/immich-mount-core/src/settings.rs:74
-msgid "Show what other apps link to (Immich crosslink)"
-msgstr "Tampilkan hal yang ditautkan oleh aplikasi lain (Immich crosslink)"
+msgid "Show what other apps link to (Immich Crosslink)"
+msgstr "Tampilkan apa yang ditautkan aplikasi lain (Immich Crosslink)"
 
 #: crates/immich-mount-core/src/settings.rs:75
 msgid "Apps left out of Show in, by their desktop entry or bundle id, separated by ;"
@@ -987,12 +988,12 @@ msgid "Ask Each Time"
 msgstr "Tanya setiap kali"
 
 #: apple/App/ContentView.swift:19
-#: apple/App/SettingsView.swift:346
+#: apple/App/SettingsView.swift:344
 msgid "Move Immich Mount to Applications"
 msgstr "Pindahkan Immich Mount ke Aplikasi"
 
 #: apple/App/ContentView.swift:20
-#: apple/App/SettingsView.swift:347
+#: apple/App/SettingsView.swift:345
 msgid "Finder's location runs from the Applications folder. Quit Immich Mount, drag it into Applications, then open it from there."
 msgstr "Lokasi di Finder hanya berjalan dari folder Aplikasi. Keluar dari Immich Mount, seret ke Aplikasi, lalu buka dari sana."
 
@@ -1034,7 +1035,7 @@ msgstr "Gunakan Pengaturan Sistem sebagai gantinya"
 
 #: apple/App/ContentView.swift:167
 #: apple/App/ImmichMountApp.swift:464
-#: apple/App/SettingsView.swift:327
+#: apple/App/SettingsView.swift:325
 msgid "Open in Finder"
 msgstr "Buka di Finder"
 
@@ -1126,17 +1127,17 @@ msgid "Settings…"
 msgstr "Pengaturan…"
 
 #: apple/App/ImmichMountApp.swift:453
-#: apple/App/SettingsView.swift:305
+#: apple/App/SettingsView.swift:303
 msgid "Sign In…"
 msgstr "Masuk…"
 
 #: apple/App/ImmichMountApp.swift:455
-#: apple/App/SettingsView.swift:325
+#: apple/App/SettingsView.swift:323
 msgid "Switch On in Finder…"
 msgstr "Nyalakan di Finder…"
 
 #: apple/App/ImmichMountApp.swift:471
-#: apple/App/SettingsView.swift:330
+#: apple/App/SettingsView.swift:328
 msgid "Sign Out…"
 msgstr "Keluar dari akun…"
 
@@ -1145,7 +1146,7 @@ msgid "Quit Immich Mount"
 msgstr "Keluar dari Immich Mount"
 
 #: apple/App/ReceivedLinks.swift:18
-#: apple/App/SettingsView.swift:304
+#: apple/App/SettingsView.swift:302
 msgid "Not signed in"
 msgstr "Belum masuk"
 
@@ -1157,11 +1158,11 @@ msgstr "Umum"
 msgid "Folders"
 msgstr "Folder"
 
-#: apple/App/SettingsView.swift:258
+#: apple/App/SettingsView.swift:256
 msgid "Folder names"
 msgstr "Nama folder"
 
-#: apple/App/SettingsView.swift:261
+#: apple/App/SettingsView.swift:259
 msgid "File names"
 msgstr "Nama file"
 
@@ -1177,19 +1178,19 @@ msgstr "Periksa pembaruan secara otomatis"
 msgid "While Immich Mount runs, in the menu bar, changes in Immich reach Finder within seconds. Updates come from jakob.hviid.phd, signed by the project and notarized by Apple."
 msgstr "Selama Immich Mount berjalan di bar menu, perubahan di Immich sampai ke Finder dalam hitungan detik. Pembaruan berasal dari jakob.hviid.phd, ditandatangani oleh proyek dan dinotarisasi oleh Apple."
 
-#: apple/App/SettingsView.swift:243
+#: apple/App/SettingsView.swift:241
 msgid "Date folders are day folders inside each month in Photos, and year and month folders in the other sections."
 msgstr "Folder tanggal adalah folder harian di dalam setiap bulan di Photos, serta folder tahun dan bulan di bagian lainnya."
 
-#: apple/App/SettingsView.swift:244
+#: apple/App/SettingsView.swift:242
 msgid "Photos and videos copied into Upload are added to Immich."
 msgstr "Foto dan video yang disalin ke Upload ditambahkan ke Immich."
 
-#: apple/App/SettingsView.swift:254
+#: apple/App/SettingsView.swift:252
 msgid "Every photo and video in them is added to Immich. An album is named by its folder's path, such as Trip › Day 1."
 msgstr "Setiap foto dan video di dalamnya ditambahkan ke Immich. Album dinamai menurut jalur foldernya, misalnya Perjalanan › Hari 1."
 
-#: apple/App/SettingsView.swift:265
+#: apple/App/SettingsView.swift:263
 msgid "Finder lists Immich again after each change."
 msgstr "Finder menampilkan ulang Immich setelah setiap perubahan."
 

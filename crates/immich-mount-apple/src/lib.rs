@@ -1422,7 +1422,7 @@ pub struct SettingsPanes {
     pub file_naming: Preference,
     /// What a folder copied into Upload becomes (`uploads.folders`).
     pub upload_folders: Preference,
-    /// Immich crosslink's switch (`crosslink.enabled`), in the General pane.
+    /// Immich Crosslink's switch (`crosslink.enabled`), in the General pane.
     pub crosslink: Preference,
 }
 
@@ -2742,7 +2742,7 @@ mod tests {
         assert!(!set_app_shown(hidden, "org.example.Albums".into(), true).unwrap().contains("hidden"), "back, the key goes");
 
         let off = crosslink_targets(apps, "[crosslink]\nenabled = false\n".into(), false);
-        assert_eq!((off.gallery, off.others.len(), off.listed.len()), (None, 0, 1), "Immich crosslink off: listed, offered nowhere");
+        assert_eq!((off.gallery, off.others.len(), off.listed.len()), (None, 0, 1), "Immich Crosslink off: listed, offered nowhere");
     }
 
     #[test]

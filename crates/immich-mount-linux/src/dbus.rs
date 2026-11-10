@@ -86,7 +86,7 @@ pub type WebLinkFuture = Pin<Box<dyn Future<Output = Option<String>> + Send>>;
 /// The answer to a received link: its result, and the path shown (or the server's host, for another server).
 pub type ShowLinkFuture = Pin<Box<dyn Future<Output = (String, String)> + Send>>;
 
-/// An item's links for the menus: its web address, its crosslink (empty while Immich crosslink is off), its kind, and
+/// An item's links for the menus: its web address, its crosslink (empty while Immich Crosslink is off), its kind, and
 /// the apps left out of Show in; `None` for a path outside the mount or an item Immich has no page for.
 pub type LinksFuture = Pin<Box<dyn Future<Output = Option<(String, String, String, String)>> + Send>>;
 
@@ -196,7 +196,7 @@ impl Daemon {
     }
 
     /// The links of the item at `path`, for the menus' Show in *app*: `(web address, crosslink, kind, hidden apps)`,
-    /// the crosslink empty while Immich crosslink is off and the hidden apps separated by `;`; all empty for a path
+    /// the crosslink empty while Immich Crosslink is off and the hidden apps separated by `;`; all empty for a path
     /// outside the mount or an item Immich has no page for.
     async fn links(&self, path: String) -> (String, String, String, String) {
         (self.actions.links)(path.into()).await.unwrap_or_default()

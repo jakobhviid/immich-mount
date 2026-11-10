@@ -108,11 +108,11 @@ Kirigami.ApplicationWindow {
                                     checked: row.modelData.value === "true"
                                     onToggled: preferences.store(row.modelData.key, checked ? "true" : "false")
                                 }
-                                // Immich crosslink's switch links to the protocol, so it is clear what it is.
+                                // Immich Crosslink's switch links to the protocol, so it is clear what it is.
                                 Kirigami.UrlButton {
                                     visible: row.modelData.link.length > 0
                                     url: row.modelData.link
-                                    text: i18n("What is this?")
+                                    text: i18n("Read more")
                                 }
                             }
                         }

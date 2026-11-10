@@ -43,7 +43,7 @@ G_DEFINE_DYNAMIC_TYPE_EXTENDED(ImmichMenuProvider, immich_menu_provider, G_TYPE_
 
 static GType provider_types[1];
 
-/* What the daemon says about an item: its web address, its crosslink (empty while Immich crosslink is off), its kind,
+/* What the daemon says about an item: its web address, its crosslink (empty while Immich Crosslink is off), its kind,
  * and the apps the user left out, separated by `;`. */
 typedef struct {
     char *web;
@@ -209,7 +209,7 @@ static GList *get_file_items(G_GNUC_UNUSED NautilusMenuProvider *provider, GList
                                            G_CALLBACK(open_in_immich), links->web));
     items = g_list_append(items, menu_item("ImmichMount::CopyImmichLink", dgettext(TEXT_DOMAIN, "Copy Immich Link"),
                                            G_CALLBACK(copy_immich_link), links->web));
-    /* The crosslink is empty while Immich crosslink is off, and then no other app is offered. */
+    /* The crosslink is empty while Immich Crosslink is off, and then no other app is offered. */
     if (links->crosslink != NULL && links->crosslink[0] != '\0') {
         GList *apps = apps_showing(links->kind, links->hidden);
         for (GList *entry = apps; entry != NULL; entry = entry->next) {

@@ -22,7 +22,7 @@ pub fn dialog(report: impl Fn(&str) + Clone + 'static) -> adw::PreferencesDialog
             let current = current_value(setting);
             let widget = row(setting, &current, changed.clone(), report.clone());
             if let (Some(page), Some(action_row)) = (link(setting), widget.downcast_ref::<adw::ActionRow>()) {
-                let button = gtk::LinkButton::with_label(page, tr("What is this?"));
+                let button = gtk::LinkButton::with_label(page, tr("Read more"));
                 button.set_valign(gtk::Align::Center);
                 action_row.add_suffix(&button);
             }

@@ -30,11 +30,11 @@ pub fn link(setting: &Setting) -> Option<&'static str> {
     (setting.key == "crosslink.enabled").then_some(CROSSLINK_PAGE)
 }
 
-/// A setting's title in the user's language: its description in the core's table, translated. Immich crosslink's
+/// A setting's title in the user's language: its description in the core's table, translated. Immich Crosslink's
 /// switch carries the protocol's name, in English in every language.
 pub fn title(setting: &Setting) -> &'static str {
     if setting.key == "crosslink.enabled" {
-        return "Immich crosslink";
+        return "Immich Crosslink";
     }
     tr(setting.description)
 }

@@ -28,18 +28,18 @@ msgstr "키링이 잠긴 상태로 남아 있습니다. 다시 시도하려면 I
 
 #: crates/immich-mount-linux/src/daemon.rs:366
 #: apple/App/ReceivedLinks.swift:65
-msgid "Immich crosslink is off"
-msgstr "Immich crosslink가 꺼져 있음"
+msgid "Links from other apps are off"
+msgstr "다른 앱에서 온 링크가 꺼져 있습니다"
 
 #: crates/immich-mount-linux/src/daemon.rs:366
 #: apple/App/ReceivedLinks.swift:65
-msgid "Turn it on in Immich Mount's settings to show what other apps link to."
-msgstr "다른 앱이 링크하는 대상을 표시하려면 Immich Mount의 기본 설정에서 켜십시오."
+msgid "Turn on Immich Crosslink in Immich Mount's settings to show what other apps link to."
+msgstr "다른 앱이 가리키는 항목을 보려면 Immich Mount 설정에서 Immich Crosslink를 켜세요."
 
 #: crates/immich-mount-linux/src/daemon.rs:367
 #: apple/App/ReceivedLinks.swift:67
-msgid "This link cannot be opened"
-msgstr "이 링크를 열 수 없음"
+msgid "A link from another app cannot be opened"
+msgstr "다른 앱에서 온 링크를 열 수 없습니다"
 
 #: crates/immich-mount-linux/src/daemon.rs:367
 #: apple/App/ReceivedLinks.swift:67
@@ -269,22 +269,22 @@ msgstr "드라이브"
 #: crates/immich-mount-desktop/src/preferences.rs:13
 #: crates/immich-mount-gnome/src/window.blp:144
 #: crates/immich-mount-kde/qml/Main.qml:392
-#: apple/App/SettingsView.swift:237
+#: apple/App/SettingsView.swift:235
 msgid "Sections"
 msgstr "섹션"
 
 #: crates/immich-mount-desktop/src/preferences.rs:14
-#: apple/App/SettingsView.swift:239
+#: apple/App/SettingsView.swift:237
 msgid "Date Folders"
 msgstr "날짜 폴더"
 
 #: crates/immich-mount-desktop/src/preferences.rs:16
-#: apple/App/SettingsView.swift:263
+#: apple/App/SettingsView.swift:261
 msgid "Files"
 msgstr "파일"
 
 #: crates/immich-mount-desktop/src/preferences.rs:17
-#: apple/App/SettingsView.swift:252
+#: apple/App/SettingsView.swift:250
 msgid "Uploads"
 msgstr "업로드"
 
@@ -412,8 +412,9 @@ msgstr "종료"
 
 #: crates/immich-mount-gnome/src/preferences.rs:25
 #: crates/immich-mount-kde/qml/Main.qml:115
-msgid "What is this?"
-msgstr "이것은 무엇입니까?"
+#: apple/App/SettingsView.swift:188
+msgid "Read more"
+msgstr "자세히 보기"
 
 #: crates/immich-mount-gnome/src/window.rs:267
 #: crates/immich-mount-kde/qml/Main.qml:349
@@ -922,7 +923,7 @@ msgid "Show the Upload folder, and upload what is copied into it"
 msgstr "Upload 폴더를 표시하고 그 안에 복사한 항목 업로드"
 
 #: crates/immich-mount-core/src/settings.rs:71
-#: apple/App/SettingsView.swift:249
+#: apple/App/SettingsView.swift:247
 msgid "Folders copied into Upload"
 msgstr "Upload에 복사한 폴더"
 
@@ -935,8 +936,8 @@ msgid "Refuse thumbnailer reads of originals"
 msgstr "썸네일 생성기의 원본 읽기 거부"
 
 #: crates/immich-mount-core/src/settings.rs:74
-msgid "Show what other apps link to (Immich crosslink)"
-msgstr "다른 앱이 링크하는 대상 표시 (Immich crosslink)"
+msgid "Show what other apps link to (Immich Crosslink)"
+msgstr "다른 앱이 가리키는 항목 보기 (Immich Crosslink)"
 
 #: crates/immich-mount-core/src/settings.rs:75
 msgid "Apps left out of Show in, by their desktop entry or bundle id, separated by ;"
@@ -987,12 +988,12 @@ msgid "Ask Each Time"
 msgstr "매번 묻기"
 
 #: apple/App/ContentView.swift:19
-#: apple/App/SettingsView.swift:346
+#: apple/App/SettingsView.swift:344
 msgid "Move Immich Mount to Applications"
 msgstr "Immich Mount를 ‘응용 프로그램’ 폴더로 이동"
 
 #: apple/App/ContentView.swift:20
-#: apple/App/SettingsView.swift:347
+#: apple/App/SettingsView.swift:345
 msgid "Finder's location runs from the Applications folder. Quit Immich Mount, drag it into Applications, then open it from there."
 msgstr "Finder의 위치는 ‘응용 프로그램’ 폴더에서 실행해야 작동합니다. Immich Mount를 종료하고 ‘응용 프로그램’으로 드래그한 다음 그곳에서 여십시오."
 
@@ -1034,7 +1035,7 @@ msgstr "대신 ‘시스템 설정’ 사용"
 
 #: apple/App/ContentView.swift:167
 #: apple/App/ImmichMountApp.swift:464
-#: apple/App/SettingsView.swift:327
+#: apple/App/SettingsView.swift:325
 msgid "Open in Finder"
 msgstr "Finder에서 열기"
 
@@ -1126,17 +1127,17 @@ msgid "Settings…"
 msgstr "설정…"
 
 #: apple/App/ImmichMountApp.swift:453
-#: apple/App/SettingsView.swift:305
+#: apple/App/SettingsView.swift:303
 msgid "Sign In…"
 msgstr "로그인…"
 
 #: apple/App/ImmichMountApp.swift:455
-#: apple/App/SettingsView.swift:325
+#: apple/App/SettingsView.swift:323
 msgid "Switch On in Finder…"
 msgstr "Finder에서 켜기…"
 
 #: apple/App/ImmichMountApp.swift:471
-#: apple/App/SettingsView.swift:330
+#: apple/App/SettingsView.swift:328
 msgid "Sign Out…"
 msgstr "로그아웃…"
 
@@ -1145,7 +1146,7 @@ msgid "Quit Immich Mount"
 msgstr "Immich Mount 종료"
 
 #: apple/App/ReceivedLinks.swift:18
-#: apple/App/SettingsView.swift:304
+#: apple/App/SettingsView.swift:302
 msgid "Not signed in"
 msgstr "로그인하지 않음"
 
@@ -1157,11 +1158,11 @@ msgstr "일반"
 msgid "Folders"
 msgstr "폴더"
 
-#: apple/App/SettingsView.swift:258
+#: apple/App/SettingsView.swift:256
 msgid "Folder names"
 msgstr "폴더 이름"
 
-#: apple/App/SettingsView.swift:261
+#: apple/App/SettingsView.swift:259
 msgid "File names"
 msgstr "파일 이름"
 
@@ -1177,19 +1178,19 @@ msgstr "자동으로 업데이트 확인"
 msgid "While Immich Mount runs, in the menu bar, changes in Immich reach Finder within seconds. Updates come from jakob.hviid.phd, signed by the project and notarized by Apple."
 msgstr "Immich Mount가 메뉴 막대에서 실행되는 동안 Immich의 변경 사항이 몇 초 안에 Finder에 반영됩니다. 업데이트는 jakob.hviid.phd에서 제공되며, 프로젝트가 서명하고 Apple이 공증합니다."
 
-#: apple/App/SettingsView.swift:243
+#: apple/App/SettingsView.swift:241
 msgid "Date folders are day folders inside each month in Photos, and year and month folders in the other sections."
 msgstr "날짜 폴더는 Photos에서는 각 월 안의 일별 폴더이고, 다른 섹션에서는 연도 및 월 폴더입니다."
 
-#: apple/App/SettingsView.swift:244
+#: apple/App/SettingsView.swift:242
 msgid "Photos and videos copied into Upload are added to Immich."
 msgstr "Upload에 복사한 사진과 동영상은 Immich에 추가됩니다."
 
-#: apple/App/SettingsView.swift:254
+#: apple/App/SettingsView.swift:252
 msgid "Every photo and video in them is added to Immich. An album is named by its folder's path, such as Trip › Day 1."
 msgstr "그 안의 모든 사진과 비디오가 Immich에 추가됩니다. 앨범 이름은 폴더 경로를 따릅니다(예: 여행 › 1일차)."
 
-#: apple/App/SettingsView.swift:265
+#: apple/App/SettingsView.swift:263
 msgid "Finder lists Immich again after each change."
 msgstr "변경할 때마다 Finder가 Immich 목록을 다시 불러옵니다."
 

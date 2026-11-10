@@ -398,9 +398,9 @@ Both are offered on one item at a time, inside the mount, for items with a web a
   ask with a 250 ms limit, never starting the daemon. It finds the item from the folder listings it has, so a path the
   file manager shows needs no request to the server. With no daemon answering, the items are not offered.
 
-### Links from other apps (immich-crosslink)
+### Links from other apps (Immich Crosslink)
 
-Immich Mount takes part in [immich-crosslink](https://jakob.hviid.phd/immich-crosslink/), draft 0.2: other Immich
+Immich Mount takes part in [Immich Crosslink](https://jakob.hviid.phd/immich-crosslink/), draft 0.2: other Immich
 apps on the computer can ask it to show a photo, album, person or place, and it shows the item in the file manager,
 selected.
 - **Announcing:** the launcher entry registers the scheme (`MimeType=…;x-scheme-handler/immich-crosslink;`) and
@@ -419,8 +419,8 @@ selected.
 
   | Result | Notification |
   |---|---|
-  | Immich crosslink off | "Immich crosslink is off": turn it on in the settings |
-  | Invalid | "This link cannot be opened": not a valid Immich link |
+  | Immich Crosslink off | "Links from other apps are off": turn on Immich Crosslink in the settings |
+  | Invalid | "A link from another app cannot be opened": not a valid Immich link |
   | Cannot show | "Nothing to show": no place for what it points to |
   | Another server | "Not signed in to *host*" |
   | Another user | "Another Immich account" |
@@ -431,7 +431,7 @@ selected.
   kinds) and declares the scheme (`CFBundleURLTypes`). The menu bar app takes the link, without opening a window
   when a link started it, and Finder selects the item (`getUserVisibleURL`, then `activateFileViewerSelecting`),
   listing the folders above it first where Finder never has. The results and notifications are Linux's; signed out,
-  a link gets "Not signed in", and clicking "Immich crosslink is off" opens the app's settings.
+  a link gets "Not signed in", and clicking "Links from other apps are off" opens the app's settings.
 - **The default handler:** several apps may take the scheme. Immich Mount never makes itself the default: apps that
   take part send a link to one app by name, and a link opened in a browser or with `xdg-open` or `open` goes to the
   app the system chose, which the user can change (`xdg-mime default dev.hviid.ImmichMount.desktop
@@ -443,7 +443,7 @@ selected.
 ### Show in other apps
 
 Beside Open in Immich and Copy Immich Link, **Show in *app*** sends the item's crosslink to another app that takes
-part in immich-crosslink, which shows it there.
+part in Immich Crosslink, which shows it there.
 - **Which apps:** those whose desktop entry takes the scheme and announces draft 0.2 (`X-Immich-Crosslink-Version`)
   and the item's kind (`X-Immich-Crosslink-Shows`), less Immich Mount itself and the ones switched off in the
   settings (`crosslink.hidden`). A photo's kind is `asset` wherever it is listed; an album's `album`, a person's
@@ -451,7 +451,7 @@ part in immich-crosslink, which shows it there.
 - **Sending:** the crosslink, with the signed-in user's id when known, goes to that app alone (GIO's
   `g_app_info_launch_uris` in Files, `KIO::ApplicationLauncherJob` in Dolphin), never to the scheme's default.
 - **Off:** with `crosslink.enabled` off, no Show in items; Open in Immich and Copy Immich Link stay.
-- **The settings** (Other Apps, in both apps): the **Immich crosslink** switch with "What is this?", a link to the
+- **The settings** (Other Apps, in both apps): the **Immich Crosslink** switch with **Read more**, a link to the
   protocol, and under it each app found, by its name and icon, with a switch.
 - The menus ask the daemon's `Links`; against a daemon without it they offer Open in Immich and Copy Immich Link
   only.
@@ -514,7 +514,7 @@ table in the Core drives validation, `immich-mount configure`, and the app's set
 | `uploads.folders` | `ask`, `timeline`, `albums` | `ask` | What a folder copied into Upload becomes besides its uploads: asked each time once the copy has settled, the timeline only, or an album of each folder too ("Folders copied into Upload") |
 | `thumbnails.sharp` | bool | `true` | Also seed 1024 px thumbnails from `preview` |
 | `thumbnails.safety_net` | bool | `true` | Refuse thumbnailer reads of originals |
-| `crosslink.enabled` | bool | `true` | Immich crosslink: show in the file manager what another app links to, and offer Show in *app* (Links to Immich). Off, a link from another app only gets a notification saying so. Labelled "Immich crosslink" in the apps, in English in every language, with a link to the protocol |
+| `crosslink.enabled` | bool | `true` | Immich Crosslink: show in the file manager what another app links to, and offer Show in *app* (Links to Immich). Off, a link from another app only gets a notification saying so. Labelled "Immich Crosslink" in the apps, in English in every language, with a link to the protocol |
 | `crosslink.hidden` | ids separated by `;` | none | The apps left out of Show in *app*, by desktop entry id (`org.example.Photos.desktop`) or bundle id; the apps show a switch per app found instead |
 | `updates.check` | bool | `true` | Tell, once per version, when a new release is out: a notification and a line on the tray's menu (ARCHITECTURE.md, "Updates on Linux"). Only packages from the download page look; Homebrew's installs are left to `brew upgrade`. Linux only: the Mac app has Sparkle's own setting |
 | `credential.file` | path | none | Headless only: a 0600 file holding the credential |
@@ -646,7 +646,7 @@ macOS edition"). Where Finder's way differs:
   `Localizable.strings`. There is no `web` command on the Mac.
 - **Show in other apps** (Show in other apps): Finder's actions are fixed in the extension's Info.plist, so the apps
   come in two actions. **Show in Immich Gallery** sends the item's crosslink to Immich Gallery where it announces
-  immich-crosslink, and to a Gallery build that does not (0.5.0) opens `immichgallery://photo/<id>`
+  Immich Crosslink, and to a Gallery build that does not (0.5.0) opens `immichgallery://photo/<id>`
   (`immichgallery-dev://` for its Dev build) on a photo in Photos; never both. **Show in Another App…** has the menu
   bar app, started if it is not running and without a window, show a menu at the pointer of the other apps that
   announce draft 0.2 and the item's kind, by the names and icons macOS gives them, and sends the link to the one

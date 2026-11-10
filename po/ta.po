@@ -28,18 +28,18 @@ msgstr "கீரிங் பூட்டியே இருந்தது. �
 
 #: crates/immich-mount-linux/src/daemon.rs:366
 #: apple/App/ReceivedLinks.swift:65
-msgid "Immich crosslink is off"
-msgstr "Immich crosslink முடக்கப்பட்டுள்ளது"
+msgid "Links from other apps are off"
+msgstr "பிற பயன்பாடுகளிலிருந்து வரும் இணைப்புகள் முடக்கப்பட்டுள்ளன"
 
 #: crates/immich-mount-linux/src/daemon.rs:366
 #: apple/App/ReceivedLinks.swift:65
-msgid "Turn it on in Immich Mount's settings to show what other apps link to."
-msgstr "பிற பயன்பாடுகள் இணைப்பு தருவதைக் காட்ட, Immich Mount-இன் விருப்பங்களில் இதை இயக்கவும்."
+msgid "Turn on Immich Crosslink in Immich Mount's settings to show what other apps link to."
+msgstr "பிற பயன்பாடுகள் இணைப்பதைக் காட்ட Immich Mount அமைப்புகளில் Immich Crosslink-ஐ இயக்கவும்."
 
 #: crates/immich-mount-linux/src/daemon.rs:367
 #: apple/App/ReceivedLinks.swift:67
-msgid "This link cannot be opened"
-msgstr "இந்த இணைப்பைத் திறக்க முடியாது"
+msgid "A link from another app cannot be opened"
+msgstr "பிற பயன்பாட்டிலிருந்து வந்த இணைப்பைத் திறக்க முடியவில்லை"
 
 #: crates/immich-mount-linux/src/daemon.rs:367
 #: apple/App/ReceivedLinks.swift:67
@@ -269,22 +269,22 @@ msgstr "டிரைவ்"
 #: crates/immich-mount-desktop/src/preferences.rs:13
 #: crates/immich-mount-gnome/src/window.blp:144
 #: crates/immich-mount-kde/qml/Main.qml:392
-#: apple/App/SettingsView.swift:237
+#: apple/App/SettingsView.swift:235
 msgid "Sections"
 msgstr "பிரிவுகள்"
 
 #: crates/immich-mount-desktop/src/preferences.rs:14
-#: apple/App/SettingsView.swift:239
+#: apple/App/SettingsView.swift:237
 msgid "Date Folders"
 msgstr "தேதிக் கோப்புறைகள்"
 
 #: crates/immich-mount-desktop/src/preferences.rs:16
-#: apple/App/SettingsView.swift:263
+#: apple/App/SettingsView.swift:261
 msgid "Files"
 msgstr "கோப்புகள்"
 
 #: crates/immich-mount-desktop/src/preferences.rs:17
-#: apple/App/SettingsView.swift:252
+#: apple/App/SettingsView.swift:250
 msgid "Uploads"
 msgstr "பதிவேற்றங்கள்"
 
@@ -412,8 +412,9 @@ msgstr "மூடு"
 
 #: crates/immich-mount-gnome/src/preferences.rs:25
 #: crates/immich-mount-kde/qml/Main.qml:115
-msgid "What is this?"
-msgstr "இது என்ன?"
+#: apple/App/SettingsView.swift:188
+msgid "Read more"
+msgstr "மேலும் படிக்க"
 
 #: crates/immich-mount-gnome/src/window.rs:267
 #: crates/immich-mount-kde/qml/Main.qml:349
@@ -922,7 +923,7 @@ msgid "Show the Upload folder, and upload what is copied into it"
 msgstr "Upload கோப்புறையைக் காட்டு, அதில் நகலெடுக்கப்படுவதைப் பதிவேற்று"
 
 #: crates/immich-mount-core/src/settings.rs:71
-#: apple/App/SettingsView.swift:249
+#: apple/App/SettingsView.swift:247
 msgid "Folders copied into Upload"
 msgstr "Upload-இல் நகலெடுக்கப்பட்ட கோப்புறைகள்"
 
@@ -935,8 +936,8 @@ msgid "Refuse thumbnailer reads of originals"
 msgstr "அசல் கோப்புகளைச் சிறுபட உருவாக்கிகள் படிப்பதை மறு"
 
 #: crates/immich-mount-core/src/settings.rs:74
-msgid "Show what other apps link to (Immich crosslink)"
-msgstr "பிற பயன்பாடுகள் இணைப்பு தருவதைக் காட்டு (Immich crosslink)"
+msgid "Show what other apps link to (Immich Crosslink)"
+msgstr "பிற பயன்பாடுகள் இணைப்பதைக் காட்டு (Immich Crosslink)"
 
 #: crates/immich-mount-core/src/settings.rs:75
 msgid "Apps left out of Show in, by their desktop entry or bundle id, separated by ;"
@@ -987,12 +988,12 @@ msgid "Ask Each Time"
 msgstr "ஒவ்வொரு முறையும் கேள்"
 
 #: apple/App/ContentView.swift:19
-#: apple/App/SettingsView.swift:346
+#: apple/App/SettingsView.swift:344
 msgid "Move Immich Mount to Applications"
 msgstr "Immich Mount-ஐ Applications-க்கு நகர்த்து"
 
 #: apple/App/ContentView.swift:20
-#: apple/App/SettingsView.swift:347
+#: apple/App/SettingsView.swift:345
 msgid "Finder's location runs from the Applications folder. Quit Immich Mount, drag it into Applications, then open it from there."
 msgstr "Finder இருப்பிடம் Applications கோப்புறையிலிருந்து மட்டுமே இயங்கும். Immich Mount-ஐ மூடி, அதை Applications-க்கு இழுத்து, பிறகு அங்கிருந்து திறக்கவும்."
 
@@ -1034,7 +1035,7 @@ msgstr "பதிலாக System Settings-ஐப் பயன்படுத்
 
 #: apple/App/ContentView.swift:167
 #: apple/App/ImmichMountApp.swift:464
-#: apple/App/SettingsView.swift:327
+#: apple/App/SettingsView.swift:325
 msgid "Open in Finder"
 msgstr "Finder-இல் திற"
 
@@ -1126,17 +1127,17 @@ msgid "Settings…"
 msgstr "அமைப்புகள்…"
 
 #: apple/App/ImmichMountApp.swift:453
-#: apple/App/SettingsView.swift:305
+#: apple/App/SettingsView.swift:303
 msgid "Sign In…"
 msgstr "உள்நுழைக…"
 
 #: apple/App/ImmichMountApp.swift:455
-#: apple/App/SettingsView.swift:325
+#: apple/App/SettingsView.swift:323
 msgid "Switch On in Finder…"
 msgstr "Finder-இல் இயக்கு…"
 
 #: apple/App/ImmichMountApp.swift:471
-#: apple/App/SettingsView.swift:330
+#: apple/App/SettingsView.swift:328
 msgid "Sign Out…"
 msgstr "வெளியேறு…"
 
@@ -1145,7 +1146,7 @@ msgid "Quit Immich Mount"
 msgstr "Immich Mount-ஐ மூடு"
 
 #: apple/App/ReceivedLinks.swift:18
-#: apple/App/SettingsView.swift:304
+#: apple/App/SettingsView.swift:302
 msgid "Not signed in"
 msgstr "உள்நுழையவில்லை"
 
@@ -1157,11 +1158,11 @@ msgstr "பொது"
 msgid "Folders"
 msgstr "கோப்புறைகள்"
 
-#: apple/App/SettingsView.swift:258
+#: apple/App/SettingsView.swift:256
 msgid "Folder names"
 msgstr "கோப்புறைப் பெயர்கள்"
 
-#: apple/App/SettingsView.swift:261
+#: apple/App/SettingsView.swift:259
 msgid "File names"
 msgstr "கோப்புப் பெயர்கள்"
 
@@ -1177,19 +1178,19 @@ msgstr "புதுப்பிப்புகளைத் தானாகச�
 msgid "While Immich Mount runs, in the menu bar, changes in Immich reach Finder within seconds. Updates come from jakob.hviid.phd, signed by the project and notarized by Apple."
 msgstr "Immich Mount மெனு பட்டியில் இயங்கும்போது, Immich-இல் ஏற்படும் மாற்றங்கள் சில வினாடிகளில் Finder-ஐச் சென்றடையும். புதுப்பிப்புகள் jakob.hviid.phd இலிருந்து வருகின்றன, திட்டத்தால் கையொப்பமிடப்பட்டு Apple-ஆல் நோட்டரைஸ் செய்யப்பட்டவை."
 
-#: apple/App/SettingsView.swift:243
+#: apple/App/SettingsView.swift:241
 msgid "Date folders are day folders inside each month in Photos, and year and month folders in the other sections."
 msgstr "Photos இல் தேதிக் கோப்புறைகள் ஒவ்வொரு மாதத்திற்குள்ளும் நாள் கோப்புறைகள், மற்ற பிரிவுகளில் ஆண்டு மற்றும் மாதக் கோப்புறைகள்."
 
-#: apple/App/SettingsView.swift:244
+#: apple/App/SettingsView.swift:242
 msgid "Photos and videos copied into Upload are added to Immich."
 msgstr "Upload இல் நகலெடுக்கப்படும் படங்களும் வீடியோக்களும் Immich இல் சேர்க்கப்படும்."
 
-#: apple/App/SettingsView.swift:254
+#: apple/App/SettingsView.swift:252
 msgid "Every photo and video in them is added to Immich. An album is named by its folder's path, such as Trip › Day 1."
 msgstr "அவற்றிலுள்ள ஒவ்வொரு படமும் வீடியோவும் Immich-இல் சேர்க்கப்படும். ஒரு ஆல்பத்திற்கு அதன் கோப்புறையின் பாதையே பெயராகும், எ.கா. பயணம் › நாள் 1."
 
-#: apple/App/SettingsView.swift:265
+#: apple/App/SettingsView.swift:263
 msgid "Finder lists Immich again after each change."
 msgstr "ஒவ்வொரு மாற்றத்திற்குப் பிறகும் Finder Immich ஐ மீண்டும் பட்டியலிடும்."
 

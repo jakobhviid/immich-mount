@@ -363,8 +363,8 @@ where
 /// The notification for a received link that shows nothing, in the user's language.
 pub fn refusal_message(result: &str, detail: &str) -> (String, String) {
     let (summary, body) = match result {
-        "off" => (tr("Immich crosslink is off"), tr("Turn it on in Immich Mount's settings to show what other apps link to.")),
-        "invalid" => (tr("This link cannot be opened"), tr("It is not a valid Immich link.")),
+        "off" => (tr("Links from other apps are off"), tr("Turn on Immich Crosslink in Immich Mount's settings to show what other apps link to.")),
+        "invalid" => (tr("A link from another app cannot be opened"), tr("It is not a valid Immich link.")),
         "cannot-show" => (tr("Nothing to show"), tr("Immich Mount has no place for what this link points to.")),
         "other-server" => (tr("Not signed in to {host}"), tr("Immich Mount is signed in to another Immich server.")),
         "other-user" => (tr("Another Immich account"), tr("The link is for another account than the one Immich Mount is signed in with.")),

@@ -516,12 +516,14 @@ check_doctor() {
   report=$(timeout 60 immich-mount doctor --json 2>/dev/null | python3 -c '
 import json, sys
 data = json.load(sys.stdin)
-others = ["%s %s: %s" % (check["name"], check["status"], check["detail"]) for check in data["checks"] if check["status"] not in ("ok", "skipped")]
-print(len(data["checks"]), data["problems"], data["warnings"], "; ".join(others))')
+# The cask on Plasma: Dolphin finds its plugin from the next login, and this check installs and checks in one session.
+expected = [check for check in data["checks"] if check["name"] == "dolphin-links" and "next login" in check["detail"]]
+others = ["%s %s: %s" % (check["name"], check["status"], check["detail"]) for check in data["checks"] if check["status"] not in ("ok", "skipped") and check not in expected]
+print(len(data["checks"]), data["problems"], data["warnings"] - len(expected), "; ".join(others) or ("dolphin-links: from the next login, as expected" if expected else ""))')
   if [ -z "$report" ]; then
     fail doctor "doctor --json printed no report"
   elif [ "$(echo "$report" | cut -d' ' -f2,3)" = "0 0" ]; then
-    pass doctor "$(echo "$report" | cut -d' ' -f1) checks, no problem, no warning"
+    pass doctor "$(echo "$report" | cut -d' ' -f1) checks, no problem, no warning $(echo "$report" | cut -d' ' -f4-)"
   else
     fail doctor "$(echo "$report" | cut -d' ' -f2) problems, $(echo "$report" | cut -d' ' -f3) warnings: $(echo "$report" | cut -d' ' -f4-)"
   fi
@@ -598,18 +600,18 @@ check_remount() {
 # same folder; the launcher takes the crosslink scheme; the file manager's menu items are installed where this
 # install puts them (the packages' folders, or the cask's in the home folder).
 check_links() {
-  local album url shown handlers menus=() missing=() program
+  local album url='' shown='' handlers menus=() missing=() program
   album=$(find "$mount_point/Albums" -mindepth 1 -maxdepth 1 -type d 2>/dev/null | head -1)
   [ -n "$album" ] || { fail links "no album folder under $mount_point/Albums"; return; }
-  url=$(timeout 30 immich-mount web --json "$album" 2>/dev/null | json_fields url)
+  eval "$(timeout 30 immich-mount web --json "$album" 2>/dev/null | json_fields url=url)"
   case $url in */albums/*) ;; *) fail links "web gave '${url:-nothing}' for ${album#"$mount_point"/}"; return ;; esac
-  shown=$(timeout 30 immich-mount show --json "$url" 2>/dev/null | json_fields path)
+  eval "$(timeout 30 immich-mount show --json "$url" 2>/dev/null | json_fields shown=path)"
   [ "$(readlink -f "$shown")" = "$(readlink -f "$album")" ] || { fail links "show $url gave '${shown:-nothing}', not $album"; return; }
   handlers=$(gio mime x-scheme-handler/immich-crosslink 2>&1)
   printf '%s\n' "$handlers" | grep -q 'dev\.hviid\.ImmichMount\.desktop' || { fail links "dev.hviid.ImmichMount.desktop does not take immich-crosslink"; return; }
   program=$(readlink -f "$(command -v immich-mount)")
   case $program in
-    /home/linuxbrew/*) menus=("$HOME/.local/share/nautilus-python/extensions/immich-mount-nautilus.py"
+    */linuxbrew/*) menus=("$HOME/.local/share/nautilus-python/extensions/immich-mount-nautilus.py"
       "$HOME/.local/lib/immich-mount/plugins/kf6/kfileitemaction/immich-mount-dolphin.so"
       "$HOME/.config/plasma-workspace/env/immich-mount.sh") ;;
     *) case ${XDG_CURRENT_DESKTOP:-} in

@@ -92,8 +92,10 @@ Measured contrast on the website (WCAG AA asks 4.5:1 for text):
 - **The name** is Immich Mount, two words, in prose and as the drive's default name. "Immich" alone names the
   server only.
 - **Menu items in the file managers** are **Open in Immich** and **Copy Immich Link**, the same in Files, Dolphin
-  and Finder: "Immich" there is the server's web app, where the link goes. "Immich crosslink" is the protocol's name
-  and stays in English in every language.
+  and Finder: "Immich" there is the server's web app, where the link goes. "Immich Crosslink" is the protocol's name,
+  in English in every language: its switch in the settings reads **Immich Crosslink**, with **Read more** beside it,
+  a link to the protocol's page whose address is not shown. A notification about a link another app sent says "a link
+  from another app", not the protocol's name.
 - **Buttons and titles in title case** in English, as GNOME's, KDE's and Apple's guidelines ask; labels and
   descriptions in sentence case. Translations follow their language's own conventions.
 - **No em-dashes** anywhere (AGENTS.md).

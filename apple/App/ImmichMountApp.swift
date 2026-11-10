@@ -172,7 +172,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate, SPUUpdaterDelegate,
         completionHandler([.banner, .list])
     }
 
-    /// A notification clicked: the one saying Immich crosslink is off opens Settings where it is switched on.
+    /// A notification clicked: the one saying Immich Crosslink is off opens Settings where it is switched on.
     nonisolated func userNotificationCenter(_ center: UNUserNotificationCenter, didReceive response: UNNotificationResponse,
                                             withCompletionHandler completionHandler: @escaping () -> Void) {
         let opensSettings = response.notification.request.content.userInfo[ReceivedLinks.opensSettings] as? Bool == true

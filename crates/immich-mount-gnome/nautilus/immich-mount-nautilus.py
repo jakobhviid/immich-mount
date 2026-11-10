@@ -69,7 +69,7 @@ def call_daemon(connection, method, path, reply_type):
 
 def links_for_path(path):
     """The daemon's (web address, crosslink, kind, hidden apps) for a local path; None when the item has no web
-    address, the path is outside the mount, or no daemon answers in time. The crosslink is empty while Immich crosslink
+    address, the path is outside the mount, or no daemon answers in time. The crosslink is empty while Immich Crosslink
     is off; a daemon from before Links gives the web address alone."""
     try:
         connection = Gio.bus_get_sync(Gio.BusType.SESSION, None)
@@ -151,6 +151,6 @@ class ImmichMenuProvider(GObject.GObject, Nautilus.MenuProvider):
         open_item.connect("activate", open_in_immich, web)
         copy_item = Nautilus.MenuItem(name="ImmichMount::CopyImmichLink", label=translate("Copy Immich Link"))
         copy_item.connect("activate", copy_immich_link, web)
-        # The crosslink is empty while Immich crosslink is off, and then no other app is offered.
+        # The crosslink is empty while Immich Crosslink is off, and then no other app is offered.
         show_items = [show_in_item(app, crosslink) for app in apps_showing(kind, hidden)] if crosslink else []
         return [open_item, copy_item] + show_items
