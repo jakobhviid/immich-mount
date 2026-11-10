@@ -35,8 +35,9 @@ without downloading the library first.
   its link. A photo opens in the album, person or place you found it in.
 - **Works with other Immich apps:** Immich Mount takes part in
   [Immich Crosslink](https://jakob.hviid.phd/immich-crosslink/), an open way for Immich apps on one computer to show
-  each other's photos, albums, people and places. Right-click an item and choose **Show in *app*** to open it in
-  another app that takes part, and a link from such an app opens its item in the drive, selected.
+  each other's photos, albums, people and places. Right-click a photo, album, person or place and choose **Show in
+  *app*** to open that same item directly in another app that takes part; the other way round, the same item chosen
+  in such an app opens in the drive, selected.
   **[Immich Gallery](https://github.com/IGOLz/ImmichGallery)**, a native Immich client for macOS, is the second app:
   Show in Immich Gallery works from Finder with its releases (on photos in Photos), and its own Immich Crosslink
   support, which adds Show in Immich Mount in the gallery, is proposed upstream
