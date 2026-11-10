@@ -294,8 +294,9 @@ Right-click items in Files, Dolphin and Finder that open what the file manager s
 web app, and in other Immich apps on the same computer. The other way round, any app can ask Immich Mount to show a
 photo, album, person or place in the file manager. Apps find each other through
 [immich-crosslink](https://github.com/jakobhviid/immich-crosslink), a small open protocol published at
-<https://jakob.hviid.phd/immich-crosslink/>: one link format, carried by the scheme `immich-crosslink:`, that any app
-can register, and that names an item the way Immich's own web app does. Immich Mount implements draft 0.1. When this
+<https://jakob.hviid.phd/immich-crosslink/>: each app announces itself in the metadata it installs (the draft it
+follows and the kinds of item it shows), registers the scheme `immich-crosslink:` that delivers links to it, and names
+an item the way Immich's own web app does. Immich Mount implements draft 0.2. When this
 section and the protocol differ, the protocol wins and this section is the bug. Neither app signs in for the other:
 a link carries ids and the server's address, and works when both apps are signed in to that server.
 
@@ -310,24 +311,27 @@ is listed in, and its link keeps that context. Each key maps to an **Immich path
 it (`web/src/lib/route.ts` and `web/src/routes/(user)/` in immich-app/immich, and the paths Immich's mobile app takes
 as deep links through `my.immich.app`, `mobile/lib/services/deep_link.service.dart`).
 
-| Key | Immich path |
-|---|---|
-| `Asset` in `TimelineMonth` or `TimelineDay` | `/photos/<id>` |
-| `Asset` in `Album(a)`, directly or inside its `GroupYear`/`GroupMonth` | `/albums/<a>/photos/<id>` |
-| `Asset` in `Person(p)`, likewise | `/people/<p>/photos/<id>` |
-| `Asset` in `Section(Favorites)` or `Section(Archive)`, likewise | `/favorites/photos/<id>`, `/archive/photos/<id>` |
-| `Asset` in `City { country, city }`, likewise | `/search/photos/<id>?query=<q>` |
-| `Album(a)`, `Person(p)`, and a `GroupYear`/`GroupMonth` inside one | `/albums/<a>`, `/people/<p>` |
-| `City { country, city }` | `/search?query=<q>`, `q` = `{"city":"<city>","country":"<country>"}` |
-| `Country(country)` | `/search?query=<q>`, `q` = `{"country":"<country>"}` |
-| `Section(Photos)`, `Albums`, `People`, `Places`, `Favorites`, `Archive` | `/photos`, `/albums`, `/people`, `/places`, `/favorites`, `/archive` |
-| `Root`, `TimelineYear`, `TimelineMonth`, `TimelineDay`, `AlbumYear`, `Upload`, `UploadFolder`, an `Asset` in Upload | none: Immich has no page for it |
+| Key | Immich path | Kind |
+|---|---|---|
+| `Asset` in `TimelineMonth` or `TimelineDay` | `/photos/<id>` | `asset` |
+| `Asset` in `Album(a)`, directly or inside its `GroupYear`/`GroupMonth` | `/albums/<a>/photos/<id>` | `asset` |
+| `Asset` in `Person(p)`, likewise | `/people/<p>/photos/<id>` | `asset` |
+| `Asset` in `Section(Favorites)` or `Section(Archive)`, likewise | `/favorites/photos/<id>`, `/archive/photos/<id>` | `asset` |
+| `Asset` in `City { country, city }`, likewise | `/search/photos/<id>?query=<q>` | `asset` |
+| `Album(a)`, `Person(p)`, and a `GroupYear`/`GroupMonth` inside one | `/albums/<a>`, `/people/<p>` | `album`, `person` |
+| `City { country, city }` | `/search?query=<q>`, `q` = `{"city":"<city>","country":"<country>"}` | `place` |
+| `Country(country)` | `/search?query=<q>`, `q` = `{"country":"<country>"}` | `place` |
+| `Section(Photos)`, `Albums`, `People`, `Places`, `Favorites`, `Archive` | `/photos`, `/albums`, `/people`, `/places`, `/favorites`, `/archive` | `page` |
+| `Root`, `TimelineYear`, `TimelineMonth`, `TimelineDay`, `AlbumYear`, `Upload`, `UploadFolder`, an `Asset` in Upload | none: Immich has no page for it | |
+
+The kind is the protocol's: other apps announce the kinds they show, and step 3 offers an app only on items of those
+kinds.
 
 - `q` is the JSON Immich's web app writes for a search (`Route.search`: `JSON.stringify` of the metadata search, keys
   in the order above, no spaces), encoded as `encodeURIComponent` does: every byte but `A-Z a-z 0-9 - _ . ! ~ * ' ( )`
   as `%XX` of its UTF-8. Immich's Places page links a city with `{"city":…}` alone; the country is added because a
   city's folder knows it, and it keeps two cities of one name apart.
-- Ids are Immich's UUIDs, written as they come. Names (cities, countries) are Immich's own strings from the key, never
+- Ids are Immich's UUIDs, written in lower case; links read back accept either case. Names (cities, countries) are Immich's own strings from the key, never
   the folder's name on disk, which may be changed to fit a file system (SPEC, "Names").
 - **A web address** is `server.url` without a trailing slash (and without `/api`), followed by the Immich path.
 - **A crosslink** is `immich-crosslink://` with an empty host, the Immich path, and the server's address:
@@ -341,10 +345,14 @@ as deep links through `my.immich.app`, `mobile/lib/services/deep_link.service.da
   its date groups where the folder's mode makes them.
 
 One module in `immich-mount-core` (`links.rs`) holds the map both ways, with no platform code: a key to its Immich
-path, an Immich path to a key (given the Asset's date where needed), and the web address and crosslink of a path. Every
-platform uses it, so the same item gives the same link everywhere. Unit tests cover every row of the table both ways,
-escaping (`|`, `%`, spaces, non-ASCII city names), the JSON byte for byte against what Immich's web app writes, and
-paths that give no key.
+path and kind, an Immich path to a key (given the Asset's date where needed), the web address and crosslink of a path,
+and reading a crosslink into one of the protocol's three results (show, cannot show, invalid). Every platform uses it,
+so the same item gives the same link everywhere. Unit tests cover every row of the table both ways, escaping (`|`,
+`%`, spaces, non-ASCII city names), the JSON byte for byte against what Immich's web app writes, and paths that give
+no key. They also run the protocol's test links: `tests/links.json` from immich-crosslink, copied into
+`crates/immich-mount-core/tests/crosslink-links.json` at the commit of the draft implemented (named in the file's
+first test), whose `make` entries Immich Mount must write byte for byte and whose `read` entries it must read to the
+given result.
 
 ### Step 1: Open in Immich, and Copy Immich Link
 
@@ -400,12 +408,16 @@ Immich path.
 
 Immich Mount takes crosslinks, and shows their item in the file manager, selected.
 
-- **Registering:** on Linux, `x-scheme-handler/immich-crosslink` joins `app.immich` in the launcher entry's
-  `MimeType=` (`packaging/desktop/dev.hviid.ImmichMount.desktop.in`), whose `Exec=immich-mount app %u` already hands a
-  URL to the app; the app passes a crosslink to the daemon. On the Mac, `CFBundleURLTypes` in `apple/App/Info.plist`
-  declares `immich-crosslink`, and `AppDelegate` takes the URL (`application(_:open:)`).
-- **Reading it:** the server must be the signed-in one (scheme, host and port compared, host in lower case, a default
-  port written or not), and so must `user` when the link has it; the Immich path gives a key through the map run
+- **Announcing and registering:** on Linux, the launcher entry (`packaging/desktop/dev.hviid.ImmichMount.desktop.in`)
+  announces `X-Immich-Crosslink-Version=0.2` and `X-Immich-Crosslink-Shows=asset;album;person;place;page;`, and
+  `x-scheme-handler/immich-crosslink` joins `app.immich` in its `MimeType=`; its `Exec=immich-mount app %u` already
+  hands a URL to the app, which passes a crosslink to the daemon. On the Mac, `apple/App/Info.plist` announces
+  `ImmichCrosslink` (`Version` `0.2`, `Shows` the same five kinds) and declares the scheme in `CFBundleURLTypes`, and
+  `AppDelegate` takes the URL (`application(_:open:)`). The Dev builds announce the same.
+- **Reading it:** the core reads the link into the protocol's result: *invalid* links are dropped with a notification
+  that the link is not valid, *cannot show* gets a notification saying Immich Mount cannot show that, and *show* goes
+  on. The server must be the signed-in one (scheme, host and port compared, host in lower case, a default port
+  written or not), and so must `user` when the link has it; the Immich path gives a key through the map run
   backwards. `immich-mount show <link>` does the
   same from a terminal, for a crosslink or a web address on the signed-in server, and prints the path with `--json`.
 - **Showing it:** on Linux the daemon turns the key into its path (each folder's listing names its child) and calls
@@ -430,23 +442,28 @@ Immich Mount takes crosslinks, and shows their item in the file manager, selecte
 Immich Mount finds the other installed apps that take crosslinks, and offers **Show in *app*** for each, on the items
 step 1 offers.
 
-- **Finding them:** the apps registered for `immich-crosslink`, less Immich Mount's own builds: on the Mac
-  `NSWorkspace.urlsForApplications(toOpen:)`, on Linux GIO's `g_app_info_get_all_for_type("x-scheme-handler/immich-crosslink")`
-  (KDE's `KApplicationTrader` reads the same desktop entries). An app's name and icon come from the system (its bundle,
-  its desktop entry), never from the link.
+- **Finding them:** the apps registered for `immich-crosslink` that announce draft 0.2, less Immich Mount's own
+  builds: on the Mac `NSWorkspace.urlsForApplications(toOpen:)` and each bundle's `ImmichCrosslink`, on Linux GIO's
+  `g_app_info_get_all_for_type("x-scheme-handler/immich-crosslink")` and each entry's `X-Immich-Crosslink-*` keys
+  (KDE's `KApplicationTrader` reads the same desktop entries). An app registered for the scheme without an
+  announcement is not listed. An app is offered only on items of a kind it announces. An app's name and icon come
+  from the system (its bundle, its desktop entry), never from the link or the announcement.
+- **When:** Files' extension reads the apps for each menu, or keeps them until GIO's `GAppInfoMonitor` says apps may
+  have changed; the Dolphin plugin likewise with `KSycoca::databaseChanged`. The Mac app reads them at launch, when it
+  sees an app launch, and before showing Show in Another App…; it never asks an app anything at run time.
 - **Opening one:** the crosslink, sent to that app alone: `NSWorkspace.open(_:withApplicationAt:configuration:)`,
   `g_app_info_launch_uris`. Never the scheme's default handler, which could be any of them.
 - **Files** lists one item per app. **Dolphin** needs the file item action plugin for a list that changes. **Finder**
   declares its actions in the Info.plist, so their names are fixed: a known app gets its own action (below), and
   **Show in Another App…** has the menu bar app show a menu of the others at the pointer. Each is offered through a
-  `userInfo` marker while such an app is installed; the app has the system read the items again when the set changes
-  (at launch, and when it sees an app launch).
+  `userInfo` marker on the items of the kinds such an app announces, while it is installed; the app has the system
+  read the items again when the set of apps or kinds changes (at launch, and when it sees an app launch).
 - **Known apps:** an entry for an app that is worth naming before it takes crosslinks, or that takes its own links
   as well: its bundle id or desktop entry, the menu item's name, and its own link per kind of item. The first is
   **Immich Gallery** on the Mac (`dev.igol.ImmichGallery`, `dev.igol.ImmichGallery.Dev`): **Show in Immich Gallery**
   on a photo in Photos opens `immichgallery://photo/<id>` (`immichgallery-dev://` for the Dev build), the link its
-  desktop widget uses (`Shared/WidgetFeed.swift` in IGOLz/ImmichGallery). Once the gallery takes crosslinks (step 4),
-  it is found like any other app, on every row of the map.
+  desktop widget uses (`Shared/WidgetFeed.swift` in IGOLz/ImmichGallery). Once the gallery announces itself and takes
+  crosslinks (step 4), it is found like any other app, for the kinds it announces.
 - **Settings:** `crosslink.enabled` (bool, default `true`): offer links to other apps. `crosslink.hidden` (list,
   default empty): apps left out, by bundle id or desktop entry id. In each settings window (the Mac's, GNOME's and
   Plasma's), a switch labelled **Immich crosslink**, with a link to <https://jakob.hviid.phd/immich-crosslink/> beside
@@ -455,15 +472,17 @@ step 1 offers.
   only gets a notification saying so, with a way to turn it on. Open in Immich is not affected by either.
 - **Docs:** SPEC (the items, the keys), ARCHITECTURE (finding apps, the known apps, the fixed Finder actions),
   DESIGN (the words), README.
-- **Done when:** with two test apps registered for the scheme (a desktop entry, and a small Mac app), each is listed,
-  receives the right crosslink, and leaves the menus when switched off or removed; on the Mac, with Immich Gallery
+- **Done when:** with test apps registered for the scheme (desktop entries, and small Mac apps), one announcing every
+  kind is listed on every item with a path, one announcing only `album` only on albums, one with no announcement or
+  another draft nowhere; each receives the right crosslink, and leaves the menus when switched off or removed; on the Mac, with Immich Gallery
   installed, Show in Immich Gallery opens the photo there. Flatpak impact: from inside a Flatpak the installed apps
   cannot be listed (the OpenURI portal only offers a chooser), so a Flatpak build would offer Show in… through it.
 
 ### Step 4: Immich Gallery takes crosslinks (upstream)
 
 Not Immich Mount's work; listed because steps 2 and 3 meet it. Proposed to IGOLz/ImmichGallery as an issue and a pull
-request, as the maintainer contributes there ("Refs #N", never "Closes"): the gallery registers `immich-crosslink`,
+request, as the maintainer contributes there ("Refs #N", never "Closes"): the gallery announces itself and registers
+`immich-crosslink`,
 opens what a link names (choosing the signed-in account for its server, or saying it has none), offers Show in *app*
 for the apps it finds, with the protocol's **Immich crosslink** switch and link in its settings (on by default, a
 switch per app), and Copy Link. Immich Mount is
