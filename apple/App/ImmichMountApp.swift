@@ -270,11 +270,20 @@ final class AppDelegate: NSObject, NSApplicationDelegate, SPUUpdaterDelegate,
             let window = NSWindow(contentViewController: hosting)
             window.title = "Immich Mount"
             window.styleMask = [.titled, .closable, .miniaturizable]
-            window.setContentSize(hosting.view.fittingSize)
+            // The hosting view's fitting size can be zero (seen on macOS 27.2, after signing out): the window was then
+            // shown at 0 by 0 points, there and invisible. It takes the content's width, and a height until the step
+            // tells its own.
+            let fitting = hosting.view.fittingSize
+            window.setContentSize(NSSize(width: max(fitting.width, ContentView.width), height: max(fitting.height, 320)))
             window.isReleasedWhenClosed = false
             window.isRestorable = false
             window.center()
             self.window = window
+        } else if let window, window.contentRect(forFrameRect: window.frame).width < ContentView.width {
+            // One made at no size before stays invisible: it takes its width again.
+            let content = window.contentRect(forFrameRect: window.frame)
+            window.setContentSize(NSSize(width: ContentView.width, height: max(content.height, 320)))
+            window.center()
         }
         present(window)
     }
@@ -282,8 +291,9 @@ final class AppDelegate: NSObject, NSApplicationDelegate, SPUUpdaterDelegate,
     private func fitWindow(to height: CGFloat) {
         guard let window, height > 0 else { return }
         let content = window.contentRect(forFrameRect: window.frame)
-        guard abs(content.height - height) > 0.5 else { return }
-        var frame = window.frameRect(forContentRect: NSRect(x: content.minX, y: content.minY, width: content.width, height: height))
+        guard abs(content.height - height) > 0.5 || content.width < ContentView.width else { return }
+        let width = max(content.width, ContentView.width)
+        var frame = window.frameRect(forContentRect: NSRect(x: content.minX, y: content.minY, width: width, height: height))
         frame.origin.y = window.frame.maxY - frame.height
         window.setFrame(frame, display: true, animate: window.isVisible)
     }

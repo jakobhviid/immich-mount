@@ -6,6 +6,8 @@ import AuthenticationServices
 import SwiftUI
 
 struct ContentView: View {
+    /// The window's width, whatever the step.
+    static let width: CGFloat = 460
     @EnvironmentObject private var model: AppModel
     /// Told the content's height whenever a step changes it, so the window can take it.
     var heightChanged: (CGFloat) -> Void = { _ in }
@@ -28,7 +30,7 @@ struct ContentView: View {
         .padding(.horizontal, 28)
         .padding(.top, 20)
         .padding(.bottom, 24)
-        .frame(width: 460)
+        .frame(width: Self.width)
         .fixedSize(horizontal: false, vertical: true)
         .background(GeometryReader { proxy in
             Color.clear.preference(key: ContentHeight.self, value: proxy.size.height)

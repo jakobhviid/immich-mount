@@ -390,8 +390,8 @@ photo with Archive off, the switch off and an unmounted drive each only notified
 "Links from other apps"): on macOS 27.2, links opened with `open -a` selected an album, a photo in Photos, in an
 album and in a city, a person, a city and the Albums section in Finder, including folders Finder had never listed;
 another server, another user, an invalid link and the switch off only notified, and a link that started the app
-opened no window. **Left:** a `/photos/<id>` that lands in a day folder, which the seeded months are too small to
-make.
+opened no window. A `/photos/<id>` landing in a day folder, which the seeded months are too small to make, is covered
+by the tree's unit tests.
 
 - **Announcing and registering:** on Linux, the launcher entry (`packaging/desktop/dev.hviid.ImmichMount.desktop.in`)
   announces `X-Immich-Crosslink-Version=0.2` and `X-Immich-Crosslink-Shows=asset;album;person;place;page;`, and

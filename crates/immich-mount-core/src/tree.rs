@@ -965,6 +965,18 @@ mod tests {
     }
 
     #[tokio::test]
+    async fn a_photo_of_the_timeline_lands_in_its_day_folder_where_months_are_split() {
+        let mut config = Config::from_toml("").unwrap();
+        config.grouping_photos = GroupingMode::Always;
+        let tree = tree(linked_library(), config);
+        let found = tree.locate(&photo("a", None)).await.unwrap().unwrap();
+        let day = NodeKey::TimelineDay(YearMonth { year: 2024, month: 3 }, 15);
+        assert_eq!(found, NodeKey::Asset { parent: Box::new(day), asset_id: "a".into() });
+        let names = tree.path_of(&found).await.unwrap().unwrap();
+        assert_eq!(names.len(), 5, "Photos, the year, the month, the day, the file: {names:?}");
+    }
+
+    #[tokio::test]
     async fn a_link_to_what_the_mount_does_not_show_finds_nothing() {
         let tree = tree(linked_library(), Config::from_toml("").unwrap());
         let march = YearMonth { year: 2024, month: 3 };
