@@ -94,17 +94,19 @@ Kirigami.ApplicationWindow {
                         required property var modelData
                         Kirigami.FormData.isSection: modelData.kind === "section"
                         Kirigami.FormData.label: modelData.kind === "section" ? modelData.title
-                            : (modelData.kind === "bool" || modelData.kind === "app" ? "" : modelData.title + ":")
+                            : (modelData.kind === "bool" || modelData.kind === "app" || modelData.kind === "note" ? "" : modelData.title + ":")
                         sourceComponent: {
                             switch (modelData.kind) {
                             case "section": return sectionRow
                             case "bool": return switchRow
                             case "app": return appRow
+                            case "note": return noteRow
                             case "choice": return choiceRow
                             default: return textRow
                             }
                         }
                         Component { id: sectionRow; Kirigami.Separator {} }
+                        Component { id: noteRow; Controls.Label { text: row.modelData.title; opacity: 0.7 } }
                         Component {
                             id: switchRow
                             ColumnLayout {

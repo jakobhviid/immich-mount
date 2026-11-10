@@ -26,6 +26,7 @@
 #define CROSSLINK_VERSION "0.2"
 /* Immich Mount's own launcher entry takes the scheme too, and never offers itself. */
 #define OWN_DESKTOP_ID "dev.hviid.ImmichMount.desktop"
+#define NOTIFICATION_ICON "dev.hviid.ImmichMount-symbolic"
 
 typedef struct {
     GObject parent;
@@ -42,6 +43,8 @@ G_DEFINE_DYNAMIC_TYPE_EXTENDED(ImmichMenuProvider, immich_menu_provider, G_TYPE_
                                                              immich_menu_provider_iface_init))
 
 static GType provider_types[1];
+/* The one provider Nautilus makes, to have it ask for the items again after a failed Show in. */
+static NautilusMenuProvider *the_provider;
 
 /* What the daemon says about an item: its web address, its crosslink (empty while Immich Crosslink is off), its kind,
  * and the apps the user left out, separated by `;`. */
@@ -102,8 +105,15 @@ static gboolean list_contains(char **list, const char *wanted) {
     return list != NULL && g_strv_contains((const char *const *)list, wanted);
 }
 
-/* The other apps that show items of `kind` and that the user has not left out: registered for the scheme, and
- * announcing exactly this draft in their desktop entry. */
+/* Whether the app's program is there to start; one that is not is left out, silently (immich-crosslink, "Sending"). */
+static gboolean can_start(GAppInfo *app) {
+    const char *executable = g_app_info_get_executable(app);
+    g_autofree char *program = executable != NULL ? g_find_program_in_path(executable) : NULL;
+    return program != NULL;
+}
+
+/* The other apps that show items of `kind` and that the user has not left out: registered for the scheme, announcing
+ * exactly this draft in their desktop entry, and able to start. */
 static GList *apps_showing(const char *kind, const char *hidden) {
     g_auto(GStrv) hidden_ids = g_strsplit(hidden, ";", -1);
     GList *found = NULL;
@@ -118,7 +128,7 @@ static GList *apps_showing(const char *kind, const char *hidden) {
         GDesktopAppInfo *desktop = G_DESKTOP_APP_INFO(app);
         g_autofree char *version = g_desktop_app_info_get_string(desktop, "X-Immich-Crosslink-Version");
         g_auto(GStrv) shows = g_desktop_app_info_get_string_list(desktop, "X-Immich-Crosslink-Shows", NULL);
-        if (g_strcmp0(version, CROSSLINK_VERSION) == 0 && list_contains(shows, kind)) {
+        if (g_strcmp0(version, CROSSLINK_VERSION) == 0 && list_contains(shows, kind) && can_start(app)) {
             found = g_list_append(found, g_object_ref(app));
         }
     }
@@ -153,15 +163,54 @@ static void show_in_free(gpointer data, G_GNUC_UNUSED GClosure *closure) {
     g_free(show_in);
 }
 
+/* A desktop notification titled with the protocol's name, which stays in English, as Immich Mount's own. */
+static void notify(const char *body) {
+    g_autoptr(GDBusConnection) connection = g_bus_get_sync(G_BUS_TYPE_SESSION, NULL, NULL);
+    if (connection == NULL) {
+        return;
+    }
+    GVariant *parameters = g_variant_new("(susss@as@a{sv}i)", "Immich Mount", 0, NOTIFICATION_ICON, "Immich Crosslink",
+                                         body, g_variant_new_strv(NULL, 0),
+                                         g_variant_new_array(G_VARIANT_TYPE("{sv}"), NULL, 0), -1);
+    g_dbus_connection_call(connection, "org.freedesktop.Notifications", "/org/freedesktop/Notifications",
+                           "org.freedesktop.Notifications", "Notify", parameters, NULL, G_DBUS_CALL_FLAGS_NONE, -1,
+                           NULL, NULL, NULL);
+}
+
+/* Say why Show in did nothing, and have Files read the apps again: it keeps a selection's items until it changes. */
+static void show_in_failed(const char *body) {
+    notify(body);
+    if (the_provider != NULL) {
+        nautilus_menu_provider_emit_items_updated_signal(the_provider);
+    }
+}
+
+/* `msgid` in the user's language, with `{name}` replaced by `value` after the lookup. */
+static char *translated(const char *msgid, const char *name, const char *value) {
+    g_autoptr(GString) text = g_string_new(dgettext(TEXT_DOMAIN, msgid));
+    g_string_replace(text, name, value, 0);
+    return g_string_free(g_steal_pointer(&text), FALSE);
+}
+
 static void show_in_app(G_GNUC_UNUSED NautilusMenuItem *item, gpointer user_data) {
     ShowIn *show_in = user_data;
+    const char *app_name = g_app_info_get_name(show_in->app);
+    /* The menu may be older than the app's removal: an app gone since says so, rather than starting from memory. */
+    const char *entry = g_desktop_app_info_get_filename(G_DESKTOP_APP_INFO(show_in->app));
+    if (entry != NULL && !g_file_test(entry, G_FILE_TEST_EXISTS)) {
+        g_autofree char *body = translated("{app} is no longer installed.", "{app}", app_name);
+        show_in_failed(body);
+        return;
+    }
     g_autoptr(GError) error = NULL;
     g_autoptr(GdkAppLaunchContext) context = gdk_display_get_app_launch_context(gdk_display_get_default());
     GList uris = {.data = show_in->crosslink};
     /* To this app alone: the scheme's default handler could be any of them (immich-crosslink, "Sending"). */
     if (!g_app_info_launch_uris(show_in->app, &uris, G_APP_LAUNCH_CONTEXT(context), &error)) {
-        g_warning("Immich Mount: could not show %s in %s: %s", show_in->crosslink, g_app_info_get_name(show_in->app),
-                  error->message);
+        g_autofree char *with_app = translated("Immich Mount could not open {app}: {error}", "{app}", app_name);
+        g_autoptr(GString) body = g_string_new(with_app);
+        g_string_replace(body, "{error}", error->message, 0);
+        show_in_failed(body->str);
     }
 }
 
@@ -235,7 +284,9 @@ static void immich_menu_provider_iface_init(NautilusMenuProviderInterface *iface
     iface->get_background_items = get_background_items;
 }
 
-static void immich_menu_provider_init(G_GNUC_UNUSED ImmichMenuProvider *provider) {}
+static void immich_menu_provider_init(ImmichMenuProvider *provider) {
+    the_provider = NAUTILUS_MENU_PROVIDER(provider);
+}
 
 static void immich_menu_provider_class_init(G_GNUC_UNUSED ImmichMenuProviderClass *class) {}
 

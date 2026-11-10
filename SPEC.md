@@ -451,10 +451,14 @@ part in Immich Crosslink, which shows it there.
   `person`, a city's or a country's `place`, a section's `page`. Each is named and drawn by its desktop entry.
 - **Sending:** the crosslink, with the signed-in user's id when known, goes to that app alone (GIO's
   `g_app_info_launch_uris` in Files, `KIO::ApplicationLauncherJob` in Dolphin), never to the scheme's default.
+  An app whose program is missing is not offered. When sending fails, a notification titled "Immich Crosslink" says
+  "*app* is no longer installed." (its desktop entry gone since the menu was made) or "Immich Mount could not open
+  *app*: *the system's reason*", and the next menu reads the apps again.
 - **Off:** with `crosslink.enabled` off, no Show in items; Open in Immich and Copy Immich Link stay.
 - **The settings** (in both apps, and on the Mac): under Other Apps, the **Immich Crosslink** switch with **Read
   more**, a link to the protocol whose address is not shown; then **Apps That Take Part**, each by its name and icon
-  with a switch. An app seen before but not installed at the moment stays listed for 30 days, as **Not installed**, by its
+  with a switch, or "No other app that takes part is installed." An app seen before but not installed at the moment
+  stays listed for 30 days, as **Not installed**, by its
   remembered name and a generic icon, with its switch and a **Forget** button; forgetting it, by hand or after 30 days
   unseen, drops its switch too, so an app that comes back is new and on. What was seen is the app's state
   (`~/.local/state/immich-mount/crosslink-seen.json` on Linux, the App Group on the Mac), not a setting. The menus
@@ -659,7 +663,8 @@ macOS edition"). Where Finder's way differs:
   bar app, started if it is not running and without a window, show a menu at the pointer of the other apps that
   announce draft 0.2 and the item's kind, by the names and icons macOS gives them, and sends the link to the one
   chosen. The app finds the apps (`NSWorkspace.urlsForApplications(toOpen:)`) at launch, when any app launches, and
-  when a crosslink setting changes, and marks the items Finder offers the actions on; the settings list them, each
+  when a crosslink setting changes, leaving out an app whose program is missing, and marks the items Finder offers
+  the actions on; a send that fails gets an alert titled "Immich Crosslink", as on Linux, and the list is read again; the settings list them, each
   with a switch (`crosslink.hidden`, by bundle id). A sandboxed app reads another app's announcement only from a copy
   in /Applications.
 - **Dates:** a file has its capture time, as on Linux; a folder the time the location was set up (signing in),

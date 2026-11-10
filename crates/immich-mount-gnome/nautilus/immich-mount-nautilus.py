@@ -34,6 +34,7 @@ CROSSLINK_TYPE = "x-scheme-handler/immich-crosslink"
 CROSSLINK_VERSION = "0.2"
 # Immich Mount's own launcher entry takes the scheme too, and never offers itself.
 OWN_DESKTOP_ID = "dev.hviid.ImmichMount.desktop"
+NOTIFICATION_ICON = "dev.hviid.ImmichMount-symbolic"
 # Where a package installs the C extension; with it there, it offers the items, and this offers none.
 C_EXTENSION_FOLDERS = (
     "/usr/lib64/nautilus/extensions-4",
@@ -86,9 +87,16 @@ def links_for_path(path):
     return (web, crosslink, kind, hidden) if web or crosslink else None
 
 
+def can_start(app):
+    """Whether the app's program is there to start; one that is not is left out, silently (immich-crosslink,
+    "Sending")."""
+    executable = app.get_executable()
+    return bool(executable) and GLib.find_program_in_path(executable) is not None
+
+
 def apps_showing(kind, hidden):
     """The other apps that show items of `kind` and that the user has not left out: registered for the scheme, and
-    announcing exactly this draft in their desktop entry."""
+    announcing exactly this draft in their desktop entry, and able to start."""
     hidden_ids = set(hidden.split(";"))
     found = []
     for app in Gio.AppInfo.get_all_for_type(CROSSLINK_TYPE):
@@ -97,7 +105,7 @@ def apps_showing(kind, hidden):
             continue
         version = app.get_string("X-Immich-Crosslink-Version")
         shows = app.get_string_list("X-Immich-Crosslink-Shows") or []
-        if version == CROSSLINK_VERSION and kind in shows:
+        if version == CROSSLINK_VERSION and kind in shows and can_start(app):
             found.append(app)
     return found
 
@@ -115,21 +123,42 @@ def copy_immich_link(item, url):
     Gdk.Display.get_default().get_clipboard().set_content(Gdk.ContentProvider.new_for_value(url))
 
 
-def show_in_app(item, app, crosslink):
+def notify(body):
+    """A desktop notification titled with the protocol's name, which stays in English, as Immich Mount's own."""
+    try:
+        connection = Gio.bus_get_sync(Gio.BusType.SESSION, None)
+    except GLib.Error:
+        return
+    parameters = GLib.Variant("(susssasa{sv}i)",
+                              ("Immich Mount", 0, NOTIFICATION_ICON, "Immich Crosslink", body, [], {}, -1))
+    connection.call("org.freedesktop.Notifications", "/org/freedesktop/Notifications", "org.freedesktop.Notifications",
+                    "Notify", parameters, None, Gio.DBusCallFlags.NONE, -1, None, None)
+
+
+def show_in_app(item, app, crosslink, provider):
+    # The menu may be older than the app's removal: an app gone since says so, rather than starting from memory.
+    entry = app.get_filename()
+    if entry and not os.path.exists(entry):
+        notify(translate("{app} is no longer installed.").replace("{app}", app.get_name()))
+        # Files keeps a selection's items until it changes: have it read the apps again.
+        provider.emit_items_updated_signal()
+        return
     context = Gdk.Display.get_default().get_app_launch_context()
     # To this app alone: the scheme's default handler could be any of them (immich-crosslink, "Sending").
     try:
         app.launch_uris([crosslink], context)
     except GLib.Error as error:
-        print(f"Immich Mount: could not show {crosslink} in {app.get_name()}: {error.message}")
+        message = translate("Immich Mount could not open {app}: {error}")
+        notify(message.replace("{app}", app.get_name()).replace("{error}", error.message))
+        provider.emit_items_updated_signal()
 
 
-def show_in_item(app, crosslink):
+def show_in_item(app, crosslink, provider):
     icon = app.get_icon()
     item = Nautilus.MenuItem(name=f"ImmichMount::ShowIn::{app.get_id()}",
                              label=translate("Show in {app}").replace("{app}", app.get_name()),
                              icon=icon.to_string() if icon else None)
-    item.connect("activate", show_in_app, app, crosslink)
+    item.connect("activate", show_in_app, app, crosslink, provider)
     return item
 
 
@@ -158,5 +187,5 @@ class ImmichMenuProvider(GObject.GObject, Nautilus.MenuProvider):
             items += [open_item, copy_item]
         # The crosslink is empty while Immich Crosslink is off, and then no other app is offered.
         if crosslink:
-            items += [show_in_item(app, crosslink) for app in apps_showing(kind, hidden)]
+            items += [show_in_item(app, crosslink, self) for app in apps_showing(kind, hidden)]
         return items

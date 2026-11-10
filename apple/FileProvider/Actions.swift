@@ -4,10 +4,10 @@
 // its sandbox lets it open a web address and write the general pasteboard, so the menu bar app need not run.
 //
 // Show in Immich Gallery and Show in Another App… (ROADMAP.md, "Open in Immich, and links between apps", step 3) are
-// offered by the items' `showInGallery` and `showInAnother`. The first sends the item's crosslink (or, to a gallery
-// that does not announce itself, its own link) to that app alone. The second needs a menu of the apps at the pointer,
-// which an extension cannot show: it hands the crosslink to the menu bar app through the app's own scheme (its bundle
-// identifier), which starts the app when it is not running.
+// offered by the items' `showInGallery` and `showInAnother`. Both hand the item's link to the menu bar app through the
+// app's own scheme (its bundle identifier), which starts the app when it is not running: an extension can show no
+// menu of the apps at the pointer, nor tell the user that an app is gone or did not open. The first carries the
+// item's crosslink (or, for a gallery that does not announce itself, its own link) for that app alone.
 
 import AppKit
 import FileProvider
@@ -75,21 +75,33 @@ extension FileProviderExtension: NSFileProviderCustomAction {
         } else {
             link = await library.crosslink(identifier: identifier)
         }
-        guard let link, let url = URL(string: link) else { return NSFileProviderError(.noSuchItem) }
-        return await send(url, to: URL(fileURLWithPath: gallery.path))
+        // The app sends it, and tells the user should the gallery be gone or not open: the extension can show nothing.
+        guard let link, let encoded = link.addingPercentEncoding(withAllowedCharacters: .alphanumerics),
+              let url = ownURL(host: "show-in-app", query: "bundle=\(gallery.bundleId)&link=\(encoded)") else {
+            return NSFileProviderError(.noSuchItem)
+        }
+        return await send(url, to: containingApp)
+    }
+
+    /// An address of the app's own scheme (its bundle identifier), which only it takes.
+    private static func ownURL(host: String, query: String) -> URL? {
+        guard let appIdentifier = Bundle.main.bundleIdentifier?.replacingOccurrences(of: ".FileProvider", with: "") else { return nil }
+        return URL(string: "\(appIdentifier.lowercased())://\(host)?\(query)")
+    }
+
+    /// The app the extension is part of: the extension is its PlugIns/<extension>.appex.
+    private static var containingApp: URL {
+        Bundle.main.bundleURL.deletingLastPathComponent().deletingLastPathComponent().deletingLastPathComponent()
     }
 
     /// Hand the item's crosslink to the menu bar app, which shows the menu of the other apps at the pointer.
     private static func showInAnotherApp(_ identifier: String, library: Library) async -> Error? {
         guard let link = await library.crosslink(identifier: identifier),
               let encoded = link.addingPercentEncoding(withAllowedCharacters: .alphanumerics),
-              let appIdentifier = Bundle.main.bundleIdentifier?.replacingOccurrences(of: ".FileProvider", with: ""),
-              let url = URL(string: "\(appIdentifier.lowercased())://show-in-another-app?link=\(encoded)") else {
+              let url = ownURL(host: "show-in-another-app", query: "link=\(encoded)") else {
             return NSFileProviderError(.noSuchItem)
         }
-        // The extension is the app's PlugIns/<extension>.appex.
-        let app = Bundle.main.bundleURL.deletingLastPathComponent().deletingLastPathComponent().deletingLastPathComponent()
-        return await send(url, to: app)
+        return await send(url, to: containingApp)
     }
 
     /// Open `url` with the app at `app` alone, never the scheme's default handler.

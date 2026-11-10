@@ -212,33 +212,33 @@ msgid "Immich takes photos and videos only."
 msgstr "Immich solo admite fotos y vídeos."
 
 #: crates/immich-mount-linux/src/tray.rs:68
-#: apple/App/ImmichMountApp.swift:650
+#: apple/App/ImmichMountApp.swift:663
 msgid "Connected to {server}"
 msgstr "Conectado a {server}"
 
 #: crates/immich-mount-linux/src/tray.rs:69
-#: apple/App/ImmichMountApp.swift:650
+#: apple/App/ImmichMountApp.swift:663
 msgid "{server} is not reachable"
 msgstr "No se puede acceder a {server}"
 
 #: crates/immich-mount-linux/src/tray.rs:71
-#: apple/App/ImmichMountApp.swift:649
+#: apple/App/ImmichMountApp.swift:662
 msgid "Signed in to {server}"
 msgstr "Sesión iniciada en {server}"
 
 #: crates/immich-mount-linux/src/tray.rs:79
-#: apple/App/ImmichMountApp.swift:658
+#: apple/App/ImmichMountApp.swift:671
 msgid "Server version: Immich {version}"
 msgstr "Versión del servidor: Immich {version}"
 
 #: crates/immich-mount-linux/src/tray.rs:82
-#: apple/App/ImmichMountApp.swift:661
+#: apple/App/ImmichMountApp.swift:674
 msgid "Signed in as: {account}"
 msgstr "Sesión iniciada como: {account}"
 
 #: crates/immich-mount-linux/src/tray.rs:85
-#: crates/immich-mount-kde/qml/Main.qml:438
-#: crates/immich-mount-kde/qml/Main.qml:459
+#: crates/immich-mount-kde/qml/Main.qml:440
+#: crates/immich-mount-kde/qml/Main.qml:461
 msgid "Open in Dolphin"
 msgstr "Abrir en Dolphin"
 
@@ -263,12 +263,12 @@ msgid "Get it from jakob.hviid.phd/immich-mount."
 msgstr "Descárgala desde jakob.hviid.phd/immich-mount."
 
 #: crates/immich-mount-desktop/src/preferences.rs:31
-#: apple/App/SettingsView.swift:211
+#: apple/App/SettingsView.swift:209
 msgid "Apps That Take Part"
 msgstr "Apps que participan"
 
 #: crates/immich-mount-desktop/src/preferences.rs:36
-#: apple/App/SettingsView.swift:251
+#: apple/App/SettingsView.swift:252
 msgid "Open photos, albums, people and places in Immich's web app in your browser, or copy their address."
 msgstr "Abre fotos, álbumes, personas y lugares en la app web de Immich en tu navegador, o copia su dirección."
 
@@ -278,23 +278,23 @@ msgstr "Unidad"
 
 #: crates/immich-mount-desktop/src/preferences.rs:13
 #: crates/immich-mount-gnome/src/window.blp:144
-#: crates/immich-mount-kde/qml/Main.qml:419
-#: apple/App/SettingsView.swift:283
+#: crates/immich-mount-kde/qml/Main.qml:421
+#: apple/App/SettingsView.swift:284
 msgid "Sections"
 msgstr "Secciones"
 
 #: crates/immich-mount-desktop/src/preferences.rs:14
-#: apple/App/SettingsView.swift:285
+#: apple/App/SettingsView.swift:286
 msgid "Date Folders"
 msgstr "Carpetas por fecha"
 
 #: crates/immich-mount-desktop/src/preferences.rs:16
-#: apple/App/SettingsView.swift:309
+#: apple/App/SettingsView.swift:310
 msgid "Files"
 msgstr "Archivos"
 
 #: crates/immich-mount-desktop/src/preferences.rs:17
-#: apple/App/SettingsView.swift:298
+#: apple/App/SettingsView.swift:299
 msgid "Uploads"
 msgstr "Subidas"
 
@@ -308,7 +308,7 @@ msgid "Cache"
 msgstr "Caché"
 
 #: crates/immich-mount-desktop/src/preferences.rs:20
-#: apple/App/SettingsView.swift:249
+#: apple/App/SettingsView.swift:250
 msgid "Immich Web App"
 msgstr "App web de Immich"
 
@@ -406,14 +406,14 @@ msgid "AI Disclosure"
 msgstr "Uso de IA"
 
 #: crates/immich-mount-gnome/src/main.rs:117
-#: crates/immich-mount-kde/qml/Main.qml:230
-#: apple/App/ImmichMountApp.swift:506
+#: crates/immich-mount-kde/qml/Main.qml:232
+#: apple/App/ImmichMountApp.swift:519
 msgid "Parts of this project were written with the assistance of AI coding agents. All changes are reviewed by the maintainer."
 msgstr "Partes de este proyecto se escribieron con la ayuda de agentes de programación de IA. El responsable del proyecto revisa todos los cambios."
 
 #: crates/immich-mount-gnome/src/main.rs:81
 #: crates/immich-mount-kde/qml/Main.qml:71
-#: crates/immich-mount-kde/qml/Main.qml:253
+#: crates/immich-mount-kde/qml/Main.qml:255
 msgid "Preferences"
 msgstr "Preferencias"
 
@@ -426,25 +426,31 @@ msgid "Quit"
 msgstr "Salir"
 
 #: crates/immich-mount-gnome/src/preferences.rs:28
-#: crates/immich-mount-kde/qml/Main.qml:121
+#: crates/immich-mount-kde/qml/Main.qml:123
 #: apple/App/SettingsView.swift:199
 msgid "Read more"
 msgstr "Más información"
 
-#: crates/immich-mount-gnome/src/preferences.rs:68
-#: crates/immich-mount-kde/qml/Main.qml:155
-#: apple/App/SettingsView.swift:220
+#: crates/immich-mount-gnome/src/preferences.rs:61
+#: crates/immich-mount-kde/src/backend.rs:431
+#: apple/App/SettingsView.swift:211
+msgid "No other app that takes part is installed."
+msgstr "No hay instalada ninguna otra app que participe."
+
+#: crates/immich-mount-gnome/src/preferences.rs:70
+#: crates/immich-mount-kde/qml/Main.qml:157
+#: apple/App/SettingsView.swift:222
 msgid "Not installed"
 msgstr "No instalada"
 
-#: crates/immich-mount-gnome/src/preferences.rs:69
-#: crates/immich-mount-kde/qml/Main.qml:160
-#: apple/App/SettingsView.swift:228
+#: crates/immich-mount-gnome/src/preferences.rs:71
+#: crates/immich-mount-kde/qml/Main.qml:162
+#: apple/App/SettingsView.swift:230
 msgid "Forget"
 msgstr "Olvidar"
 
 #: crates/immich-mount-gnome/src/window.rs:267
-#: crates/immich-mount-kde/qml/Main.qml:376
+#: crates/immich-mount-kde/qml/Main.qml:378
 msgid "Continue in your browser"
 msgstr "Continúa en tu navegador"
 
@@ -469,12 +475,12 @@ msgid "Signed in, but the status could not be read"
 msgstr "Sesión iniciada, pero no se pudo leer el estado"
 
 #: crates/immich-mount-gnome/src/window.rs:425
-#: crates/immich-mount-kde/qml/Main.qml:453
+#: crates/immich-mount-kde/qml/Main.qml:455
 msgid "Signed Out of Immich"
 msgstr "Sesión de Immich cerrada"
 
 #: crates/immich-mount-gnome/src/window.rs:425
-#: crates/immich-mount-kde/qml/Main.qml:454
+#: crates/immich-mount-kde/qml/Main.qml:456
 msgid "Sign in again to keep browsing. Your caches are kept."
 msgstr "Vuelve a iniciar sesión para seguir explorando. Tus cachés se conservan."
 
@@ -484,12 +490,12 @@ msgid "Your Library Is in Files"
 msgstr "Tu biblioteca está en Archivos"
 
 #: crates/immich-mount-gnome/src/window.rs:426
-#: crates/immich-mount-kde/qml/Main.qml:455
+#: crates/immich-mount-kde/qml/Main.qml:457
 msgid "Browse it like any folder. Originals download only when you open them."
 msgstr "Explórala como cualquier carpeta. Los originales solo se descargan cuando los abres."
 
 #: crates/immich-mount-gnome/src/window.rs:427
-#: crates/immich-mount-kde/qml/Main.qml:453
+#: crates/immich-mount-kde/qml/Main.qml:455
 msgid "Not Mounted"
 msgstr "No montado"
 
@@ -511,7 +517,7 @@ msgid "Your Immich Library in Files"
 msgstr "Tu biblioteca de Immich en Archivos"
 
 #: crates/immich-mount-gnome/src/window.blp:34
-#: crates/immich-mount-kde/qml/Main.qml:292
+#: crates/immich-mount-kde/qml/Main.qml:294
 msgid "Browse your photos and videos as a drive. Originals download only when you open them."
 msgstr "Explora tus fotos y vídeos como una unidad. Los originales solo se descargan cuando los abres."
 
@@ -524,15 +530,15 @@ msgid "_Continue"
 msgstr "_Continuar"
 
 #: crates/immich-mount-gnome/src/window.blp:70
-#: crates/immich-mount-kde/qml/Main.qml:267
-#: crates/immich-mount-kde/qml/Main.qml:350
-#: apple/App/ContentView.swift:141
-#: apple/App/ContentView.swift:145
+#: crates/immich-mount-kde/qml/Main.qml:269
+#: crates/immich-mount-kde/qml/Main.qml:352
+#: apple/App/ContentView.swift:143
+#: apple/App/ContentView.swift:147
 msgid "Sign In"
 msgstr "Iniciar sesión"
 
 #: crates/immich-mount-gnome/src/window.blp:78
-#: crates/immich-mount-kde/qml/Main.qml:331
+#: crates/immich-mount-kde/qml/Main.qml:333
 msgid "Opens your browser, where you sign in as usual, with a passkey or a password manager."
 msgstr "Abre tu navegador, donde inicias sesión como siempre, con una llave de acceso o un gestor de contraseñas."
 
@@ -545,12 +551,12 @@ msgid "For two-factor sign-in, use your server's single sign-on instead."
 msgstr "Para iniciar sesión con dos factores, usa en su lugar el inicio de sesión único de tu servidor."
 
 #: crates/immich-mount-gnome/src/window.blp:96
-#: crates/immich-mount-kde/qml/Main.qml:340
+#: crates/immich-mount-kde/qml/Main.qml:342
 msgid "Email"
 msgstr "Correo electrónico"
 
 #: crates/immich-mount-gnome/src/window.blp:101
-#: crates/immich-mount-kde/qml/Main.qml:344
+#: crates/immich-mount-kde/qml/Main.qml:346
 msgid "Password"
 msgstr "Contraseña"
 
@@ -588,12 +594,12 @@ msgstr "La cronología, por año y mes"
 
 #: crates/immich-mount-gnome/src/window.blp:174
 #: crates/immich-mount-gnome/src/window.blp:322
-#: crates/immich-mount-kde/qml/Main.qml:426
+#: crates/immich-mount-kde/qml/Main.qml:428
 msgid "Location"
 msgstr "Ubicación"
 
 #: crates/immich-mount-gnome/src/window.blp:177
-#: crates/immich-mount-kde/qml/Main.qml:429
+#: crates/immich-mount-kde/qml/Main.qml:431
 msgid "Folder"
 msgstr "Carpeta"
 
@@ -655,26 +661,38 @@ msgstr "Atajos de _teclado"
 msgid "_About Immich Mount"
 msgstr "_Acerca de Immich Mount"
 
-#: crates/immich-mount-gnome/nautilus/immich-mount-nautilus.c:170
-#: crates/immich-mount-gnome/nautilus/immich-mount-nautilus.py:130
-#: crates/immich-mount-kde/dolphin/immich-mount-dolphin.cpp:157
+#: crates/immich-mount-gnome/nautilus/immich-mount-nautilus.c:219
+#: crates/immich-mount-gnome/nautilus/immich-mount-nautilus.py:159
+#: crates/immich-mount-kde/dolphin/immich-mount-dolphin.cpp:191
 #: apple/App/CrosslinkApps.swift:157
 msgid "Show in {app}"
 msgstr "Mostrar en {app}"
 
-#: crates/immich-mount-gnome/nautilus/immich-mount-nautilus.c:211
-#: crates/immich-mount-gnome/nautilus/immich-mount-nautilus.py:154
-#: crates/immich-mount-kde/dolphin/immich-mount-dolphin.cpp:137
+#: crates/immich-mount-gnome/nautilus/immich-mount-nautilus.c:260
+#: crates/immich-mount-gnome/nautilus/immich-mount-nautilus.py:183
+#: crates/immich-mount-kde/dolphin/immich-mount-dolphin.cpp:171
 #: apple/FileProvider/Info.plist (NSExtensionFileProviderActionName)
 msgid "Open in Immich"
 msgstr "Abrir en Immich"
 
-#: crates/immich-mount-gnome/nautilus/immich-mount-nautilus.c:214
-#: crates/immich-mount-gnome/nautilus/immich-mount-nautilus.py:156
-#: crates/immich-mount-kde/dolphin/immich-mount-dolphin.cpp:144
+#: crates/immich-mount-gnome/nautilus/immich-mount-nautilus.c:263
+#: crates/immich-mount-gnome/nautilus/immich-mount-nautilus.py:185
+#: crates/immich-mount-kde/dolphin/immich-mount-dolphin.cpp:178
 #: apple/FileProvider/Info.plist (NSExtensionFileProviderActionName)
 msgid "Copy Immich Link"
 msgstr "Copiar enlace de Immich"
+
+#: crates/immich-mount-gnome/nautilus/immich-mount-nautilus.py:142
+#: crates/immich-mount-kde/dolphin/immich-mount-dolphin.cpp:196
+#: apple/App/CrosslinkApps.swift:205
+msgid "{app} is no longer installed."
+msgstr "{app} ya no está instalada."
+
+#: crates/immich-mount-gnome/nautilus/immich-mount-nautilus.py:151
+#: crates/immich-mount-kde/dolphin/immich-mount-dolphin.cpp:206
+#: apple/App/CrosslinkApps.swift:215
+msgid "Immich Mount could not open {app}: {error}"
+msgstr "Immich Mount no pudo abrir {app}: {error}"
 
 #: crates/immich-mount-kde/qml/Main.qml:53
 msgid "Show thumbnails"
@@ -684,188 +702,188 @@ msgstr "Mostrar miniaturas"
 msgid "Lets Dolphin preview files up to 100 MB on remote locations, this drive included. Thumbnails come from the server; no original is downloaded."
 msgstr "Permite que Dolphin previsualice archivos de hasta 100 MB en ubicaciones remotas, incluida esta unidad. Las miniaturas vienen del servidor; no se descarga ningún original."
 
-#: crates/immich-mount-kde/qml/Main.qml:198
-#: crates/immich-mount-kde/qml/Main.qml:259
+#: crates/immich-mount-kde/qml/Main.qml:200
+#: crates/immich-mount-kde/qml/Main.qml:261
 msgid "About"
 msgstr "Acerca de"
 
-#: crates/immich-mount-kde/qml/Main.qml:210
+#: crates/immich-mount-kde/qml/Main.qml:212
 msgid "Your Immich photos and videos as a drive in Dolphin. By Jakob Hviid, under the MIT license."
 msgstr "Tus fotos y vídeos de Immich como una unidad en Dolphin. Por Jakob Hviid, con licencia MIT."
 
-#: crates/immich-mount-kde/qml/Main.qml:215
+#: crates/immich-mount-kde/qml/Main.qml:217
 #: apple/App/Info.plist (NSHumanReadableCopyright)
 msgid "Immich Mount is an independent, unofficial project. It is not affiliated with, endorsed by, or sponsored by the Immich project or FUTO. “Immich” is used only to describe the server this software works with, and remains the mark of its owner."
 msgstr "Immich Mount es un proyecto independiente y no oficial. No está afiliado al proyecto Immich ni a FUTO, ni cuenta con su respaldo o patrocinio. «Immich» se usa solo para describir el servidor con el que funciona este software, y sigue siendo una marca de su titular."
 
-#: crates/immich-mount-kde/qml/Main.qml:217
+#: crates/immich-mount-kde/qml/Main.qml:219
 msgid "Credits"
 msgstr "Créditos"
 
-#: crates/immich-mount-kde/qml/Main.qml:223
+#: crates/immich-mount-kde/qml/Main.qml:225
 msgid "Inspired by {project}"
 msgstr "Inspirado en {project}"
 
-#: crates/immich-mount-kde/qml/Main.qml:224
+#: crates/immich-mount-kde/qml/Main.qml:226
 msgid "The Immich API layer: {project}"
 msgstr "La capa de la API de Immich: {project}"
 
-#: crates/immich-mount-kde/qml/Main.qml:226
-#: apple/App/ImmichMountApp.swift:505
+#: crates/immich-mount-kde/qml/Main.qml:228
+#: apple/App/ImmichMountApp.swift:518
 msgid "AI disclosure"
 msgstr "Uso de IA"
 
-#: crates/immich-mount-kde/qml/Main.qml:235
+#: crates/immich-mount-kde/qml/Main.qml:237
 msgid "Website: {link}"
 msgstr "Sitio web: {link}"
 
-#: crates/immich-mount-kde/qml/Main.qml:236
+#: crates/immich-mount-kde/qml/Main.qml:238
 msgid "Source code: {link}"
 msgstr "Código fuente: {link}"
 
-#: crates/immich-mount-kde/qml/Main.qml:246
-#: apple/App/ContentView.swift:123
+#: crates/immich-mount-kde/qml/Main.qml:248
+#: apple/App/ContentView.swift:125
 msgid "Back"
 msgstr "Atrás"
 
-#: crates/immich-mount-kde/qml/Main.qml:266
+#: crates/immich-mount-kde/qml/Main.qml:268
 msgid "Connect"
 msgstr "Conectar"
 
-#: crates/immich-mount-kde/qml/Main.qml:268
+#: crates/immich-mount-kde/qml/Main.qml:270
 msgid "Continue in Your Browser"
 msgstr "Continúa en tu navegador"
 
-#: crates/immich-mount-kde/qml/Main.qml:269
+#: crates/immich-mount-kde/qml/Main.qml:271
 msgid "Your Library in Dolphin"
 msgstr "Tu biblioteca en Dolphin"
 
-#: crates/immich-mount-kde/qml/Main.qml:291
+#: crates/immich-mount-kde/qml/Main.qml:293
 msgid "Your Immich Library in Dolphin"
 msgstr "Tu biblioteca de Immich en Dolphin"
 
-#: crates/immich-mount-kde/qml/Main.qml:298
+#: crates/immich-mount-kde/qml/Main.qml:300
 msgid "Server address:"
 msgstr "Dirección del servidor:"
 
-#: crates/immich-mount-kde/qml/Main.qml:299
+#: crates/immich-mount-kde/qml/Main.qml:301
 msgid "Server address"
 msgstr "Dirección del servidor"
 
-#: crates/immich-mount-kde/qml/Main.qml:307
-#: apple/App/ContentView.swift:137
+#: crates/immich-mount-kde/qml/Main.qml:309
+#: apple/App/ContentView.swift:139
 msgid "Continue"
 msgstr "Continuar"
 
-#: crates/immich-mount-kde/qml/Main.qml:337
+#: crates/immich-mount-kde/qml/Main.qml:339
 msgid "Email and password"
 msgstr "Correo electrónico y contraseña"
 
-#: crates/immich-mount-kde/qml/Main.qml:340
-#: apple/App/ContentView.swift:99
+#: crates/immich-mount-kde/qml/Main.qml:342
+#: apple/App/ContentView.swift:101
 msgid "Email:"
 msgstr "Correo electrónico:"
 
-#: crates/immich-mount-kde/qml/Main.qml:343
-#: apple/App/ContentView.swift:100
+#: crates/immich-mount-kde/qml/Main.qml:345
+#: apple/App/ContentView.swift:102
 msgid "Password:"
 msgstr "Contraseña:"
 
-#: crates/immich-mount-kde/qml/Main.qml:355
-#: crates/immich-mount-kde/qml/Main.qml:359
+#: crates/immich-mount-kde/qml/Main.qml:357
+#: crates/immich-mount-kde/qml/Main.qml:361
 msgid "API key"
 msgstr "Clave de API"
 
-#: crates/immich-mount-kde/qml/Main.qml:358
+#: crates/immich-mount-kde/qml/Main.qml:360
 msgid "Key:"
 msgstr "Clave:"
 
-#: crates/immich-mount-kde/qml/Main.qml:364
+#: crates/immich-mount-kde/qml/Main.qml:366
 msgid "Sign In With Key"
 msgstr "Iniciar sesión con clave"
 
-#: crates/immich-mount-kde/qml/Main.qml:377
+#: crates/immich-mount-kde/qml/Main.qml:379
 msgid "Sign in there. When your browser asks to open Immich Mount, allow it."
 msgstr "Inicia sesión allí. Cuando tu navegador pida abrir Immich Mount, permítelo."
 
-#: crates/immich-mount-kde/qml/Main.qml:380
+#: crates/immich-mount-kde/qml/Main.qml:382
 msgid "Open the Sign-In Page Again"
 msgstr "Volver a abrir la página de inicio de sesión"
 
-#: crates/immich-mount-kde/qml/Main.qml:391
+#: crates/immich-mount-kde/qml/Main.qml:393
 msgid "No browser could be opened. Open this address in one:"
 msgstr "No se pudo abrir ningún navegador. Abre esta dirección en uno:"
 
-#: crates/immich-mount-kde/qml/Main.qml:398
+#: crates/immich-mount-kde/qml/Main.qml:400
 msgid "Sign-in address"
 msgstr "Dirección de inicio de sesión"
 
-#: crates/immich-mount-kde/qml/Main.qml:428
+#: crates/immich-mount-kde/qml/Main.qml:430
 msgid "Folder:"
 msgstr "Carpeta:"
 
-#: crates/immich-mount-kde/qml/Main.qml:433
+#: crates/immich-mount-kde/qml/Main.qml:435
 msgid "Dolphin"
 msgstr "Dolphin"
 
-#: crates/immich-mount-kde/qml/Main.qml:453
+#: crates/immich-mount-kde/qml/Main.qml:455
 msgid "Your Library Is in Dolphin"
 msgstr "Tu biblioteca está en Dolphin"
 
-#: crates/immich-mount-kde/qml/Main.qml:456
+#: crates/immich-mount-kde/qml/Main.qml:458
 msgid "Mount it to browse your library in Dolphin."
 msgstr "Monta la unidad para explorar tu biblioteca en Dolphin."
 
-#: crates/immich-mount-kde/qml/Main.qml:459
+#: crates/immich-mount-kde/qml/Main.qml:461
 msgid "Sign In Again"
 msgstr "Volver a iniciar sesión"
 
-#: crates/immich-mount-kde/qml/Main.qml:459
+#: crates/immich-mount-kde/qml/Main.qml:461
 msgid "Mount"
 msgstr "Montar"
 
-#: crates/immich-mount-kde/qml/Main.qml:467
-#: apple/App/ContentView.swift:105
+#: crates/immich-mount-kde/qml/Main.qml:469
+#: apple/App/ContentView.swift:107
 msgid "Server:"
 msgstr "Servidor:"
 
-#: crates/immich-mount-kde/qml/Main.qml:468
+#: crates/immich-mount-kde/qml/Main.qml:470
 msgid "Account:"
 msgstr "Cuenta:"
 
-#: crates/immich-mount-kde/qml/Main.qml:469
+#: crates/immich-mount-kde/qml/Main.qml:471
 msgid "Credential:"
 msgstr "Credencial:"
 
-#: crates/immich-mount-kde/qml/Main.qml:470
+#: crates/immich-mount-kde/qml/Main.qml:472
 msgid "Connection:"
 msgstr "Conexión:"
 
-#: crates/immich-mount-kde/qml/Main.qml:471
+#: crates/immich-mount-kde/qml/Main.qml:473
 msgid "Cache:"
 msgstr "Caché:"
 
-#: crates/immich-mount-kde/qml/Main.qml:472
+#: crates/immich-mount-kde/qml/Main.qml:474
 msgid "Location:"
 msgstr "Ubicación:"
 
-#: crates/immich-mount-kde/qml/Main.qml:473
+#: crates/immich-mount-kde/qml/Main.qml:475
 msgid "Uploading:"
 msgstr "Subiendo:"
 
-#: crates/immich-mount-kde/qml/Main.qml:474
+#: crates/immich-mount-kde/qml/Main.qml:476
 msgid "Dolphin:"
 msgstr "Dolphin:"
 
-#: crates/immich-mount-kde/qml/Main.qml:479
+#: crates/immich-mount-kde/qml/Main.qml:481
 msgid "Unmount"
 msgstr "Desmontar"
 
-#: crates/immich-mount-kde/qml/Main.qml:486
+#: crates/immich-mount-kde/qml/Main.qml:488
 msgid "Disconnect"
 msgstr "Desconectar"
 
-#: crates/immich-mount-kde/qml/Main.qml:498
+#: crates/immich-mount-kde/qml/Main.qml:500
 msgid "Immich Mount is an independent, unofficial project. It is not affiliated with, endorsed by, or sponsored by the Immich project or FUTO."
 msgstr "Immich Mount es un proyecto independiente y no oficial. No está afiliado al proyecto Immich ni a FUTO, ni cuenta con su respaldo o patrocinio."
 
@@ -950,7 +968,7 @@ msgid "Show the Upload folder, and upload what is copied into it"
 msgstr "Mostrar la carpeta Upload y subir lo que se copie en ella"
 
 #: crates/immich-mount-core/src/settings.rs:71
-#: apple/App/SettingsView.swift:295
+#: apple/App/SettingsView.swift:296
 msgid "Folders copied into Upload"
 msgstr "Carpetas copiadas en Upload"
 
@@ -963,7 +981,7 @@ msgid "Refuse thumbnailer reads of originals"
 msgstr "Impedir que los generadores de miniaturas lean los originales"
 
 #: crates/immich-mount-core/src/settings.rs:74
-#: apple/App/SettingsView.swift:246
+#: apple/App/SettingsView.swift:247
 msgid "Open in Immich and Copy Immich Link"
 msgstr "Abrir en Immich y Copiar enlace de Immich"
 
@@ -1019,166 +1037,166 @@ msgstr "Nombres de archivo originales"
 msgid "Ask Each Time"
 msgstr "Preguntar cada vez"
 
-#: apple/App/ContentView.swift:19
-#: apple/App/SettingsView.swift:392
+#: apple/App/ContentView.swift:21
+#: apple/App/SettingsView.swift:393
 msgid "Move Immich Mount to Applications"
 msgstr "Mover Immich Mount a Aplicaciones"
 
-#: apple/App/ContentView.swift:20
-#: apple/App/SettingsView.swift:393
+#: apple/App/ContentView.swift:22
+#: apple/App/SettingsView.swift:394
 msgid "Finder's location runs from the Applications folder. Quit Immich Mount, drag it into Applications, then open it from there."
 msgstr "La ubicación de Finder funciona desde la carpeta Aplicaciones. Sal de Immich Mount, arrástralo a Aplicaciones y ábrelo desde allí."
 
-#: apple/App/ContentView.swift:22
+#: apple/App/ContentView.swift:24
 msgid "Sign In to Immich"
 msgstr "Iniciar sesión en Immich"
 
-#: apple/App/ContentView.swift:22
+#: apple/App/ContentView.swift:24
 msgid "Your photos and videos in Finder, as a drive."
 msgstr "Tus fotos y vídeos en Finder, como una unidad."
 
-#: apple/App/ContentView.swift:128
+#: apple/App/ContentView.swift:130
 msgid "Use Email and Password"
 msgstr "Usar correo y contraseña"
 
-#: apple/App/ContentView.swift:128
+#: apple/App/ContentView.swift:130
 msgid "Use an API Key"
 msgstr "Usar una clave de API"
 
-#: apple/App/ContentView.swift:161
+#: apple/App/ContentView.swift:163
 msgid "Switch On Immich Mount"
 msgstr "Activar Immich Mount"
 
-#: apple/App/ContentView.swift:162
+#: apple/App/ContentView.swift:164
 msgid "macOS asks once before a new location shows in Finder: open it in Finder, then click Enable at the top of the window."
 msgstr "macOS pregunta una vez antes de que una nueva ubicación aparezca en Finder: ábrela en Finder y haz clic en Activar en la parte superior de la ventana."
 
-#: apple/App/ContentView.swift:91
+#: apple/App/ContentView.swift:93
 msgid "API Key:"
 msgstr "Clave de API:"
 
-#: apple/App/ContentView.swift:93
+#: apple/App/ContentView.swift:95
 msgid "Make one in Immich under Account Settings, API Keys; one that may only read is enough to browse."
 msgstr "Crea una en Immich, en Configuración de la cuenta, Claves de API; una que solo pueda leer basta para explorar."
 
-#: apple/App/ContentView.swift:164
+#: apple/App/ContentView.swift:166
 msgid "Use System Settings Instead"
 msgstr "Usar Ajustes del Sistema en su lugar"
 
-#: apple/App/ContentView.swift:167
-#: apple/App/ImmichMountApp.swift:464
-#: apple/App/SettingsView.swift:373
+#: apple/App/ContentView.swift:169
+#: apple/App/ImmichMountApp.swift:477
+#: apple/App/SettingsView.swift:374
 msgid "Open in Finder"
 msgstr "Abrir en Finder"
 
-#: apple/App/ImmichMountApp.swift:217
+#: apple/App/ImmichMountApp.swift:220
 msgid "Sign out of Immich Mount?"
 msgstr "¿Cerrar sesión en Immich Mount?"
 
-#: apple/App/ImmichMountApp.swift:218
+#: apple/App/ImmichMountApp.swift:221
 msgid "Immich Mount leaves Finder, together with the photos and videos downloaded to this Mac. Your library on the server stays as it is."
 msgstr "Immich Mount desaparece de Finder, junto con las fotos y vídeos descargados en este Mac. Tu biblioteca en el servidor se queda como está."
 
-#: apple/App/ImmichMountApp.swift:220
+#: apple/App/ImmichMountApp.swift:223
 msgid "Files in Upload that have not reached Immich: {count}. They stay on this Mac, and Finder shows where once you have signed out."
 msgstr "Archivos en Upload que no han llegado a Immich: {count}. Se quedan en este Mac, y Finder muestra dónde cuando hayas cerrado la sesión."
 
-#: apple/App/ImmichMountApp.swift:224
+#: apple/App/ImmichMountApp.swift:227
 msgid "Sign Out"
 msgstr "Cerrar sesión"
 
-#: apple/App/ImmichMountApp.swift:225
+#: apple/App/ImmichMountApp.swift:228
 msgid "Cancel"
 msgstr "Cancelar"
 
-#: apple/App/ImmichMountApp.swift:240
+#: apple/App/ImmichMountApp.swift:243
 msgid "Still signed in"
 msgstr "La sesión sigue iniciada"
 
-#: apple/App/ImmichMountApp.swift:241
+#: apple/App/ImmichMountApp.swift:244
 msgid "Finder's location could not be removed, so Immich Mount stays signed in: {error}"
 msgstr "No se pudo quitar la ubicación de Finder, así que Immich Mount sigue con la sesión iniciada: {error}"
 
-#: apple/App/ImmichMountApp.swift:495
+#: apple/App/ImmichMountApp.swift:508
 msgid "Your Immich photos and videos as a drive in Finder. By Jakob Hviid, under the MIT license."
 msgstr "Tus fotos y vídeos de Immich como una unidad en Finder. Por Jakob Hviid, con licencia MIT."
 
-#: apple/App/ImmichMountApp.swift:496
+#: apple/App/ImmichMountApp.swift:509
 msgid "Website"
 msgstr "Sitio web"
 
-#: apple/App/ImmichMountApp.swift:498
+#: apple/App/ImmichMountApp.swift:511
 msgid "Source code"
 msgstr "Código fuente"
 
-#: apple/App/ImmichMountApp.swift:501
+#: apple/App/ImmichMountApp.swift:514
 msgid "Inspired by"
 msgstr "Inspirado en"
 
-#: apple/App/ImmichMountApp.swift:503
+#: apple/App/ImmichMountApp.swift:516
 msgid "The Immich API layer"
 msgstr "La capa de la API de Immich"
 
-#: apple/App/ImmichMountApp.swift:666
+#: apple/App/ImmichMountApp.swift:679
 msgid "Last checked: {time}"
 msgstr "Última comprobación: {time}"
 
-#: apple/App/ImmichMountApp.swift:668
+#: apple/App/ImmichMountApp.swift:681
 msgid "Reason: {reason}"
 msgstr "Motivo: {reason}"
 
-#: apple/App/ImmichMountApp.swift:668
+#: apple/App/ImmichMountApp.swift:681
 msgid "none given"
 msgstr "no se indicó ninguno"
 
-#: apple/App/ImmichMountApp.swift:766
+#: apple/App/ImmichMountApp.swift:779
 msgid "The login item could not be changed: {error}"
 msgstr "No se pudo cambiar el ítem de inicio: {error}"
 
-#: apple/App/ImmichMountApp.swift:800
+#: apple/App/ImmichMountApp.swift:813
 msgid "The server sent an address that cannot be opened."
 msgstr "El servidor envió una dirección que no se puede abrir."
 
-#: apple/App/ImmichMountApp.swift:898
+#: apple/App/ImmichMountApp.swift:911
 msgid "Finder does not show Immich yet. Is the extension switched on in System Settings? ({error})"
 msgstr "Finder aún no muestra Immich. ¿Está activada la extensión en Ajustes del Sistema? ({error})"
 
 #: apple/App/ImmichMountApp.swift:46
-#: apple/App/ImmichMountApp.swift:475
+#: apple/App/ImmichMountApp.swift:488
 msgid "About Immich Mount"
 msgstr "Acerca de Immich Mount"
 
 #: apple/App/ImmichMountApp.swift:49
-#: apple/App/ImmichMountApp.swift:468
+#: apple/App/ImmichMountApp.swift:481
 msgid "Check for Updates…"
 msgstr "Buscar actualizaciones…"
 
 #: apple/App/ImmichMountApp.swift:54
-#: apple/App/ImmichMountApp.swift:466
+#: apple/App/ImmichMountApp.swift:479
 msgid "Settings…"
 msgstr "Ajustes…"
 
-#: apple/App/ImmichMountApp.swift:453
-#: apple/App/SettingsView.swift:351
+#: apple/App/ImmichMountApp.swift:466
+#: apple/App/SettingsView.swift:352
 msgid "Sign In…"
 msgstr "Iniciar sesión…"
 
-#: apple/App/ImmichMountApp.swift:455
-#: apple/App/SettingsView.swift:371
+#: apple/App/ImmichMountApp.swift:468
+#: apple/App/SettingsView.swift:372
 msgid "Switch On in Finder…"
 msgstr "Activar en Finder…"
 
-#: apple/App/ImmichMountApp.swift:471
-#: apple/App/SettingsView.swift:376
+#: apple/App/ImmichMountApp.swift:484
+#: apple/App/SettingsView.swift:377
 msgid "Sign Out…"
 msgstr "Cerrar sesión…"
 
-#: apple/App/ImmichMountApp.swift:476
+#: apple/App/ImmichMountApp.swift:489
 msgid "Quit Immich Mount"
 msgstr "Salir de Immich Mount"
 
 #: apple/App/ReceivedLinks.swift:18
-#: apple/App/SettingsView.swift:350
+#: apple/App/SettingsView.swift:351
 msgid "Not signed in"
 msgstr "Sin iniciar sesión"
 
@@ -1190,11 +1208,11 @@ msgstr "General"
 msgid "Folders"
 msgstr "Carpetas"
 
-#: apple/App/SettingsView.swift:304
+#: apple/App/SettingsView.swift:305
 msgid "Folder names"
 msgstr "Nombres de carpeta"
 
-#: apple/App/SettingsView.swift:307
+#: apple/App/SettingsView.swift:308
 msgid "File names"
 msgstr "Nombres de archivo"
 
@@ -1210,19 +1228,19 @@ msgstr "Buscar actualizaciones automáticamente"
 msgid "While Immich Mount runs, in the menu bar, changes in Immich reach Finder within seconds. Updates come from jakob.hviid.phd, signed by the project and notarized by Apple."
 msgstr "Mientras Immich Mount se ejecuta en la barra de menús, los cambios en Immich llegan a Finder en segundos. Las actualizaciones vienen de jakob.hviid.phd, firmadas por el proyecto y notarizadas por Apple."
 
-#: apple/App/SettingsView.swift:289
+#: apple/App/SettingsView.swift:290
 msgid "Date folders are day folders inside each month in Photos, and year and month folders in the other sections."
 msgstr "Las carpetas por fecha son carpetas por día dentro de cada mes en Photos, y carpetas por año y mes en las demás secciones."
 
-#: apple/App/SettingsView.swift:290
+#: apple/App/SettingsView.swift:291
 msgid "Photos and videos copied into Upload are added to Immich."
 msgstr "Las fotos y los vídeos copiados en Upload se añaden a Immich."
 
-#: apple/App/SettingsView.swift:300
+#: apple/App/SettingsView.swift:301
 msgid "Every photo and video in them is added to Immich. An album is named by its folder's path, such as Trip › Day 1."
 msgstr "Cada foto y vídeo que contienen se añade a Immich. Un álbum lleva como nombre la ruta de su carpeta, por ejemplo Viaje › Día 1."
 
-#: apple/App/SettingsView.swift:311
+#: apple/App/SettingsView.swift:312
 msgid "Finder lists Immich again after each change."
 msgstr "Finder vuelve a mostrar Immich después de cada cambio."
 

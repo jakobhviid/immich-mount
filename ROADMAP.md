@@ -433,10 +433,9 @@ never; each received exactly the item's crosslink with `&user=`; `crosslink.hidd
 the menus offered Open and Copy alone. The Python extension did the same on Bazzite 44. **Built on the Mac** too
 (SPEC.md, "In Finder"): Immich Mount Dev on macOS 27.2 found Immich Gallery Dev (announcing) and the Gallery release
 (not announcing) and two test apps, `fileproviderctl evaluate` offered the actions on Albums, an album and a photo in
-an album, hiding an app or switching crosslink off removed them, and the menu listed two apps for an album. **Left:**
-the maintainer's clicks in Finder (Show in Immich Gallery on a photo, Show in Another App… on an album), which no
-command can press;
-for a second or so after the daemon starts, an item in a folder it has not listed yet gets no items.
+an album, hiding an app or switching crosslink off removed them, and the menu listed two apps for an album. The maintainer's clicks in
+Finder (Show in Immich Gallery on a photo, Show in Another App… on an album) worked (2026-11-10). **Left:** for a
+second or so after the daemon starts, an item in a folder it has not listed yet gets no items.
 
 Immich Mount finds the other installed apps that take crosslinks, and offers **Show in *app*** for each, on the items
 step 1 offers.

@@ -123,7 +123,7 @@ final class CrosslinkApps: NSObject, ObservableObject {
         return (registered + known).compactMap { url in
             // A sandboxed app reads only some places: an app outside Applications may not be read (immich-crosslink,
             // "Finding participants").
-            guard let bundle = Bundle(url: url), let bundleId = bundle.bundleIdentifier else {
+            guard let bundle = Bundle(url: url), let bundleId = bundle.bundleIdentifier, Self.canStart(url) else {
                 logger.info("an app that takes crosslinks could not be read: \(url.path, privacy: .public)")
                 return nil
             }
@@ -171,12 +171,75 @@ final class CrosslinkApps: NSObject, ObservableObject {
     /// Send the crosslink to the app chosen, and to it alone.
     @objc private func send(_ item: NSMenuItem) {
         guard let pair = item.representedObject as? [String], pair.count == 2, let url = URL(string: pair[0]) else { return }
-        let app = URL(fileURLWithPath: pair[1])
-        NSWorkspace.shared.open([url], withApplicationAt: app, configuration: NSWorkspace.OpenConfiguration()) { _, error in
-            if let error {
-                logger.error("\(app.lastPathComponent, privacy: .public) did not take the crosslink: \(String(describing: error), privacy: .public)")
-            } else {
-                logger.notice("sent a crosslink to \(app.lastPathComponent, privacy: .public)")
+        send(url, toAppAt: pair[1])
+    }
+
+    /// Show in Immich Gallery, from the extension, which can show no message itself: `bundle` names the app among
+    /// those offered, and `link` must be what it is offered for (a crosslink of a kind it shows, or its own link).
+    func showInApp(for url: URL) {
+        let query = URLComponents(url: url, resolvingAgainstBaseURL: false)?.queryItems ?? []
+        guard let bundleId = query.first(where: { $0.name == "bundle" })?.value,
+              let link = query.first(where: { $0.name == "link" })?.value, let linkURL = URL(string: link) else { return }
+        // Among the apps Finder was offering, as kept for the extension: one removed since is told about in `send`.
+        let offered = OfferedApps.load()
+        guard let app = ([offered.gallery].compactMap { $0 } + offered.others).first(where: { $0.bundleId == bundleId }) else {
+            logger.error("Show in came for an app that is not offered: \(bundleId, privacy: .public)")
+            return
+        }
+        let kind = crosslinkKind(link: link)
+        let ownLink = app.ownScheme.map { link.hasPrefix("\($0)://photo/") } ?? false
+        guard ownLink || kind.map(app.kinds.contains) == true else {
+            logger.error("Show in came with a link the app is not offered for")
+            return
+        }
+        send(linkURL, toAppAt: app.path)
+    }
+
+    /// Send `link` to the app at `path` alone. An app removed since the list was read, or one the system cannot open,
+    /// is told about in an alert, and the list is read again (Immich Crosslink, "Sending").
+    func send(_ link: URL, toAppAt path: String) {
+        let app = URL(fileURLWithPath: path)
+        let name = FileManager.default.displayName(atPath: path).replacingOccurrences(of: ".app", with: "")
+        guard Self.canStart(app) else {
+            logger.notice("\(app.lastPathComponent, privacy: .public) is no longer installed")
+            Self.tell(tr("{app} is no longer installed.", ["app": name]))
+            refresh()
+            return
+        }
+        NSWorkspace.shared.open([link], withApplicationAt: app, configuration: NSWorkspace.OpenConfiguration()) { _, error in
+            guard let error else {
+                logger.notice("sent a link to \(app.lastPathComponent, privacy: .public)")
+                return
+            }
+            logger.error("\(app.lastPathComponent, privacy: .public) did not take the link: \(String(describing: error), privacy: .public)")
+            let message = tr("Immich Mount could not open {app}: {error}", ["app": name, "error": error.localizedDescription])
+            DispatchQueue.main.async {
+                MainActor.assumeIsolated {
+                    Self.tell(message)
+                    CrosslinkApps.shared.refresh()
+                }
+            }
+        }
+    }
+
+    /// Whether the app at `url` can start: its program is there, and executable. Read from the disk each time, since
+    /// a bundle once read is kept by the system.
+    private static func canStart(_ url: URL) -> Bool {
+        guard let info = NSDictionary(contentsOf: url.appendingPathComponent("Contents/Info.plist")),
+              let executable = info["CFBundleExecutable"] as? String else { return false }
+        return FileManager.default.isExecutableFile(atPath: url.appendingPathComponent("Contents/MacOS/\(executable)").path)
+    }
+
+    /// An alert titled with the protocol's name, as Immich Gallery tells the same.
+    private static func tell(_ message: String) {
+        RunLoop.main.perform {
+            MainActor.assumeIsolated {
+                let alert = NSAlert()
+                alert.messageText = "Immich Crosslink"
+                alert.informativeText = message
+                AppDelegate.shared?.bringForward()
+                AppDelegate.shared?.floatUntilUsed(alert.window)
+                alert.runModal()
             }
         }
     }

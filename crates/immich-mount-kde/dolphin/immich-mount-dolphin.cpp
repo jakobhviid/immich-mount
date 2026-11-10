@@ -14,6 +14,7 @@
 #include <KFileItem>
 #include <KFileItemListProperties>
 #include <KIO/ApplicationLauncherJob>
+#include <KIO/DesktopExecParser>
 #include <KIO/JobUiDelegateFactory>
 #include <KIO/OpenUrlJob>
 #include <KLocalizedString>
@@ -29,6 +30,7 @@
 #include <QFileInfo>
 #include <QGuiApplication>
 #include <QIcon>
+#include <QStandardPaths>
 #include <QUrl>
 #include <QWidget>
 
@@ -79,12 +81,44 @@ Links linksForPath(const QString &path)
 
 // The other apps that show items of `kind`: registered for the scheme, announcing the draft this sends, listing the
 // kind, and not left out by the user. Never Immich Mount itself.
+// `msgid` in the user's language, with `{name}` replaced by `value` after the lookup.
+QString translated(const char *msgid, const QString &name, const QString &value)
+{
+    return i18nd("immich-mount", msgid).replace(name, value);
+}
+
+// A desktop notification titled with the protocol's name, which stays in English, as Immich Mount's own.
+void notify(const QString &body)
+{
+    QDBusMessage message = QDBusMessage::createMethodCall(QStringLiteral("org.freedesktop.Notifications"),
+                                                          QStringLiteral("/org/freedesktop/Notifications"),
+                                                          QStringLiteral("org.freedesktop.Notifications"),
+                                                          QStringLiteral("Notify"));
+    message << QStringLiteral("Immich Mount") << 0u << QStringLiteral("dev.hviid.ImmichMount-symbolic")
+            << QStringLiteral("Immich Crosslink") << body << QStringList() << QVariantMap() << -1;
+    QDBusConnection::sessionBus().send(message);
+}
+
+// Whether an app's desktop entry is still there: the menu may be older than the app's removal.
+bool stillInstalled(const KService::Ptr &app)
+{
+    const QString entry = app->entryPath();
+    if (QFileInfo(entry).isAbsolute()) {
+        return QFileInfo::exists(entry);
+    }
+    return !QStandardPaths::locate(QStandardPaths::GenericDataLocation, entry).isEmpty();
+}
+
 KService::List appsShowing(const QString &kind, const QString &hidden)
 {
     const QStringList hiddenIds = hidden.split(QLatin1Char(';'), Qt::SkipEmptyParts);
     return KApplicationTrader::queryByMimeType(QStringLiteral("x-scheme-handler/immich-crosslink"), [&](const KService::Ptr &app) {
         const QString id = app->storageId();
         if (id == QLatin1String("dev.hviid.ImmichMount.desktop") || hiddenIds.contains(id)) {
+            return false;
+        }
+        // An app whose program is gone is not offered (immich-crosslink, "Sending").
+        if (QStandardPaths::findExecutable(KIO::DesktopExecParser::executablePath(app->exec())).isEmpty()) {
             return false;
         }
         // The announcement's keys are read from the entry itself, which every KF6 has.
@@ -158,9 +192,21 @@ public:
             label.replace(QLatin1String("{app}"), app->name());
             auto *show = new QAction(QIcon::fromTheme(app->icon()), label, owner);
             connect(show, &QAction::triggered, this, [app, crosslink, parentWidget]() {
+                if (!stillInstalled(app)) {
+                    notify(translated("{app} is no longer installed.", QStringLiteral("{app}"), app->name()));
+                    return;
+                }
                 auto *job = new KIO::ApplicationLauncherJob(app);
                 job->setUrls({QUrl(crosslink)});
-                job->setUiDelegate(KIO::createDefaultJobUiDelegate(KJobUiDelegate::AutoHandlingEnabled, parentWidget));
+                // Failures are told in a notification of our own, not KIO's dialog.
+                job->setUiDelegate(KIO::createDefaultJobUiDelegate(KJobUiDelegate::Flags{}, parentWidget));
+                const QString name = app->name();
+                connect(job, &KJob::result, job, [name](KJob *finished) {
+                    if (finished->error()) {
+                        notify(translated("Immich Mount could not open {app}: {error}", QStringLiteral("{app}"), name)
+                                   .replace(QLatin1String("{error}"), finished->errorString()));
+                    }
+                });
                 job->start();
             });
             actions.append(show);

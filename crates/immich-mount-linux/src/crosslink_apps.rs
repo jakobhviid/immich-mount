@@ -26,9 +26,44 @@ pub struct CrosslinkApp {
 /// The apps installed for the user, by name.
 pub fn installed() -> Vec<CrosslinkApp> {
     let languages = crate::i18n::languages(&|name| std::env::var(name).ok());
-    let mut apps: Vec<CrosslinkApp> = entries(&application_folders()).into_iter().filter_map(|(id, text)| read(&id, &text, &languages)).collect();
+    let mut apps: Vec<CrosslinkApp> = entries(&application_folders())
+        .into_iter()
+        .filter(|(_, text)| can_start(text))
+        .filter_map(|(id, text)| read(&id, &text, &languages))
+        .collect();
     apps.sort_by_key(|app| app.name.to_lowercase());
     apps
+}
+
+/// Whether an entry's program is there to start, as GIO checks before it lists an app: one that is not is left out,
+/// as Files' menu leaves it out (immich-crosslink, "Sending"). The program is the first word of `Exec`, found on the
+/// `PATH` unless it is a path.
+fn can_start(text: &str) -> bool {
+    let mut in_main_group = false;
+    let exec = text.lines().map(str::trim).find_map(|line| {
+        if line.starts_with('[') {
+            in_main_group = line == "[Desktop Entry]";
+            None
+        } else {
+            line.strip_prefix("Exec=").filter(|_| in_main_group)
+        }
+    });
+    let Some(exec) = exec.map(str::trim) else { return false };
+    let program = match exec.strip_prefix('"') {
+        Some(quoted) => quoted.split('"').next().unwrap_or_default(),
+        None => exec.split_whitespace().next().unwrap_or_default(),
+    };
+    let is_program = |path: &Path| {
+        use std::os::unix::fs::PermissionsExt;
+        path.metadata().is_ok_and(|metadata| metadata.is_file() && metadata.permissions().mode() & 0o111 != 0)
+    };
+    if program.is_empty() {
+        false
+    } else if program.contains('/') {
+        is_program(Path::new(program))
+    } else {
+        std::env::var_os("PATH").is_some_and(|path| std::env::split_paths(&path).any(|folder| is_program(&folder.join(program))))
+    }
 }
 
 /// The folders desktop entries are found in, the user's first: `XDG_DATA_HOME`, then `XDG_DATA_DIRS`.
@@ -204,6 +239,16 @@ mod tests {
         let found = entries(&[user, system]);
         assert!(found["org.example.Gallery.desktop"].contains("Name=Mine"));
         assert!(found.contains_key("kde-viewer.desktop"));
+    }
+
+    #[test]
+    fn an_app_whose_program_is_missing_cannot_start() {
+        assert!(can_start("[Desktop Entry]\nExec=sh -c true %u\n"), "found on the PATH");
+        assert!(can_start("[Desktop Entry]\nExec=\"/bin/sh\" %u\n"), "a quoted path");
+        assert!(!can_start("[Desktop Entry]\nExec=/nonexistent/program %u\n"));
+        assert!(!can_start("[Desktop Entry]\nExec=no-such-program-anywhere %u\n"));
+        assert!(!can_start("[Desktop Entry]\nName=No Exec\n"));
+        assert!(!can_start("[Desktop Action other]\nExec=sh\n"), "only the main group's Exec");
     }
 
     #[test]

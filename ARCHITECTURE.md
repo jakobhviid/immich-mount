@@ -991,8 +991,10 @@ Open in Immich and Copy Immich Link take an item from the file manager to its pa
   The app finds the apps (an extension may not ask Launch Services about other apps' bundles from its sandbox, and the
   app sees apps launch), writes what is offered to the App Group (`crosslink-apps.json`), and the extension marks the
   items Finder offers each action on (`userInfo`); the markers are part of each item's version, so the app has the
-  system read the items again when the offers change. An extension shows no interface, so Show in Another App…
-  opens the app's own URL scheme, which starts the app without a window if it is not running.
+  system read the items again when the offers change. An extension shows no interface, so both actions open the
+  app's own URL scheme, which starts the app without a window if it is not running: it shows Show in Another App…'s
+  menu, and tells the user in an alert when sending fails, which an extension could not. It acts only on an app the
+  extension was offering, with a link that app is offered for.
   - **The Gallery's own link** (`immichgallery://photo/<id>`, its widget's) is kept for the releases that do not
     announce Immich Crosslink; once a build announces, it gets crosslinks like any other app.
 - **Flatpak impact:** the D-Bus members and the command work from a Flatpak (the command needs the session bus and

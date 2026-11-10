@@ -55,9 +55,11 @@ pub fn dialog(report: impl Fn(&str) + Clone + 'static) -> adw::PreferencesDialog
 /// The apps that take part in Immich Crosslink, by their names and icons, each with its switch; one not installed now
 /// is marked so, with a generic icon and a button that forgets it (Immich Crosslink, "Participants that come and go").
 fn apps_group(changed: Rc<Cell<bool>>, report: impl Fn(&str) + Clone + 'static) -> adw::PreferencesGroup {
+    let group = adw::PreferencesGroup::builder().title(apps_heading()).build();
     let apps = crosslink_apps();
-    // With no app to list, the heading alone would say nothing.
-    let group = adw::PreferencesGroup::builder().title(apps_heading()).visible(!apps.is_empty()).build();
+    if apps.is_empty() {
+        group.add(&adw::ActionRow::builder().title(tr("No other app that takes part is installed.")).build());
+    }
     for (listed, shown) in apps {
         let app = listed.app;
         let app_row = adw::SwitchRow::builder().title(app.name.as_str()).active(shown).build();

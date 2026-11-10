@@ -204,32 +204,33 @@ private struct CrosslinkSection: View {
     }
 
     /// The apps seen, each with its switch; they mean nothing while Immich Crosslink is off. One not installed now is
-    /// listed by its remembered name for 30 days, with a Forget button. No heading while none is listed.
-    @ViewBuilder
+    /// listed by its remembered name for 30 days, with a Forget button; with none, a sentence says so.
     private var apps: some View {
-        if !found.listed.isEmpty {
-            Section(tr("Apps That Take Part")) {
-                ForEach(found.listed) { app in
-                    HStack {
-                        Toggle(isOn: Binding(get: { app.shown }, set: { settings.setShown(app.bundleId, $0) })) {
-                            Label {
-                                if app.installed {
-                                    Text(verbatim: app.name)
-                                } else {
-                                    Text(verbatim: app.name)
-                                    Text(tr("Not installed"))
-                                }
-                            } icon: {
-                                Image(nsImage: app.icon).resizable().frame(width: 20, height: 20)
+        Section(tr("Apps That Take Part")) {
+            if found.listed.isEmpty {
+                Text(tr("No other app that takes part is installed."))
+                    .foregroundStyle(.secondary)
+            }
+            ForEach(found.listed) { app in
+                HStack {
+                    Toggle(isOn: Binding(get: { app.shown }, set: { settings.setShown(app.bundleId, $0) })) {
+                        Label {
+                            if app.installed {
+                                Text(verbatim: app.name)
+                            } else {
+                                Text(verbatim: app.name)
+                                Text(tr("Not installed"))
                             }
-                        }
-                        .toggleStyle(.switch)
-                        if !app.installed {
-                            Button(tr("Forget")) { found.forget(app.bundleId) }
+                        } icon: {
+                            Image(nsImage: app.icon).resizable().frame(width: 20, height: 20)
                         }
                     }
-                    .disabled(crosslink.value != "true")
+                    .toggleStyle(.switch)
+                    if !app.installed {
+                        Button(tr("Forget")) { found.forget(app.bundleId) }
+                    }
                 }
+                .disabled(crosslink.value != "true")
             }
         }
     }

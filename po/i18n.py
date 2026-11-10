@@ -52,7 +52,7 @@ SOURCES = [
     ("crates/immich-mount-gnome/nautilus/*.py", [r"\btranslate\(\s*" + LITERAL]),
     ("crates/immich-mount-kde/src/*.rs", [TR, TITLE_ROW]),
     ("crates/immich-mount-kde/qml/*.qml", [r"\bi18n\(\s*" + LITERAL]),
-    ("crates/immich-mount-kde/dolphin/*.cpp", [r'\bi18nd\(\s*"immich-mount",\s*' + LITERAL]),
+    ("crates/immich-mount-kde/dolphin/*.cpp", [r'\bi18nd\(\s*"immich-mount",\s*' + LITERAL, r"\btranslated\(\s*" + LITERAL]),
     ("crates/immich-mount-core/src/settings.rs", [r"description: " + LITERAL, r'"[A-Za-z0-9-]+" => ' + LITERAL]),
     ("crates/immich-mount-apple/src/lib.rs", [TITLE_ROW]),
     ("apple/App/*.swift", [TR, r"\b(?:" + SWIFT_VIEWS + r")\(\s*" + LITERAL]),

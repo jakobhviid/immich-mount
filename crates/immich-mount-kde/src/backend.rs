@@ -424,10 +424,11 @@ impl qobject::Backend {
                 }));
             }
             if *prefix == "crosslink" {
-                // The heading shows only over apps to list.
+                // The heading stays when no app is listed, with a sentence saying so.
                 let apps = preferences::crosslink_apps();
-                if !apps.is_empty() {
-                    rows.push(serde_json::json!({ "kind": "section", "title": preferences::apps_heading() }));
+                rows.push(serde_json::json!({ "kind": "section", "title": preferences::apps_heading() }));
+                if apps.is_empty() {
+                    rows.push(serde_json::json!({ "kind": "note", "title": tr("No other app that takes part is installed.") }));
                 }
                 for (listed, shown) in apps {
                     rows.push(serde_json::json!({

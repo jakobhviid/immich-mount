@@ -109,7 +109,10 @@ final class AppDelegate: NSObject, NSApplicationDelegate, SPUUpdaterDelegate,
         }
         let ownScheme = Bundle.main.bundleIdentifier?.lowercased()
         for url in urls {
-            if url.scheme?.lowercased() == ownScheme {
+            if url.scheme?.lowercased() == ownScheme, url.host == "show-in-app" {
+                // Finder's Show in Immich Gallery, from the extension.
+                CrosslinkApps.shared.showInApp(for: url)
+            } else if url.scheme?.lowercased() == ownScheme {
                 // Finder's Show in Another App…, from the extension.
                 CrosslinkApps.shared.showMenu(for: url)
             } else {
