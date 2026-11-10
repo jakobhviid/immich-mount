@@ -10,11 +10,11 @@ msgstr ""
 "Content-Type: text/plain; charset=UTF-8\n"
 "Content-Transfer-Encoding: 8bit\n"
 
-#: crates/immich-mount/src/commands.rs:421
+#: crates/immich-mount/src/commands.rs:427
 msgid "Immich Mount is not mounted"
 msgstr "Immich Mount மவுண்ட் செய்யப்படவில்லை"
 
-#: crates/immich-mount/src/commands.rs:422
+#: crates/immich-mount/src/commands.rs:428
 msgid "Mount it from Immich Mount, then open the link again."
 msgstr "Immich Mount-இலிருந்து டிரைவை மவுண்ட் செய்து, பிறகு இணைப்பை மீண்டும் திறக்கவும்."
 
@@ -26,84 +26,84 @@ msgstr "Immich மவுண்ட் செய்யப்படவில்ல�
 msgid "The keyring stayed locked. Open Immich Mount, or run “immich-mount mount”, to try again."
 msgstr "கீரிங் பூட்டியே இருந்தது. மீண்டும் முயல Immich Mount-ஐத் திறக்கவும், அல்லது “immich-mount mount” கட்டளையை இயக்கவும்."
 
-#: crates/immich-mount-linux/src/daemon.rs:368
+#: crates/immich-mount-linux/src/daemon.rs:371
 #: apple/App/ReceivedLinks.swift:65
 msgid "Links from other apps are off"
 msgstr "பிற பயன்பாடுகளிலிருந்து வரும் இணைப்புகள் முடக்கப்பட்டுள்ளன"
 
-#: crates/immich-mount-linux/src/daemon.rs:368
+#: crates/immich-mount-linux/src/daemon.rs:371
 #: apple/App/ReceivedLinks.swift:65
 msgid "Turn on Immich Crosslink in Immich Mount's settings to show what other apps link to."
 msgstr "பிற பயன்பாடுகள் இணைப்பதைக் காட்ட Immich Mount அமைப்புகளில் Immich Crosslink-ஐ இயக்கவும்."
 
-#: crates/immich-mount-linux/src/daemon.rs:369
+#: crates/immich-mount-linux/src/daemon.rs:372
 #: apple/App/ReceivedLinks.swift:67
 msgid "A link from another app cannot be opened"
 msgstr "பிற பயன்பாட்டிலிருந்து வந்த இணைப்பைத் திறக்க முடியவில்லை"
 
-#: crates/immich-mount-linux/src/daemon.rs:369
+#: crates/immich-mount-linux/src/daemon.rs:372
 #: apple/App/ReceivedLinks.swift:67
 msgid "It is not a valid Immich link."
 msgstr "இது சரியான Immich இணைப்பு அல்ல."
 
-#: crates/immich-mount-linux/src/daemon.rs:370
-#: crates/immich-mount-linux/src/daemon.rs:374
+#: crates/immich-mount-linux/src/daemon.rs:373
+#: crates/immich-mount-linux/src/daemon.rs:377
 #: apple/App/ReceivedLinks.swift:69
 #: apple/App/ReceivedLinks.swift:75
 msgid "Nothing to show"
 msgstr "காட்ட எதுவும் இல்லை"
 
-#: crates/immich-mount-linux/src/daemon.rs:370
+#: crates/immich-mount-linux/src/daemon.rs:373
 #: apple/App/ReceivedLinks.swift:69
 msgid "Immich Mount has no place for what this link points to."
 msgstr "இந்த இணைப்பு சுட்டுவதற்கு Immich Mount-இல் இடம் இல்லை."
 
-#: crates/immich-mount-linux/src/daemon.rs:371
+#: crates/immich-mount-linux/src/daemon.rs:374
 #: apple/App/ReceivedLinks.swift:71
 msgid "Not signed in to {host}"
 msgstr "{host} இல் உள்நுழையவில்லை"
 
-#: crates/immich-mount-linux/src/daemon.rs:371
+#: crates/immich-mount-linux/src/daemon.rs:374
 #: apple/App/ReceivedLinks.swift:71
 msgid "Immich Mount is signed in to another Immich server."
 msgstr "Immich Mount வேறொரு Immich சேவையகத்தில் உள்நுழைந்துள்ளது."
 
-#: crates/immich-mount-linux/src/daemon.rs:372
+#: crates/immich-mount-linux/src/daemon.rs:375
 #: apple/App/ReceivedLinks.swift:73
 msgid "Another Immich account"
 msgstr "வேறொரு Immich கணக்கு"
 
-#: crates/immich-mount-linux/src/daemon.rs:372
+#: crates/immich-mount-linux/src/daemon.rs:375
 #: apple/App/ReceivedLinks.swift:73
 msgid "The link is for another account than the one Immich Mount is signed in with."
 msgstr "இந்த இணைப்பு Immich Mount உள்நுழைந்துள்ள கணக்கிற்கானது அல்ல, வேறொரு கணக்கிற்கானது."
 
-#: crates/immich-mount-linux/src/daemon.rs:375
+#: crates/immich-mount-linux/src/daemon.rs:378
 #: apple/App/ReceivedLinks.swift:76
 msgid "The drive does not show this. It may be hidden, in a section that is switched off, or not shared with you."
 msgstr "டிரைவ் இதைக் காட்டவில்லை. இது மறைக்கப்பட்டிருக்கலாம், முடக்கப்பட்ட பிரிவில் இருக்கலாம், அல்லது உங்களுடன் பகிரப்படாமல் இருக்கலாம்."
 
-#: crates/immich-mount-linux/src/daemon.rs:377
-#: crates/immich-mount-linux/src/daemon.rs:424
+#: crates/immich-mount-linux/src/daemon.rs:380
+#: crates/immich-mount-linux/src/daemon.rs:427
 #: apple/App/ReceivedLinks.swift:78
 msgid "Immich is unreachable"
 msgstr "Immich-ஐ அணுக முடியவில்லை"
 
-#: crates/immich-mount-linux/src/daemon.rs:377
+#: crates/immich-mount-linux/src/daemon.rs:380
 #: apple/App/ReceivedLinks.swift:78
 msgid "The Immich server cannot be reached. Try the link again later."
 msgstr "Immich சேவையகத்தை அணுக முடியவில்லை. பின்னர் இணைப்பை மீண்டும் முயலவும்."
 
-#: crates/immich-mount-linux/src/daemon.rs:425
+#: crates/immich-mount-linux/src/daemon.rs:428
 msgid "The Immich server cannot be reached. Files you opened before stay available."
 msgstr "Immich சேவையகத்தை அணுக முடியவில்லை. முன்பு திறந்த கோப்புகள் தொடர்ந்து கிடைக்கும்."
 
-#: crates/immich-mount-linux/src/daemon.rs:428
+#: crates/immich-mount-linux/src/daemon.rs:431
 #: crates/immich-mount-linux/src/tray.rs:70
 msgid "Signed out of Immich"
 msgstr "Immich-இலிருந்து வெளியேறிவிட்டீர்கள்"
 
-#: crates/immich-mount-linux/src/daemon.rs:429
+#: crates/immich-mount-linux/src/daemon.rs:432
 msgid "Immich no longer accepts this sign-in. Open Immich Mount to sign in again."
 msgstr "Immich இனி இந்த உள்நுழைவை ஏற்கவில்லை. மீண்டும் உள்நுழைய Immich Mount-ஐத் திறக்கவும்."
 
@@ -212,27 +212,27 @@ msgid "Immich takes photos and videos only."
 msgstr "Immich படங்களையும் வீடியோக்களையும் மட்டுமே ஏற்கும்."
 
 #: crates/immich-mount-linux/src/tray.rs:68
-#: apple/App/ImmichMountApp.swift:663
+#: apple/App/ImmichMountApp.swift:661
 msgid "Connected to {server}"
 msgstr "{server} உடன் இணைக்கப்பட்டுள்ளது"
 
 #: crates/immich-mount-linux/src/tray.rs:69
-#: apple/App/ImmichMountApp.swift:663
+#: apple/App/ImmichMountApp.swift:661
 msgid "{server} is not reachable"
 msgstr "{server} ஐ அணுக முடியவில்லை"
 
 #: crates/immich-mount-linux/src/tray.rs:71
-#: apple/App/ImmichMountApp.swift:662
+#: apple/App/ImmichMountApp.swift:660
 msgid "Signed in to {server}"
 msgstr "{server} இல் உள்நுழைந்துள்ளீர்கள்"
 
 #: crates/immich-mount-linux/src/tray.rs:79
-#: apple/App/ImmichMountApp.swift:671
+#: apple/App/ImmichMountApp.swift:669
 msgid "Server version: Immich {version}"
 msgstr "சேவையகப் பதிப்பு: Immich {version}"
 
 #: crates/immich-mount-linux/src/tray.rs:82
-#: apple/App/ImmichMountApp.swift:674
+#: apple/App/ImmichMountApp.swift:672
 msgid "Signed in as: {account}"
 msgstr "உள்நுழைந்துள்ள கணக்கு: {account}"
 
@@ -407,7 +407,7 @@ msgstr "AI பயன்பாடு குறித்த அறிவிப்�
 
 #: crates/immich-mount-gnome/src/main.rs:117
 #: crates/immich-mount-kde/qml/Main.qml:232
-#: apple/App/ImmichMountApp.swift:519
+#: apple/App/ImmichMountApp.swift:517
 msgid "Parts of this project were written with the assistance of AI coding agents. All changes are reviewed by the maintainer."
 msgstr "இந்தத் திட்டத்தின் சில பகுதிகள் AI நிரலாக்க முகவர்களின் உதவியுடன் எழுதப்பட்டன. எல்லா மாற்றங்களையும் பராமரிப்பாளர் மதிப்பாய்வு செய்கிறார்."
 
@@ -661,36 +661,36 @@ msgstr "விசைப்பலகைக் குறுக்குவழி�
 msgid "_About Immich Mount"
 msgstr "Immich Mount பற்றி (_A)"
 
-#: crates/immich-mount-gnome/nautilus/immich-mount-nautilus.c:219
-#: crates/immich-mount-gnome/nautilus/immich-mount-nautilus.py:159
-#: crates/immich-mount-kde/dolphin/immich-mount-dolphin.cpp:191
-#: apple/App/CrosslinkApps.swift:157
+#: crates/immich-mount-gnome/nautilus/immich-mount-nautilus.c:232
+#: crates/immich-mount-gnome/nautilus/immich-mount-nautilus.py:174
+#: crates/immich-mount-kde/dolphin/immich-mount-dolphin.cpp:227
+#: apple/App/CrosslinkApps.swift:196
 msgid "Show in {app}"
 msgstr "{app}-இல் காட்டு"
 
-#: crates/immich-mount-gnome/nautilus/immich-mount-nautilus.c:260
-#: crates/immich-mount-gnome/nautilus/immich-mount-nautilus.py:183
-#: crates/immich-mount-kde/dolphin/immich-mount-dolphin.cpp:171
+#: crates/immich-mount-gnome/nautilus/immich-mount-nautilus.c:273
+#: crates/immich-mount-gnome/nautilus/immich-mount-nautilus.py:198
+#: crates/immich-mount-kde/dolphin/immich-mount-dolphin.cpp:207
 #: apple/FileProvider/Info.plist (NSExtensionFileProviderActionName)
 msgid "Open in Immich"
 msgstr "Immich-இல் திற"
 
-#: crates/immich-mount-gnome/nautilus/immich-mount-nautilus.c:263
-#: crates/immich-mount-gnome/nautilus/immich-mount-nautilus.py:185
-#: crates/immich-mount-kde/dolphin/immich-mount-dolphin.cpp:178
+#: crates/immich-mount-gnome/nautilus/immich-mount-nautilus.c:276
+#: crates/immich-mount-gnome/nautilus/immich-mount-nautilus.py:200
+#: crates/immich-mount-kde/dolphin/immich-mount-dolphin.cpp:214
 #: apple/FileProvider/Info.plist (NSExtensionFileProviderActionName)
 msgid "Copy Immich Link"
 msgstr "Immich இணைப்பை நகலெடு"
 
-#: crates/immich-mount-gnome/nautilus/immich-mount-nautilus.py:142
-#: crates/immich-mount-kde/dolphin/immich-mount-dolphin.cpp:196
-#: apple/App/CrosslinkApps.swift:205
+#: crates/immich-mount-gnome/nautilus/immich-mount-nautilus.py:157
+#: crates/immich-mount-kde/dolphin/immich-mount-dolphin.cpp:232
+#: apple/App/CrosslinkApps.swift:223
 msgid "{app} is no longer installed."
 msgstr "{app} இனி நிறுவப்படவில்லை."
 
-#: crates/immich-mount-gnome/nautilus/immich-mount-nautilus.py:151
-#: crates/immich-mount-kde/dolphin/immich-mount-dolphin.cpp:206
-#: apple/App/CrosslinkApps.swift:215
+#: crates/immich-mount-gnome/nautilus/immich-mount-nautilus.py:166
+#: crates/immich-mount-kde/dolphin/immich-mount-dolphin.cpp:120
+#: apple/App/CrosslinkApps.swift:233
 msgid "Immich Mount could not open {app}: {error}"
 msgstr "Immich Mount ஆல் {app}-ஐத் திறக்க முடியவில்லை: {error}"
 
@@ -729,7 +729,7 @@ msgid "The Immich API layer: {project}"
 msgstr "Immich API அடுக்கு: {project}"
 
 #: crates/immich-mount-kde/qml/Main.qml:228
-#: apple/App/ImmichMountApp.swift:518
+#: apple/App/ImmichMountApp.swift:516
 msgid "AI disclosure"
 msgstr "AI பயன்பாடு குறித்த அறிவிப்பு"
 
@@ -1084,114 +1084,114 @@ msgid "Use System Settings Instead"
 msgstr "பதிலாக System Settings-ஐப் பயன்படுத்து"
 
 #: apple/App/ContentView.swift:169
-#: apple/App/ImmichMountApp.swift:477
+#: apple/App/ImmichMountApp.swift:475
 #: apple/App/SettingsView.swift:374
 msgid "Open in Finder"
 msgstr "Finder-இல் திற"
 
-#: apple/App/ImmichMountApp.swift:220
+#: apple/App/ImmichMountApp.swift:218
 msgid "Sign out of Immich Mount?"
 msgstr "Immich Mount-இலிருந்து வெளியேறவா?"
 
-#: apple/App/ImmichMountApp.swift:221
+#: apple/App/ImmichMountApp.swift:219
 msgid "Immich Mount leaves Finder, together with the photos and videos downloaded to this Mac. Your library on the server stays as it is."
 msgstr "இந்த Mac-இல் பதிவிறக்கப்பட்ட படங்கள், வீடியோக்களுடன் சேர்ந்து Immich Mount, Finder-இலிருந்து நீங்கும். சேவையகத்தில் உள்ள உங்கள் லைப்ரரி அப்படியே இருக்கும்."
 
-#: apple/App/ImmichMountApp.swift:223
+#: apple/App/ImmichMountApp.swift:221
 msgid "Files in Upload that have not reached Immich: {count}. They stay on this Mac, and Finder shows where once you have signed out."
 msgstr "Immich-ஐ இன்னும் சென்றடையாத Upload கோப்புகள்: {count}. அவை இந்த Mac-இலேயே இருக்கும், நீங்கள் வெளியேறியதும் அவை எங்கே உள்ளன என்பதை Finder காட்டும்."
 
-#: apple/App/ImmichMountApp.swift:227
+#: apple/App/ImmichMountApp.swift:225
 msgid "Sign Out"
 msgstr "வெளியேறு"
 
-#: apple/App/ImmichMountApp.swift:228
+#: apple/App/ImmichMountApp.swift:226
 msgid "Cancel"
 msgstr "ரத்துசெய்"
 
-#: apple/App/ImmichMountApp.swift:243
+#: apple/App/ImmichMountApp.swift:241
 msgid "Still signed in"
 msgstr "இன்னும் உள்நுழைந்துள்ளீர்கள்"
 
-#: apple/App/ImmichMountApp.swift:244
+#: apple/App/ImmichMountApp.swift:242
 msgid "Finder's location could not be removed, so Immich Mount stays signed in: {error}"
 msgstr "Finder இருப்பிடத்தை அகற்ற முடியவில்லை, எனவே Immich Mount உள்நுழைந்த நிலையிலேயே உள்ளது: {error}"
 
-#: apple/App/ImmichMountApp.swift:508
+#: apple/App/ImmichMountApp.swift:506
 msgid "Your Immich photos and videos as a drive in Finder. By Jakob Hviid, under the MIT license."
 msgstr "Finder-இல் ஒரு டிரைவாக உங்கள் Immich படங்களும் வீடியோக்களும். உருவாக்கியவர் Jakob Hviid, MIT உரிமத்தின் கீழ்."
 
-#: apple/App/ImmichMountApp.swift:509
+#: apple/App/ImmichMountApp.swift:507
 msgid "Website"
 msgstr "இணையதளம்"
 
-#: apple/App/ImmichMountApp.swift:511
+#: apple/App/ImmichMountApp.swift:509
 msgid "Source code"
 msgstr "மூலக் குறியீடு"
 
-#: apple/App/ImmichMountApp.swift:514
+#: apple/App/ImmichMountApp.swift:512
 msgid "Inspired by"
 msgstr "உத்வேகம்"
 
-#: apple/App/ImmichMountApp.swift:516
+#: apple/App/ImmichMountApp.swift:514
 msgid "The Immich API layer"
 msgstr "Immich API அடுக்கு"
 
-#: apple/App/ImmichMountApp.swift:679
+#: apple/App/ImmichMountApp.swift:677
 msgid "Last checked: {time}"
 msgstr "கடைசியாகச் சரிபார்த்தது: {time}"
 
-#: apple/App/ImmichMountApp.swift:681
+#: apple/App/ImmichMountApp.swift:679
 msgid "Reason: {reason}"
 msgstr "காரணம்: {reason}"
 
-#: apple/App/ImmichMountApp.swift:681
+#: apple/App/ImmichMountApp.swift:679
 msgid "none given"
 msgstr "எதுவும் குறிப்பிடப்படவில்லை"
 
-#: apple/App/ImmichMountApp.swift:779
+#: apple/App/ImmichMountApp.swift:777
 msgid "The login item could not be changed: {error}"
 msgstr "உள்நுழைவு உருப்படியை மாற்ற முடியவில்லை: {error}"
 
-#: apple/App/ImmichMountApp.swift:813
+#: apple/App/ImmichMountApp.swift:811
 msgid "The server sent an address that cannot be opened."
 msgstr "திறக்க முடியாத ஒரு முகவரியைச் சேவையகம் அனுப்பியது."
 
-#: apple/App/ImmichMountApp.swift:911
+#: apple/App/ImmichMountApp.swift:919
 msgid "Finder does not show Immich yet. Is the extension switched on in System Settings? ({error})"
 msgstr "Finder இன்னும் Immich-ஐக் காட்டவில்லை. System Settings-இல் நீட்டிப்பு இயக்கப்பட்டுள்ளதா? ({error})"
 
 #: apple/App/ImmichMountApp.swift:46
-#: apple/App/ImmichMountApp.swift:488
+#: apple/App/ImmichMountApp.swift:486
 msgid "About Immich Mount"
 msgstr "Immich Mount பற்றி"
 
 #: apple/App/ImmichMountApp.swift:49
-#: apple/App/ImmichMountApp.swift:481
+#: apple/App/ImmichMountApp.swift:479
 msgid "Check for Updates…"
 msgstr "புதுப்பிப்புகளைச் சரிபார்…"
 
 #: apple/App/ImmichMountApp.swift:54
-#: apple/App/ImmichMountApp.swift:479
+#: apple/App/ImmichMountApp.swift:477
 msgid "Settings…"
 msgstr "அமைப்புகள்…"
 
-#: apple/App/ImmichMountApp.swift:466
+#: apple/App/ImmichMountApp.swift:464
 #: apple/App/SettingsView.swift:352
 msgid "Sign In…"
 msgstr "உள்நுழைக…"
 
-#: apple/App/ImmichMountApp.swift:468
+#: apple/App/ImmichMountApp.swift:466
 #: apple/App/SettingsView.swift:372
 msgid "Switch On in Finder…"
 msgstr "Finder-இல் இயக்கு…"
 
-#: apple/App/ImmichMountApp.swift:484
+#: apple/App/ImmichMountApp.swift:482
 #: apple/App/SettingsView.swift:377
 msgid "Sign Out…"
 msgstr "வெளியேறு…"
 
-#: apple/App/ImmichMountApp.swift:489
+#: apple/App/ImmichMountApp.swift:487
 msgid "Quit Immich Mount"
 msgstr "Immich Mount-ஐ மூடு"
 

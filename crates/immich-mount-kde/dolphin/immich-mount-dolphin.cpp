@@ -13,7 +13,7 @@
 #include <KConfigGroup>
 #include <KFileItem>
 #include <KFileItemListProperties>
-#include <KIO/ApplicationLauncherJob>
+#include <KIO/CommandLauncherJob>
 #include <KIO/DesktopExecParser>
 #include <KIO/JobUiDelegateFactory>
 #include <KIO/OpenUrlJob>
@@ -30,6 +30,7 @@
 #include <QFileInfo>
 #include <QGuiApplication>
 #include <QIcon>
+#include <QPointer>
 #include <QStandardPaths>
 #include <QUrl>
 #include <QWidget>
@@ -109,6 +110,39 @@ bool stillInstalled(const KService::Ptr &app)
     return !QStandardPaths::locate(QStandardPaths::GenericDataLocation, entry).isEmpty();
 }
 
+// Run `app` on the crosslink, byte for byte. KIO hands `%u` over as QUrl::toString(), which decodes `%20` and UTF-8
+// escapes, while the protocol wants the link as encodeURIComponent made it ("Sending"). So the app's command is made
+// with a placeholder, which the link then replaces, and runs as that app alone.
+void launch(const KService::Ptr &app, const QString &crosslink, QWidget *parentWidget)
+{
+    const QString name = app->name();
+    const auto failed = [name](const QString &error) {
+        notify(translated("Immich Mount could not open {app}: {error}", QStringLiteral("{app}"), name)
+                   .replace(QLatin1String("{error}"), error));
+    };
+    const QString placeholder = QStringLiteral("immich-crosslink:///immich-mount-link");
+    KIO::DesktopExecParser parser(*app, {QUrl(placeholder)});
+    QStringList arguments = parser.resultingArguments();
+    if (arguments.isEmpty()) {
+        failed(parser.errorMessage());
+        return;
+    }
+    for (QString &argument : arguments) {
+        argument.replace(placeholder, crosslink);
+    }
+    const QString program = arguments.takeFirst();
+    auto *job = new KIO::CommandLauncherJob(program, arguments);
+    job->setDesktopName(app->desktopEntryName());
+    // Failures are told in a notification of our own, not KIO's dialog.
+    job->setUiDelegate(KIO::createDefaultJobUiDelegate(KJobUiDelegate::Flags{}, parentWidget));
+    QObject::connect(job, &KJob::result, job, [failed](KJob *finished) {
+        if (finished->error()) {
+            failed(finished->errorString());
+        }
+    });
+    job->start();
+}
+
 KService::List appsShowing(const QString &kind, const QString &hidden)
 {
     const QStringList hiddenIds = hidden.split(QLatin1Char(';'), Qt::SkipEmptyParts);
@@ -148,6 +182,8 @@ public:
 
     QList<QAction *> actions(const KFileItemListProperties &selection, QWidget *parentWidget) override
     {
+        // The actions of the menu shown before go: Dolphin keeps none once its menu closes.
+        delete m_actions;
         const KFileItemList items = selection.items();
         if (items.size() != 1) {
             return {};
@@ -160,8 +196,8 @@ public:
         if (links.web.isEmpty() && links.crosslink.isEmpty()) {
             return {};
         }
-        // The plasma desktop's folder view gives no widget; the actions then live as long as this plugin.
-        QObject *owner = parentWidget ? static_cast<QObject *>(parentWidget) : this;
+        m_actions = new QObject(this);
+        QObject *owner = m_actions;
         QList<QAction *> actions;
 
         // The web address is empty while Open in Immich and Copy Immich Link are switched off (web.links).
@@ -196,23 +232,16 @@ public:
                     notify(translated("{app} is no longer installed.", QStringLiteral("{app}"), app->name()));
                     return;
                 }
-                auto *job = new KIO::ApplicationLauncherJob(app);
-                job->setUrls({QUrl(crosslink)});
-                // Failures are told in a notification of our own, not KIO's dialog.
-                job->setUiDelegate(KIO::createDefaultJobUiDelegate(KJobUiDelegate::Flags{}, parentWidget));
-                const QString name = app->name();
-                connect(job, &KJob::result, job, [name](KJob *finished) {
-                    if (finished->error()) {
-                        notify(translated("Immich Mount could not open {app}: {error}", QStringLiteral("{app}"), name)
-                                   .replace(QLatin1String("{error}"), finished->errorString()));
-                    }
-                });
-                job->start();
+                launch(app, crosslink, parentWidget);
             });
             actions.append(show);
         }
         return actions;
     }
+
+private:
+    // The actions of the last menu, owned here so they go with the next one.
+    QPointer<QObject> m_actions;
 };
 
 K_PLUGIN_CLASS_WITH_JSON(ImmichMountDolphin, "immich-mount-dolphin.json")

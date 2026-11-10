@@ -9,6 +9,7 @@
 import gettext
 import os
 import shutil
+import time
 
 import gi
 
@@ -61,11 +62,25 @@ def locale_folder():
 translate = gettext.translation(TEXT_DOMAIN, localedir=locale_folder(), fallback=True).gettext
 
 
+# Files asks on every selection, on its main thread: after a daemon that did not answer in time, it is not asked again
+# for a while, so a stuck daemon costs one wait, not one per click.
+QUIET_AFTER_TIMEOUT_SECONDS = 30
+quiet_until = 0.0
+
+
 def call_daemon(connection, method, path, reply_type):
+    global quiet_until
+    if time.monotonic() < quiet_until:
+        raise GLib.Error("the daemon did not answer a moment ago")
     # No auto start: right-clicking a file elsewhere must never start the daemon.
-    return connection.call_sync(BUS_NAME, OBJECT_PATH, INTERFACE, method, GLib.Variant("(s)", (path,)),
-                                GLib.VariantType.new(reply_type), Gio.DBusCallFlags.NO_AUTO_START,
-                                WEB_LINK_TIMEOUT_MS, None).unpack()
+    try:
+        return connection.call_sync(BUS_NAME, OBJECT_PATH, INTERFACE, method, GLib.Variant("(s)", (path,)),
+                                    GLib.VariantType.new(reply_type), Gio.DBusCallFlags.NO_AUTO_START,
+                                    WEB_LINK_TIMEOUT_MS, None).unpack()
+    except GLib.Error as error:
+        if error.matches(Gio.io_error_quark(), Gio.IOErrorEnum.TIMED_OUT):
+            quiet_until = time.monotonic() + QUIET_AFTER_TIMEOUT_SECONDS
+        raise
 
 
 def links_for_path(path):

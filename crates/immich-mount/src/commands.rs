@@ -346,11 +346,14 @@ pub fn web(paths: &Paths, path: &std::path::Path) -> Result<WebReport> {
     if mounts::names_below(&path, &mount_point).is_none() {
         anyhow::bail!("{} is not inside the mount at {}", path.display(), mount_point.display());
     }
+    if !load_config(paths)?.web_links {
+        anyhow::bail!("web links are switched off (web.links): Open in Immich and Copy Immich Link are not offered");
+    }
     let path_text = path.to_str().context("the path is not UTF-8")?;
     let runtime = tokio::runtime::Builder::new_current_thread().enable_all().build()?;
     let url = runtime
-        .block_on(immich_mount_linux::dbus::web_link(path_text))
-        .context("the mount is not running; start it with `immich-mount mount`")?;
+        .block_on(async { tokio::time::timeout(std::time::Duration::from_secs(15), immich_mount_linux::dbus::web_link(path_text)).await.ok().flatten() })
+        .context("the mount is not running, or did not answer; start it with `immich-mount mount`")?;
     if url.is_empty() {
         anyhow::bail!("Immich has no page for {} (only photos, albums, people, places and the sections have one)", path.display());
     }
@@ -397,9 +400,12 @@ pub struct ShowReport {
 /// notification says why not.
 pub fn show(link: &str, select: bool, notify: bool) -> Result<ShowReport> {
     let runtime = tokio::runtime::Builder::new_current_thread().enable_all().build()?;
+    // The daemon gives up on a link after 20 s, and on the file manager after 10 more.
     let (result, detail) = runtime
-        .block_on(immich_mount_linux::dbus::show_link(link, select, notify))
-        .context("the mount is not running; start it with `immich-mount mount`")?;
+        .block_on(async {
+            tokio::time::timeout(std::time::Duration::from_secs(40), immich_mount_linux::dbus::show_link(link, select, notify)).await.ok().flatten()
+        })
+        .context("the mount is not running, or did not answer; start it with `immich-mount mount`")?;
     let message = (result != "show").then(|| {
         let (summary, body) = immich_mount_linux::daemon::refusal_message(&result, &detail);
         format!("{summary}: {body}")

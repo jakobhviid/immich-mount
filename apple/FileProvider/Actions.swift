@@ -5,9 +5,9 @@
 //
 // Show in Immich Gallery and Show in Another App… (ROADMAP.md, "Open in Immich, and links between apps", step 3) are
 // offered by the items' `showInGallery` and `showInAnother`. Both hand the item's link to the menu bar app through the
-// app's own scheme (its bundle identifier), which starts the app when it is not running: an extension can show no
-// menu of the apps at the pointer, nor tell the user that an app is gone or did not open. The first carries the
-// item's crosslink (or, for a gallery that does not announce itself, its own link) for that app alone.
+// app (`ActionRequest`), which starts when it is not running: an extension can show no menu of the apps at the
+// pointer, nor tell the user that an app is gone or did not open. The app sends the item's crosslink (or, to a
+// gallery that does not announce itself, its own link) to that app alone.
 
 import AppKit
 import FileProvider
@@ -56,52 +56,44 @@ extension FileProviderExtension: NSFileProviderCustomAction {
                 finish(copied ? nil : CocoaError(.featureUnsupported))
             }
         case .showInGallery:
-            Task { finish(await Self.showInGallery(identifier.bridged, library: library)) }
+            Task { finish(await Self.showInGallery(identifier.bridged)) }
         case .showInAnotherApp:
-            Task { finish(await Self.showInAnotherApp(identifier.bridged, library: library)) }
+            Task { finish(await Self.showInAnotherApp(identifier.bridged)) }
         default:
             finish(CocoaError(.featureUnsupported))
         }
         return progress
     }
 
-    /// Send the item to Immich Gallery: its crosslink, or the gallery's own link to a photo in Photos.
-    private static func showInGallery(_ identifier: String, library: Library) async -> Error? {
+    /// Hand Show in Immich Gallery to the app, which sends the item's link and tells the user should the gallery be
+    /// gone or not open.
+    private static func showInGallery(_ identifier: String) async -> Error? {
         CurrentOffers.reload()
         guard let gallery = CurrentOffers.value.gallery else { return CocoaError(.featureUnsupported) }
-        let link: String?
-        if let scheme = gallery.ownScheme {
-            link = photoInPhotos(identifier: identifier).map { "\(scheme)://photo/\($0)" }
-        } else {
-            link = await library.crosslink(identifier: identifier)
+        return await hand(ActionRequest(action: ActionRequest.showInApp, identifier: identifier, bundleId: gallery.bundleId))
+    }
+
+    /// Hand Show in Another App… to the app, which shows the menu of the other apps at the pointer.
+    private static func showInAnotherApp(_ identifier: String) async -> Error? {
+        await hand(ActionRequest(action: ActionRequest.showInAnotherApp, identifier: identifier, bundleId: nil))
+    }
+
+    /// Keep the request in the App Group, and open the app's own scheme (its bundle identifier) with its token alone.
+    private static func hand(_ request: ActionRequest) async -> Error? {
+        let token: String
+        do {
+            token = try request.write()
+        } catch {
+            logger.error("the request was not kept for the app: \(String(describing: error), privacy: .public)")
+            return error
         }
-        // The app sends it, and tells the user should the gallery be gone or not open: the extension can show nothing.
-        guard let link, let encoded = link.addingPercentEncoding(withAllowedCharacters: .alphanumerics),
-              let url = ownURL(host: "show-in-app", query: "bundle=\(gallery.bundleId)&link=\(encoded)") else {
+        guard let appIdentifier = Bundle.main.bundleIdentifier?.replacingOccurrences(of: ".FileProvider", with: ""),
+              let url = URL(string: "\(appIdentifier.lowercased())://action?token=\(token)") else {
             return NSFileProviderError(.noSuchItem)
         }
-        return await send(url, to: containingApp)
-    }
-
-    /// An address of the app's own scheme (its bundle identifier), which only it takes.
-    private static func ownURL(host: String, query: String) -> URL? {
-        guard let appIdentifier = Bundle.main.bundleIdentifier?.replacingOccurrences(of: ".FileProvider", with: "") else { return nil }
-        return URL(string: "\(appIdentifier.lowercased())://\(host)?\(query)")
-    }
-
-    /// The app the extension is part of: the extension is its PlugIns/<extension>.appex.
-    private static var containingApp: URL {
-        Bundle.main.bundleURL.deletingLastPathComponent().deletingLastPathComponent().deletingLastPathComponent()
-    }
-
-    /// Hand the item's crosslink to the menu bar app, which shows the menu of the other apps at the pointer.
-    private static func showInAnotherApp(_ identifier: String, library: Library) async -> Error? {
-        guard let link = await library.crosslink(identifier: identifier),
-              let encoded = link.addingPercentEncoding(withAllowedCharacters: .alphanumerics),
-              let url = ownURL(host: "show-in-another-app", query: "link=\(encoded)") else {
-            return NSFileProviderError(.noSuchItem)
-        }
-        return await send(url, to: containingApp)
+        // The extension is the app's PlugIns/<extension>.appex.
+        let app = Bundle.main.bundleURL.deletingLastPathComponent().deletingLastPathComponent().deletingLastPathComponent()
+        return await send(url, to: app)
     }
 
     /// Open `url` with the app at `app` alone, never the scheme's default handler.

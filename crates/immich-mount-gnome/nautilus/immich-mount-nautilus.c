@@ -65,12 +65,25 @@ static void item_links_free(ItemLinks *links) {
 
 G_DEFINE_AUTOPTR_CLEANUP_FUNC(ItemLinks, item_links_free)
 
+/* Files asks on every selection, on its main thread: after a daemon that did not answer in time, it is not asked
+ * again for a while, so a stuck daemon costs one wait, not one per click. */
+#define QUIET_AFTER_TIMEOUT_US (30 * G_USEC_PER_SEC)
+static gint64 quiet_until = 0;
+
 static GVariant *call_daemon(GDBusConnection *connection, const char *method, const char *path,
                              const char *reply_type, GError **error) {
+    if (g_get_monotonic_time() < quiet_until) {
+        g_set_error_literal(error, G_IO_ERROR, G_IO_ERROR_TIMED_OUT, "the daemon did not answer a moment ago");
+        return NULL;
+    }
     /* No auto start: right-clicking a file elsewhere must never start the daemon. */
-    return g_dbus_connection_call_sync(connection, BUS_NAME, OBJECT_PATH, INTERFACE, method,
-                                       g_variant_new("(s)", path), G_VARIANT_TYPE(reply_type),
-                                       G_DBUS_CALL_FLAGS_NO_AUTO_START, WEB_LINK_TIMEOUT_MS, NULL, error);
+    GVariant *reply = g_dbus_connection_call_sync(connection, BUS_NAME, OBJECT_PATH, INTERFACE, method,
+                                                  g_variant_new("(s)", path), G_VARIANT_TYPE(reply_type),
+                                                  G_DBUS_CALL_FLAGS_NO_AUTO_START, WEB_LINK_TIMEOUT_MS, NULL, error);
+    if (reply == NULL && g_error_matches(*error, G_IO_ERROR, G_IO_ERROR_TIMED_OUT)) {
+        quiet_until = g_get_monotonic_time() + QUIET_AFTER_TIMEOUT_US;
+    }
+    return reply;
 }
 
 /* The daemon's links for a local path; NULL when the item has neither a web address nor a crosslink, the path is

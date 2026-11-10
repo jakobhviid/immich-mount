@@ -889,7 +889,7 @@ Open in Immich and Copy Immich Link take an item from the file manager to its pa
   - **Folders without a page have no link,** rather than the nearest page: Photos' year, month and day folders,
     the year folders above albums, Upload. A link that opened the timeline at large from a month folder would look
     like it had failed.
-- **On Linux the daemon answers** (`WebLink` on its D-Bus interface): it alone knows which key a
+- **On Linux the daemon answers** (`Links`, and `WebLink` for older menus, on its D-Bus interface): it alone knows which key a
   path means, through the names it handed out. It walks the path from the mount point through the folder listings
   it has, however old (`Tree::key_at`), and reads a folder from Immich only when it has none: the file manager asking
   has just shown the folder, and names are kept per folder, so an old listing still gives the item a name means. A
@@ -907,8 +907,10 @@ Open in Immich and Copy Immich Link take an item from the file manager to its pa
   the clipboard itself.
 - **Files: a Nautilus extension in C** (`crates/immich-mount-gnome/nautilus/`), about 140 lines on
   `libnautilus-extension-4` and GTK 4, which Nautilus has loaded already. It sends one selected `file://` item to
-  the daemon's `WebLink` (250 ms limit, `NO_AUTO_START`) and offers the items when an address comes back, so the
-  daemon alone decides what is in the mount; the extension never reads `MountPoint`. A call takes about 3 ms (GNOME
+  the daemon's `Links` (250 ms limit, `NO_AUTO_START`) and offers the items when an address comes back, so the
+  daemon alone decides what is in the mount; the extension never reads `MountPoint`. Files asks on its main thread at
+  every selection, so after a call that timed out it does not ask again for 30 seconds: a stuck daemon costs one wait,
+  not one per click. A call takes about 3 ms (GNOME
   50 VM). It opens through GIO with GDK's launch context, so the browser comes to the front on Wayland, and copies
   with GDK's clipboard, which it owns for as long as Files runs.
   - **Built in each package's own job,** for its own distribution: one build would load on Fedora 44 (Nautilus 50.4)
@@ -921,14 +923,21 @@ Open in Immich and Copy Immich Link take an item from the file manager to its pa
     reads the catalogs beside the cask's programs, and stays quiet where the C extension is installed, so a machine
     with both shows one pair (verified on Bazzite 44 with both).
 - **Dolphin: a file item action plugin** (`crates/immich-mount-kde/dolphin/`, `KAbstractFileItemActionPlugin`, C++ on
-  KF6), asking `WebLink` the same way and copying with Qt's clipboard, inside Dolphin.
+  KF6), asking `Links` the same way and copying with Qt's clipboard, inside Dolphin.
+  - **Show in *app* runs the app's command itself:** KIO hands a URL to an app as `QUrl::toString()`, which decodes
+    `%20` and UTF-8 escapes, where the protocol wants the link as `encodeURIComponent` wrote it. So the plugin makes
+    the app's command from its desktop entry (`KIO::DesktopExecParser`) with a placeholder link, puts the crosslink
+    in its place, and runs it as that app (`KIO::CommandLauncherJob`, argument by argument, no shell). An app started
+    through D-Bus activation is then started through its `Exec` line instead (verified in the Plasma VM: an Århus
+    link and a name with a space arrived byte for byte).
   - **Not chosen: a service menu.** It can only run a command, and its one way to show only on some items,
     `X-KDE-ShowIfDBusCall`, was deprecated in KF 5.76 and is gone from KF6 (absent at 6.0.0; a probe menu with it
     showed everywhere in Plasma 6). Shown on every file on the computer, Open in Immich would mostly say there is
     nothing to open. The plugin also lets Show in *app* list a changing set of apps (step 3 of the roadmap's
     section).
   - **Homebrew's cask:** KIO finds plugins only on Qt's plugin path, which a home folder is not on. The cask links the
-    plugin under `~/.local/lib/qt6/plugins` and adds a Plasma login script (`~/.config/plasma-workspace/env/`), which
+    plugin under `~/.local/lib/immich-mount/plugins` (a folder that holds only it, as Qt advises against a
+    broad `QT_PLUGIN_PATH`) and adds a Plasma login script (`~/.config/plasma-workspace/env/`), which
     startplasma sources, putting that folder on `QT_PLUGIN_PATH`; the items appear from the next login. Bazzite's
     Qt 6.11 and KF 6.31 match Fedora 44's, where the cask's programs are built (verified on Bazzite 44 KDE).
 - **Finder: the File Provider extension's own actions** (SPEC.md, "In Finder"). The extension opens the address and
@@ -991,10 +1000,16 @@ Open in Immich and Copy Immich Link take an item from the file manager to its pa
   The app finds the apps (an extension may not ask Launch Services about other apps' bundles from its sandbox, and the
   app sees apps launch), writes what is offered to the App Group (`crosslink-apps.json`), and the extension marks the
   items Finder offers each action on (`userInfo`); the markers are part of each item's version, so the app has the
-  system read the items again when the offers change. An extension shows no interface, so both actions open the
-  app's own URL scheme, which starts the app without a window if it is not running: it shows Show in Another App…'s
-  menu, and tells the user in an alert when sending fails, which an extension could not. It acts only on an app the
-  extension was offering, with a link that app is offered for.
+  system read the items again when the offers change. An extension shows no interface, so both actions hand the
+  request to the app: the extension writes it (the action, the item and the app) into the App Group's `actions/`,
+  and opens the app's own URL scheme with that request's one-time token alone, which starts the app without a window
+  if it is not running. The app takes a request once, only while it is a few seconds old, makes the link itself from
+  the item, and sends it only to an app offered for that item's kind; it shows Show in Another App…'s menu, and tells
+  the user in an alert when sending fails, which an extension could not. Requests no one took are removed as the app
+  starts.
+  - **Not chosen: the link in the URL.** Any web page can open an app's URL scheme, so a link carried there would let
+    a page make Immich Mount send something to another app without a click; the App Group is the extension's and the
+    app's alone.
   - **The Gallery's own link** (`immichgallery://photo/<id>`, its widget's) is kept for the releases that do not
     announce Immich Crosslink; once a build announces, it gets crosslinks like any other app.
 - **Flatpak impact:** the D-Bus members and the command work from a Flatpak (the command needs the session bus and

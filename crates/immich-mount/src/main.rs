@@ -266,13 +266,22 @@ fn run_login(paths: &Paths, password: bool, api_key: bool, server: Option<String
         _ => online::LoginMethod::Browser,
     };
     let report = online::login(paths, method, server)?;
-    // A daemon already running holds the credential it started with; it starts again with this one. `try-restart`
-    // leaves a stopped service alone.
-    let _ = std::process::Command::new("systemctl")
-        .args(["--user", "try-restart", immich_mount_linux::service::user_service()])
-        .stdout(std::process::Stdio::null())
-        .stderr(std::process::Stdio::null())
-        .status();
+    // A daemon already running holds the credential it started with; it starts again with this one (`try-restart`
+    // leaves a stopped service alone), unless a copy into Upload is in flight, which a restart would cut short.
+    let uploading = tokio::runtime::Builder::new_current_thread()
+        .enable_all()
+        .build()
+        .map(|runtime| runtime.block_on(immich_mount_linux::dbus::uploads_in_flight()))
+        .unwrap_or_default();
+    if uploading.is_empty() {
+        let _ = std::process::Command::new("systemctl")
+            .args(["--user", "try-restart", immich_mount_linux::service::user_service()])
+            .stdout(std::process::Stdio::null())
+            .stderr(std::process::Stdio::null())
+            .status();
+    } else if !json {
+        eprintln!("the mount keeps its earlier sign-in until its uploads finish; then run `immich-mount unmount` and `immich-mount mount`");
+    }
     if json {
         print_json(&report);
     } else {

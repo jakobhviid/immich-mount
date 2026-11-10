@@ -373,26 +373,47 @@ pub fn read_web_address(address: &str, server_url: &str) -> Option<ImmichItem> {
 /// A server address as the protocol compares them: an absolute `http` or `https` URL, scheme and host in lower case,
 /// a scheme's default port dropped, no trailing slash. `None` for anything else.
 pub fn normalise_server(address: &str) -> Option<String> {
-    let (scheme, rest) = address.trim().split_once("://")?;
-    let scheme = scheme.to_ascii_lowercase();
-    let default_port = match scheme.as_str() {
-        "https" => "443",
-        "http" => "80",
-        _ => return None,
-    };
-    if rest.contains(['?', '#']) {
+    // Any web page can open a crosslink, and a refusal names the server's host: only an address made of a URL's own
+    // characters is read, so a link cannot put words of its own into a notification.
+    let address = address.trim();
+    if address.len() > 2048 {
         return None;
     }
+    let (scheme, rest) = address.split_once("://")?;
+    let scheme = scheme.to_ascii_lowercase();
+    let default_port: u16 = match scheme.as_str() {
+        "https" => 443,
+        "http" => 80,
+        _ => return None,
+    };
     let (authority, path) = rest.find('/').map_or((rest, ""), |index| rest.split_at(index));
     // A bracketed IPv6 host keeps its colons; the port follows the bracket.
     let (host, port) = match authority.rsplit_once(':') {
         Some((host, port)) if !port.contains(']') => (host, Some(port)),
         _ => (authority, None),
     };
-    if host.is_empty() || host.contains('@') || port.is_some_and(|port| port.is_empty() || !port.bytes().all(|byte| byte.is_ascii_digit())) {
+    let is_name = |host: &str| host.len() <= 253 && host.bytes().all(|byte| byte.is_ascii_alphanumeric() || byte == b'-' || byte == b'.');
+    let is_ipv6 = |host: &str| {
+        host.strip_prefix('[').and_then(|inner| inner.strip_suffix(']')).is_some_and(|inner| {
+            !inner.is_empty() && inner.bytes().all(|byte| byte.is_ascii_hexdigit() || byte == b':' || byte == b'.')
+        })
+    };
+    if host.is_empty() || !(is_name(host) || is_ipv6(host)) {
         return None;
     }
-    let port = port.filter(|port| port.trim_start_matches('0') != default_port).map(|port| format!(":{port}")).unwrap_or_default();
+    let port = match port {
+        None => None,
+        Some(digits) if !digits.is_empty() && digits.len() <= 5 && digits.bytes().all(|byte| byte.is_ascii_digit()) => {
+            Some(digits.parse::<u32>().ok().filter(|port| (1..=65535).contains(port))?)
+        }
+        Some(_) => return None,
+    };
+    // A path of a URL's own characters; no query or fragment.
+    let is_path_byte = |byte: u8| byte.is_ascii_alphanumeric() || b"-._~!$&'()*+,;=:@/%".contains(&byte);
+    if !path.bytes().all(is_path_byte) {
+        return None;
+    }
+    let port = port.filter(|port| *port != u32::from(default_port)).map(|port| format!(":{port}")).unwrap_or_default();
     Some(format!("{scheme}://{}{port}{}", host.to_ascii_lowercase(), path.trim_end_matches('/')))
 }
 
@@ -825,7 +846,24 @@ mod tests {
         assert_eq!(normalise_server("HTTPS://Photos.Example.com:443/").as_deref(), Some(SERVER));
         assert_eq!(normalise_server("http://nas.local:2283/immich/").as_deref(), Some("http://nas.local:2283/immich"));
         assert_eq!(normalise_server("http://[::1]:80").as_deref(), Some("http://[::1]"));
-        for refused in ["photos.example.com", "ftp://photos.example.com", "https://", "https://host:", "https://host:x", "https://u@host", "https://host/?a"] {
+        assert_eq!(normalise_server("https://photos.example.com:0443").as_deref(), Some(SERVER), "ports compare as numbers");
+        let refused = [
+            "photos.example.com",
+            "ftp://photos.example.com",
+            "https://",
+            "https://host:",
+            "https://host:x",
+            "https://u@host",
+            "https://host/?a",
+            "https://Your session expired. Visit evil.example to sign in\n",
+            "https://<b>bold<",
+            "https://[::1",
+            "https://host:99999999999999999999",
+            "https://host:65536",
+            "https://host:0",
+            "https://host/a b",
+        ];
+        for refused in refused {
             assert_eq!(normalise_server(refused), None, "{refused}");
         }
     }

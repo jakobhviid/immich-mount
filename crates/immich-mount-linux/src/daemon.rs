@@ -355,8 +355,11 @@ where
     };
     let path = names.iter().fold(mount_point.to_path_buf(), |path, name| path.join(name));
     if select {
-        if let Err(error) = crate::dbus::show_in_file_manager(&path).await {
-            log::warn!("could not show {} in the file manager: {error}", path.display());
+        // A file manager that hangs as it starts must not hold the link's answer.
+        match tokio::time::timeout(Duration::from_secs(10), crate::dbus::show_in_file_manager(&path)).await {
+            Ok(Ok(())) => {}
+            Ok(Err(error)) => log::warn!("could not show {} in the file manager: {error}", path.display()),
+            Err(_) => log::warn!("the file manager did not answer within 10 s for {}", path.display()),
         }
     }
     ("show", path.display().to_string())

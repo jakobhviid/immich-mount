@@ -136,15 +136,54 @@ final class CrosslinkApps: NSObject, ObservableObject {
 
     // MARK: Show in Another App…
 
-    /// The menu of the other apps that show what `link` names, at the pointer, as Finder's Show in Another App… asks
-    /// through the app's own scheme. Any page could open that address too: the menu only offers to send a crosslink,
-    /// and only on a click.
-    func showMenu(for url: URL) {
-        guard let link = URLComponents(url: url, resolvingAgainstBaseURL: false)?.queryItems?.first(where: { $0.name == "link" })?.value,
-              let kind = crosslinkKind(link: link) else {
-            logger.error("Show in Another App… came without a valid crosslink")
+    /// A Finder Show in action the extension handed over: `url` carries only the token of the request it kept in the
+    /// App Group. Any page can open the app's scheme, so a token that names no fresh request does nothing; the link is
+    /// made here from the item, and sent only to an app offered for that item's kind.
+    func perform(_ url: URL) {
+        guard let token = URLComponents(url: url, resolvingAgainstBaseURL: false)?.queryItems?.first(where: { $0.name == "token" })?.value,
+              let request = ActionRequest.take(token) else {
+            logger.notice("an address of the app's own scheme named no request of Finder's; nothing is sent")
             return
         }
+        guard let kind = itemKind(identifier: request.identifier), let account = Account.load() else {
+            logger.error("a Show in request named no item with a link")
+            return
+        }
+        Task {
+            switch request.action {
+            case ActionRequest.showInApp:
+                await showInApp(request.bundleId ?? "", identifier: request.identifier, kind: kind, account: account)
+            case ActionRequest.showInAnotherApp:
+                guard let link = await itemCrosslink(server: account.server, credential: account.credential, identifier: request.identifier) else { return }
+                showMenu(link: link, kind: kind)
+            default:
+                logger.error("a Show in request of an unknown kind")
+            }
+        }
+    }
+
+    /// Show in Immich Gallery: to the app among those Finder was offering (as kept for the extension; one removed
+    /// since is told about in `send`), when it is offered for the item.
+    private func showInApp(_ bundleId: String, identifier: String, kind: String, account: Account) async {
+        let offered = OfferedApps.load()
+        guard let app = ([offered.gallery].compactMap { $0 } + offered.others).first(where: { $0.bundleId == bundleId }),
+              offered.gallery?.bundleId != bundleId || offered.offersGallery(kind: kind, photoInPhotos: photoInPhotos(identifier: identifier) != nil),
+              app.kinds.contains(kind) else {
+            logger.error("Show in came for an app that is not offered on this item: \(bundleId, privacy: .public)")
+            return
+        }
+        let link: String?
+        if let scheme = app.ownScheme {
+            link = photoInPhotos(identifier: identifier).map { "\(scheme)://photo/\($0)" }
+        } else {
+            link = await itemCrosslink(server: account.server, credential: account.credential, identifier: identifier)
+        }
+        guard let link, let url = URL(string: link) else { return }
+        send(url, toAppAt: app.path)
+    }
+
+    /// The menu of the other apps that show the item's kind, at the pointer, as Finder's Show in Another App… asks.
+    private func showMenu(link: String, kind: String) {
         refresh()
         let apps = (targets?.others ?? []).filter { $0.kinds.contains(kind) }
         guard !apps.isEmpty else {
@@ -172,27 +211,6 @@ final class CrosslinkApps: NSObject, ObservableObject {
     @objc private func send(_ item: NSMenuItem) {
         guard let pair = item.representedObject as? [String], pair.count == 2, let url = URL(string: pair[0]) else { return }
         send(url, toAppAt: pair[1])
-    }
-
-    /// Show in Immich Gallery, from the extension, which can show no message itself: `bundle` names the app among
-    /// those offered, and `link` must be what it is offered for (a crosslink of a kind it shows, or its own link).
-    func showInApp(for url: URL) {
-        let query = URLComponents(url: url, resolvingAgainstBaseURL: false)?.queryItems ?? []
-        guard let bundleId = query.first(where: { $0.name == "bundle" })?.value,
-              let link = query.first(where: { $0.name == "link" })?.value, let linkURL = URL(string: link) else { return }
-        // Among the apps Finder was offering, as kept for the extension: one removed since is told about in `send`.
-        let offered = OfferedApps.load()
-        guard let app = ([offered.gallery].compactMap { $0 } + offered.others).first(where: { $0.bundleId == bundleId }) else {
-            logger.error("Show in came for an app that is not offered: \(bundleId, privacy: .public)")
-            return
-        }
-        let kind = crosslinkKind(link: link)
-        let ownLink = app.ownScheme.map { link.hasPrefix("\($0)://photo/") } ?? false
-        guard ownLink || kind.map(app.kinds.contains) == true else {
-            logger.error("Show in came with a link the app is not offered for")
-            return
-        }
-        send(linkURL, toAppAt: app.path)
     }
 
     /// Send `link` to the app at `path` alone. An app removed since the list was read, or one the system cannot open,

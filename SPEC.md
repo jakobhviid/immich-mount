@@ -382,8 +382,9 @@ person or place.
 - The same item gives the same address on every platform: the map is in the core (`links.rs`).
 
 **Open in Immich** opens the web address in the default browser, and **Copy Immich Link** puts it on the clipboard.
-Both are offered on one item at a time, inside the mount, for items with a web address, and nowhere else, while the
-switch **Open in Immich and Copy Immich Link** (`web.links`, under Immich Web App in the settings, on by default) is on:
+Both are offered on one item at a time, inside the mount, for items with a web address, and nowhere else, while
+the switch **Open in Immich and Copy Immich Link** (`web.links`, under Immich Web App in the settings, on by default)
+is on:
 - **In Files:** a Nautilus extension, in the `immich-mount-gnome` package (Nautilus's extension folder, such as
   `/usr/lib64/nautilus/extensions-4/libimmich-mount-nautilus.so`). Homebrew's cask, which cannot write there,
   installs the same items as a nautilus-python extension (`~/.local/share/nautilus-python/extensions/`), which
@@ -395,9 +396,10 @@ switch **Open in Immich and Copy Immich Link** (`web.links`, under Immich Web Ap
 - **In Finder:** two actions of the File Provider extension (In Finder). They work whether the menu bar app runs or
   not.
 - **In a terminal:** `immich-mount web <path>`, `--copy`, and `--json` (The `immich-mount` command).
-- **The daemon** answers `WebLink` on D-Bus (The daemon's D-Bus interface), which the items in Files and Dolphin
-  ask with a 250 ms limit, never starting the daemon. It finds the item from the folder listings it has, so a path the
-  file manager shows needs no request to the server. With no daemon answering, the items are not offered.
+- **The daemon** answers `Links` on D-Bus (The daemon's D-Bus interface), which the items in Files and Dolphin
+  ask with a 250 ms limit, never starting the daemon, falling back to `WebLink` against a daemon without it; after a
+  call that timed out, Files does not ask again for 30 seconds. It finds the item from the folder listings it has, so
+  a path the file manager shows needs no request to the server. With no daemon answering, the items are not offered.
 
 ### Links from other apps (Immich Crosslink)
 
@@ -450,7 +452,8 @@ part in Immich Crosslink, which shows it there.
   settings (`crosslink.hidden`). A photo's kind is `asset` wherever it is listed; an album's `album`, a person's
   `person`, a city's or a country's `place`, a section's `page`. Each is named and drawn by its desktop entry.
 - **Sending:** the crosslink, with the signed-in user's id when known, goes to that app alone (GIO's
-  `g_app_info_launch_uris` in Files, `KIO::ApplicationLauncherJob` in Dolphin), never to the scheme's default.
+  `g_app_info_launch_uris` in Files; in Dolphin the app's own command, made from its desktop entry), never to the
+  scheme's default, and byte for byte as the daemon wrote it.
   An app whose program is missing is not offered. When sending fails, a notification titled "Immich Crosslink" says
   "*app* is no longer installed." (its desktop entry gone since the menu was made) or "Immich Mount could not open
   *app*: *the system's reason*", and the next menu reads the apps again.
@@ -548,8 +551,8 @@ One binary: the daemon and the command line.
 | `immich-mount status` | Connection state, server and its version, account, credential, mount point, cache usage |
 | `immich-mount doctor` | A read-only health check (see WORKFLOWS) |
 | `immich-mount configure list \| keys \| get \| set \| unset` | Reads and writes settings |
-| `immich-mount show <link>` | Shows in the file manager, selected, the item an `immich-crosslink:` link or an address of Immich's web app on the signed-in server names (Links to Immich), and prints its path. With `--json` it prints `{"link": …, "result": …, "path": …, "message": …}` and selects nothing. A link it cannot show exits non-zero with the reason |
-| `immich-mount web [--copy] <path>` | Opens the item at `path` in Immich's web app, in the default browser (`xdg-open`), or with `--copy` puts its web address on the clipboard (Links to Immich). With `--json` it prints `{"path": …, "url": …}` and opens nothing. A path outside the mount, an item Immich has no page for, and a mount that is not running each exit non-zero, saying which. `--copy` hands the address to Plasma's clipboard (Klipper) where it runs, else to `wl-copy` on Wayland or `xclip` or `xsel` on X11, which keep it after the command ends |
+| `immich-mount show <link>` | Shows in the file manager, selected, the item an `immich-crosslink:` link or an address of Immich's web app on the signed-in server names (Links to Immich), and prints its path. With `--json` it prints `{"link": …, "result": …, "path": …, "message": …}` and selects nothing. A link it cannot show exits non-zero with the reason. With `crosslink.enabled` off it shows nothing, web addresses included (`off`) |
+| `immich-mount web [--copy] <path>` | Opens the item at `path` in Immich's web app, in the default browser (`xdg-open`), or with `--copy` puts its web address on the clipboard (Links to Immich). With `--json` it prints `{"path": …, "url": …}` and opens nothing. A path outside the mount, an item Immich has no page for, and a mount that is not running each exit non-zero, saying which. `--copy` hands the address to Plasma's clipboard (Klipper) where it runs, else to `wl-copy` on Wayland or `xclip` or `xsel` on X11, which keep it after the command ends. With `web.links` off it says so and exits non-zero |
 | `immich-mount completions <shell>` | Shell completions |
 
 Global flags:
@@ -627,7 +630,7 @@ A click on the icon shows the menu (`ItemIsMenu`), as the Mac's menu bar item do
 | The mount in Files' sidebar, where GVfs still does not list it (GNOME app) | A line `file://<mount point> <drive's name>` in `~/.config/gtk-3.0/bookmarks`: added once by the GNOME app's setup, renamed by the daemon as it starts when `mount.name` changed (a bookmark the user titled otherwise keeps its title), removed by the daemon once the drive is listed, and by `logout` (with a bookmark of the resolved path) |
 | The sign-in redirect's handler | `x-scheme-handler/app.immich` in `~/.config/mimeapps.list`, set by the app that last started a browser sign-in |
 | Open in Immich in Files, Homebrew's cask | `~/.local/share/nautilus-python/extensions/immich-mount-nautilus.py`, removed with the cask |
-| Open in Immich in Dolphin, Homebrew's cask | The plugin linked as `~/.local/lib/qt6/plugins/kf6/kfileitemaction/immich-mount-dolphin.so`, found through `QT_PLUGIN_PATH`, which `~/.config/plasma-workspace/env/immich-mount.sh` adds to at login; both removed with the cask |
+| Open in Immich in Dolphin, Homebrew's cask | The plugin linked as `~/.local/lib/immich-mount/plugins/kf6/kfileitemaction/immich-mount-dolphin.so`, found through `QT_PLUGIN_PATH`, which `~/.config/plasma-workspace/env/immich-mount.sh` adds to at login; both removed with the cask |
 | The version last told of (`updates.check`) | `~/.local/state/immich-mount/update-told` |
 | Logs | journald (`journalctl --user -u immich-mount`) |
 

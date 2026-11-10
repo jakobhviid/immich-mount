@@ -180,7 +180,8 @@ fn save(seen_file: &Path, seen: &BTreeMap<String, Seen>) {
         let _ = std::fs::create_dir_all(folder);
     }
     if let Ok(text) = serde_json::to_string_pretty(seen) {
-        let temporary = seen_file.with_extension("json.tmp");
+        // Both apps' settings may write at once: each its own temporary file, so neither renames the other's half.
+        let temporary = seen_file.with_extension(format!("json.{}.tmp", std::process::id()));
         if std::fs::write(&temporary, text).is_ok() {
             let _ = std::fs::rename(&temporary, seen_file);
         }

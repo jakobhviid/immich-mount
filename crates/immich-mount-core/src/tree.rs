@@ -487,12 +487,14 @@ impl<Source: LibrarySource, Names: NameMemory> Tree<Source, Names> {
     async fn locate_folder(&self, item: &ImmichItem) -> Result<Option<NodeKey>, SourceError> {
         let key = match (item.folder_key(), item) {
             (Some(key), _) => key,
-            // Immich's Places page names a city alone; the first country listing it is taken.
+            // Immich's Places page names a city alone; the first country listing it is taken. Through the listings the
+            // drive keeps, so links repeated by a page cost no request each.
             (None, ImmichItem::City { country: None, city }) => {
                 let mut found = None;
-                for country in self.source.countries().await? {
-                    if self.source.cities(&country).await?.iter().any(|listed| listed == city) {
-                        found = Some(NodeKey::City { country, city: city.clone() });
+                for country in self.list(&NodeKey::Section(SectionKey::Places)).await? {
+                    let wanted = |entry: &Entry| matches!(&entry.node, NodeKey::City { city: listed, .. } if listed == city);
+                    if let Some(entry) = self.list(&country.node).await?.into_iter().find(wanted) {
+                        found = Some(entry.node);
                         break;
                     }
                 }

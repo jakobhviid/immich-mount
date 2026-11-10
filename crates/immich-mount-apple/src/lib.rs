@@ -1905,15 +1905,22 @@ struct Seen {
 }
 
 fn read_seen(file: &Path) -> std::collections::BTreeMap<String, Seen> {
-    std::fs::read_to_string(file).ok().and_then(|text| serde_json::from_str(&text).ok()).unwrap_or_default()
+    let Ok(text) = std::fs::read_to_string(file) else { return Default::default() };
+    serde_json::from_str(&text).unwrap_or_else(|error| {
+        log::warn!("{} could not be read, so the apps seen start afresh: {error}", file.display());
+        Default::default()
+    })
 }
 
+/// Written whole through a temporary file of this process's own, so two writers at once never rename each other's
+/// half-written file.
 fn write_seen(file: &Path, seen: &std::collections::BTreeMap<String, Seen>) {
-    if let Ok(text) = serde_json::to_string_pretty(seen) {
-        let temporary = file.with_extension("json.tmp");
-        if std::fs::write(&temporary, text).is_ok() {
-            let _ = std::fs::rename(&temporary, file);
-        }
+    let Ok(text) = serde_json::to_string_pretty(seen) else { return };
+    let temporary = file.with_extension(format!("json.{}.tmp", std::process::id()));
+    let written = std::fs::write(&temporary, text).and_then(|()| std::fs::rename(&temporary, file));
+    if let Err(error) = written {
+        log::warn!("{} could not be written: {error}", file.display());
+        let _ = std::fs::remove_file(&temporary);
     }
 }
 
@@ -1952,6 +1959,25 @@ pub fn forget_app(file: String, bundle_id: String) {
     if seen.remove(&bundle_id).is_some() {
         write_seen(file, &seen);
     }
+}
+
+/// The item's crosslink, as the extension's `Library::crosslink` makes it, for the app, which has no library: with
+/// the signed-in user's id when the server tells it in time.
+#[uniffi::export]
+pub async fn item_crosslink(server: String, credential: Credential, identifier: String) -> Option<String> {
+    let node = NodeKey::from_storage_key(&identifier)?;
+    let server = normalised_address(&server);
+    let asking = server.clone();
+    let user_id = on_runtime(async move {
+        let client = Client::new(&asking, Some(credential.for_client()), USER_AGENT).map_err(failed)?;
+        match tokio::time::timeout(SIGN_IN_LIMIT, client.me()).await {
+            Ok(Ok(me)) => Ok(me.id),
+            _ => Err(too_slow()),
+        }
+    })
+    .await
+    .ok();
+    links::crosslink(&server, user_id.as_deref(), &node)
 }
 
 /// Whether Finder offers Open in Immich and Copy Immich Link (`web.links`); on when `config` cannot be read.
@@ -2882,6 +2908,8 @@ mod tests {
         assert_eq!(later, RememberedApps { absent: vec![absent], forgotten: vec![] }, "not installed, its switch kept");
         let gone = remember_apps_at(&file, vec![], hidden, start + chrono::Duration::days(31));
         assert_eq!(gone, RememberedApps { absent: vec![], forgotten: vec![gallery.bundle_id.clone()] }, "forgotten after 30 days");
+        std::fs::write(&file, "not json").unwrap();
+        assert!(remember_apps_at(&file, vec![], "", start).absent.is_empty(), "a broken file starts afresh");
         remember_apps_at(&file, vec![gallery.clone()], "", start);
         forget_app(file.display().to_string(), gallery.bundle_id.clone());
         assert!(remember_apps_at(&file, vec![], "", start).absent.is_empty(), "forgotten by hand");

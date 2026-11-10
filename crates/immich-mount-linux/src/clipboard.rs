@@ -1,5 +1,5 @@
-//! The clipboard, for a command that ends at once: Dolphin's Copy Immich Link runs `immich-mount web --copy`. A
-//! Wayland or X11 clipboard is served by the program that set it, so the text is handed to one that stays.
+//! The clipboard, for a command that ends at once (`immich-mount web --copy`; the file managers' menus copy in their own
+//! process). A Wayland or X11 clipboard is served by the program that set it, so the text is handed to one that stays.
 
 use std::io::Write;
 
