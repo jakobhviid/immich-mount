@@ -37,8 +37,10 @@ without downloading the library first.
   [Immich Crosslink](https://jakob.hviid.phd/immich-crosslink/), an open way for Immich apps on one computer to show
   each other's photos, albums, people and places. Right-click an item and choose **Show in *app*** to open it in
   another app that takes part, and a link from such an app opens its item in the drive, selected.
-  **[Immich Gallery](https://github.com/IGOLz/ImmichGallery)**, a native Immich client for macOS, takes part too:
-  Show in Immich Gallery from Finder, Show in Immich Mount from the gallery.
+  **[Immich Gallery](https://github.com/IGOLz/ImmichGallery)**, a native Immich client for macOS, is the second app:
+  Show in Immich Gallery works from Finder with its releases (on photos in Photos), and its own Immich Crosslink
+  support, which adds Show in Immich Mount in the gallery, is proposed upstream
+  ([IGOLz/ImmichGallery#47](https://github.com/IGOLz/ImmichGallery/pull/47)).
 - **One app, native on each desktop:** it opens in GTK and libadwaita on GNOME and in Kirigami on KDE Plasma, to sign
   in, choose what to show, and see the status. A tray icon shows how it is connected, in KDE Plasma's system tray and
   in GNOME's top bar where the AppIndicator extension is on.
