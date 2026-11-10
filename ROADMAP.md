@@ -333,7 +333,8 @@ as deep links through `my.immich.app`, `mobile/lib/services/deep_link.service.da
 - **A crosslink** is `immich-crosslink://` with an empty host, the Immich path, and the server's address:
   `immich-crosslink:///albums/<a>/photos/<id>?server=<origin>`, where `<origin>` is `server.url` without a trailing
   slash, encoded as above; it joins a path's own query with `&`
-  (`immich-crosslink:///search?query=<q>&server=<origin>`).
+  (`immich-crosslink:///search?query=<q>&server=<origin>`), and ends with `&user=<id>`, the signed-in user's Immich
+  id, when the credential may read it.
 - **Reading a link back** (step 2) is the map run backwards: an Immich path, from a crosslink or from a web address on
   the signed-in server, gives a key. `/photos/<id>` and the paths of a photo inside an album, person or city need the
   Asset's `localDateTime` (`GET /assets/{id}`) to find its month, its day where `grouping.photos` splits the month, and
@@ -404,7 +405,8 @@ Immich Mount takes crosslinks, and shows their item in the file manager, selecte
   URL to the app; the app passes a crosslink to the daemon. On the Mac, `CFBundleURLTypes` in `apple/App/Info.plist`
   declares `immich-crosslink`, and `AppDelegate` takes the URL (`application(_:open:)`).
 - **Reading it:** the server must be the signed-in one (scheme, host and port compared, host in lower case, a default
-  port written or not); the Immich path gives a key through the map run backwards. `immich-mount show <link>` does the
+  port written or not), and so must `user` when the link has it; the Immich path gives a key through the map run
+  backwards. `immich-mount show <link>` does the
   same from a terminal, for a crosslink or a web address on the signed-in server, and prints the path with `--json`.
 - **Showing it:** on Linux the daemon turns the key into its path (each folder's listing names its child) and calls
   `org.freedesktop.FileManager1.ShowItems`, which Files and Dolphin both answer; on the Mac the app gets the item's
@@ -449,7 +451,8 @@ step 1 offers.
   default empty): apps left out, by bundle id or desktop entry id. In each settings window (the Mac's, GNOME's and
   Plasma's), a switch labelled **Immich crosslink**, with a link to <https://jakob.hviid.phd/immich-crosslink/> beside
   it, so it is clear what it is; under it the apps found, with a switch each. The label and the link are the
-  protocol's, the same in every app that takes part. Open in Immich is not affected by either.
+  protocol's, the same in every app that takes part. With the switch off, a crosslink Immich Mount receives (step 2)
+  only gets a notification saying so, with a way to turn it on. Open in Immich is not affected by either.
 - **Docs:** SPEC (the items, the keys), ARCHITECTURE (finding apps, the known apps, the fixed Finder actions),
   DESIGN (the words), README.
 - **Done when:** with two test apps registered for the scheme (a desktop entry, and a small Mac app), each is listed,
