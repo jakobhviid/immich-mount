@@ -1600,7 +1600,12 @@ Urdu and Vietnamese. Portuguese is Brazil's, which both platforms also offer to 
   - the version is derived from Conventional Commits: the first commit is 1.0.0, then a breaking change bumps the
     major version, a feature the minor, anything else the patch (AGENTS.md, "Versioning"). One script,
     `ci/version.sh`, gives every job and the Mac build the same number
-  - the clippy gate and the tests run first; the build needs them
+  - the clippy gate and the tests run first; the builds need them, except the Mac's, the longest job, which runs
+    beside them, while publishing still waits for the tests. Every Rust job keeps its dependencies and build products
+    between runs (`Swatinem/rust-cache`), so a release compiles only what changed
+  - a release that fails is run again once, its failed jobs only (`retry.yml`): what failed on GitHub's side (a
+    runner that cannot resolve a mirror, the artifact service answering with an error page; both seen on
+    2026-11-11) passes the second time, and a failure of our own fails again, for a person to read
   - static musl builds for x86_64 and aarch64
   - every release kept, with its tag, files and notes ("Note for the house guidelines")
   - the headless Homebrew formula (`ci/immich-mount-headless.rb.tmpl`) with an x86_64 Linux bottle, pushed to a
@@ -1608,7 +1613,9 @@ Urdu and Vietnamese. Portuguese is Brazil's, which both platforms also offer to 
     lands; `brew services` runs the daemon as `homebrew.immich-mount-headless.service`, which `logout` turns off like
     the packages' unit
   - the cask's archive, `immich-mount-app-x86_64.tar.gz`: the interfaces from the `fedora:44` job, with the static
-    x86_64 daemon, its man page and completions; the tap bumps the cask daily from the releases
+    x86_64 daemon, its man page and completions. Once published, the release pushes a copy of the tap's main to
+    `auto/release-immich-mount`, which runs the tap's cask bump at once: it tests the cask on Linux and macOS and lands
+    it only if it passes. The tap's daily run catches a release this missed
   - not built yet: `install.sh` for headless machines
 - **The GNOME app** links the system's GTK 4 and libadwaita, so it ships through the native packages and the cask,
   not as a static bottle.

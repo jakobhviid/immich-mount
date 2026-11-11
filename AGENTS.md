@@ -79,8 +79,10 @@ release (no packages, no Mac build, no tap update), and `ci/version.sh` skips ma
 contiguous. A push that mixes marked and unmarked commits releases as usual, counting only the unmarked ones. It is
 not the breaking-change bang, which sits right before the colon (`feat!:`). A push cancels a release run still in progress (the workflow's
 concurrency), so a `!no-release` push while an earlier commit's release builds leaves that commit unreleased: wait
-for the release before pushing a marked commit, or run the cancelled run again (`gh run rerun <id>`). The download page rebuilds by itself when
-`site/` changes on `main` (the `pages` workflow), with or without a release.
+for the release before pushing a marked commit, or run the cancelled run again (`gh run rerun <id>`). A release that
+fails (rather than being cancelled) is run again once by itself, its failed jobs only (`retry.yml`); one that fails
+twice needs a person. A published release has the tap's cask bump run at once, so Homebrew follows within the hour.
+The download page rebuilds by itself when `site/` changes on `main` (the `pages` workflow), with or without a release.
 
 ## The green gate
 

@@ -54,6 +54,8 @@ jobs:
         with:
           components: clippy
           targets: aarch64-apple-darwin
+      # Dependencies and build products kept between runs, so a release compiles only what changed.
+      - uses: Swatinem/rust-cache@v2
       - name: Green gate - clippy (warnings are errors), tests, and the portable core
         run: |
           cargo clippy --workspace --exclude immich-mount-gnome --exclude immich-mount-kde --all-targets -- -D warnings
@@ -232,6 +234,10 @@ jobs:
       - uses: dtolnay/rust-toolchain@stable
         with:
           targets: ${{ matrix.target }}
+      # Dependencies and build products kept between runs, each target's apart.
+      - uses: Swatinem/rust-cache@v2
+        with:
+          key: ${{ matrix.target }}
       - name: Install cross
         uses: taiki-e/install-action@v2
         with:
@@ -297,8 +303,10 @@ jobs:
     # The macOS edition (ARCHITECTURE.md, "The macOS edition"): a universal disk image, signed with Developer ID and
     # notarized by apple/release.sh. The certificate, the two provisioning profiles and the notary key are secrets;
     # until they are set, the repository variable MACOS_RELEASES is not `on`, and releases go out without the Mac.
-    needs: test
-    if: vars.MACOS_RELEASES == 'on'
+    # Beside the tests rather than after them: it is the longest job, and the release still waits for the tests,
+    # so a failing test publishes nothing; it only costs that run's Mac minutes.
+    needs: gate
+    if: needs.gate.outputs.release == 'true' && vars.MACOS_RELEASES == 'on'
     runs-on: macos-latest
     steps:
       - uses: actions/checkout@v5
@@ -311,6 +319,8 @@ jobs:
       - uses: dtolnay/rust-toolchain@stable
         with:
           targets: aarch64-apple-darwin,x86_64-apple-darwin
+      # Dependencies and build products kept between runs, so a release compiles only what changed.
+      - uses: Swatinem/rust-cache@v2
       - name: Signing keychain, profiles and notary key
         env:
           MACOS_CERTIFICATE: ${{ secrets.MACOS_CERTIFICATE }}
@@ -456,6 +466,9 @@ jobs:
           cd tap
           git config user.name "tap-bot"
           git config user.email "tap-bot@users.noreply.github.com"
+          # The app's cask, now rather than at the tap's next daily run: its bump runs on a push to this branch (a
+          # copy of the tap's main), tests the cask on Linux and macOS, and lands it only if it passes.
+          git push --force origin "origin/main:refs/heads/auto/release-immich-mount"
           git add Formula/immich-mount-headless.rb
           git commit -m "immich-mount-headless ${VERSION}" || { echo "no formula change"; exit 0; }
           # To a candidate branch, not main: the tap's gate installs and tests the formula on every platform it

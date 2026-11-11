@@ -15,6 +15,8 @@ jobs:
         with:
           components: clippy
           targets: aarch64-apple-darwin
+      # Dependencies and build products kept between runs, so a release compiles only what changed.
+      - uses: Swatinem/rust-cache@v2
       - name: clippy (warnings are errors)
         run: cargo clippy --workspace --exclude immich-mount-gnome --exclude immich-mount-kde --all-targets -- -D warnings
       - name: tests
@@ -93,6 +95,8 @@ jobs:
         with:
           components: clippy
           targets: aarch64-apple-darwin,x86_64-apple-darwin
+      # Dependencies and build products kept between runs, so a release compiles only what changed.
+      - uses: Swatinem/rust-cache@v2
       - name: clippy (warnings are errors) and tests of the portable crates and the bridge
         run: |
           cargo clippy -p immich-api -p immich-mount-core -p immich-mount-apple --all-targets -- -D warnings
