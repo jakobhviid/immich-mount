@@ -250,6 +250,11 @@ install on a second Mac, which the maintainer dropped; what steps 1 and 4 left u
    Exit: a Mac that never had it installs from Homebrew, switches the extension on, and browses.
 
 Open:
+- **Apple silicon only:** build the Mac app for `arm64` alone, without `x86_64-apple-darwin` in the bridge
+  (`apple/build-rust.sh`), the archive and the disk image, and have the cask's macOS part depend on `arm64`. macOS 26
+  is the last release for Intel Macs (Apple, WWDC 2025), so macOS 27 runs on Apple silicon only, and no one the
+  maintainer knows uses an Intel Mac; meanwhile every release compiles the bridge a second time on the Mac runner, the
+  slowest job of the release workflow. Easily added back, should an Intel user ask.
 - **The Local Network prompt,** with a server on the LAN: macOS asks only before an app reaches a local address, so
   a server whose address is public never brings it (step 1).
 - **How Finder shows a refused upload,** and **signing out with a file waiting in Upload** (removed with
