@@ -178,10 +178,13 @@ cameras. Clashes are detected case-insensitively, after Unicode NFC normalisatio
 
 ### Files the mount answers itself
 
-- `/.xdg-volume-info` (`[Volume Info]`, `Name=Immich Mount`, the drive's name from `mount.name`): the display name
-  in the file manager (verified in a GNOME 50 VM).
+- `/.xdg-volume-info` (`[Volume Info]`, `Name=Immich Mount`, the drive's name from `mount.name`, and
+  `Icon=dev.hviid.ImmichMount`): the display name in the file manager (verified in a GNOME 50 VM), and GVfs's
+  full-colour icon.
+- `/.directory` (`[Desktop Entry]`, `Icon=dev.hviid.ImmichMount`): the mount's folder icon in Dolphin, where previews
+  of remote folders are on (ARCHITECTURE.md, "The drive's icon").
 - `/.nomedia` and `/.trackerignore`: hidden; they keep GNOME's indexer out.
-- Anything else that tools probe for (`.hidden`, `.directory`, `.Trash-<uid>`, `autorun.inf`, `.DS_Store`, and
+- Anything else that tools probe for (`.hidden`, `.directory` below the root, `.Trash-<uid>`, `autorun.inf`, `.DS_Store`, and
   rom-properties' `code`, `title.tik`, `default.xex` and `default.xbe` in their spellings): a fast `ENOENT`, which
   the kernel remembers for a minute (a negative entry), so a folder's next probes never reach the daemon. Such a
   name never waits for the server: without the folder's listing at hand it is answered absent at once, not
@@ -218,7 +221,7 @@ cameras. Clashes are detected case-insensitively, after Unicode NFC normalisatio
   fetches the original's first 64 KiB and last 16 KiB together, and keeps them. Once a program has peeked at three
   files of a folder within 10 seconds, the start and end of the folder's other files, up to 1,000 of them, are
   fetched ahead of it, eight files at a time.
-- The content cache has a size limit (default 10 GiB). It evicts least-recently-used Assets that are not being
+- The content cache has a size limit (default 10 GB). It evicts least-recently-used Assets that are not being
   read. It never takes the disk's last tenth: with less than 10% of the disk free, it evicts as if over its limit.
 - Originals are byte-identical to the server's.
 - The library is never mirrored.
@@ -513,7 +516,9 @@ part in Immich Crosslink, which shows it there.
 ## Configuration
 
 `~/.config/immich-mount/config.toml`. Unknown keys are ignored on read, and writes preserve comments. One settings
-table in the Core drives validation, `immich-mount configure`, and the app's settings dialog.
+table in the Core drives validation, `immich-mount configure`, and the apps' settings pages, where each setting has
+one place (ARCHITECTURE.md, "One layout for every settings window"): General, Folders, Other Apps, or the command
+line only (the server, the apps left out of Show in, the headless credential file and `thumbnails.safety_net`).
 
 | Key | Values | Default | Meaning |
 |---|---|---|---|
@@ -528,11 +533,11 @@ table in the Core drives validation, `immich-mount configure`, and the app's set
 | `grouping.photos` | `never`, `atLeast500`, `always` | `atLeast500` | Day folders inside months |
 | `albums.layout` | `year-prefix`, `year-folders`, `flat` | `year-prefix` | How album folders are named and grouped |
 | `files.naming` | `date-time`, `original` | `date-time` | How files are named |
-| `cache.limit` | size (`10GiB`) | `10GiB` | Content cache limit |
+| `cache.limit` | size (`10GB`, `500MB`, or binary units: `10GiB`) | `10GB` | Content cache limit. The apps offer 5, 10, 25, 50 and 100 GB, and show any other size as "Custom" |
 | `uploads.enabled` | bool | `true` | Show the Upload folder, and upload what is copied into it (also needs the server's upload permission) |
 | `uploads.folders` | `ask`, `timeline`, `albums` | `ask` | What a folder copied into Upload becomes besides its uploads: asked each time once the copy has settled, the timeline only, or an album of each folder too ("Folders copied into Upload") |
 | `thumbnails.sharp` | bool | `true` | Also seed 1024 px thumbnails from `preview` |
-| `thumbnails.safety_net` | bool | `true` | Refuse thumbnailer reads of originals |
+| `thumbnails.safety_net` | bool | `true` | Refuse thumbnailer reads of originals. In `config.toml` and `configure` only: off, a thumbnailer may download every original it is shown |
 | `web.links` | bool | `true` | Open in Immich and Copy Immich Link in the file managers' menus (Links to Immich); off, the daemon gives no web address and the menus offer Show in *app* alone |
 | `crosslink.enabled` | bool | `true` | Immich Crosslink: show in the file manager what another app links to, and offer Show in *app* (Links to Immich). Off, a link from another app only gets a notification saying so. Labelled "Immich Crosslink" in the apps, in English in every language, with a link to the protocol |
 | `crosslink.hidden` | ids separated by `;` | none | The apps left out of Show in *app*, by desktop entry id (`org.example.Photos.desktop`) or bundle id; the apps show a switch per app found instead |
@@ -631,7 +636,9 @@ A click on the icon shows the menu (`ItemIsMenu`), as the Mac's menu bar item do
 | A browser sign-in waiting for its redirect (KDE app) | `$XDG_RUNTIME_DIR/immich-mount-sign-in`, mode 0600: the server, the state and the PKCE verifier, replaced by the outcome once the redirect arrives, and removed when the app reads it |
 | Dolphin's previews of remote files (KDE app, only when the user turns them on) | `[PreviewSettings] MaximumRemoteSize=104857600` in `~/.config/kdeglobals`; turning them off removes the key |
 | The mount in Dolphin's Places (KDE) | A bookmark for the mount point, titled with the drive's name (`mount.name`), in `~/.local/share/user-places.xbel`: added once by the KDE app's setup, renamed by the daemon as it starts when the name changed (a place the user renamed otherwise keeps its name), removed by `logout` |
-| The resolved home for GVfs, where home is reached through a symlink | `~/.config/systemd/user/gvfs-udisks2-volume-monitor.service.d/immich-mount.conf`, `Environment=HOME=<resolved home>`: written by the daemon as it starts, which then restarts the volume monitor, so Files lists the mount as a drive; removed by `logout` |
+| GVfs's volume monitor's settings, where it is a user service | `~/.config/systemd/user/gvfs-udisks2-volume-monitor.service.d/immich-mount.conf`: `Environment=LIBMOUNT_FSTAB=<the volume monitor's fstab>`, and, where home is reached through a symlink, `Environment=HOME=<resolved home>`; written by the daemon as it starts, which then restarts the volume monitor, so Files lists the mount as a drive, with our icon; removed by `logout` |
+| The volume monitor's fstab | `~/.local/state/immich-mount/gvfs-fstab`: `/etc/fstab` as it was when the daemon started, and, while the mount is up, `immich <resolved mount point> fuse.immich noauto,x-gvfs-show,x-gvfs-name=<drive's name>,x-gvfs-icon=dev.hviid.ImmichMount,x-gvfs-symbolic-icon=dev.hviid.ImmichMount-symbolic 0 0`; written without that line as the daemon starts and once it stops; removed by `logout` |
+| The mount point's folder icon in Files | `metadata::custom-icon-name=dev.hviid.ImmichMount` on the mount point, in gvfsd-metadata's store (`~/.local/share/gvfs-metadata/`), set by the daemon as it starts and once mounted |
 | The mount in Files' sidebar, where GVfs still does not list it (GNOME app) | A line `file://<mount point> <drive's name>` in `~/.config/gtk-3.0/bookmarks`: added once by the GNOME app's setup, renamed by the daemon as it starts when `mount.name` changed (a bookmark the user titled otherwise keeps its title), removed by the daemon once the drive is listed, and by `logout` (with a bookmark of the resolved path) |
 | The sign-in redirect's handler | `x-scheme-handler/app.immich` in `~/.config/mimeapps.list`, set by the app that last started a browser sign-in |
 | Open in Immich in Files, Homebrew's cask | `~/.local/share/nautilus-python/extensions/immich-mount-nautilus.py`, removed with the cask |

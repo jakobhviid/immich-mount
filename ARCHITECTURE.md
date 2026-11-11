@@ -84,8 +84,7 @@ icon style, and is MIT like the rest.
   packages, and both apps may be installed side by side.
 - **Software centres** take the icon from the launcher entry, so the AppStream files name none (with one, the
   validator wants the categories repeated there too).
-- **The Files sidebar** keeps its own drive symbol: it draws mounts with the theme's symbolic icons, whatever the
-  mount supplies.
+- **The drive itself** takes our icons in Files and Dolphin by the ways each offers ("The drive's icon").
 - **Flatpak impact:** a Flatpak exports icons named after its own app ID, `dev.hviid.ImmichMount`, so it ships the
   icon as it is.
 - **On macOS** the drive is the whole icon, in the rounded square macOS 26 expects of an app icon (other shapes are
@@ -119,6 +118,40 @@ icon style, and is MIT like the rest.
   menu bar icons' size, 18 points with a 16-point glyph, rather than a symbol that takes the text's size, which came
   out smaller than its neighbours. Together with the sidebar's outline and the Icon Composer icon, the rounded square
   gives the Mac edition a look of its own on the Mac.
+
+### The drive's icon
+
+The drive shows our icon wherever a file manager lets a mount have one, and each place has its own way (verified in
+Fedora 44 GNOME 50 and Plasma 6.8 VMs, from GLib 2.88, GVfs 1.60, Nautilus 50.4 and KIO 6.31's sources):
+- **Files' sidebar draws only symbolic icons,** and GVfs gives a FUSE mount a fixed one (`drive-removable-media`)
+  unless the mount has a volume. A volume comes from an fstab entry, whose `x-gvfs-symbolic-icon`, `x-gvfs-icon` and
+  `x-gvfs-name` it honours; a mount's own options and `/.xdg-volume-info` (which has no symbolic key) never set the
+  symbol. So the daemon points GVfs's volume monitor, through the drop-in it already writes for that user service, at
+  a private copy of `/etc/fstab` (`LIBMOUNT_FSTAB`, which GLib's libmount reads and watches) and puts the mount's
+  line there while, and only while, it is mounted: an entry left for an unmounted folder would show a volume that
+  cannot mount. It writes the copy without the line as it starts, so none left by a daemon that was killed stays,
+  and leaves the copy alone when another daemon serves the mount. Eject still works (the `umount` the monitor runs is
+  setuid and ignores the variable), and the same line's `x-gvfs-show` lists the mount where home is reached through
+  a symlink as well.
+  - **The cost:** `LIBMOUNT_FSTAB` is libmount's own testing switch, not a promise GVfs makes, and the copy follows
+    `/etc/fstab` only as each daemon starts. Should GVfs stop honouring it, the drive keeps the generic symbol, as
+    before; nothing else depends on it. Only where the volume monitor is a user service, as the drop-in already is.
+  - **Not chosen: a line in `/etc/fstab`,** the same path for GVfs, but written by root for each user, and showing a
+    volume that cannot mount whenever the drive is not mounted.
+  - **Not chosen: `x-gvfs-*` options in the mount table** (`/run/mount/utab`): GVfs reads only `x-gvfs-show` and
+    `x-gvfs-hide` there, and fusermount3 writes them only from fuse3 3.17, into a utab that may not exist.
+  - **Not chosen: a remote volume monitor of our own,** whose volume would shadow the mount: it is installed into
+    `/usr/share/gvfs/remote-volume-monitors` and speaks GVfs's private D-Bus interface.
+- **Files' views** draw the mount point, seen from home, with the folder's custom icon (`metadata::custom-icon-name`,
+  kept by gvfsd-metadata, as Properties' Change Icon sets it), which the daemon sets with `gio` as it starts and once
+  mounted, since GVfs keeps it apart for the folder unmounted and mounted. A user who resets it gets it back at the
+  next start.
+- **Dolphin's Places** draws the place Immich Mount adds with our icon (`bookmark:icon`); KDE's Solid lists no device
+  for `fuse.immich` (it knows sshfs, rclone and a few others), so there is no device entry to give one.
+- **Dolphin's views** draw a folder with the `Icon` of its `.directory`, which the mount serves at its root, but for
+  a remote folder (KDE counts every FUSE mount without a `/dev` source as remote) only with Dolphin's previews of
+  remote folders on (`[PreviewSettings] EnableRemoteFolderThumbnail`). That switch is KDE-wide, and starts previews
+  of every remote folder, the albums inside the mount included, so the app leaves it to the user.
 
 ## Two processes: a daemon and an app
 
@@ -1254,8 +1287,8 @@ What the API does, verified on v3.3.5, all of which the client encodes:
     - **The fix belongs in GVfs** (and GLib's `g_unix_mount_entry_guess_should_display`, which has the same
       comparison): resolving `$HOME` before comparing would list every such mount, and the drop-in would be needed
       no more.
-  - **Its name** comes from `/.xdg-volume-info`. The icon set there only affects full-colour icons; the sidebar keeps
-    the drive symbol.
+  - **Its name** comes from `/.xdg-volume-info`, with its full-colour icon; the sidebar's symbol comes another way
+    ("The drive's icon").
   - **Elsewhere:** a mount under `/run/user` is invisible unless bookmarked.
   - **Eject** really unmounts. The daemon treats that as the user's choice and exits cleanly; the user service is
     not restarted, so the next login, **Mount** on the app's status page or `immich-mount mount` mounts again.
@@ -1303,9 +1336,9 @@ Each platform gets a native app that looks and reads like a first-party app (pri
 - **Not chosen: Relm4.** Less boilerplate, but an extra layer, and not what GNOME's documentation or its own Rust
   apps (Loupe, Snapshot) use.
 - On GNOME: GTK 4 and libadwaita, following the GNOME Human Interface Guidelines:
-  - `AdwApplicationWindow`, `AdwNavigationView`, `AdwStatusPage`
-  - `AdwPreferencesDialog`, `AdwToast`, `AdwAboutDialog` and `AdwShortcutsDialog` (Ctrl+?, which needs
-    libadwaita 1.8, GNOME 49)
+  - `AdwApplicationWindow`, `AdwNavigationView` for the first run, then `AdwNavigationSplitView` for the app's
+    pages, `AdwStatusPage`, `AdwPreferencesPage`
+  - `AdwToast`, `AdwAboutDialog` and `AdwShortcutsDialog` (Ctrl+?, which needs libadwaita 1.8, GNOME 49)
   - adaptive layout, the system's dark style and accent colour
   - symbolic icons, and GNOME's capitalisation rules
 - **Names:** the app says "Immich Mount", and the file manager says "Immich". The interface says "Files", never
@@ -1315,9 +1348,13 @@ Each platform gets a native app that looks and reads like a first-party app (pri
   2. sign-in, offering only the methods the server supports
   3. the sections and the mount location
   4. "Open in Files"
-- **One settings table:** the settings dialog is generated from the core's settings table, the same one behind
-  `immich-mount configure`. The two can never disagree about which settings exist or what values are valid.
-- **Status:** connection, account, server version, mount point, cache usage and uploads in flight.
+- **One settings table:** every setting is in the core's table, the same one behind `immich-mount configure`, so
+  the windows and the command line never disagree about which settings exist or what values are valid. Where each
+  is shown is decided once ("One layout for every settings window").
+- **Signed in, the app is its pages,** in a sidebar: Status, General, Folders, Other Apps and Account.
+  - **Status:** the drive (Open in Files, Unmount or Mount), the connection, cache usage, the mount point and
+    uploads in flight; Sign In Again when signed out.
+  - **Account:** the server and its version, the account, where the credential is kept, and Disconnect.
 - **The About dialog** carries the non-affiliation notice, the links to the website (`jakob.hviid.phd/immich-mount`)
   and the source code, the credits, and the AI disclosure.
 - **Accessibility:** keyboard navigation everywhere, a keyboard-shortcuts dialog, and accessible labels on every
@@ -1354,12 +1391,16 @@ Each platform gets a native app that looks and reads like a first-party app (pri
   Rust/Qt bridge). The object is a thin layer over `immich-mount-desktop`, so the two apps share every step but
   the widgets.
   - **Its pages** follow GNOME's steps in Kirigami's terms: `PlaceholderMessage` for the start, waiting and status
-    pages, `FormLayout` for sign-in, setup and preferences, Preferences and About as layers from the header's menu,
-    and the `org.kde.desktop` style, so it looks like Plasma's own apps.
-  - **Its preferences page** is generated from the same settings table as the GNOME dialog (one `FormLayout` row
-    per setting: a switch, a list or a field), and shares its side effects through `immich-mount-desktop`: each
-    change is written at once, "Mount when the session starts" enables or disables the user service, and the daemon
-    restarts when the page closes if anything it reads changed. A refused value shows the table's message.
+    pages, `FormLayout` for sign-in, setup and the settings, About as a layer from the header's menu, and the
+    `org.kde.desktop` style, so it looks like Plasma's own apps. Signed in, a `GlobalDrawer` is the sidebar of the
+    same pages as GNOME's, open beside them on a wide window and a drawer on a narrow one, as in System Settings, with
+    one page shown at a time.
+  - **Its settings pages** draw the same layout as GNOME's from the backend's rows (a switch, a list, a folder
+    chosen in the system's chooser, a section's switch with its date folders), and share their side effects through
+    `immich-mount-desktop`: each change is written at once, "Mount at Login" enables or disables the user service,
+    and the daemon restarts when the page is left if anything it reads changed. A refused value shows the table's
+    message. The sidebar's entries are written in QML (Kirigami's actions are a list it does not build from a model),
+    with the same ids as the shared layout's pages.
   - **The browser's redirect starts a second process,** because Qt has no single-instance service. The first process
     keeps the waiting sign-in (server, state, PKCE verifier) in `$XDG_RUNTIME_DIR/immich-mount-sign-in`, mode 0600;
     the second claims the attempt by renaming the file away (so a redirect delivered twice is finished once),
@@ -1382,6 +1423,36 @@ Each platform gets a native app that looks and reads like a first-party app (pri
     (`$XDG_RUNTIME_DIR/app/$FLATPAK_ID`), which every instance shares. The previews switch would need write access to
     `xdg-config/kdeglobals`, or would be left out of a Flatpak.
 
+### One layout for every settings window
+
+**The settings have one place each, decided once, and every edition draws the same pages its own way.**
+- **The places:** the core's `settings::PANES` gives each setting of the table its pane: General, Folders, Other
+  Apps, or the command line only. A test fails when a setting is added to the table without a place.
+  `immich-mount-desktop`'s `PAGES` then says how the Linux pages read (the groups, each row's title and line, which
+  setting a section shows with its switch), and a test fails when a page shows a setting its pane does not place
+  there, or leaves one out. The Mac's Settings window is tested against the same places, less what means nothing on
+  a Mac.
+- **On Linux the app is its pages,** Status first, in a sidebar as GNOME Settings and KDE's System Settings have
+  them. The app has no content of its own (the photos are in the file manager), so its settings are not an aside to
+  a main window, as GNOME's Preferences dialog assumes, but most of the app. A sidebar also has room for the pages
+  to come, where a header's view switcher fits two to five. On the Mac, the menu bar menu is the status, and the
+  Settings window has the same panes in its toolbar, as Mac apps have them.
+- **What is out of the windows:** the server (set by signing in), the apps left out of Show in (each app's own
+  switch), the headless credential file, and `thumbnails.safety_net`: off, a thumbnailer may download every original
+  it is shown, gigabytes for icons, and no one could judge that from a switch. It stays in `config.toml` and
+  `immich-mount configure`.
+- **Each setting as the platforms show its kind:** a section's switch and its date folders together (a row that
+  opens while the section is shown, on GNOME; one line, on KDE), a folder in the system's folder chooser, and the
+  cache's size as a choice of 5, 10, 25, 50 and 100 GB, in decimal units, as Files and Dolphin count. A size set by
+  hand in `config.toml` shows as itself.
+  - **Not chosen: a slider** for the cache: snapped to steps it is a list without the list's clarity, and free it
+    gives sizes like 13.7 GB; neither platform's slider shows its value by itself.
+- **The daemon reads its settings as it starts,** so the app restarts it once the user leaves a page where something
+  changed, or closes the window, rather than at each switch.
+- **Not chosen: a Preferences dialog generated from the table** (tried first): one page of eleven groups in the
+  table's order, sections and their date folders apart, the table's descriptions as labels ("Show the Photos
+  section"), and internals beside choices, which grew with every setting added.
+
 ## The tray
 
 The Mac's menu bar item on Linux (DESIGN.md, "The apps' interfaces"): a glance at the connection, and the way to the
@@ -1396,8 +1467,9 @@ drive and the app, without opening a window. **The daemon serves it,** as a Stat
 - **The menu is the Mac's:** the state on its first line, grey lines saying what each is, then Open in Files (or
   Dolphin) and Open Immich Mount. A click shows the menu, as on the Mac (`ItemIsMenu`). Its texts are the Mac's,
   translated once.
-- **The icon** is the symbolic one, the wide drive with the five-segment ring (DESIGN.md, "The icon family"), which
-  both trays recolour to the panel's text.
+- **The icon** is the symbolic one, the drive filling a rounded square with the five-segment ring (DESIGN.md, "The
+  icon family"), which both trays recolour to the panel's text. It fills its square as its neighbours in the top bar
+  do: the wide drive it was drew a third smaller than they did.
 - **Verified** (Fedora 44 VMs, 2026-11-07 and 2026-11-08): in Plasma 6's system tray beside its own icons, the menu
   drawn with its five lines on a click (2.21.17), and both actions (Activate opens the app, Open in Dolphin opens
   Dolphin); in GNOME 50's top bar with the AppIndicator extension, the menu drawn with its five lines, connected to

@@ -275,11 +275,14 @@ The loop for scripts: act, run `immich-mount doctor --json`, decide from the cou
 immich-mount configure list                       # every setting and its effective value
 immich-mount configure set albums.layout year-folders     # Albums/2023/Summer trip/
 immich-mount configure set files.naming original          # IMG_1234.JPG instead of the date and time
-immich-mount configure set cache.limit 20GiB
+immich-mount configure set cache.limit 25GB
 immich-mount configure unset thumbnails.sharp      # back to the default
 ```
 
-The apps' preferences (GNOME's dialog, KDE's page) edit the same settings. The keys are listed in SPEC.md.
+The apps edit the same settings on their pages, in the window's sidebar: **General** (mounting at login, the
+drive's folder and name, the cache's size, sharp thumbnails, updates), **Folders** (each section with its date
+folders, Upload, album and file names) and **Other Apps**. Ctrl+, opens General. A change reaches the mount when you
+leave the page. The keys are listed in SPEC.md; `thumbnails.safety_net` is set here only.
 
 **Updates.** Homebrew updates its install with `brew upgrade`. A package from the download page tells you once when a
 new version is out, with a notification and a line on the tray's menu that opens the page; install the new package
@@ -316,7 +319,7 @@ folders in the drive keep their English names.
   immich-mount configure set uploads.folders albums      # always make the albums; `timeline` never; `ask` asks
   ```
 
-  The apps' preferences have it under Uploads, and the Mac's Settings in the Folders pane. Making albums needs an
+  The apps have it on their Folders page, with Upload, and the Mac's Settings in the Folders pane. Making albums needs an
   API key with `album.read`, `album.create` and `albumAsset.create`; without them a notification says so, and the
   photos stay in the timeline. On the Mac the menu bar app asks, in a dialog, while it runs. Timeline Only changes
   nothing more: the photos are already in Immich (delete one there if it was a mistake). Changed your mind? Copy the
@@ -350,13 +353,13 @@ folder is.
 
 ## 9. Disconnect and uninstall
 
-- `immich-mount logout`, or **Disconnect** in the app, removes:
+- `immich-mount logout`, or **Disconnect** on the app's Account page, removes:
   - the credential (from the keyring or KWallet, or the file)
   - the session on the server, so the device leaves Immich's "Authorized devices"
   - the metadata store and the content cache
   - every thumbnail the daemon seeded
-  - the mount's place in Dolphin's Places, on KDE, and on an atomic desktop the GVfs drop-in, and the mount's
-    bookmark in Files' sidebar where it has one
+  - the mount's place in Dolphin's Places, on KDE; on GNOME the GVfs drop-in and the volume monitor's fstab copy;
+    and the mount's bookmark in Files' sidebar where it has one
 
   It also turns the user service off (Homebrew's too), which would otherwise fail at every login without a
   credential. After the

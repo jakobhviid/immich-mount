@@ -22,7 +22,8 @@ and how it is built; the platforms' own guidelines (GNOME's, KDE's, Apple's) gov
 | Where | What | Source |
 |---|---|---|
 | Linux: launchers, About, the apps' pages, Dolphin's place | The app icon: the wide drive, white face and grey base, the lens with its five-colour ring, the green status light. GNOME's app icon style: an object, with no tile behind it | `packaging/icons/dev.hviid.ImmichMount.svg`, hand-written SVG |
-| Linux: notifications and the tray | The symbolic icon: the wide drive as one solid shape, the ring in five segments, its centre, the face's edge and the light cut out, the Mac menu bar icon's language in Linux's shape. Recoloured to the text by GTK and KDE | `packaging/icons/dev.hviid.ImmichMount-symbolic.svg` (`packaging/icons/make-symbolic.py`) |
+| Linux: the tray, notifications, Files' sidebar and the app's sidebar | The symbolic icon: the Mac menu bar icon's drawing, the drive filling a rounded square as one solid shape, the ring in five segments, its centre, the face's edge and the light cut out, so it fills its square as its neighbours in a top bar do. Recoloured to the text by GTK and KDE | `packaging/icons/dev.hviid.ImmichMount-symbolic.svg` (`packaging/icons/make-symbolic.py`) |
+| Linux: the drive in Files and Dolphin | The app icon on the mount point's folder (Files' Home view; Dolphin's with remote folder previews on), the symbolic one in Files' sidebar, the app icon on Dolphin's place | ARCHITECTURE.md, "The drive's icon" |
 | Mac: Dock, Finder, System Settings, About | The app icon: the drive filling Apple's rounded square. On macOS 26 and later an Icon Composer document, with the light, dark, tinted and clear appearances and a glass lens | `apple/App/AppIcon.icon` (`apple/make-icon-composer.py`); `AppIcon.appiconset` for macOS 14 and 15 |
 | Mac: the menu bar | One solid shape, the ring, its centre, the face's edge and the light cut out, as menu bar icons are drawn | `MenuBarIcon.imageset` (`apple/make-menu-bar-icon.py`) |
 | Mac: Finder's sidebar | The app icon in outline | `SidebarSymbol.symbolset` (`apple/make-symbol.py --square`) |
@@ -148,10 +149,13 @@ What the Mac edition taught, for every edition (ARCHITECTURE.md, "The desktop ap
 - **A window for what needs doing,** not a dashboard: signing in, then switching the location on, then it closes.
 - **Status where it can be glanced at:** on the Mac the menu bar menu, its first line the state and then grey
   lines, each saying what it is ("Server version: ...", "Signed in as: ..."). On Linux the same menu from the tray
-  icon, where the desktop has a tray (ARCHITECTURE.md, "The tray"), and the app's status page.
-- **Settings in the platform's own preferences window,** in panes where the platform's settings windows have them
-  (the Mac: General, Folders, Account), with an account pane where the platform's sync apps have one, generated from
-  the core's settings table, showing only what means something on that platform.
+  icon, where the desktop has a tray (ARCHITECTURE.md, "The tray"), and the app's Status page.
+- **The same pages on every platform, in its own frame** (ARCHITECTURE.md, "One layout for every settings window"):
+  General, Folders, Other Apps and Account. On the Mac in the Settings window's toolbar; on Linux the app's window
+  is its pages, Status first, in a sidebar as GNOME Settings and KDE's System Settings have them. Each page shows
+  only what means something on that platform, with short titles ("Photos", "Cache Size"), a line under a row where
+  its title says too little, and each kind of setting as the platform shows it: a section's switch with its date
+  folders, a folder from the system's chooser, a size from a list.
 - **Destructive actions ask first,** in the platform's own alert, with its destructive button style.
 - **Windows come forward the platform's way:** on the Mac, where macOS refuses a menu bar app's activation, they
   float above other apps' windows until used.
