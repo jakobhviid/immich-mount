@@ -99,7 +99,7 @@ msgid "The Immich server cannot be reached. Files you opened before stay availab
 msgstr "Không thể kết nối máy chủ Immich. Các tập tin đã mở trước đó vẫn dùng được."
 
 #: crates/immich-mount-linux/src/daemon.rs:431
-#: crates/immich-mount-linux/src/tray.rs:70
+#: crates/immich-mount-linux/src/tray.rs:82
 msgid "Signed out of Immich"
 msgstr "Đã đăng xuất khỏi Immich"
 
@@ -211,48 +211,66 @@ msgstr "Việc tải lên mất quá nhiều thời gian. Tập tin được gi�
 msgid "Immich takes photos and videos only."
 msgstr "Immich chỉ nhận ảnh và video."
 
-#: crates/immich-mount-linux/src/tray.rs:68
+#: crates/immich-mount-linux/src/tray.rs:80
 #: apple/App/ImmichMountApp.swift:665
 msgid "Connected to {server}"
 msgstr "Đã kết nối tới {server}"
 
-#: crates/immich-mount-linux/src/tray.rs:69
+#: crates/immich-mount-linux/src/tray.rs:81
 #: apple/App/ImmichMountApp.swift:665
 msgid "{server} is not reachable"
 msgstr "Không thể kết nối tới {server}"
 
-#: crates/immich-mount-linux/src/tray.rs:71
+#: crates/immich-mount-linux/src/tray.rs:83
 #: apple/App/ImmichMountApp.swift:664
 msgid "Signed in to {server}"
 msgstr "Đã đăng nhập vào {server}"
 
-#: crates/immich-mount-linux/src/tray.rs:79
+#: crates/immich-mount-linux/src/tray.rs:91
 #: apple/App/ImmichMountApp.swift:673
 msgid "Server version: Immich {version}"
 msgstr "Phiên bản máy chủ: Immich {version}"
 
-#: crates/immich-mount-linux/src/tray.rs:82
+#: crates/immich-mount-linux/src/tray.rs:94
 #: apple/App/ImmichMountApp.swift:676
 msgid "Signed in as: {account}"
 msgstr "Đăng nhập với tư cách: {account}"
 
-#: crates/immich-mount-linux/src/tray.rs:85
-#: crates/immich-mount-kde/qml/Main.qml:609
-#: crates/immich-mount-kde/qml/Main.qml:630
+#: crates/immich-mount-linux/src/tray.rs:97
+#: crates/immich-mount-kde/qml/Main.qml:646
+#: crates/immich-mount-kde/qml/Main.qml:667
 msgid "Open in Dolphin"
 msgstr "Mở trong Dolphin"
 
-#: crates/immich-mount-linux/src/tray.rs:85
+#: crates/immich-mount-linux/src/tray.rs:97
 msgid "Open in Files"
 msgstr "Mở trong Tập tin"
 
-#: crates/immich-mount-linux/src/tray.rs:87
+#: crates/immich-mount-linux/src/tray.rs:99
+#: apple/App/ImmichMountApp.swift:54
+#: apple/App/ImmichMountApp.swift:481
+msgid "Settings…"
+msgstr "Cài đặt…"
+
+#: crates/immich-mount-linux/src/tray.rs:100
 msgid "Open Immich Mount"
 msgstr "Mở Immich Mount"
 
-#: crates/immich-mount-linux/src/tray.rs:90
+#: crates/immich-mount-linux/src/tray.rs:103
 msgid "Get Immich Mount {version}…"
 msgstr "Tải Immich Mount {version}…"
+
+#: crates/immich-mount-linux/src/tray.rs:106
+#: crates/immich-mount-kde/qml/Main.qml:396
+#: apple/App/ImmichMountApp.swift:486
+#: apple/App/SettingsView.swift:408
+msgid "Sign Out…"
+msgstr "Đăng xuất…"
+
+#: crates/immich-mount-linux/src/tray.rs:107
+#: apple/App/ImmichMountApp.swift:491
+msgid "Quit Immich Mount"
+msgstr "Thoát Immich Mount"
 
 #: crates/immich-mount-linux/src/updates.rs:53
 msgid "Immich Mount {version} is available"
@@ -290,7 +308,7 @@ msgstr "Hiện ảnh, album, người và địa điểm trong các ứng dụng
 #: crates/immich-mount-desktop/src/preferences.rs:56
 #: crates/immich-mount-gnome/src/window.blp:174
 #: crates/immich-mount-gnome/src/window.blp:331
-#: crates/immich-mount-kde/qml/Main.qml:597
+#: crates/immich-mount-kde/qml/Main.qml:634
 msgid "Location"
 msgstr "Vị trí"
 
@@ -427,22 +445,22 @@ msgid "Signed in, but the mount did not start: {error}"
 msgstr "Đã đăng nhập, nhưng việc gắn kết không bắt đầu: {error}"
 
 #: crates/immich-mount-desktop/src/preferences.rs:48
-#: crates/immich-mount-kde/qml/Main.qml:48
-#: crates/immich-mount-kde/qml/Main.qml:124
+#: crates/immich-mount-kde/qml/Main.qml:92
+#: crates/immich-mount-kde/qml/Main.qml:168
 #: apple/App/SettingsView.swift:14
 msgid "General"
 msgstr "Cài đặt chung"
 
 #: crates/immich-mount-desktop/src/preferences.rs:81
-#: crates/immich-mount-kde/qml/Main.qml:49
-#: crates/immich-mount-kde/qml/Main.qml:124
+#: crates/immich-mount-kde/qml/Main.qml:93
+#: crates/immich-mount-kde/qml/Main.qml:168
 #: apple/App/SettingsView.swift:15
 msgid "Folders"
 msgstr "Thư mục"
 
 #: crates/immich-mount-desktop/src/preferences.rs:109
-#: crates/immich-mount-kde/qml/Main.qml:50
-#: crates/immich-mount-kde/qml/Main.qml:124
+#: crates/immich-mount-kde/qml/Main.qml:94
+#: crates/immich-mount-kde/qml/Main.qml:168
 #: apple/App/SettingsView.swift:16
 msgid "Other Apps"
 msgstr "Ứng dụng khác"
@@ -473,7 +491,7 @@ msgstr "Báo cho tôi khi có phiên bản mới."
 
 #: crates/immich-mount-desktop/src/preferences.rs:85
 #: crates/immich-mount-gnome/src/window.blp:144
-#: crates/immich-mount-kde/qml/Main.qml:590
+#: crates/immich-mount-kde/qml/Main.qml:627
 #: apple/App/SettingsView.swift:315
 msgid "Sections"
 msgstr "Các phần"
@@ -505,95 +523,95 @@ msgstr "Ứng dụng web Immich"
 msgid "Mount at Login"
 msgstr "Gắn kết khi đăng nhập"
 
-#: crates/immich-mount-gnome/src/main.rs:106
+#: crates/immich-mount-gnome/src/main.rs:112
 msgid "Your Immich photos and videos as a drive in Files."
 msgstr "Ảnh và video Immich của bạn dưới dạng ổ đĩa trong Tập tin."
 
-#: crates/immich-mount-gnome/src/main.rs:110
+#: crates/immich-mount-gnome/src/main.rs:116
 msgid "Source Code"
 msgstr "Mã nguồn"
 
-#: crates/immich-mount-gnome/src/main.rs:111
+#: crates/immich-mount-gnome/src/main.rs:117
 msgid "Inspired By"
 msgstr "Lấy cảm hứng từ"
 
-#: crates/immich-mount-gnome/src/main.rs:112
+#: crates/immich-mount-gnome/src/main.rs:118
 msgid "The Immich API Layer"
 msgstr "Lớp API Immich"
 
-#: crates/immich-mount-gnome/src/main.rs:114
+#: crates/immich-mount-gnome/src/main.rs:120
 msgid "AI Disclosure"
 msgstr "Sử dụng AI"
 
-#: crates/immich-mount-gnome/src/main.rs:118
-#: crates/immich-mount-kde/qml/Main.qml:406
+#: crates/immich-mount-gnome/src/main.rs:124
+#: crates/immich-mount-kde/qml/Main.qml:441
 #: apple/App/ImmichMountApp.swift:521
 msgid "Parts of this project were written with the assistance of AI coding agents. All changes are reviewed by the maintainer."
 msgstr "Một số phần của dự án này được viết với sự hỗ trợ của các tác nhân lập trình AI. Mọi thay đổi đều được người bảo trì xem xét."
 
-#: crates/immich-mount-gnome/src/main.rs:81
+#: crates/immich-mount-gnome/src/main.rs:87
 msgid "Preferences"
 msgstr "Tùy thích"
 
-#: crates/immich-mount-gnome/src/main.rs:82
+#: crates/immich-mount-gnome/src/main.rs:88
 msgid "Keyboard Shortcuts"
 msgstr "Phím tắt"
 
-#: crates/immich-mount-gnome/src/main.rs:83
+#: crates/immich-mount-gnome/src/main.rs:89
 msgid "Quit"
 msgstr "Thoát"
 
-#: crates/immich-mount-gnome/src/preferences.rs:149
-#: crates/immich-mount-gnome/src/preferences.rs:153
+#: crates/immich-mount-gnome/src/preferences.rs:189
+#: crates/immich-mount-gnome/src/preferences.rs:193
 msgid "Choose a Folder"
 msgstr "Chọn thư mục"
 
-#: crates/immich-mount-gnome/src/preferences.rs:184
-#: crates/immich-mount-kde/qml/Main.qml:197
+#: crates/immich-mount-gnome/src/preferences.rs:224
+#: crates/immich-mount-kde/qml/Main.qml:241
 msgid "Learn More"
 msgstr "Tìm hiểu thêm"
 
-#: crates/immich-mount-gnome/src/preferences.rs:219
-#: crates/immich-mount-kde/qml/Main.qml:233
+#: crates/immich-mount-gnome/src/preferences.rs:259
+#: crates/immich-mount-kde/qml/Main.qml:277
 #: apple/App/SettingsView.swift:244
 msgid "Not found"
 msgstr "Không tìm thấy"
 
-#: crates/immich-mount-gnome/src/preferences.rs:220
-#: crates/immich-mount-kde/qml/Main.qml:239
+#: crates/immich-mount-gnome/src/preferences.rs:260
+#: crates/immich-mount-kde/qml/Main.qml:283
 #: apple/App/SettingsView.swift:232
 msgid "Forget"
 msgstr "Quên"
 
-#: crates/immich-mount-gnome/src/preferences.rs:247
-#: crates/immich-mount-kde/src/backend.rs:474
+#: crates/immich-mount-gnome/src/preferences.rs:287
+#: crates/immich-mount-kde/src/backend.rs:487
 #: apple/App/CrosslinkApps.swift:160
 #: apple/App/SettingsView.swift:225
 msgid "No other app that takes part is installed."
 msgstr "Không có ứng dụng tham gia nào khác được cài đặt."
 
-#: crates/immich-mount-gnome/src/preferences.rs:248
-#: crates/immich-mount-kde/src/backend.rs:476
+#: crates/immich-mount-gnome/src/preferences.rs:288
+#: crates/immich-mount-kde/src/backend.rs:489
 msgid "Find Apps That Take Part"
 msgstr "Tìm ứng dụng tham gia"
 
 #: crates/immich-mount-gnome/src/window.rs:215
 #: crates/immich-mount-gnome/src/window.blp:237
-#: crates/immich-mount-kde/qml/Main.qml:47
-#: crates/immich-mount-kde/qml/Main.qml:440
+#: crates/immich-mount-kde/qml/Main.qml:91
+#: crates/immich-mount-kde/qml/Main.qml:477
 msgid "Status"
 msgstr "Trạng thái"
 
 #: crates/immich-mount-gnome/src/window.rs:217
 #: crates/immich-mount-gnome/src/window.blp:366
-#: crates/immich-mount-kde/qml/Main.qml:51
-#: crates/immich-mount-kde/qml/Main.qml:338
+#: crates/immich-mount-kde/qml/Main.qml:95
+#: crates/immich-mount-kde/qml/Main.qml:386
 #: apple/App/SettingsView.swift:17
 msgid "Account"
 msgstr "Tài khoản"
 
 #: crates/immich-mount-gnome/src/window.rs:309
-#: crates/immich-mount-kde/qml/Main.qml:547
+#: crates/immich-mount-kde/qml/Main.qml:584
 msgid "Continue in your browser"
 msgstr "Tiếp tục trong trình duyệt"
 
@@ -618,12 +636,12 @@ msgid "Signed in, but the status could not be read"
 msgstr "Đã đăng nhập, nhưng không thể đọc trạng thái"
 
 #: crates/immich-mount-gnome/src/window.rs:467
-#: crates/immich-mount-kde/qml/Main.qml:624
+#: crates/immich-mount-kde/qml/Main.qml:661
 msgid "Signed Out of Immich"
 msgstr "Đã đăng xuất khỏi Immich"
 
 #: crates/immich-mount-gnome/src/window.rs:467
-#: crates/immich-mount-kde/qml/Main.qml:625
+#: crates/immich-mount-kde/qml/Main.qml:662
 msgid "Sign in again to keep browsing. Your caches are kept."
 msgstr "Hãy đăng nhập lại để tiếp tục duyệt. Bộ nhớ đệm của bạn vẫn được giữ."
 
@@ -633,12 +651,12 @@ msgid "Your Library Is in Files"
 msgstr "Thư viện của bạn ở trong Tập tin"
 
 #: crates/immich-mount-gnome/src/window.rs:468
-#: crates/immich-mount-kde/qml/Main.qml:626
+#: crates/immich-mount-kde/qml/Main.qml:663
 msgid "Browse it like any folder. Originals download only when you open them."
 msgstr "Duyệt như mọi thư mục khác. Bản gốc chỉ được tải xuống khi bạn mở chúng."
 
 #: crates/immich-mount-gnome/src/window.rs:469
-#: crates/immich-mount-kde/qml/Main.qml:624
+#: crates/immich-mount-kde/qml/Main.qml:661
 msgid "Not Mounted"
 msgstr "Chưa gắn kết"
 
@@ -646,9 +664,33 @@ msgstr "Chưa gắn kết"
 msgid "Mount it to browse your library in Files."
 msgstr "Hãy gắn kết ổ đĩa để duyệt thư viện trong Tập tin."
 
-#: crates/immich-mount-gnome/src/window.rs:559
-msgid "Disconnected"
-msgstr "Đã ngắt kết nối"
+#: crates/immich-mount-gnome/src/window.rs:566
+#: crates/immich-mount-kde/qml/Main.qml:59
+#: apple/App/ImmichMountApp.swift:218
+msgid "Sign out of Immich Mount?"
+msgstr "Đăng xuất khỏi Immich Mount?"
+
+#: crates/immich-mount-gnome/src/window.rs:567
+msgid "Immich Mount leaves Files, together with the photos and videos downloaded to this computer. Your library on the server stays as it is."
+msgstr "Immich Mount sẽ rời khỏi Tập tin, cùng với ảnh và video đã tải xuống máy tính này. Thư viện của bạn trên máy chủ vẫn giữ nguyên."
+
+#: crates/immich-mount-gnome/src/window.rs:569
+#: crates/immich-mount-kde/qml/Main.qml:73
+#: apple/App/CrosslinkApps.swift:198
+#: apple/App/CrosslinkApps.swift:213
+#: apple/App/ImmichMountApp.swift:226
+msgid "Cancel"
+msgstr "Hủy"
+
+#: crates/immich-mount-gnome/src/window.rs:569
+#: crates/immich-mount-kde/qml/Main.qml:64
+#: apple/App/ImmichMountApp.swift:225
+msgid "Sign Out"
+msgstr "Đăng xuất"
+
+#: crates/immich-mount-gnome/src/window.rs:583
+msgid "Signed out"
+msgstr "Đã đăng xuất"
 
 #: crates/immich-mount-gnome/src/window.blp:26
 #: crates/immich-mount-gnome/src/window.blp:216
@@ -660,7 +702,7 @@ msgid "Your Immich Library in Files"
 msgstr "Thư viện Immich của bạn trong Tập tin"
 
 #: crates/immich-mount-gnome/src/window.blp:34
-#: crates/immich-mount-kde/qml/Main.qml:463
+#: crates/immich-mount-kde/qml/Main.qml:500
 msgid "Browse your photos and videos as a drive. Originals download only when you open them."
 msgstr "Duyệt ảnh và video của bạn như một ổ đĩa. Bản gốc chỉ được tải xuống khi bạn mở chúng."
 
@@ -673,15 +715,15 @@ msgid "_Continue"
 msgstr "_Tiếp tục"
 
 #: crates/immich-mount-gnome/src/window.blp:70
-#: crates/immich-mount-kde/qml/Main.qml:437
-#: crates/immich-mount-kde/qml/Main.qml:521
+#: crates/immich-mount-kde/qml/Main.qml:474
+#: crates/immich-mount-kde/qml/Main.qml:558
 #: apple/App/ContentView.swift:143
 #: apple/App/ContentView.swift:147
 msgid "Sign In"
 msgstr "Đăng nhập"
 
 #: crates/immich-mount-gnome/src/window.blp:78
-#: crates/immich-mount-kde/qml/Main.qml:502
+#: crates/immich-mount-kde/qml/Main.qml:539
 msgid "Opens your browser, where you sign in as usual, with a passkey or a password manager."
 msgstr "Mở trình duyệt, nơi bạn đăng nhập như thường lệ, bằng khóa truy cập hoặc trình quản lý mật khẩu."
 
@@ -694,12 +736,12 @@ msgid "For two-factor sign-in, use your server's single sign-on instead."
 msgstr "Nếu dùng xác thực hai yếu tố, hãy đăng nhập bằng tính năng đăng nhập một lần của máy chủ."
 
 #: crates/immich-mount-gnome/src/window.blp:96
-#: crates/immich-mount-kde/qml/Main.qml:511
+#: crates/immich-mount-kde/qml/Main.qml:548
 msgid "Email"
 msgstr "Email"
 
 #: crates/immich-mount-gnome/src/window.blp:101
-#: crates/immich-mount-kde/qml/Main.qml:515
+#: crates/immich-mount-kde/qml/Main.qml:552
 msgid "Password"
 msgstr "Mật khẩu"
 
@@ -732,7 +774,7 @@ msgid "The folders the drive shows. You can change this later in Preferences."
 msgstr "Các thư mục mà ổ đĩa hiển thị. Bạn có thể thay đổi sau trong Tùy thích."
 
 #: crates/immich-mount-gnome/src/window.blp:177
-#: crates/immich-mount-kde/qml/Main.qml:600
+#: crates/immich-mount-kde/qml/Main.qml:637
 msgid "Folder"
 msgstr "Thư mục"
 
@@ -777,19 +819,15 @@ msgstr "Máy chủ"
 msgid "Credential"
 msgstr "Thông tin đăng nhập"
 
-#: crates/immich-mount-gnome/src/window.blp:384
-msgid "Disconnecting signs out and takes the drive out of Files. Your library on the server stays as it is."
-msgstr "Ngắt kết nối sẽ đăng xuất và đưa ổ đĩa ra khỏi Tập tin. Thư viện của bạn trên máy chủ vẫn giữ nguyên."
+#: crates/immich-mount-gnome/src/window.blp:385
+msgid "Sign _Out…"
+msgstr "Đăng _xuất…"
 
-#: crates/immich-mount-gnome/src/window.blp:387
-msgid "_Disconnect"
-msgstr "_Ngắt kết nối"
-
-#: crates/immich-mount-gnome/src/window.blp:418
+#: crates/immich-mount-gnome/src/window.blp:416
 msgid "_Keyboard Shortcuts"
 msgstr "_Phím tắt"
 
-#: crates/immich-mount-gnome/src/window.blp:423
+#: crates/immich-mount-gnome/src/window.blp:421
 msgid "_About Immich Mount"
 msgstr "_Giới thiệu Immich Mount"
 
@@ -825,205 +863,201 @@ msgstr "{app} không còn được cài đặt."
 msgid "Immich Mount could not open {app}: {error}"
 msgstr "Immich Mount không thể mở {app}: {error}"
 
-#: crates/immich-mount-kde/qml/Main.qml:54
-#: crates/immich-mount-kde/qml/Main.qml:374
-#: crates/immich-mount-kde/qml/Main.qml:429
+#: crates/immich-mount-kde/qml/Main.qml:60
+msgid "Immich Mount leaves Dolphin, together with the photos and videos downloaded to this computer. Your library on the server stays as it is."
+msgstr "Immich Mount sẽ rời khỏi Dolphin, cùng với ảnh và video đã tải xuống máy tính này. Thư viện của bạn trên máy chủ vẫn giữ nguyên."
+
+#: crates/immich-mount-kde/qml/Main.qml:98
+#: crates/immich-mount-kde/qml/Main.qml:409
+#: crates/immich-mount-kde/qml/Main.qml:464
 msgid "About"
 msgstr "Giới thiệu"
 
-#: crates/immich-mount-kde/qml/Main.qml:104
+#: crates/immich-mount-kde/qml/Main.qml:148
 msgid "Show thumbnails"
 msgstr "Hiện ảnh thu nhỏ"
 
-#: crates/immich-mount-kde/qml/Main.qml:113
+#: crates/immich-mount-kde/qml/Main.qml:157
 msgid "Lets Dolphin preview files up to 100 MB on remote locations, this drive included. Thumbnails come from the server; no original is downloaded."
 msgstr "Cho phép Dolphin xem trước các tập tin tới 100 MB ở vị trí từ xa, kể cả ổ đĩa này. Ảnh thu nhỏ đến từ máy chủ; không bản gốc nào bị tải xuống."
 
-#: crates/immich-mount-kde/qml/Main.qml:276
+#: crates/immich-mount-kde/qml/Main.qml:324
 msgid "Choose…"
 msgstr "Chọn…"
 
-#: crates/immich-mount-kde/qml/Main.qml:342
+#: crates/immich-mount-kde/qml/Main.qml:390
 #: apple/App/ContentView.swift:107
 msgid "Server:"
 msgstr "Máy chủ:"
 
-#: crates/immich-mount-kde/qml/Main.qml:343
+#: crates/immich-mount-kde/qml/Main.qml:391
 msgid "Account:"
 msgstr "Tài khoản:"
 
-#: crates/immich-mount-kde/qml/Main.qml:344
+#: crates/immich-mount-kde/qml/Main.qml:392
 msgid "Credential:"
 msgstr "Thông tin đăng nhập:"
 
-#: crates/immich-mount-kde/qml/Main.qml:348
-msgid "Disconnect"
-msgstr "Ngắt kết nối"
-
-#: crates/immich-mount-kde/qml/Main.qml:364
-msgid "Disconnecting signs out and takes the drive out of Dolphin. Your library on the server stays as it is."
-msgstr "Ngắt kết nối sẽ đăng xuất và đưa ổ đĩa ra khỏi Dolphin. Thư viện của bạn trên máy chủ vẫn giữ nguyên."
-
-#: crates/immich-mount-kde/qml/Main.qml:386
+#: crates/immich-mount-kde/qml/Main.qml:421
 msgid "Your Immich photos and videos as a drive in Dolphin. By Jakob Hviid, under the MIT license."
 msgstr "Ảnh và video Immich của bạn dưới dạng ổ đĩa trong Dolphin. Tác giả: Jakob Hviid, theo giấy phép MIT."
 
-#: crates/immich-mount-kde/qml/Main.qml:391
+#: crates/immich-mount-kde/qml/Main.qml:426
 #: apple/App/Info.plist (NSHumanReadableCopyright)
 msgid "Immich Mount is an independent, unofficial project. It is not affiliated with, endorsed by, or sponsored by the Immich project or FUTO. “Immich” is used only to describe the server this software works with, and remains the mark of its owner."
 msgstr "Immich Mount là một dự án độc lập, không chính thức. Dự án không liên kết với, không được chứng thực hay tài trợ bởi dự án Immich hoặc FUTO. “Immich” chỉ được dùng để chỉ máy chủ mà phần mềm này làm việc cùng, và vẫn là nhãn hiệu của chủ sở hữu."
 
-#: crates/immich-mount-kde/qml/Main.qml:393
+#: crates/immich-mount-kde/qml/Main.qml:428
 msgid "Credits"
 msgstr "Ghi nhận"
 
-#: crates/immich-mount-kde/qml/Main.qml:399
+#: crates/immich-mount-kde/qml/Main.qml:434
 msgid "Inspired by {project}"
 msgstr "Lấy cảm hứng từ {project}"
 
-#: crates/immich-mount-kde/qml/Main.qml:400
+#: crates/immich-mount-kde/qml/Main.qml:435
 msgid "The Immich API layer: {project}"
 msgstr "Lớp API Immich: {project}"
 
-#: crates/immich-mount-kde/qml/Main.qml:402
+#: crates/immich-mount-kde/qml/Main.qml:437
 #: apple/App/ImmichMountApp.swift:520
 msgid "AI disclosure"
 msgstr "Sử dụng AI"
 
-#: crates/immich-mount-kde/qml/Main.qml:411
+#: crates/immich-mount-kde/qml/Main.qml:446
 msgid "Website: {link}"
 msgstr "Trang web: {link}"
 
-#: crates/immich-mount-kde/qml/Main.qml:412
+#: crates/immich-mount-kde/qml/Main.qml:447
 msgid "Source code: {link}"
 msgstr "Mã nguồn: {link}"
 
-#: crates/immich-mount-kde/qml/Main.qml:422
+#: crates/immich-mount-kde/qml/Main.qml:457
 #: apple/App/ContentView.swift:125
 msgid "Back"
 msgstr "Quay lại"
 
-#: crates/immich-mount-kde/qml/Main.qml:436
+#: crates/immich-mount-kde/qml/Main.qml:473
 msgid "Connect"
 msgstr "Kết nối máy chủ"
 
-#: crates/immich-mount-kde/qml/Main.qml:438
+#: crates/immich-mount-kde/qml/Main.qml:475
 msgid "Continue in Your Browser"
 msgstr "Tiếp tục trong trình duyệt"
 
-#: crates/immich-mount-kde/qml/Main.qml:439
+#: crates/immich-mount-kde/qml/Main.qml:476
 msgid "Your Library in Dolphin"
 msgstr "Thư viện của bạn trong Dolphin"
 
-#: crates/immich-mount-kde/qml/Main.qml:462
+#: crates/immich-mount-kde/qml/Main.qml:499
 msgid "Your Immich Library in Dolphin"
 msgstr "Thư viện Immich của bạn trong Dolphin"
 
-#: crates/immich-mount-kde/qml/Main.qml:469
+#: crates/immich-mount-kde/qml/Main.qml:506
 msgid "Server address:"
 msgstr "Địa chỉ máy chủ:"
 
-#: crates/immich-mount-kde/qml/Main.qml:470
+#: crates/immich-mount-kde/qml/Main.qml:507
 msgid "Server address"
 msgstr "Địa chỉ máy chủ"
 
-#: crates/immich-mount-kde/qml/Main.qml:478
+#: crates/immich-mount-kde/qml/Main.qml:515
 #: apple/App/ContentView.swift:139
 msgid "Continue"
 msgstr "Tiếp tục"
 
-#: crates/immich-mount-kde/qml/Main.qml:508
+#: crates/immich-mount-kde/qml/Main.qml:545
 msgid "Email and password"
 msgstr "Email và mật khẩu"
 
-#: crates/immich-mount-kde/qml/Main.qml:511
+#: crates/immich-mount-kde/qml/Main.qml:548
 #: apple/App/ContentView.swift:101
 msgid "Email:"
 msgstr "Email:"
 
-#: crates/immich-mount-kde/qml/Main.qml:514
+#: crates/immich-mount-kde/qml/Main.qml:551
 #: apple/App/ContentView.swift:102
 msgid "Password:"
 msgstr "Mật khẩu:"
 
-#: crates/immich-mount-kde/qml/Main.qml:526
-#: crates/immich-mount-kde/qml/Main.qml:530
+#: crates/immich-mount-kde/qml/Main.qml:563
+#: crates/immich-mount-kde/qml/Main.qml:567
 msgid "API key"
 msgstr "Khóa API"
 
-#: crates/immich-mount-kde/qml/Main.qml:529
+#: crates/immich-mount-kde/qml/Main.qml:566
 msgid "Key:"
 msgstr "Khóa:"
 
-#: crates/immich-mount-kde/qml/Main.qml:535
+#: crates/immich-mount-kde/qml/Main.qml:572
 msgid "Sign In With Key"
 msgstr "Đăng nhập bằng khóa"
 
-#: crates/immich-mount-kde/qml/Main.qml:548
+#: crates/immich-mount-kde/qml/Main.qml:585
 msgid "Sign in there. When your browser asks to open Immich Mount, allow it."
 msgstr "Hãy đăng nhập ở đó. Khi trình duyệt hỏi có mở Immich Mount không, hãy cho phép."
 
-#: crates/immich-mount-kde/qml/Main.qml:551
+#: crates/immich-mount-kde/qml/Main.qml:588
 msgid "Open the Sign-In Page Again"
 msgstr "Mở lại trang đăng nhập"
 
-#: crates/immich-mount-kde/qml/Main.qml:562
+#: crates/immich-mount-kde/qml/Main.qml:599
 msgid "No browser could be opened. Open this address in one:"
 msgstr "Không mở được trình duyệt nào. Hãy mở địa chỉ này trong một trình duyệt:"
 
-#: crates/immich-mount-kde/qml/Main.qml:569
+#: crates/immich-mount-kde/qml/Main.qml:606
 msgid "Sign-in address"
 msgstr "Địa chỉ đăng nhập"
 
-#: crates/immich-mount-kde/qml/Main.qml:599
+#: crates/immich-mount-kde/qml/Main.qml:636
 msgid "Folder:"
 msgstr "Thư mục:"
 
-#: crates/immich-mount-kde/qml/Main.qml:604
+#: crates/immich-mount-kde/qml/Main.qml:641
 msgid "Dolphin"
 msgstr "Dolphin"
 
-#: crates/immich-mount-kde/qml/Main.qml:624
+#: crates/immich-mount-kde/qml/Main.qml:661
 msgid "Your Library Is in Dolphin"
 msgstr "Thư viện của bạn ở trong Dolphin"
 
-#: crates/immich-mount-kde/qml/Main.qml:627
+#: crates/immich-mount-kde/qml/Main.qml:664
 msgid "Mount it to browse your library in Dolphin."
 msgstr "Hãy gắn kết ổ đĩa để duyệt thư viện trong Dolphin."
 
-#: crates/immich-mount-kde/qml/Main.qml:630
+#: crates/immich-mount-kde/qml/Main.qml:667
 msgid "Sign In Again"
 msgstr "Đăng nhập lại"
 
-#: crates/immich-mount-kde/qml/Main.qml:630
+#: crates/immich-mount-kde/qml/Main.qml:667
 msgid "Mount"
 msgstr "Gắn kết"
 
-#: crates/immich-mount-kde/qml/Main.qml:638
+#: crates/immich-mount-kde/qml/Main.qml:675
 msgid "Connection:"
 msgstr "Kết nối:"
 
-#: crates/immich-mount-kde/qml/Main.qml:639
+#: crates/immich-mount-kde/qml/Main.qml:676
 msgid "Cache:"
 msgstr "Bộ nhớ đệm:"
 
-#: crates/immich-mount-kde/qml/Main.qml:640
+#: crates/immich-mount-kde/qml/Main.qml:677
 msgid "Location:"
 msgstr "Vị trí:"
 
-#: crates/immich-mount-kde/qml/Main.qml:641
+#: crates/immich-mount-kde/qml/Main.qml:678
 msgid "Uploading:"
 msgstr "Đang tải lên:"
 
-#: crates/immich-mount-kde/qml/Main.qml:642
+#: crates/immich-mount-kde/qml/Main.qml:679
 msgid "Dolphin:"
 msgstr "Dolphin:"
 
-#: crates/immich-mount-kde/qml/Main.qml:647
+#: crates/immich-mount-kde/qml/Main.qml:684
 msgid "Unmount"
 msgstr "Bỏ gắn kết"
 
-#: crates/immich-mount-kde/qml/Main.qml:660
+#: crates/immich-mount-kde/qml/Main.qml:697
 msgid "Immich Mount is an independent, unofficial project. It is not affiliated with, endorsed by, or sponsored by the Immich project or FUTO."
 msgstr "Immich Mount là một dự án độc lập, không chính thức. Dự án không liên kết với, không được chứng thực hay tài trợ bởi dự án Immich hoặc FUTO."
 
@@ -1236,16 +1270,6 @@ msgstr "Chọn một ứng dụng để hiện “{item}”."
 msgid "Show"
 msgstr "Hiện"
 
-#: apple/App/CrosslinkApps.swift:198
-#: apple/App/CrosslinkApps.swift:213
-#: apple/App/ImmichMountApp.swift:226
-msgid "Cancel"
-msgstr "Hủy"
-
-#: apple/App/ImmichMountApp.swift:218
-msgid "Sign out of Immich Mount?"
-msgstr "Đăng xuất khỏi Immich Mount?"
-
 #: apple/App/ImmichMountApp.swift:219
 msgid "Immich Mount leaves Finder, together with the photos and videos downloaded to this Mac. Your library on the server stays as it is."
 msgstr "Immich Mount sẽ rời khỏi Finder, cùng với ảnh và video đã tải xuống máy Mac này. Thư viện của bạn trên máy chủ vẫn giữ nguyên."
@@ -1253,10 +1277,6 @@ msgstr "Immich Mount sẽ rời khỏi Finder, cùng với ảnh và video đã 
 #: apple/App/ImmichMountApp.swift:221
 msgid "Files in Upload that have not reached Immich: {count}. They stay on this Mac, and Finder shows where once you have signed out."
 msgstr "Tệp trong Upload chưa đến được Immich: {count}. Chúng vẫn ở trên máy Mac này, và Finder sẽ cho biết vị trí sau khi bạn đăng xuất."
-
-#: apple/App/ImmichMountApp.swift:225
-msgid "Sign Out"
-msgstr "Đăng xuất"
 
 #: apple/App/ImmichMountApp.swift:241
 msgid "Still signed in"
@@ -1320,11 +1340,6 @@ msgstr "Giới thiệu về Immich Mount"
 msgid "Check for Updates…"
 msgstr "Kiểm tra bản cập nhật…"
 
-#: apple/App/ImmichMountApp.swift:54
-#: apple/App/ImmichMountApp.swift:481
-msgid "Settings…"
-msgstr "Cài đặt…"
-
 #: apple/App/ImmichMountApp.swift:468
 #: apple/App/SettingsView.swift:383
 msgid "Sign In…"
@@ -1334,15 +1349,6 @@ msgstr "Đăng nhập…"
 #: apple/App/SettingsView.swift:403
 msgid "Switch On in Finder…"
 msgstr "Bật trong Finder…"
-
-#: apple/App/ImmichMountApp.swift:486
-#: apple/App/SettingsView.swift:408
-msgid "Sign Out…"
-msgstr "Đăng xuất…"
-
-#: apple/App/ImmichMountApp.swift:491
-msgid "Quit Immich Mount"
-msgstr "Thoát Immich Mount"
 
 #: apple/App/ReceivedLinks.swift:18
 #: apple/App/SettingsView.swift:382

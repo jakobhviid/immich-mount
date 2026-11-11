@@ -33,6 +33,50 @@ Kirigami.ApplicationWindow {
             globalDrawer.close()
     }
 
+    // Started from the tray: open General, or the Account page with the question to sign out, once signed in.
+    property string startRequest: backend.startRequest()
+    function followStartRequest() {
+        if (backend.page !== "status" || startRequest.length === 0)
+            return
+        const request = startRequest
+        startRequest = ""
+        if (request === "settings") {
+            openCategory("general")
+        } else if (request === "sign-out") {
+            openCategory("account")
+            signOutDialog.open()
+        }
+    }
+    Connections {
+        target: backend
+        function onPageChanged() { root.followStartRequest() }
+    }
+    Component.onCompleted: followStartRequest()
+
+    // Signing out removes the drive and what was downloaded, so it is asked first, as on the Mac.
+    Kirigami.PromptDialog {
+        id: signOutDialog
+        title: i18n("Sign out of Immich Mount?")
+        subtitle: i18n("Immich Mount leaves Dolphin, together with the photos and videos downloaded to this computer. Your library on the server stays as it is.")
+        standardButtons: Kirigami.Dialog.NoButton
+        customFooterActions: [
+            Kirigami.Action {
+                text: i18n("Sign Out")
+                icon.name: "system-log-out"
+                onTriggered: {
+                    signOutDialog.close()
+                    root.openCategory("status")
+                    backend.disconnect()
+                }
+            },
+            Kirigami.Action {
+                text: i18n("Cancel")
+                icon.name: "dialog-cancel"
+                onTriggered: signOutDialog.close()
+            }
+        ]
+    }
+
     // Signed in, the app's pages are in a sidebar, as in KDE's System Settings; before that, the sign-in steps fill
     // the window. Narrow, the sidebar becomes a drawer.
     globalDrawer: Kirigami.GlobalDrawer {
@@ -349,23 +393,10 @@ Kirigami.ApplicationWindow {
                 }
                 Controls.Button {
                     Layout.alignment: Qt.AlignHCenter
-                    text: i18n("Disconnect")
-                    icon.name: "network-disconnect"
+                    text: i18n("Sign Out…")
+                    icon.name: "system-log-out"
                     enabled: !backend.busy
-                    onClicked: {
-                        root.openCategory("status")
-                        backend.disconnect()
-                    }
-                }
-                Controls.Label {
-                    Layout.fillWidth: true
-                    Layout.maximumWidth: Kirigami.Units.gridUnit * 24
-                    Layout.alignment: Qt.AlignHCenter
-                    horizontalAlignment: Text.AlignHCenter
-                    wrapMode: Text.WordWrap
-                    font: Kirigami.Theme.smallFont
-                    opacity: 0.7
-                    text: i18n("Disconnecting signs out and takes the drive out of Dolphin. Your library on the server stays as it is.")
+                    onClicked: signOutDialog.open()
                 }
             }
         }

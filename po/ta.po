@@ -99,7 +99,7 @@ msgid "The Immich server cannot be reached. Files you opened before stay availab
 msgstr "Immich சேவையகத்தை அணுக முடியவில்லை. முன்பு திறந்த கோப்புகள் தொடர்ந்து கிடைக்கும்."
 
 #: crates/immich-mount-linux/src/daemon.rs:431
-#: crates/immich-mount-linux/src/tray.rs:70
+#: crates/immich-mount-linux/src/tray.rs:82
 msgid "Signed out of Immich"
 msgstr "Immich-இலிருந்து வெளியேறிவிட்டீர்கள்"
 
@@ -211,48 +211,66 @@ msgstr "பதிவேற்றம் மிக அதிக நேரம் �
 msgid "Immich takes photos and videos only."
 msgstr "Immich படங்களையும் வீடியோக்களையும் மட்டுமே ஏற்கும்."
 
-#: crates/immich-mount-linux/src/tray.rs:68
+#: crates/immich-mount-linux/src/tray.rs:80
 #: apple/App/ImmichMountApp.swift:665
 msgid "Connected to {server}"
 msgstr "{server} உடன் இணைக்கப்பட்டுள்ளது"
 
-#: crates/immich-mount-linux/src/tray.rs:69
+#: crates/immich-mount-linux/src/tray.rs:81
 #: apple/App/ImmichMountApp.swift:665
 msgid "{server} is not reachable"
 msgstr "{server} ஐ அணுக முடியவில்லை"
 
-#: crates/immich-mount-linux/src/tray.rs:71
+#: crates/immich-mount-linux/src/tray.rs:83
 #: apple/App/ImmichMountApp.swift:664
 msgid "Signed in to {server}"
 msgstr "{server} இல் உள்நுழைந்துள்ளீர்கள்"
 
-#: crates/immich-mount-linux/src/tray.rs:79
+#: crates/immich-mount-linux/src/tray.rs:91
 #: apple/App/ImmichMountApp.swift:673
 msgid "Server version: Immich {version}"
 msgstr "சேவையகப் பதிப்பு: Immich {version}"
 
-#: crates/immich-mount-linux/src/tray.rs:82
+#: crates/immich-mount-linux/src/tray.rs:94
 #: apple/App/ImmichMountApp.swift:676
 msgid "Signed in as: {account}"
 msgstr "உள்நுழைந்துள்ள கணக்கு: {account}"
 
-#: crates/immich-mount-linux/src/tray.rs:85
-#: crates/immich-mount-kde/qml/Main.qml:609
-#: crates/immich-mount-kde/qml/Main.qml:630
+#: crates/immich-mount-linux/src/tray.rs:97
+#: crates/immich-mount-kde/qml/Main.qml:646
+#: crates/immich-mount-kde/qml/Main.qml:667
 msgid "Open in Dolphin"
 msgstr "Dolphin-இல் திற"
 
-#: crates/immich-mount-linux/src/tray.rs:85
+#: crates/immich-mount-linux/src/tray.rs:97
 msgid "Open in Files"
 msgstr "கோப்புகள் பயன்பாட்டில் திற"
 
-#: crates/immich-mount-linux/src/tray.rs:87
+#: crates/immich-mount-linux/src/tray.rs:99
+#: apple/App/ImmichMountApp.swift:54
+#: apple/App/ImmichMountApp.swift:481
+msgid "Settings…"
+msgstr "அமைப்புகள்…"
+
+#: crates/immich-mount-linux/src/tray.rs:100
 msgid "Open Immich Mount"
 msgstr "Immich Mount-ஐத் திற"
 
-#: crates/immich-mount-linux/src/tray.rs:90
+#: crates/immich-mount-linux/src/tray.rs:103
 msgid "Get Immich Mount {version}…"
 msgstr "Immich Mount {version}-ஐப் பதிவிறக்கு…"
+
+#: crates/immich-mount-linux/src/tray.rs:106
+#: crates/immich-mount-kde/qml/Main.qml:396
+#: apple/App/ImmichMountApp.swift:486
+#: apple/App/SettingsView.swift:408
+msgid "Sign Out…"
+msgstr "வெளியேறு…"
+
+#: crates/immich-mount-linux/src/tray.rs:107
+#: apple/App/ImmichMountApp.swift:491
+msgid "Quit Immich Mount"
+msgstr "Immich Mount-ஐ மூடு"
 
 #: crates/immich-mount-linux/src/updates.rs:53
 msgid "Immich Mount {version} is available"
@@ -290,7 +308,7 @@ msgstr "புகைப்படங்கள், ஆல்பங்கள், �
 #: crates/immich-mount-desktop/src/preferences.rs:56
 #: crates/immich-mount-gnome/src/window.blp:174
 #: crates/immich-mount-gnome/src/window.blp:331
-#: crates/immich-mount-kde/qml/Main.qml:597
+#: crates/immich-mount-kde/qml/Main.qml:634
 msgid "Location"
 msgstr "இருப்பிடம்"
 
@@ -427,22 +445,22 @@ msgid "Signed in, but the mount did not start: {error}"
 msgstr "உள்நுழைந்துவிட்டீர்கள், ஆனால் மவுண்ட் தொடங்கவில்லை: {error}"
 
 #: crates/immich-mount-desktop/src/preferences.rs:48
-#: crates/immich-mount-kde/qml/Main.qml:48
-#: crates/immich-mount-kde/qml/Main.qml:124
+#: crates/immich-mount-kde/qml/Main.qml:92
+#: crates/immich-mount-kde/qml/Main.qml:168
 #: apple/App/SettingsView.swift:14
 msgid "General"
 msgstr "பொது"
 
 #: crates/immich-mount-desktop/src/preferences.rs:81
-#: crates/immich-mount-kde/qml/Main.qml:49
-#: crates/immich-mount-kde/qml/Main.qml:124
+#: crates/immich-mount-kde/qml/Main.qml:93
+#: crates/immich-mount-kde/qml/Main.qml:168
 #: apple/App/SettingsView.swift:15
 msgid "Folders"
 msgstr "கோப்புறைகள்"
 
 #: crates/immich-mount-desktop/src/preferences.rs:109
-#: crates/immich-mount-kde/qml/Main.qml:50
-#: crates/immich-mount-kde/qml/Main.qml:124
+#: crates/immich-mount-kde/qml/Main.qml:94
+#: crates/immich-mount-kde/qml/Main.qml:168
 #: apple/App/SettingsView.swift:16
 msgid "Other Apps"
 msgstr "பிற பயன்பாடுகள்"
@@ -473,7 +491,7 @@ msgstr "புதிய பதிப்பு வெளியானால் எ
 
 #: crates/immich-mount-desktop/src/preferences.rs:85
 #: crates/immich-mount-gnome/src/window.blp:144
-#: crates/immich-mount-kde/qml/Main.qml:590
+#: crates/immich-mount-kde/qml/Main.qml:627
 #: apple/App/SettingsView.swift:315
 msgid "Sections"
 msgstr "பிரிவுகள்"
@@ -505,95 +523,95 @@ msgstr "Immich வலைப் பயன்பாடு"
 msgid "Mount at Login"
 msgstr "உள்நுழையும்போது மவுண்ட் செய்"
 
-#: crates/immich-mount-gnome/src/main.rs:106
+#: crates/immich-mount-gnome/src/main.rs:112
 msgid "Your Immich photos and videos as a drive in Files."
 msgstr "உங்கள் Immich படங்களும் வீடியோக்களும், கோப்புகள் பயன்பாட்டில் ஒரு டிரைவாக."
 
-#: crates/immich-mount-gnome/src/main.rs:110
+#: crates/immich-mount-gnome/src/main.rs:116
 msgid "Source Code"
 msgstr "மூலக் குறியீடு"
 
-#: crates/immich-mount-gnome/src/main.rs:111
+#: crates/immich-mount-gnome/src/main.rs:117
 msgid "Inspired By"
 msgstr "உத்வேகம்"
 
-#: crates/immich-mount-gnome/src/main.rs:112
+#: crates/immich-mount-gnome/src/main.rs:118
 msgid "The Immich API Layer"
 msgstr "Immich API அடுக்கு"
 
-#: crates/immich-mount-gnome/src/main.rs:114
+#: crates/immich-mount-gnome/src/main.rs:120
 msgid "AI Disclosure"
 msgstr "AI பயன்பாடு குறித்த அறிவிப்பு"
 
-#: crates/immich-mount-gnome/src/main.rs:118
-#: crates/immich-mount-kde/qml/Main.qml:406
+#: crates/immich-mount-gnome/src/main.rs:124
+#: crates/immich-mount-kde/qml/Main.qml:441
 #: apple/App/ImmichMountApp.swift:521
 msgid "Parts of this project were written with the assistance of AI coding agents. All changes are reviewed by the maintainer."
 msgstr "இந்தத் திட்டத்தின் சில பகுதிகள் AI நிரலாக்க முகவர்களின் உதவியுடன் எழுதப்பட்டன. எல்லா மாற்றங்களையும் பராமரிப்பாளர் மதிப்பாய்வு செய்கிறார்."
 
-#: crates/immich-mount-gnome/src/main.rs:81
+#: crates/immich-mount-gnome/src/main.rs:87
 msgid "Preferences"
 msgstr "விருப்பங்கள்"
 
-#: crates/immich-mount-gnome/src/main.rs:82
+#: crates/immich-mount-gnome/src/main.rs:88
 msgid "Keyboard Shortcuts"
 msgstr "விசைப்பலகைக் குறுக்குவழிகள்"
 
-#: crates/immich-mount-gnome/src/main.rs:83
+#: crates/immich-mount-gnome/src/main.rs:89
 msgid "Quit"
 msgstr "மூடு"
 
-#: crates/immich-mount-gnome/src/preferences.rs:149
-#: crates/immich-mount-gnome/src/preferences.rs:153
+#: crates/immich-mount-gnome/src/preferences.rs:189
+#: crates/immich-mount-gnome/src/preferences.rs:193
 msgid "Choose a Folder"
 msgstr "கோப்புறையைத் தேர்ந்தெடு"
 
-#: crates/immich-mount-gnome/src/preferences.rs:184
-#: crates/immich-mount-kde/qml/Main.qml:197
+#: crates/immich-mount-gnome/src/preferences.rs:224
+#: crates/immich-mount-kde/qml/Main.qml:241
 msgid "Learn More"
 msgstr "மேலும் அறிக"
 
-#: crates/immich-mount-gnome/src/preferences.rs:219
-#: crates/immich-mount-kde/qml/Main.qml:233
+#: crates/immich-mount-gnome/src/preferences.rs:259
+#: crates/immich-mount-kde/qml/Main.qml:277
 #: apple/App/SettingsView.swift:244
 msgid "Not found"
 msgstr "கிடைக்கவில்லை"
 
-#: crates/immich-mount-gnome/src/preferences.rs:220
-#: crates/immich-mount-kde/qml/Main.qml:239
+#: crates/immich-mount-gnome/src/preferences.rs:260
+#: crates/immich-mount-kde/qml/Main.qml:283
 #: apple/App/SettingsView.swift:232
 msgid "Forget"
 msgstr "மறந்துவிடு"
 
-#: crates/immich-mount-gnome/src/preferences.rs:247
-#: crates/immich-mount-kde/src/backend.rs:474
+#: crates/immich-mount-gnome/src/preferences.rs:287
+#: crates/immich-mount-kde/src/backend.rs:487
 #: apple/App/CrosslinkApps.swift:160
 #: apple/App/SettingsView.swift:225
 msgid "No other app that takes part is installed."
 msgstr "பங்கேற்கும் வேறு பயன்பாடு எதுவும் நிறுவப்படவில்லை."
 
-#: crates/immich-mount-gnome/src/preferences.rs:248
-#: crates/immich-mount-kde/src/backend.rs:476
+#: crates/immich-mount-gnome/src/preferences.rs:288
+#: crates/immich-mount-kde/src/backend.rs:489
 msgid "Find Apps That Take Part"
 msgstr "பங்கேற்கும் பயன்பாடுகளைக் கண்டறி"
 
 #: crates/immich-mount-gnome/src/window.rs:215
 #: crates/immich-mount-gnome/src/window.blp:237
-#: crates/immich-mount-kde/qml/Main.qml:47
-#: crates/immich-mount-kde/qml/Main.qml:440
+#: crates/immich-mount-kde/qml/Main.qml:91
+#: crates/immich-mount-kde/qml/Main.qml:477
 msgid "Status"
 msgstr "நிலை"
 
 #: crates/immich-mount-gnome/src/window.rs:217
 #: crates/immich-mount-gnome/src/window.blp:366
-#: crates/immich-mount-kde/qml/Main.qml:51
-#: crates/immich-mount-kde/qml/Main.qml:338
+#: crates/immich-mount-kde/qml/Main.qml:95
+#: crates/immich-mount-kde/qml/Main.qml:386
 #: apple/App/SettingsView.swift:17
 msgid "Account"
 msgstr "கணக்கு"
 
 #: crates/immich-mount-gnome/src/window.rs:309
-#: crates/immich-mount-kde/qml/Main.qml:547
+#: crates/immich-mount-kde/qml/Main.qml:584
 msgid "Continue in your browser"
 msgstr "உங்கள் உலாவியில் தொடரவும்"
 
@@ -618,12 +636,12 @@ msgid "Signed in, but the status could not be read"
 msgstr "உள்நுழைந்துவிட்டீர்கள், ஆனால் நிலையைப் படிக்க முடியவில்லை"
 
 #: crates/immich-mount-gnome/src/window.rs:467
-#: crates/immich-mount-kde/qml/Main.qml:624
+#: crates/immich-mount-kde/qml/Main.qml:661
 msgid "Signed Out of Immich"
 msgstr "Immich-இலிருந்து வெளியேறிவிட்டீர்கள்"
 
 #: crates/immich-mount-gnome/src/window.rs:467
-#: crates/immich-mount-kde/qml/Main.qml:625
+#: crates/immich-mount-kde/qml/Main.qml:662
 msgid "Sign in again to keep browsing. Your caches are kept."
 msgstr "தொடர்ந்து உலாவ மீண்டும் உள்நுழையவும். உங்கள் தற்காலிகச் சேமிப்புகள் வைக்கப்பட்டுள்ளன."
 
@@ -633,12 +651,12 @@ msgid "Your Library Is in Files"
 msgstr "உங்கள் லைப்ரரி கோப்புகள் பயன்பாட்டில் உள்ளது"
 
 #: crates/immich-mount-gnome/src/window.rs:468
-#: crates/immich-mount-kde/qml/Main.qml:626
+#: crates/immich-mount-kde/qml/Main.qml:663
 msgid "Browse it like any folder. Originals download only when you open them."
 msgstr "எந்தக் கோப்புறையையும் போல இதை உலாவவும். அசல் கோப்புகள் நீங்கள் திறக்கும்போது மட்டுமே பதிவிறக்கப்படும்."
 
 #: crates/immich-mount-gnome/src/window.rs:469
-#: crates/immich-mount-kde/qml/Main.qml:624
+#: crates/immich-mount-kde/qml/Main.qml:661
 msgid "Not Mounted"
 msgstr "மவுண்ட் செய்யப்படவில்லை"
 
@@ -646,9 +664,33 @@ msgstr "மவுண்ட் செய்யப்படவில்லை"
 msgid "Mount it to browse your library in Files."
 msgstr "கோப்புகள் பயன்பாட்டில் உங்கள் லைப்ரரியை உலாவ இதை மவுண்ட் செய்யவும்."
 
-#: crates/immich-mount-gnome/src/window.rs:559
-msgid "Disconnected"
-msgstr "இணைப்பு துண்டிக்கப்பட்டது"
+#: crates/immich-mount-gnome/src/window.rs:566
+#: crates/immich-mount-kde/qml/Main.qml:59
+#: apple/App/ImmichMountApp.swift:218
+msgid "Sign out of Immich Mount?"
+msgstr "Immich Mount-இலிருந்து வெளியேறவா?"
+
+#: crates/immich-mount-gnome/src/window.rs:567
+msgid "Immich Mount leaves Files, together with the photos and videos downloaded to this computer. Your library on the server stays as it is."
+msgstr "இந்தக் கணினியில் பதிவிறக்கப்பட்ட படங்கள், வீடியோக்களுடன் சேர்ந்து Immich Mount, கோப்புகள் பயன்பாட்டிலிருந்து நீங்கும். சேவையகத்தில் உள்ள உங்கள் லைப்ரரி அப்படியே இருக்கும்."
+
+#: crates/immich-mount-gnome/src/window.rs:569
+#: crates/immich-mount-kde/qml/Main.qml:73
+#: apple/App/CrosslinkApps.swift:198
+#: apple/App/CrosslinkApps.swift:213
+#: apple/App/ImmichMountApp.swift:226
+msgid "Cancel"
+msgstr "ரத்துசெய்"
+
+#: crates/immich-mount-gnome/src/window.rs:569
+#: crates/immich-mount-kde/qml/Main.qml:64
+#: apple/App/ImmichMountApp.swift:225
+msgid "Sign Out"
+msgstr "வெளியேறு"
+
+#: crates/immich-mount-gnome/src/window.rs:583
+msgid "Signed out"
+msgstr "வெளியேறிவிட்டீர்கள்"
 
 #: crates/immich-mount-gnome/src/window.blp:26
 #: crates/immich-mount-gnome/src/window.blp:216
@@ -660,7 +702,7 @@ msgid "Your Immich Library in Files"
 msgstr "கோப்புகள் பயன்பாட்டில் உங்கள் Immich லைப்ரரி"
 
 #: crates/immich-mount-gnome/src/window.blp:34
-#: crates/immich-mount-kde/qml/Main.qml:463
+#: crates/immich-mount-kde/qml/Main.qml:500
 msgid "Browse your photos and videos as a drive. Originals download only when you open them."
 msgstr "உங்கள் படங்களையும் வீடியோக்களையும் ஒரு டிரைவாக உலாவவும். அசல் கோப்புகள் நீங்கள் திறக்கும்போது மட்டுமே பதிவிறக்கப்படும்."
 
@@ -673,15 +715,15 @@ msgid "_Continue"
 msgstr "தொடர்க (_C)"
 
 #: crates/immich-mount-gnome/src/window.blp:70
-#: crates/immich-mount-kde/qml/Main.qml:437
-#: crates/immich-mount-kde/qml/Main.qml:521
+#: crates/immich-mount-kde/qml/Main.qml:474
+#: crates/immich-mount-kde/qml/Main.qml:558
 #: apple/App/ContentView.swift:143
 #: apple/App/ContentView.swift:147
 msgid "Sign In"
 msgstr "உள்நுழைக"
 
 #: crates/immich-mount-gnome/src/window.blp:78
-#: crates/immich-mount-kde/qml/Main.qml:502
+#: crates/immich-mount-kde/qml/Main.qml:539
 msgid "Opens your browser, where you sign in as usual, with a passkey or a password manager."
 msgstr "உங்கள் உலாவியைத் திறக்கும், அங்கே வழக்கம்போல பாஸ்கீ அல்லது கடவுச்சொல் நிர்வாகி மூலம் உள்நுழையலாம்."
 
@@ -694,12 +736,12 @@ msgid "For two-factor sign-in, use your server's single sign-on instead."
 msgstr "இரண்டு காரணி உள்நுழைவுக்கு, பதிலாக உங்கள் சேவையகத்தின் ஒற்றை உள்நுழைவை (SSO) பயன்படுத்தவும்."
 
 #: crates/immich-mount-gnome/src/window.blp:96
-#: crates/immich-mount-kde/qml/Main.qml:511
+#: crates/immich-mount-kde/qml/Main.qml:548
 msgid "Email"
 msgstr "மின்னஞ்சல்"
 
 #: crates/immich-mount-gnome/src/window.blp:101
-#: crates/immich-mount-kde/qml/Main.qml:515
+#: crates/immich-mount-kde/qml/Main.qml:552
 msgid "Password"
 msgstr "கடவுச்சொல்"
 
@@ -732,7 +774,7 @@ msgid "The folders the drive shows. You can change this later in Preferences."
 msgstr "டிரைவ் காட்டும் கோப்புறைகள். இதைப் பின்னர் விருப்பங்களில் மாற்றலாம்."
 
 #: crates/immich-mount-gnome/src/window.blp:177
-#: crates/immich-mount-kde/qml/Main.qml:600
+#: crates/immich-mount-kde/qml/Main.qml:637
 msgid "Folder"
 msgstr "கோப்புறை"
 
@@ -777,19 +819,15 @@ msgstr "சேவையகம்"
 msgid "Credential"
 msgstr "அனுமதிச் சான்று"
 
-#: crates/immich-mount-gnome/src/window.blp:384
-msgid "Disconnecting signs out and takes the drive out of Files. Your library on the server stays as it is."
-msgstr "இணைப்பைத் துண்டித்தால் வெளியேறி, இயக்ககம் கோப்புகள் பயன்பாட்டிலிருந்து நீக்கப்படும். சேவையகத்தில் உங்கள் நூலகம் அப்படியே இருக்கும்."
+#: crates/immich-mount-gnome/src/window.blp:385
+msgid "Sign _Out…"
+msgstr "வெளியேறு… (_O)"
 
-#: crates/immich-mount-gnome/src/window.blp:387
-msgid "_Disconnect"
-msgstr "இணைப்பைத் துண்டி (_D)"
-
-#: crates/immich-mount-gnome/src/window.blp:418
+#: crates/immich-mount-gnome/src/window.blp:416
 msgid "_Keyboard Shortcuts"
 msgstr "விசைப்பலகைக் குறுக்குவழிகள் (_K)"
 
-#: crates/immich-mount-gnome/src/window.blp:423
+#: crates/immich-mount-gnome/src/window.blp:421
 msgid "_About Immich Mount"
 msgstr "Immich Mount பற்றி (_A)"
 
@@ -825,205 +863,201 @@ msgstr "{app} இனி நிறுவப்படவில்லை."
 msgid "Immich Mount could not open {app}: {error}"
 msgstr "Immich Mount ஆல் {app}-ஐத் திறக்க முடியவில்லை: {error}"
 
-#: crates/immich-mount-kde/qml/Main.qml:54
-#: crates/immich-mount-kde/qml/Main.qml:374
-#: crates/immich-mount-kde/qml/Main.qml:429
+#: crates/immich-mount-kde/qml/Main.qml:60
+msgid "Immich Mount leaves Dolphin, together with the photos and videos downloaded to this computer. Your library on the server stays as it is."
+msgstr "இந்தக் கணினியில் பதிவிறக்கப்பட்ட படங்கள், வீடியோக்களுடன் சேர்ந்து Immich Mount, Dolphin-இலிருந்து நீங்கும். சேவையகத்தில் உள்ள உங்கள் லைப்ரரி அப்படியே இருக்கும்."
+
+#: crates/immich-mount-kde/qml/Main.qml:98
+#: crates/immich-mount-kde/qml/Main.qml:409
+#: crates/immich-mount-kde/qml/Main.qml:464
 msgid "About"
 msgstr "பற்றி"
 
-#: crates/immich-mount-kde/qml/Main.qml:104
+#: crates/immich-mount-kde/qml/Main.qml:148
 msgid "Show thumbnails"
 msgstr "சிறுபடங்களைக் காட்டு"
 
-#: crates/immich-mount-kde/qml/Main.qml:113
+#: crates/immich-mount-kde/qml/Main.qml:157
 msgid "Lets Dolphin preview files up to 100 MB on remote locations, this drive included. Thumbnails come from the server; no original is downloaded."
 msgstr "இந்த டிரைவ் உட்பட, தொலைநிலை இருப்பிடங்களில் உள்ள 100 MB வரையிலான கோப்புகளுக்கு Dolphin முன்னோட்டம் காட்ட அனுமதிக்கிறது. சிறுபடங்கள் சேவையகத்திலிருந்து வருகின்றன; எந்த அசல் கோப்பும் பதிவிறக்கப்படுவதில்லை."
 
-#: crates/immich-mount-kde/qml/Main.qml:276
+#: crates/immich-mount-kde/qml/Main.qml:324
 msgid "Choose…"
 msgstr "தேர்ந்தெடு…"
 
-#: crates/immich-mount-kde/qml/Main.qml:342
+#: crates/immich-mount-kde/qml/Main.qml:390
 #: apple/App/ContentView.swift:107
 msgid "Server:"
 msgstr "சேவையகம்:"
 
-#: crates/immich-mount-kde/qml/Main.qml:343
+#: crates/immich-mount-kde/qml/Main.qml:391
 msgid "Account:"
 msgstr "கணக்கு:"
 
-#: crates/immich-mount-kde/qml/Main.qml:344
+#: crates/immich-mount-kde/qml/Main.qml:392
 msgid "Credential:"
 msgstr "அனுமதிச் சான்று:"
 
-#: crates/immich-mount-kde/qml/Main.qml:348
-msgid "Disconnect"
-msgstr "இணைப்பைத் துண்டி"
-
-#: crates/immich-mount-kde/qml/Main.qml:364
-msgid "Disconnecting signs out and takes the drive out of Dolphin. Your library on the server stays as it is."
-msgstr "இணைப்பைத் துண்டித்தால் வெளியேறி, இயக்ககம் Dolphin-இலிருந்து நீக்கப்படும். சேவையகத்தில் உங்கள் நூலகம் அப்படியே இருக்கும்."
-
-#: crates/immich-mount-kde/qml/Main.qml:386
+#: crates/immich-mount-kde/qml/Main.qml:421
 msgid "Your Immich photos and videos as a drive in Dolphin. By Jakob Hviid, under the MIT license."
 msgstr "Dolphin-இல் ஒரு டிரைவாக உங்கள் Immich படங்களும் வீடியோக்களும். உருவாக்கியவர் Jakob Hviid, MIT உரிமத்தின் கீழ்."
 
-#: crates/immich-mount-kde/qml/Main.qml:391
+#: crates/immich-mount-kde/qml/Main.qml:426
 #: apple/App/Info.plist (NSHumanReadableCopyright)
 msgid "Immich Mount is an independent, unofficial project. It is not affiliated with, endorsed by, or sponsored by the Immich project or FUTO. “Immich” is used only to describe the server this software works with, and remains the mark of its owner."
 msgstr "Immich Mount ஒரு சுயாதீனமான, அதிகாரப்பூர்வமற்ற திட்டம். இது Immich திட்டத்துடனோ FUTO உடனோ தொடர்புடையதல்ல, அவற்றின் ஒப்புதலையோ நிதியுதவியையோ பெற்றதும் அல்ல. இந்த மென்பொருள் இணைந்து செயல்படும் சேவையகத்தை விவரிக்க மட்டுமே “Immich” பயன்படுத்தப்படுகிறது, அது அதன் உரிமையாளரின் முத்திரையாகவே இருக்கும்."
 
-#: crates/immich-mount-kde/qml/Main.qml:393
+#: crates/immich-mount-kde/qml/Main.qml:428
 msgid "Credits"
 msgstr "நன்றி"
 
-#: crates/immich-mount-kde/qml/Main.qml:399
+#: crates/immich-mount-kde/qml/Main.qml:434
 msgid "Inspired by {project}"
 msgstr "{project} மூலம் உத்வேகம் பெற்றது"
 
-#: crates/immich-mount-kde/qml/Main.qml:400
+#: crates/immich-mount-kde/qml/Main.qml:435
 msgid "The Immich API layer: {project}"
 msgstr "Immich API அடுக்கு: {project}"
 
-#: crates/immich-mount-kde/qml/Main.qml:402
+#: crates/immich-mount-kde/qml/Main.qml:437
 #: apple/App/ImmichMountApp.swift:520
 msgid "AI disclosure"
 msgstr "AI பயன்பாடு குறித்த அறிவிப்பு"
 
-#: crates/immich-mount-kde/qml/Main.qml:411
+#: crates/immich-mount-kde/qml/Main.qml:446
 msgid "Website: {link}"
 msgstr "இணையதளம்: {link}"
 
-#: crates/immich-mount-kde/qml/Main.qml:412
+#: crates/immich-mount-kde/qml/Main.qml:447
 msgid "Source code: {link}"
 msgstr "மூலக் குறியீடு: {link}"
 
-#: crates/immich-mount-kde/qml/Main.qml:422
+#: crates/immich-mount-kde/qml/Main.qml:457
 #: apple/App/ContentView.swift:125
 msgid "Back"
 msgstr "பின்செல்"
 
-#: crates/immich-mount-kde/qml/Main.qml:436
+#: crates/immich-mount-kde/qml/Main.qml:473
 msgid "Connect"
 msgstr "இணை"
 
-#: crates/immich-mount-kde/qml/Main.qml:438
+#: crates/immich-mount-kde/qml/Main.qml:475
 msgid "Continue in Your Browser"
 msgstr "உங்கள் உலாவியில் தொடரவும்"
 
-#: crates/immich-mount-kde/qml/Main.qml:439
+#: crates/immich-mount-kde/qml/Main.qml:476
 msgid "Your Library in Dolphin"
 msgstr "Dolphin-இல் உங்கள் லைப்ரரி"
 
-#: crates/immich-mount-kde/qml/Main.qml:462
+#: crates/immich-mount-kde/qml/Main.qml:499
 msgid "Your Immich Library in Dolphin"
 msgstr "Dolphin-இல் உங்கள் Immich லைப்ரரி"
 
-#: crates/immich-mount-kde/qml/Main.qml:469
+#: crates/immich-mount-kde/qml/Main.qml:506
 msgid "Server address:"
 msgstr "சேவையக முகவரி:"
 
-#: crates/immich-mount-kde/qml/Main.qml:470
+#: crates/immich-mount-kde/qml/Main.qml:507
 msgid "Server address"
 msgstr "சேவையக முகவரி"
 
-#: crates/immich-mount-kde/qml/Main.qml:478
+#: crates/immich-mount-kde/qml/Main.qml:515
 #: apple/App/ContentView.swift:139
 msgid "Continue"
 msgstr "தொடர்க"
 
-#: crates/immich-mount-kde/qml/Main.qml:508
+#: crates/immich-mount-kde/qml/Main.qml:545
 msgid "Email and password"
 msgstr "மின்னஞ்சல் மற்றும் கடவுச்சொல்"
 
-#: crates/immich-mount-kde/qml/Main.qml:511
+#: crates/immich-mount-kde/qml/Main.qml:548
 #: apple/App/ContentView.swift:101
 msgid "Email:"
 msgstr "மின்னஞ்சல்:"
 
-#: crates/immich-mount-kde/qml/Main.qml:514
+#: crates/immich-mount-kde/qml/Main.qml:551
 #: apple/App/ContentView.swift:102
 msgid "Password:"
 msgstr "கடவுச்சொல்:"
 
-#: crates/immich-mount-kde/qml/Main.qml:526
-#: crates/immich-mount-kde/qml/Main.qml:530
+#: crates/immich-mount-kde/qml/Main.qml:563
+#: crates/immich-mount-kde/qml/Main.qml:567
 msgid "API key"
 msgstr "API விசை"
 
-#: crates/immich-mount-kde/qml/Main.qml:529
+#: crates/immich-mount-kde/qml/Main.qml:566
 msgid "Key:"
 msgstr "விசை:"
 
-#: crates/immich-mount-kde/qml/Main.qml:535
+#: crates/immich-mount-kde/qml/Main.qml:572
 msgid "Sign In With Key"
 msgstr "விசை மூலம் உள்நுழைக"
 
-#: crates/immich-mount-kde/qml/Main.qml:548
+#: crates/immich-mount-kde/qml/Main.qml:585
 msgid "Sign in there. When your browser asks to open Immich Mount, allow it."
 msgstr "அங்கே உள்நுழையவும். Immich Mount-ஐத் திறக்க உங்கள் உலாவி அனுமதி கேட்டால், அனுமதிக்கவும்."
 
-#: crates/immich-mount-kde/qml/Main.qml:551
+#: crates/immich-mount-kde/qml/Main.qml:588
 msgid "Open the Sign-In Page Again"
 msgstr "உள்நுழைவுப் பக்கத்தை மீண்டும் திற"
 
-#: crates/immich-mount-kde/qml/Main.qml:562
+#: crates/immich-mount-kde/qml/Main.qml:599
 msgid "No browser could be opened. Open this address in one:"
 msgstr "எந்த உலாவியையும் திறக்க முடியவில்லை. இந்த முகவரியை ஓர் உலாவியில் திறக்கவும்:"
 
-#: crates/immich-mount-kde/qml/Main.qml:569
+#: crates/immich-mount-kde/qml/Main.qml:606
 msgid "Sign-in address"
 msgstr "உள்நுழைவு முகவரி"
 
-#: crates/immich-mount-kde/qml/Main.qml:599
+#: crates/immich-mount-kde/qml/Main.qml:636
 msgid "Folder:"
 msgstr "கோப்புறை:"
 
-#: crates/immich-mount-kde/qml/Main.qml:604
+#: crates/immich-mount-kde/qml/Main.qml:641
 msgid "Dolphin"
 msgstr "Dolphin"
 
-#: crates/immich-mount-kde/qml/Main.qml:624
+#: crates/immich-mount-kde/qml/Main.qml:661
 msgid "Your Library Is in Dolphin"
 msgstr "உங்கள் லைப்ரரி Dolphin-இல் உள்ளது"
 
-#: crates/immich-mount-kde/qml/Main.qml:627
+#: crates/immich-mount-kde/qml/Main.qml:664
 msgid "Mount it to browse your library in Dolphin."
 msgstr "Dolphin-இல் உங்கள் லைப்ரரியை உலாவ இதை மவுண்ட் செய்யவும்."
 
-#: crates/immich-mount-kde/qml/Main.qml:630
+#: crates/immich-mount-kde/qml/Main.qml:667
 msgid "Sign In Again"
 msgstr "மீண்டும் உள்நுழைக"
 
-#: crates/immich-mount-kde/qml/Main.qml:630
+#: crates/immich-mount-kde/qml/Main.qml:667
 msgid "Mount"
 msgstr "மவுண்ட் செய்"
 
-#: crates/immich-mount-kde/qml/Main.qml:638
+#: crates/immich-mount-kde/qml/Main.qml:675
 msgid "Connection:"
 msgstr "இணைப்பு:"
 
-#: crates/immich-mount-kde/qml/Main.qml:639
+#: crates/immich-mount-kde/qml/Main.qml:676
 msgid "Cache:"
 msgstr "தற்காலிகச் சேமிப்பு:"
 
-#: crates/immich-mount-kde/qml/Main.qml:640
+#: crates/immich-mount-kde/qml/Main.qml:677
 msgid "Location:"
 msgstr "இருப்பிடம்:"
 
-#: crates/immich-mount-kde/qml/Main.qml:641
+#: crates/immich-mount-kde/qml/Main.qml:678
 msgid "Uploading:"
 msgstr "பதிவேற்றுகிறது:"
 
-#: crates/immich-mount-kde/qml/Main.qml:642
+#: crates/immich-mount-kde/qml/Main.qml:679
 msgid "Dolphin:"
 msgstr "Dolphin:"
 
-#: crates/immich-mount-kde/qml/Main.qml:647
+#: crates/immich-mount-kde/qml/Main.qml:684
 msgid "Unmount"
 msgstr "அன்மவுண்ட் செய்"
 
-#: crates/immich-mount-kde/qml/Main.qml:660
+#: crates/immich-mount-kde/qml/Main.qml:697
 msgid "Immich Mount is an independent, unofficial project. It is not affiliated with, endorsed by, or sponsored by the Immich project or FUTO."
 msgstr "Immich Mount ஒரு சுயாதீனமான, அதிகாரப்பூர்வமற்ற திட்டம். இது Immich திட்டத்துடனோ FUTO உடனோ தொடர்புடையதல்ல, அவற்றின் ஒப்புதலையோ நிதியுதவியையோ பெற்றதும் அல்ல."
 
@@ -1236,16 +1270,6 @@ msgstr "\"{item}\" ஐக் காட்ட ஒரு பயன்பாட்�
 msgid "Show"
 msgstr "காட்டு"
 
-#: apple/App/CrosslinkApps.swift:198
-#: apple/App/CrosslinkApps.swift:213
-#: apple/App/ImmichMountApp.swift:226
-msgid "Cancel"
-msgstr "ரத்துசெய்"
-
-#: apple/App/ImmichMountApp.swift:218
-msgid "Sign out of Immich Mount?"
-msgstr "Immich Mount-இலிருந்து வெளியேறவா?"
-
 #: apple/App/ImmichMountApp.swift:219
 msgid "Immich Mount leaves Finder, together with the photos and videos downloaded to this Mac. Your library on the server stays as it is."
 msgstr "இந்த Mac-இல் பதிவிறக்கப்பட்ட படங்கள், வீடியோக்களுடன் சேர்ந்து Immich Mount, Finder-இலிருந்து நீங்கும். சேவையகத்தில் உள்ள உங்கள் லைப்ரரி அப்படியே இருக்கும்."
@@ -1253,10 +1277,6 @@ msgstr "இந்த Mac-இல் பதிவிறக்கப்பட்ட
 #: apple/App/ImmichMountApp.swift:221
 msgid "Files in Upload that have not reached Immich: {count}. They stay on this Mac, and Finder shows where once you have signed out."
 msgstr "Immich-ஐ இன்னும் சென்றடையாத Upload கோப்புகள்: {count}. அவை இந்த Mac-இலேயே இருக்கும், நீங்கள் வெளியேறியதும் அவை எங்கே உள்ளன என்பதை Finder காட்டும்."
-
-#: apple/App/ImmichMountApp.swift:225
-msgid "Sign Out"
-msgstr "வெளியேறு"
 
 #: apple/App/ImmichMountApp.swift:241
 msgid "Still signed in"
@@ -1320,11 +1340,6 @@ msgstr "Immich Mount பற்றி"
 msgid "Check for Updates…"
 msgstr "புதுப்பிப்புகளைச் சரிபார்…"
 
-#: apple/App/ImmichMountApp.swift:54
-#: apple/App/ImmichMountApp.swift:481
-msgid "Settings…"
-msgstr "அமைப்புகள்…"
-
 #: apple/App/ImmichMountApp.swift:468
 #: apple/App/SettingsView.swift:383
 msgid "Sign In…"
@@ -1334,15 +1349,6 @@ msgstr "உள்நுழைக…"
 #: apple/App/SettingsView.swift:403
 msgid "Switch On in Finder…"
 msgstr "Finder-இல் இயக்கு…"
-
-#: apple/App/ImmichMountApp.swift:486
-#: apple/App/SettingsView.swift:408
-msgid "Sign Out…"
-msgstr "வெளியேறு…"
-
-#: apple/App/ImmichMountApp.swift:491
-msgid "Quit Immich Mount"
-msgstr "Immich Mount-ஐ மூடு"
 
 #: apple/App/ReceivedLinks.swift:18
 #: apple/App/SettingsView.swift:382

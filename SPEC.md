@@ -250,7 +250,7 @@ cameras. Clashes are detected case-insensitively, after Unicode NFC normalisatio
   and others), it gets `EIO` instead of the bytes. It never gets substitute bytes.
 - Listings made by the file manager's search, or by an indexer walking the tree (`baloo_file`, `localsearch-3`), do
   not trigger seeding.
-- Every seeded file is recorded, and removed again when signing out (`immich-mount logout`, or Disconnect in the app).
+- Every seeded file is recorded, and removed again when signing out (`immich-mount logout`, or Sign Out… in the app).
 
 ## Uploads
 
@@ -491,7 +491,7 @@ part in Immich Crosslink, which shows it there.
     on a server) or when `credential.file` is set.
   - Reading prefers a credential file when one exists, then the keyring.
 - Signing in happens once. A credential persists across restarts and reboots until Immich or the identity provider
-  revokes it, or the user disconnects.
+  revokes it, or the user signs out.
 - A locked keyring triggers the system's unlock prompt. If the user dismisses it, the daemon says so in its log and
   stops cleanly, so the service is not restarted into another prompt, and one notification says why. There is no
   repeated prompting, and no silent failure. (An **Unlock** action on it comes with the daemon's D-Bus control.)
@@ -616,7 +616,11 @@ appears. The menu, top to bottom:
 | "Server version: Immich *version*" | grey, when the server said |
 | "Signed in as: *email*" | grey, when the credential may read it |
 | "Open in Files" ("Open in Dolphin" on KDE Plasma) | the mount point, in the file manager (`xdg-open`) |
+| "Settings…" | the app on its General page (`immich-mount app immich-mount:settings`) |
 | "Open Immich Mount" | the app (`immich-mount app`); activating the icon does the same |
+| "Get Immich Mount *version*…" | after a separator, once a newer release is out: its page |
+| "Sign Out…" | after a separator: the app on its Account page, asking whether to sign out (`immich-mount app immich-mount:sign-out`); nothing is signed out without the answer |
+| "Quit Immich Mount" | unmounts, as `immich-mount unmount` and Files' eject do: the drive and the icon leave until the next login, or Mount in the app; refused while a file is uploading, with a notification saying which |
 
 A click on the icon shows the menu (`ItemIsMenu`), as the Mac's menu bar item does.
 

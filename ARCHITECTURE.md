@@ -1356,7 +1356,8 @@ Each platform gets a native app that looks and reads like a first-party app (pri
 - **Signed in, the app is its pages,** in a sidebar: Status, General, Folders, Other Apps and Account.
   - **Status:** the drive (Open in Files, Unmount or Mount), the connection, cache usage, the mount point and
     uploads in flight; Sign In Again when signed out.
-  - **Account:** the server and its version, the account, where the credential is kept, and Disconnect.
+  - **Account:** the server and its version, the account, where the credential is kept, and Sign Out…, which asks
+    first, as on the Mac.
 - **The About dialog** carries the non-affiliation notice, the links to the website (`jakob.hviid.phd/immich-mount`)
   and the source code, the credits, and the AI disclosure.
 - **Accessibility:** keyboard navigation everywhere, a keyboard-shortcuts dialog, and accessible labels on every
@@ -1468,8 +1469,15 @@ drive and the app, without opening a window. **The daemon serves it,** as a Stat
   sidebar stay the way in. Nothing is lost where no tray watches: the registration fails quietly, and is made again
   whenever a tray starts, after the daemon or again.
 - **The menu is the Mac's:** the state on its first line, grey lines saying what each is, then Open in Files (or
-  Dolphin) and Open Immich Mount. A click shows the menu, as on the Mac (`ItemIsMenu`). Its texts are the Mac's,
-  translated once.
+  Dolphin), Settings… and Open Immich Mount, and at its foot Sign Out… and Quit Immich Mount. A click shows the menu,
+  as on the Mac (`ItemIsMenu`). Its texts are the Mac's, translated once.
+  - **Quit unmounts.** On Linux the daemon is the drive and the tray icon alike, so quitting is unmounting, as Files'
+    eject is: the daemon leaves cleanly, and its service starts again at the next login or with Mount in the app.
+    On the Mac quitting leaves the location, which the system serves. KDE's own tray items end with Quit, and so do
+    the apps' that use GNOME's AppIndicator.
+  - **Sign Out… asks, in the app.** The daemon has no window to ask in, so it opens the app on its Account page
+    with the question up (`immich-mount app immich-mount:sign-out`, an address no other program claims, as
+    `immich-mount:settings` opens General); the GNOME app takes it in the window already open.
 - **The icon** is the symbolic one, the drive filling a rounded square with the five-segment ring (DESIGN.md, "The
   icon family"), which both trays recolour to the panel's text. It fills its square as its neighbours in the top bar
   do: the wide drive it was drew a third smaller than they did.

@@ -38,10 +38,16 @@ fn main() -> glib::ExitCode {
     application.connect_activate(|application| window_of(application).present());
     application.connect_open(|application, files, _hint| {
         let window = window_of(application);
-        for file in files {
-            window.handle_redirect(&file.uri());
-        }
         window.present();
+        // From the tray (`immich-mount app <address>`): a page to open, or the question to sign out; anything else is
+        // the browser's sign-in redirect.
+        for file in files {
+            match file.uri().as_str() {
+                immich_mount_linux::tray::OPEN_SETTINGS => window.show_preferences(),
+                immich_mount_linux::tray::OPEN_SIGN_OUT => window.ask_to_sign_out(),
+                address => window.handle_redirect(address),
+            }
+        }
     });
     let about = gio::ActionEntry::builder("about").activate(|application: &adw::Application, _, _| show_about(application)).build();
     let quit = gio::ActionEntry::builder("quit").activate(|application: &adw::Application, _, _| application.quit()).build();

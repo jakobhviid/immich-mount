@@ -99,7 +99,7 @@ msgid "The Immich server cannot be reached. Files you opened before stay availab
 msgstr "Immich-serveren kan ikke nås. Filer, du har åbnet før, er stadig tilgængelige."
 
 #: crates/immich-mount-linux/src/daemon.rs:431
-#: crates/immich-mount-linux/src/tray.rs:70
+#: crates/immich-mount-linux/src/tray.rs:82
 msgid "Signed out of Immich"
 msgstr "Logget ud af Immich"
 
@@ -211,48 +211,66 @@ msgstr "Uploaden tog for lang tid. Filen gemmes i {folder}."
 msgid "Immich takes photos and videos only."
 msgstr "Immich tager kun imod billeder og videoer."
 
-#: crates/immich-mount-linux/src/tray.rs:68
+#: crates/immich-mount-linux/src/tray.rs:80
 #: apple/App/ImmichMountApp.swift:665
 msgid "Connected to {server}"
 msgstr "Forbundet til {server}"
 
-#: crates/immich-mount-linux/src/tray.rs:69
+#: crates/immich-mount-linux/src/tray.rs:81
 #: apple/App/ImmichMountApp.swift:665
 msgid "{server} is not reachable"
 msgstr "{server} kan ikke nås"
 
-#: crates/immich-mount-linux/src/tray.rs:71
+#: crates/immich-mount-linux/src/tray.rs:83
 #: apple/App/ImmichMountApp.swift:664
 msgid "Signed in to {server}"
 msgstr "Logget ind på {server}"
 
-#: crates/immich-mount-linux/src/tray.rs:79
+#: crates/immich-mount-linux/src/tray.rs:91
 #: apple/App/ImmichMountApp.swift:673
 msgid "Server version: Immich {version}"
 msgstr "Serverversion: Immich {version}"
 
-#: crates/immich-mount-linux/src/tray.rs:82
+#: crates/immich-mount-linux/src/tray.rs:94
 #: apple/App/ImmichMountApp.swift:676
 msgid "Signed in as: {account}"
 msgstr "Logget ind som: {account}"
 
-#: crates/immich-mount-linux/src/tray.rs:85
-#: crates/immich-mount-kde/qml/Main.qml:609
-#: crates/immich-mount-kde/qml/Main.qml:630
+#: crates/immich-mount-linux/src/tray.rs:97
+#: crates/immich-mount-kde/qml/Main.qml:646
+#: crates/immich-mount-kde/qml/Main.qml:667
 msgid "Open in Dolphin"
 msgstr "Åbn i Dolphin"
 
-#: crates/immich-mount-linux/src/tray.rs:85
+#: crates/immich-mount-linux/src/tray.rs:97
 msgid "Open in Files"
 msgstr "Åbn i Filer"
 
-#: crates/immich-mount-linux/src/tray.rs:87
+#: crates/immich-mount-linux/src/tray.rs:99
+#: apple/App/ImmichMountApp.swift:54
+#: apple/App/ImmichMountApp.swift:481
+msgid "Settings…"
+msgstr "Indstillinger…"
+
+#: crates/immich-mount-linux/src/tray.rs:100
 msgid "Open Immich Mount"
 msgstr "Åbn Immich Mount"
 
-#: crates/immich-mount-linux/src/tray.rs:90
+#: crates/immich-mount-linux/src/tray.rs:103
 msgid "Get Immich Mount {version}…"
 msgstr "Hent Immich Mount {version}…"
+
+#: crates/immich-mount-linux/src/tray.rs:106
+#: crates/immich-mount-kde/qml/Main.qml:396
+#: apple/App/ImmichMountApp.swift:486
+#: apple/App/SettingsView.swift:408
+msgid "Sign Out…"
+msgstr "Log ud…"
+
+#: crates/immich-mount-linux/src/tray.rs:107
+#: apple/App/ImmichMountApp.swift:491
+msgid "Quit Immich Mount"
+msgstr "Afslut Immich Mount"
 
 #: crates/immich-mount-linux/src/updates.rs:53
 msgid "Immich Mount {version} is available"
@@ -290,7 +308,7 @@ msgstr "Vis billeder, albummer, personer og steder i andre apps, der deltager, o
 #: crates/immich-mount-desktop/src/preferences.rs:56
 #: crates/immich-mount-gnome/src/window.blp:174
 #: crates/immich-mount-gnome/src/window.blp:331
-#: crates/immich-mount-kde/qml/Main.qml:597
+#: crates/immich-mount-kde/qml/Main.qml:634
 msgid "Location"
 msgstr "Placering"
 
@@ -427,22 +445,22 @@ msgid "Signed in, but the mount did not start: {error}"
 msgstr "Logget ind, men monteringen startede ikke: {error}"
 
 #: crates/immich-mount-desktop/src/preferences.rs:48
-#: crates/immich-mount-kde/qml/Main.qml:48
-#: crates/immich-mount-kde/qml/Main.qml:124
+#: crates/immich-mount-kde/qml/Main.qml:92
+#: crates/immich-mount-kde/qml/Main.qml:168
 #: apple/App/SettingsView.swift:14
 msgid "General"
 msgstr "Generelt"
 
 #: crates/immich-mount-desktop/src/preferences.rs:81
-#: crates/immich-mount-kde/qml/Main.qml:49
-#: crates/immich-mount-kde/qml/Main.qml:124
+#: crates/immich-mount-kde/qml/Main.qml:93
+#: crates/immich-mount-kde/qml/Main.qml:168
 #: apple/App/SettingsView.swift:15
 msgid "Folders"
 msgstr "Mapper"
 
 #: crates/immich-mount-desktop/src/preferences.rs:109
-#: crates/immich-mount-kde/qml/Main.qml:50
-#: crates/immich-mount-kde/qml/Main.qml:124
+#: crates/immich-mount-kde/qml/Main.qml:94
+#: crates/immich-mount-kde/qml/Main.qml:168
 #: apple/App/SettingsView.swift:16
 msgid "Other Apps"
 msgstr "Andre apps"
@@ -473,7 +491,7 @@ msgstr "Giv besked, når en ny version udkommer."
 
 #: crates/immich-mount-desktop/src/preferences.rs:85
 #: crates/immich-mount-gnome/src/window.blp:144
-#: crates/immich-mount-kde/qml/Main.qml:590
+#: crates/immich-mount-kde/qml/Main.qml:627
 #: apple/App/SettingsView.swift:315
 msgid "Sections"
 msgstr "Sektioner"
@@ -505,95 +523,95 @@ msgstr "Immich-webapp"
 msgid "Mount at Login"
 msgstr "Montér ved login"
 
-#: crates/immich-mount-gnome/src/main.rs:106
+#: crates/immich-mount-gnome/src/main.rs:112
 msgid "Your Immich photos and videos as a drive in Files."
 msgstr "Dine Immich-billeder og -videoer som et drev i Filer."
 
-#: crates/immich-mount-gnome/src/main.rs:110
+#: crates/immich-mount-gnome/src/main.rs:116
 msgid "Source Code"
 msgstr "Kildekode"
 
-#: crates/immich-mount-gnome/src/main.rs:111
+#: crates/immich-mount-gnome/src/main.rs:117
 msgid "Inspired By"
 msgstr "Inspireret af"
 
-#: crates/immich-mount-gnome/src/main.rs:112
+#: crates/immich-mount-gnome/src/main.rs:118
 msgid "The Immich API Layer"
 msgstr "Immich-API-laget"
 
-#: crates/immich-mount-gnome/src/main.rs:114
+#: crates/immich-mount-gnome/src/main.rs:120
 msgid "AI Disclosure"
 msgstr "Brug af AI"
 
-#: crates/immich-mount-gnome/src/main.rs:118
-#: crates/immich-mount-kde/qml/Main.qml:406
+#: crates/immich-mount-gnome/src/main.rs:124
+#: crates/immich-mount-kde/qml/Main.qml:441
 #: apple/App/ImmichMountApp.swift:521
 msgid "Parts of this project were written with the assistance of AI coding agents. All changes are reviewed by the maintainer."
 msgstr "Dele af dette projekt er skrevet med hjælp fra AI-kodeagenter. Alle ændringer gennemgås af vedligeholderen."
 
-#: crates/immich-mount-gnome/src/main.rs:81
+#: crates/immich-mount-gnome/src/main.rs:87
 msgid "Preferences"
 msgstr "Indstillinger"
 
-#: crates/immich-mount-gnome/src/main.rs:82
+#: crates/immich-mount-gnome/src/main.rs:88
 msgid "Keyboard Shortcuts"
 msgstr "Tastaturgenveje"
 
-#: crates/immich-mount-gnome/src/main.rs:83
+#: crates/immich-mount-gnome/src/main.rs:89
 msgid "Quit"
 msgstr "Afslut"
 
-#: crates/immich-mount-gnome/src/preferences.rs:149
-#: crates/immich-mount-gnome/src/preferences.rs:153
+#: crates/immich-mount-gnome/src/preferences.rs:189
+#: crates/immich-mount-gnome/src/preferences.rs:193
 msgid "Choose a Folder"
 msgstr "Vælg en mappe"
 
-#: crates/immich-mount-gnome/src/preferences.rs:184
-#: crates/immich-mount-kde/qml/Main.qml:197
+#: crates/immich-mount-gnome/src/preferences.rs:224
+#: crates/immich-mount-kde/qml/Main.qml:241
 msgid "Learn More"
 msgstr "Få mere at vide"
 
-#: crates/immich-mount-gnome/src/preferences.rs:219
-#: crates/immich-mount-kde/qml/Main.qml:233
+#: crates/immich-mount-gnome/src/preferences.rs:259
+#: crates/immich-mount-kde/qml/Main.qml:277
 #: apple/App/SettingsView.swift:244
 msgid "Not found"
 msgstr "Ikke fundet"
 
-#: crates/immich-mount-gnome/src/preferences.rs:220
-#: crates/immich-mount-kde/qml/Main.qml:239
+#: crates/immich-mount-gnome/src/preferences.rs:260
+#: crates/immich-mount-kde/qml/Main.qml:283
 #: apple/App/SettingsView.swift:232
 msgid "Forget"
 msgstr "Glem"
 
-#: crates/immich-mount-gnome/src/preferences.rs:247
-#: crates/immich-mount-kde/src/backend.rs:474
+#: crates/immich-mount-gnome/src/preferences.rs:287
+#: crates/immich-mount-kde/src/backend.rs:487
 #: apple/App/CrosslinkApps.swift:160
 #: apple/App/SettingsView.swift:225
 msgid "No other app that takes part is installed."
 msgstr "Der er ingen anden app installeret, der deltager."
 
-#: crates/immich-mount-gnome/src/preferences.rs:248
-#: crates/immich-mount-kde/src/backend.rs:476
+#: crates/immich-mount-gnome/src/preferences.rs:288
+#: crates/immich-mount-kde/src/backend.rs:489
 msgid "Find Apps That Take Part"
 msgstr "Find apps, der deltager"
 
 #: crates/immich-mount-gnome/src/window.rs:215
 #: crates/immich-mount-gnome/src/window.blp:237
-#: crates/immich-mount-kde/qml/Main.qml:47
-#: crates/immich-mount-kde/qml/Main.qml:440
+#: crates/immich-mount-kde/qml/Main.qml:91
+#: crates/immich-mount-kde/qml/Main.qml:477
 msgid "Status"
 msgstr "Status"
 
 #: crates/immich-mount-gnome/src/window.rs:217
 #: crates/immich-mount-gnome/src/window.blp:366
-#: crates/immich-mount-kde/qml/Main.qml:51
-#: crates/immich-mount-kde/qml/Main.qml:338
+#: crates/immich-mount-kde/qml/Main.qml:95
+#: crates/immich-mount-kde/qml/Main.qml:386
 #: apple/App/SettingsView.swift:17
 msgid "Account"
 msgstr "Konto"
 
 #: crates/immich-mount-gnome/src/window.rs:309
-#: crates/immich-mount-kde/qml/Main.qml:547
+#: crates/immich-mount-kde/qml/Main.qml:584
 msgid "Continue in your browser"
 msgstr "Fortsæt i din browser"
 
@@ -618,12 +636,12 @@ msgid "Signed in, but the status could not be read"
 msgstr "Logget ind, men status kunne ikke læses"
 
 #: crates/immich-mount-gnome/src/window.rs:467
-#: crates/immich-mount-kde/qml/Main.qml:624
+#: crates/immich-mount-kde/qml/Main.qml:661
 msgid "Signed Out of Immich"
 msgstr "Logget ud af Immich"
 
 #: crates/immich-mount-gnome/src/window.rs:467
-#: crates/immich-mount-kde/qml/Main.qml:625
+#: crates/immich-mount-kde/qml/Main.qml:662
 msgid "Sign in again to keep browsing. Your caches are kept."
 msgstr "Log ind igen for at fortsætte med at gennemse. Dine cacher bevares."
 
@@ -633,12 +651,12 @@ msgid "Your Library Is in Files"
 msgstr "Dit bibliotek er i Filer"
 
 #: crates/immich-mount-gnome/src/window.rs:468
-#: crates/immich-mount-kde/qml/Main.qml:626
+#: crates/immich-mount-kde/qml/Main.qml:663
 msgid "Browse it like any folder. Originals download only when you open them."
 msgstr "Gennemse det som enhver anden mappe. Originaler hentes først, når du åbner dem."
 
 #: crates/immich-mount-gnome/src/window.rs:469
-#: crates/immich-mount-kde/qml/Main.qml:624
+#: crates/immich-mount-kde/qml/Main.qml:661
 msgid "Not Mounted"
 msgstr "Ikke monteret"
 
@@ -646,9 +664,33 @@ msgstr "Ikke monteret"
 msgid "Mount it to browse your library in Files."
 msgstr "Montér drevet for at gennemse dit bibliotek i Filer."
 
-#: crates/immich-mount-gnome/src/window.rs:559
-msgid "Disconnected"
-msgstr "Forbindelsen er afbrudt"
+#: crates/immich-mount-gnome/src/window.rs:566
+#: crates/immich-mount-kde/qml/Main.qml:59
+#: apple/App/ImmichMountApp.swift:218
+msgid "Sign out of Immich Mount?"
+msgstr "Log ud af Immich Mount?"
+
+#: crates/immich-mount-gnome/src/window.rs:567
+msgid "Immich Mount leaves Files, together with the photos and videos downloaded to this computer. Your library on the server stays as it is."
+msgstr "Immich Mount forsvinder fra Filer sammen med de billeder og videoer, der er hentet til denne computer. Dit bibliotek på serveren forbliver, som det er."
+
+#: crates/immich-mount-gnome/src/window.rs:569
+#: crates/immich-mount-kde/qml/Main.qml:73
+#: apple/App/CrosslinkApps.swift:198
+#: apple/App/CrosslinkApps.swift:213
+#: apple/App/ImmichMountApp.swift:226
+msgid "Cancel"
+msgstr "Annuller"
+
+#: crates/immich-mount-gnome/src/window.rs:569
+#: crates/immich-mount-kde/qml/Main.qml:64
+#: apple/App/ImmichMountApp.swift:225
+msgid "Sign Out"
+msgstr "Log ud"
+
+#: crates/immich-mount-gnome/src/window.rs:583
+msgid "Signed out"
+msgstr "Logget ud"
 
 #: crates/immich-mount-gnome/src/window.blp:26
 #: crates/immich-mount-gnome/src/window.blp:216
@@ -660,7 +702,7 @@ msgid "Your Immich Library in Files"
 msgstr "Dit Immich-bibliotek i Filer"
 
 #: crates/immich-mount-gnome/src/window.blp:34
-#: crates/immich-mount-kde/qml/Main.qml:463
+#: crates/immich-mount-kde/qml/Main.qml:500
 msgid "Browse your photos and videos as a drive. Originals download only when you open them."
 msgstr "Gennemse dine billeder og videoer som et drev. Originaler hentes først, når du åbner dem."
 
@@ -673,15 +715,15 @@ msgid "_Continue"
 msgstr "_Fortsæt"
 
 #: crates/immich-mount-gnome/src/window.blp:70
-#: crates/immich-mount-kde/qml/Main.qml:437
-#: crates/immich-mount-kde/qml/Main.qml:521
+#: crates/immich-mount-kde/qml/Main.qml:474
+#: crates/immich-mount-kde/qml/Main.qml:558
 #: apple/App/ContentView.swift:143
 #: apple/App/ContentView.swift:147
 msgid "Sign In"
 msgstr "Log ind"
 
 #: crates/immich-mount-gnome/src/window.blp:78
-#: crates/immich-mount-kde/qml/Main.qml:502
+#: crates/immich-mount-kde/qml/Main.qml:539
 msgid "Opens your browser, where you sign in as usual, with a passkey or a password manager."
 msgstr "Åbner din browser, hvor du logger ind som normalt, med en adgangsnøgle eller en adgangskodeadministrator."
 
@@ -694,12 +736,12 @@ msgid "For two-factor sign-in, use your server's single sign-on instead."
 msgstr "Til login med totrinsbekræftelse skal du i stedet bruge din servers single sign-on."
 
 #: crates/immich-mount-gnome/src/window.blp:96
-#: crates/immich-mount-kde/qml/Main.qml:511
+#: crates/immich-mount-kde/qml/Main.qml:548
 msgid "Email"
 msgstr "E-mail"
 
 #: crates/immich-mount-gnome/src/window.blp:101
-#: crates/immich-mount-kde/qml/Main.qml:515
+#: crates/immich-mount-kde/qml/Main.qml:552
 msgid "Password"
 msgstr "Adgangskode"
 
@@ -732,7 +774,7 @@ msgid "The folders the drive shows. You can change this later in Preferences."
 msgstr "De mapper, drevet viser. Du kan ændre det senere i Indstillinger."
 
 #: crates/immich-mount-gnome/src/window.blp:177
-#: crates/immich-mount-kde/qml/Main.qml:600
+#: crates/immich-mount-kde/qml/Main.qml:637
 msgid "Folder"
 msgstr "Mappe"
 
@@ -777,19 +819,15 @@ msgstr "Server"
 msgid "Credential"
 msgstr "Loginoplysninger"
 
-#: crates/immich-mount-gnome/src/window.blp:384
-msgid "Disconnecting signs out and takes the drive out of Files. Your library on the server stays as it is."
-msgstr "Afbryd forbindelsen logger ud og fjerner drevet fra Filer. Dit bibliotek på serveren forbliver, som det er."
+#: crates/immich-mount-gnome/src/window.blp:385
+msgid "Sign _Out…"
+msgstr "_Log ud…"
 
-#: crates/immich-mount-gnome/src/window.blp:387
-msgid "_Disconnect"
-msgstr "Afbryd _forbindelse"
-
-#: crates/immich-mount-gnome/src/window.blp:418
+#: crates/immich-mount-gnome/src/window.blp:416
 msgid "_Keyboard Shortcuts"
 msgstr "_Tastaturgenveje"
 
-#: crates/immich-mount-gnome/src/window.blp:423
+#: crates/immich-mount-gnome/src/window.blp:421
 msgid "_About Immich Mount"
 msgstr "_Om Immich Mount"
 
@@ -825,205 +863,201 @@ msgstr "{app} er ikke længere installeret."
 msgid "Immich Mount could not open {app}: {error}"
 msgstr "Immich Mount kunne ikke åbne {app}: {error}"
 
-#: crates/immich-mount-kde/qml/Main.qml:54
-#: crates/immich-mount-kde/qml/Main.qml:374
-#: crates/immich-mount-kde/qml/Main.qml:429
+#: crates/immich-mount-kde/qml/Main.qml:60
+msgid "Immich Mount leaves Dolphin, together with the photos and videos downloaded to this computer. Your library on the server stays as it is."
+msgstr "Immich Mount forsvinder fra Dolphin sammen med de billeder og videoer, der er hentet til denne computer. Dit bibliotek på serveren forbliver, som det er."
+
+#: crates/immich-mount-kde/qml/Main.qml:98
+#: crates/immich-mount-kde/qml/Main.qml:409
+#: crates/immich-mount-kde/qml/Main.qml:464
 msgid "About"
 msgstr "Om"
 
-#: crates/immich-mount-kde/qml/Main.qml:104
+#: crates/immich-mount-kde/qml/Main.qml:148
 msgid "Show thumbnails"
 msgstr "Vis miniaturer"
 
-#: crates/immich-mount-kde/qml/Main.qml:113
+#: crates/immich-mount-kde/qml/Main.qml:157
 msgid "Lets Dolphin preview files up to 100 MB on remote locations, this drive included. Thumbnails come from the server; no original is downloaded."
 msgstr "Lader Dolphin vise forhåndsvisninger af filer på op til 100 MB på fjerne placeringer, også dette drev. Miniaturerne kommer fra serveren; ingen originaler hentes."
 
-#: crates/immich-mount-kde/qml/Main.qml:276
+#: crates/immich-mount-kde/qml/Main.qml:324
 msgid "Choose…"
 msgstr "Vælg…"
 
-#: crates/immich-mount-kde/qml/Main.qml:342
+#: crates/immich-mount-kde/qml/Main.qml:390
 #: apple/App/ContentView.swift:107
 msgid "Server:"
 msgstr "Server:"
 
-#: crates/immich-mount-kde/qml/Main.qml:343
+#: crates/immich-mount-kde/qml/Main.qml:391
 msgid "Account:"
 msgstr "Konto:"
 
-#: crates/immich-mount-kde/qml/Main.qml:344
+#: crates/immich-mount-kde/qml/Main.qml:392
 msgid "Credential:"
 msgstr "Loginoplysninger:"
 
-#: crates/immich-mount-kde/qml/Main.qml:348
-msgid "Disconnect"
-msgstr "Afbryd forbindelse"
-
-#: crates/immich-mount-kde/qml/Main.qml:364
-msgid "Disconnecting signs out and takes the drive out of Dolphin. Your library on the server stays as it is."
-msgstr "Afbryd forbindelsen logger ud og fjerner drevet fra Dolphin. Dit bibliotek på serveren forbliver, som det er."
-
-#: crates/immich-mount-kde/qml/Main.qml:386
+#: crates/immich-mount-kde/qml/Main.qml:421
 msgid "Your Immich photos and videos as a drive in Dolphin. By Jakob Hviid, under the MIT license."
 msgstr "Dine Immich-billeder og -videoer som et drev i Dolphin. Af Jakob Hviid, under MIT-licensen."
 
-#: crates/immich-mount-kde/qml/Main.qml:391
+#: crates/immich-mount-kde/qml/Main.qml:426
 #: apple/App/Info.plist (NSHumanReadableCopyright)
 msgid "Immich Mount is an independent, unofficial project. It is not affiliated with, endorsed by, or sponsored by the Immich project or FUTO. “Immich” is used only to describe the server this software works with, and remains the mark of its owner."
 msgstr "Immich Mount er et uafhængigt, uofficielt projekt. Det er ikke tilknyttet, godkendt eller sponsoreret af Immich-projektet eller FUTO. »Immich« bruges kun til at beskrive den server, som denne software arbejder sammen med, og forbliver sin ejers varemærke."
 
-#: crates/immich-mount-kde/qml/Main.qml:393
+#: crates/immich-mount-kde/qml/Main.qml:428
 msgid "Credits"
 msgstr "Anerkendelser"
 
-#: crates/immich-mount-kde/qml/Main.qml:399
+#: crates/immich-mount-kde/qml/Main.qml:434
 msgid "Inspired by {project}"
 msgstr "Inspireret af {project}"
 
-#: crates/immich-mount-kde/qml/Main.qml:400
+#: crates/immich-mount-kde/qml/Main.qml:435
 msgid "The Immich API layer: {project}"
 msgstr "Immich-API-laget: {project}"
 
-#: crates/immich-mount-kde/qml/Main.qml:402
+#: crates/immich-mount-kde/qml/Main.qml:437
 #: apple/App/ImmichMountApp.swift:520
 msgid "AI disclosure"
 msgstr "Brug af AI"
 
-#: crates/immich-mount-kde/qml/Main.qml:411
+#: crates/immich-mount-kde/qml/Main.qml:446
 msgid "Website: {link}"
 msgstr "Websted: {link}"
 
-#: crates/immich-mount-kde/qml/Main.qml:412
+#: crates/immich-mount-kde/qml/Main.qml:447
 msgid "Source code: {link}"
 msgstr "Kildekode: {link}"
 
-#: crates/immich-mount-kde/qml/Main.qml:422
+#: crates/immich-mount-kde/qml/Main.qml:457
 #: apple/App/ContentView.swift:125
 msgid "Back"
 msgstr "Tilbage"
 
-#: crates/immich-mount-kde/qml/Main.qml:436
+#: crates/immich-mount-kde/qml/Main.qml:473
 msgid "Connect"
 msgstr "Forbind"
 
-#: crates/immich-mount-kde/qml/Main.qml:438
+#: crates/immich-mount-kde/qml/Main.qml:475
 msgid "Continue in Your Browser"
 msgstr "Fortsæt i din browser"
 
-#: crates/immich-mount-kde/qml/Main.qml:439
+#: crates/immich-mount-kde/qml/Main.qml:476
 msgid "Your Library in Dolphin"
 msgstr "Dit bibliotek i Dolphin"
 
-#: crates/immich-mount-kde/qml/Main.qml:462
+#: crates/immich-mount-kde/qml/Main.qml:499
 msgid "Your Immich Library in Dolphin"
 msgstr "Dit Immich-bibliotek i Dolphin"
 
-#: crates/immich-mount-kde/qml/Main.qml:469
+#: crates/immich-mount-kde/qml/Main.qml:506
 msgid "Server address:"
 msgstr "Serveradresse:"
 
-#: crates/immich-mount-kde/qml/Main.qml:470
+#: crates/immich-mount-kde/qml/Main.qml:507
 msgid "Server address"
 msgstr "Serveradresse"
 
-#: crates/immich-mount-kde/qml/Main.qml:478
+#: crates/immich-mount-kde/qml/Main.qml:515
 #: apple/App/ContentView.swift:139
 msgid "Continue"
 msgstr "Fortsæt"
 
-#: crates/immich-mount-kde/qml/Main.qml:508
+#: crates/immich-mount-kde/qml/Main.qml:545
 msgid "Email and password"
 msgstr "E-mail og adgangskode"
 
-#: crates/immich-mount-kde/qml/Main.qml:511
+#: crates/immich-mount-kde/qml/Main.qml:548
 #: apple/App/ContentView.swift:101
 msgid "Email:"
 msgstr "E-mail:"
 
-#: crates/immich-mount-kde/qml/Main.qml:514
+#: crates/immich-mount-kde/qml/Main.qml:551
 #: apple/App/ContentView.swift:102
 msgid "Password:"
 msgstr "Adgangskode:"
 
-#: crates/immich-mount-kde/qml/Main.qml:526
-#: crates/immich-mount-kde/qml/Main.qml:530
+#: crates/immich-mount-kde/qml/Main.qml:563
+#: crates/immich-mount-kde/qml/Main.qml:567
 msgid "API key"
 msgstr "API-nøgle"
 
-#: crates/immich-mount-kde/qml/Main.qml:529
+#: crates/immich-mount-kde/qml/Main.qml:566
 msgid "Key:"
 msgstr "Nøgle:"
 
-#: crates/immich-mount-kde/qml/Main.qml:535
+#: crates/immich-mount-kde/qml/Main.qml:572
 msgid "Sign In With Key"
 msgstr "Log ind med nøgle"
 
-#: crates/immich-mount-kde/qml/Main.qml:548
+#: crates/immich-mount-kde/qml/Main.qml:585
 msgid "Sign in there. When your browser asks to open Immich Mount, allow it."
 msgstr "Log ind der. Når din browser spørger, om den må åbne Immich Mount, så tillad det."
 
-#: crates/immich-mount-kde/qml/Main.qml:551
+#: crates/immich-mount-kde/qml/Main.qml:588
 msgid "Open the Sign-In Page Again"
 msgstr "Åbn loginsiden igen"
 
-#: crates/immich-mount-kde/qml/Main.qml:562
+#: crates/immich-mount-kde/qml/Main.qml:599
 msgid "No browser could be opened. Open this address in one:"
 msgstr "Ingen browser kunne åbnes. Åbn denne adresse i en browser:"
 
-#: crates/immich-mount-kde/qml/Main.qml:569
+#: crates/immich-mount-kde/qml/Main.qml:606
 msgid "Sign-in address"
 msgstr "Loginadresse"
 
-#: crates/immich-mount-kde/qml/Main.qml:599
+#: crates/immich-mount-kde/qml/Main.qml:636
 msgid "Folder:"
 msgstr "Mappe:"
 
-#: crates/immich-mount-kde/qml/Main.qml:604
+#: crates/immich-mount-kde/qml/Main.qml:641
 msgid "Dolphin"
 msgstr "Dolphin"
 
-#: crates/immich-mount-kde/qml/Main.qml:624
+#: crates/immich-mount-kde/qml/Main.qml:661
 msgid "Your Library Is in Dolphin"
 msgstr "Dit bibliotek er i Dolphin"
 
-#: crates/immich-mount-kde/qml/Main.qml:627
+#: crates/immich-mount-kde/qml/Main.qml:664
 msgid "Mount it to browse your library in Dolphin."
 msgstr "Montér drevet for at gennemse dit bibliotek i Dolphin."
 
-#: crates/immich-mount-kde/qml/Main.qml:630
+#: crates/immich-mount-kde/qml/Main.qml:667
 msgid "Sign In Again"
 msgstr "Log ind igen"
 
-#: crates/immich-mount-kde/qml/Main.qml:630
+#: crates/immich-mount-kde/qml/Main.qml:667
 msgid "Mount"
 msgstr "Montér"
 
-#: crates/immich-mount-kde/qml/Main.qml:638
+#: crates/immich-mount-kde/qml/Main.qml:675
 msgid "Connection:"
 msgstr "Forbindelse:"
 
-#: crates/immich-mount-kde/qml/Main.qml:639
+#: crates/immich-mount-kde/qml/Main.qml:676
 msgid "Cache:"
 msgstr "Cache:"
 
-#: crates/immich-mount-kde/qml/Main.qml:640
+#: crates/immich-mount-kde/qml/Main.qml:677
 msgid "Location:"
 msgstr "Placering:"
 
-#: crates/immich-mount-kde/qml/Main.qml:641
+#: crates/immich-mount-kde/qml/Main.qml:678
 msgid "Uploading:"
 msgstr "Uploader:"
 
-#: crates/immich-mount-kde/qml/Main.qml:642
+#: crates/immich-mount-kde/qml/Main.qml:679
 msgid "Dolphin:"
 msgstr "Dolphin:"
 
-#: crates/immich-mount-kde/qml/Main.qml:647
+#: crates/immich-mount-kde/qml/Main.qml:684
 msgid "Unmount"
 msgstr "Afmontér"
 
-#: crates/immich-mount-kde/qml/Main.qml:660
+#: crates/immich-mount-kde/qml/Main.qml:697
 msgid "Immich Mount is an independent, unofficial project. It is not affiliated with, endorsed by, or sponsored by the Immich project or FUTO."
 msgstr "Immich Mount er et uafhængigt, uofficielt projekt. Det er ikke tilknyttet, godkendt eller sponsoreret af Immich-projektet eller FUTO."
 
@@ -1236,16 +1270,6 @@ msgstr "Vælg en app at vise “{item}” i."
 msgid "Show"
 msgstr "Vis"
 
-#: apple/App/CrosslinkApps.swift:198
-#: apple/App/CrosslinkApps.swift:213
-#: apple/App/ImmichMountApp.swift:226
-msgid "Cancel"
-msgstr "Annuller"
-
-#: apple/App/ImmichMountApp.swift:218
-msgid "Sign out of Immich Mount?"
-msgstr "Log ud af Immich Mount?"
-
 #: apple/App/ImmichMountApp.swift:219
 msgid "Immich Mount leaves Finder, together with the photos and videos downloaded to this Mac. Your library on the server stays as it is."
 msgstr "Immich Mount forsvinder fra Finder sammen med de billeder og videoer, der er hentet til denne Mac. Dit bibliotek på serveren forbliver, som det er."
@@ -1253,10 +1277,6 @@ msgstr "Immich Mount forsvinder fra Finder sammen med de billeder og videoer, de
 #: apple/App/ImmichMountApp.swift:221
 msgid "Files in Upload that have not reached Immich: {count}. They stay on this Mac, and Finder shows where once you have signed out."
 msgstr "Filer i Upload, der ikke er nået frem til Immich: {count}. De bliver på denne Mac, og Finder viser hvor, når du er logget ud."
-
-#: apple/App/ImmichMountApp.swift:225
-msgid "Sign Out"
-msgstr "Log ud"
 
 #: apple/App/ImmichMountApp.swift:241
 msgid "Still signed in"
@@ -1320,11 +1340,6 @@ msgstr "Om Immich Mount"
 msgid "Check for Updates…"
 msgstr "Søg efter opdateringer…"
 
-#: apple/App/ImmichMountApp.swift:54
-#: apple/App/ImmichMountApp.swift:481
-msgid "Settings…"
-msgstr "Indstillinger…"
-
 #: apple/App/ImmichMountApp.swift:468
 #: apple/App/SettingsView.swift:383
 msgid "Sign In…"
@@ -1334,15 +1349,6 @@ msgstr "Log ind…"
 #: apple/App/SettingsView.swift:403
 msgid "Switch On in Finder…"
 msgstr "Slå til i Finder…"
-
-#: apple/App/ImmichMountApp.swift:486
-#: apple/App/SettingsView.swift:408
-msgid "Sign Out…"
-msgstr "Log ud…"
-
-#: apple/App/ImmichMountApp.swift:491
-msgid "Quit Immich Mount"
-msgstr "Afslut Immich Mount"
 
 #: apple/App/ReceivedLinks.swift:18
 #: apple/App/SettingsView.swift:382

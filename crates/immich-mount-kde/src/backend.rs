@@ -94,6 +94,11 @@ pub mod qobject {
         #[cxx_name = "forgetApp"]
         fn forget_app(self: Pin<&mut Backend>, id: &QString) -> QString;
 
+        /// What the tray started the app for: `settings` (General), `sign-out` (the question), or nothing.
+        #[qinvokable]
+        #[cxx_name = "startRequest"]
+        fn start_request(self: &Backend) -> QString;
+
         /// A folder the folder chooser gave, as a `file://` address, written as the location setting is.
         #[qinvokable]
         #[cxx_name = "homeRelative"]
@@ -498,6 +503,15 @@ impl qobject::Backend {
             }
         }
         QString::from(&serde_json::Value::Array(rows).to_string())
+    }
+
+    pub fn start_request(&self) -> QString {
+        let request = std::env::args().skip(1).find_map(|argument| match argument.as_str() {
+            immich_mount_linux::tray::OPEN_SETTINGS => Some("settings"),
+            immich_mount_linux::tray::OPEN_SIGN_OUT => Some("sign-out"),
+            _ => None,
+        });
+        QString::from(request.unwrap_or_default())
     }
 
     pub fn home_relative(&self, address: &QString) -> QString {

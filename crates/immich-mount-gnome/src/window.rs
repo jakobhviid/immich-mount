@@ -170,8 +170,8 @@ mod imp {
         }
 
         #[template_callback]
-        fn on_disconnect(&self, #[rest] _values: &[glib::Value]) {
-            self.obj().disconnect();
+        fn on_sign_out(&self, #[rest] _values: &[glib::Value]) {
+            self.obj().confirm_sign_out();
         }
 
         #[template_callback]
@@ -551,12 +551,36 @@ impl Window {
         });
     }
 
-    fn disconnect(&self) {
+    /// Sign out, as the tray's Sign Out… asks: the Account page, and the question. Before anyone signed in, the app
+    /// is simply shown.
+    pub fn ask_to_sign_out(&self) {
+        if self.imp().navigation.visible_page().and_then(|page| page.tag()).is_some_and(|tag| tag == "status") {
+            self.select_page("account");
+            self.confirm_sign_out();
+        }
+    }
+
+    /// Signing out removes the drive and what was downloaded, so it is asked first, as on the Mac.
+    fn confirm_sign_out(&self) {
+        let dialog = adw::AlertDialog::new(
+            Some(tr("Sign out of Immich Mount?")),
+            Some(tr("Immich Mount leaves Files, together with the photos and videos downloaded to this computer. Your library on the server stays as it is.")),
+        );
+        dialog.add_responses(&[("cancel", tr("Cancel")), ("sign-out", tr("Sign Out"))]);
+        dialog.set_response_appearance("sign-out", adw::ResponseAppearance::Destructive);
+        dialog.set_default_response(Some("cancel"));
+        dialog.set_close_response("cancel");
+        let window = self.clone();
+        dialog.connect_response(Some("sign-out"), move |_, _| window.sign_out());
+        dialog.present(Some(self));
+    }
+
+    fn sign_out(&self) {
         let window = self.clone();
         run(async { session::disconnect() }, move |outcome| match outcome {
             Ok(()) => {
                 window.imp().navigation.replace_with_tags(&["connect"]);
-                window.toast(tr("Disconnected"));
+                window.toast(tr("Signed out"));
             }
             Err(message) => window.toast(&message),
         });

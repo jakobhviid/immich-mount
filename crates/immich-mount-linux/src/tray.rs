@@ -4,7 +4,8 @@
 //! Bazzite), and nowhere on stock GNOME, where the app and Files' sidebar stay the way in.
 //!
 //! The menu is the Mac's: the state on its first line, then grey lines saying what each is, then the way to the
-//! drive and to the app.
+//! drive, the settings and the app, and at the foot Sign Out… and Quit, which unmounts, as the tray menus of KDE and
+//! the apps that use GNOME's AppIndicator end.
 
 use std::collections::HashMap;
 use std::sync::{Arc, Mutex};
@@ -53,9 +54,20 @@ pub enum Line {
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub enum Action {
     OpenDrive,
+    OpenSettings,
     OpenApp,
     OpenUpdate,
+    SignOut,
+    Quit,
 }
+
+/// What `immich-mount app` is given to open the app on its first settings page, General: an address no other program
+/// claims, which the GNOME app receives as a file to open (in the window already running, if one is) and the KDE app
+/// as an argument.
+pub const OPEN_SETTINGS: &str = "immich-mount:settings";
+/// What `immich-mount app` is given to open the app on its Account page, asking whether to sign out: the daemon has
+/// no window to ask in, and signing out is never done without asking.
+pub const OPEN_SIGN_OUT: &str = "immich-mount:sign-out";
 
 impl View {
     fn host(&self) -> String {
@@ -84,11 +96,15 @@ impl View {
         lines.push(Line::Separator);
         let open = if self.on_kde { tr("Open in Dolphin") } else { tr("Open in Files") };
         lines.push(Line::Action(open.to_owned(), Action::OpenDrive));
+        lines.push(Line::Action(tr("Settings…").to_owned(), Action::OpenSettings));
         lines.push(Line::Action(tr("Open Immich Mount").to_owned(), Action::OpenApp));
         if let Some(release) = &self.update {
             lines.push(Line::Separator);
             lines.push(Line::Action(tr("Get Immich Mount {version}…").replace("{version}", &release.version), Action::OpenUpdate));
         }
+        lines.push(Line::Separator);
+        lines.push(Line::Action(tr("Sign Out…").to_owned(), Action::SignOut));
+        lines.push(Line::Action(tr("Quit Immich Mount").to_owned(), Action::Quit));
         lines
     }
 }
@@ -307,7 +323,7 @@ impl Menu {
     async fn layout_updated(emitter: &SignalEmitter<'_>, revision: u32, parent: i32) -> zbus::Result<()>;
 }
 
-/// Do what a line of the menu says: open the drive in the file manager, or the app.
+/// Do what a line of the menu says: open the drive in the file manager, the app or its settings, or quit.
 fn run(action: Action, view: &View) {
     let outcome = match action {
         Action::OpenDrive => std::process::Command::new("xdg-open").arg(&view.mount_point).spawn(),
@@ -315,14 +331,43 @@ fn run(action: Action, view: &View) {
             Some(release) => std::process::Command::new("xdg-open").arg(&release.page).spawn(),
             None => return,
         },
-        Action::OpenApp => match std::env::current_exe() {
-            Ok(program) => std::process::Command::new(program).arg("app").spawn(),
+        Action::OpenApp | Action::OpenSettings | Action::SignOut => match std::env::current_exe() {
+            Ok(program) => {
+                let mut command = std::process::Command::new(program);
+                command.arg("app");
+                match action {
+                    Action::OpenSettings => _ = command.arg(OPEN_SETTINGS),
+                    Action::SignOut => _ = command.arg(OPEN_SIGN_OUT),
+                    _ => {}
+                }
+                command.spawn()
+            }
             Err(error) => Err(error),
         },
+        Action::Quit => return quit(),
     };
     if let Err(error) = outcome {
         log::warn!("the tray's {action:?} did not start: {error}");
     }
+}
+
+/// Quit, which on Linux is unmounting (the daemon serves the drive and the tray icon alike): `immich-mount unmount`,
+/// as the app's Unmount and Files' eject, so the daemon leaves cleanly and its service is not started again until the
+/// next login or Mount. It refuses while a file is uploading, and says why in a notification.
+fn quit() {
+    let Ok(program) = std::env::current_exe() else { return };
+    std::thread::spawn(move || {
+        let outcome = std::process::Command::new(program).arg("unmount").output();
+        let refusal = match outcome {
+            Ok(output) if output.status.success() => return,
+            Ok(output) => String::from_utf8_lossy(&output.stderr).trim().trim_start_matches("error:").trim().to_owned(),
+            Err(error) => error.to_string(),
+        };
+        log::warn!("the tray's Quit did not unmount: {refusal}");
+        if let Ok(runtime) = tokio::runtime::Builder::new_current_thread().enable_all().build() {
+            runtime.block_on(crate::notify::notify("Immich Mount", &refusal));
+        }
+    });
 }
 
 /// Show the tray icon on `connection`, and keep it registered with the desktop's tray, which may start after the
@@ -407,14 +452,20 @@ mod tests {
         assert_eq!(lines[2], Line::Text("Signed in as: admin@example.com".to_owned()));
         assert_eq!(lines[3], Line::Separator);
         assert_eq!(lines[4], Line::Action("Open in Files".to_owned(), Action::OpenDrive));
-        assert_eq!(lines[5], Line::Action("Open Immich Mount".to_owned(), Action::OpenApp));
+        assert_eq!(lines[5], Line::Action("Settings…".to_owned(), Action::OpenSettings));
+        assert_eq!(lines[6], Line::Action("Open Immich Mount".to_owned(), Action::OpenApp));
+        assert_eq!(lines[7], Line::Separator);
+        assert_eq!(lines[8], Line::Action("Sign Out…".to_owned(), Action::SignOut));
+        assert_eq!(lines.last(), Some(&Line::Action("Quit Immich Mount".to_owned(), Action::Quit)), "Quit at the foot");
         let offline = view(State::Offline).lines();
         assert_eq!(offline[0], Line::Text("photos.example.org is not reachable".to_owned()));
         let on_kde = View { on_kde: true, ..view(State::Online) };
         assert!(on_kde.lines().contains(&Line::Action("Open in Dolphin".to_owned(), Action::OpenDrive)));
         let release = crate::updates::Release { version: "2.21.0".to_owned(), page: "https://example.org/".to_owned() };
         let behind = View { update: Some(release), ..view(State::Online) };
-        assert_eq!(behind.lines().last(), Some(&Line::Action("Get Immich Mount 2.21.0…".to_owned(), Action::OpenUpdate)));
+        let behind = behind.lines();
+        assert_eq!(behind[behind.len() - 4], Line::Action("Get Immich Mount 2.21.0…".to_owned(), Action::OpenUpdate));
+        assert_eq!(behind.last(), Some(&Line::Action("Quit Immich Mount".to_owned(), Action::Quit)), "Quit stays last");
     }
 
     #[test]
@@ -429,7 +480,7 @@ mod tests {
         let (root, properties, children) = layout(&view(State::Online).lines());
         assert_eq!(root, 0);
         assert!(properties.contains_key("children-display"));
-        assert_eq!(children.len(), 6);
+        assert_eq!(children.len(), 10, "three lines, a separator, three ways in, a separator, Sign Out… and Quit");
         // Each child is the structure dbusmenu wants, (ia{sv}av), inside a variant.
         assert_eq!(children[0].value_signature().to_string(), "(ia{sv}av)");
     }

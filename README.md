@@ -153,8 +153,8 @@ AppIndicator extension is on (Ubuntu and Bazzite have it). One click shows how i
 item does:
 
 <table><tr>
-<td><img src="docs/screenshots/gnome-tray.png" width="440" alt="The tray icon's menu in GNOME's top bar: connected to the server, its version and the account, then Open in Files and Open Immich Mount"></td>
-<td><img src="docs/screenshots/kde-tray.png" width="340" alt="The tray icon's menu in Plasma's system tray: connected to the server, its version and the account, then Open in Dolphin and Open Immich Mount"></td>
+<td><img src="docs/screenshots/gnome-tray.png" width="440" alt="The tray icon's menu in GNOME's top bar: connected to the server, its version and the account, then Open in Files, Settings… and Open Immich Mount, Sign Out… and Quit"></td>
+<td><img src="docs/screenshots/kde-tray.png" width="340" alt="The tray icon's menu in Plasma's system tray: connected to the server, its version and the account, then Open in Dolphin, Settings… and Open Immich Mount, Sign Out… and Quit"></td>
 </tr></table>
 
 On KDE Plasma, the same app opens in Kirigami, puts the mount in Dolphin's Places, and offers to let Dolphin show

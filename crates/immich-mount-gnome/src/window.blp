@@ -381,12 +381,10 @@ template $ImmichMountWindow: Adw.ApplicationWindow {
                     }
 
                     Adw.PreferencesGroup {
-                      description: _("Disconnecting signs out and takes the drive out of Files. Your library on the server stays as it is.");
-
                       Adw.ButtonRow {
-                        title: _("_Disconnect");
+                        title: _("Sign _Out…");
                         use-underline: true;
-                        activated => $on_disconnect() swapped;
+                        activated => $on_sign_out() swapped;
 
                         styles [
                           "destructive-action",

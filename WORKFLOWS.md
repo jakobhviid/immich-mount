@@ -221,8 +221,9 @@ immich-mount show --json 'immich-crosslink:///people/5b7d9f1e-3a2c-4e6b-8d0f-1c3
 
 **At a glance:** while the drive is mounted, Immich Mount's icon sits in the tray, in KDE Plasma's system tray and in
 GNOME's top bar where the AppIndicator extension is on (Ubuntu and Bazzite have it). A click shows whether it is
-connected, to which server and as whom, with Open in Files (Open in Dolphin on Plasma) and Open Immich Mount. On the
-Mac the same menu is the menu bar item's. Without a tray, the app's status page says the same.
+connected, to which server and as whom, with Open in Files (Open in Dolphin on Plasma), Settings… and Open Immich
+Mount, then Sign Out… and Quit Immich Mount, which takes the drive out until the next login. On the Mac the same menu
+is the menu bar item's. Without a tray, the app's status page says the same.
 
 ```sh
 immich-mount status
@@ -351,9 +352,9 @@ the time (`… opened in 2300 ms: 450 entries listed in 1900 ms, 900 thumbnail p
 `IMMICH_MOUNT_LOG=debug` (`systemctl --user set-environment IMMICH_MOUNT_LOG=debug`, then restart the service) every
 folder is.
 
-## 9. Disconnect and uninstall
+## 9. Sign out and uninstall
 
-- `immich-mount logout`, or **Disconnect** on the app's Account page, removes:
+- `immich-mount logout`, or **Sign Out…** on the app's Account page or in the tray, removes:
   - the credential (from the keyring or KWallet, or the file)
   - the session on the server, so the device leaves Immich's "Authorized devices"
   - the metadata store and the content cache
