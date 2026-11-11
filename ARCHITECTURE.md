@@ -987,16 +987,17 @@ Open in Immich and Copy Immich Link take an item from the file manager to its pa
     switched off before it comes back, and then age out with nothing to do (test apps, uninstalled ones). What was
     seen is kept as state, not a setting, as the protocol leaves to each app: it changes whenever the settings look,
     and is nothing a user writes. Immich Gallery keeps the same list by the same rules.
-  - **Forget on every app, and off as the lasting choice.** It works like pairing devices, with pairing automatic:
-    an app that announces itself is found, its switch is the user's choice, and Forget drops what was remembered of
-    it, switch and all. One still found comes back at once, new and on; one not found leaves the list. So Forget is
-    always safe, and clears an entry that went wrong without the user knowing why (an app moved, renamed, or no
-    longer announcing), and an app the user does not want is switched off. The surprise, an app switched off coming
-    back on after Forget, is why the list's description says what Forget does. An app away reads **Not found**,
-    not "not installed": it may be installed and no longer announce itself, or be where a sandboxed app cannot read
-    it.
-    - **Not chosen: Forget only for apps away:** an entry for an installed app could never be cleared, and an app
-      found by mistake stayed listed.
+  - **Off is the lasting choice, and Forget is for an app not found.** It works like pairing devices, with pairing
+    automatic: an app that is found (it announces itself, can be read, and can start) is listed, its switch is the
+    user's choice, and one not found stays listed, remembered, until the user or 30 days forget it. An app that is
+    installed is found whether or not it ever started, as Open With lists it: its announcement is installed with it,
+    on the Mac in its Info.plist, which is the only thing one sandboxed app can read of another's. So an entry that
+    looks wrong is either really there, and switched off, or not, and Not found, where Forget clears it. An app away
+    reads **Not found**, not "not installed": it may be installed and no longer announce itself, be a copy Launch
+    Services still lists that was deleted or moved, a desktop entry whose program is gone, or be where a sandboxed
+    app cannot read it.
+    - **Not chosen: Forget on every app** (tried first): an installed app was found again at once and came back
+      switched on, so on the Mac Forget seemed to do nothing, and on an app switched off it only turned it on.
   - **No app set apart.** Immich Mount offers and names only apps that announce themselves, the same way whoever
     made them, so the protocol it publishes is the one it follows. Immich Gallery is one participant among them.
 - **Web links can be switched off** (`web.links`), apart from Immich Crosslink, as the protocol asks of every
@@ -1008,8 +1009,10 @@ Open in Immich and Copy Immich Link take an item from the file manager to its pa
 - **Show in *app* on the Mac:** Finder's actions are declared in the extension's Info.plist, so their names are
   fixed; a list that changes cannot be one action per app. So the Mac takes the protocol's second way to offer Show
   in: one action, **Show in Another App…**, for every app that takes part. With one app offered for the item it
-  sends straight to it, which shows where it went; with several it asks in a dialog, **Show in Which App?**, a list
-  of the apps by name and icon with **Show** and **Cancel**, as Finder's own Open With > Other… asks. The app finds
+  sends straight to it, which shows where it went; with several it asks in an alert, **Show in Which App?**, naming
+  the item, with a button per app (its icon and name, stacked as macOS stacks an alert's buttons) and **Cancel**: one
+  click, and Return presses the app chosen last time. With more than six, the alert holds a list instead, since a
+  dozen buttons stop being an alert. The app finds
   the apps (an extension may not ask Launch Services about other apps' bundles from its sandbox, and the app sees
   apps launch), writes what is offered to the App Group (`crosslink-apps.json`), and the extension marks the items
   Finder offers the action on (`userInfo`); the marker is part of each item's version, so the app has the system

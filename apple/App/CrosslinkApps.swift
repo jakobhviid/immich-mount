@@ -91,8 +91,8 @@ final class CrosslinkApps: NSObject, ObservableObject {
         }
     }
 
-    /// Forget an app, installed or not, and its switch with it: one that still takes part is found again at once, new
-    /// and on (Immich Crosslink, "Participants that come and go").
+    /// Forget an app not found, and its switch with it: should it come back, it is new, and on (Immich Crosslink,
+    /// "Participants that come and go").
     func forget(_ bundleId: String) {
         forgetApp(file: Self.seenFile.path, bundleId: bundleId)
         Self.dropSwitch(bundleId)
@@ -167,28 +167,69 @@ final class CrosslinkApps: NSObject, ObservableObject {
                 send(url, toAppAt: apps[0].path)
                 return
             }
+            // The item's name, as Finder shows it, for the question; none if the system cannot tell at once.
+            let place = try? await NSFileProviderManager(for: FinderLocation.domain)?
+                .getUserVisibleURL(for: NSFileProviderItemIdentifier(request.identifier))
+            let item = place.map { FileManager.default.displayName(atPath: $0.path) }
             // A modal alert run inside a task holds the main queue (AppDelegate's `confirmSignOut`).
-            RunLoop.main.perform { MainActor.assumeIsolated { self.choose(among: apps, for: url) } }
+            RunLoop.main.perform { MainActor.assumeIsolated { self.choose(among: apps, for: url, item: item) } }
         }
     }
 
-    /// Ask which app shows the item, by the names and icons the system gives them, and send the link to the one
-    /// chosen. The first is chosen until the user picks another; a double-click picks and shows.
-    private func choose(among apps: [OfferedApp], for link: URL) {
-        let choice = AppChoice(apps: apps.map { AppChoice.Choice(path: $0.path, name: Self.name(ofAppAt: $0.path),
-                                                                 icon: NSWorkspace.shared.icon(forFile: $0.path)) })
+    /// The app last chosen in Show in Which App?, whose button Return presses next time (the app's own state).
+    private static let lastChoiceKey = "ShowInLastApp"
+    /// The most apps asked about as buttons; with more, an alert of buttons stops being one, and they are a list.
+    private static let mostButtons = 6
+
+    /// Ask which app shows the item: a button per app, by the name and icon the system gives it, in the settings'
+    /// order, and Cancel; Return presses the app chosen last time. The link goes to the app clicked, alone.
+    private func choose(among apps: [OfferedApp], for link: URL, item: String?) {
+        let choices = apps.map { (bundleId: $0.bundleId, path: $0.path, name: Self.name(ofAppAt: $0.path)) }
+            .sorted { $0.name.localizedStandardCompare($1.name) == .orderedAscending }
         let alert = NSAlert()
         alert.messageText = tr("Show in Which App?")
-        alert.addButton(withTitle: tr("Show"))
-        alert.addButton(withTitle: tr("Cancel"))
-        let list = NSHostingView(rootView: AppChoiceList(choice: choice))
-        list.frame = NSRect(x: 0, y: 0, width: 280, height: min(CGFloat(apps.count) * 32 + 8, 200))
-        alert.accessoryView = list
-        logger.notice("Show in Another App…: asking which of \(apps.count) apps")
+        if let item {
+            alert.informativeText = tr("Choose an app to show “{item}” in.", ["item": item])
+        }
+        let chosen: String?
+        if choices.count > Self.mostButtons {
+            let choice = AppChoice(apps: choices.map { AppChoice.Choice(path: $0.path, name: $0.name, icon: NSWorkspace.shared.icon(forFile: $0.path)) })
+            alert.addButton(withTitle: tr("Show"))
+            alert.addButton(withTitle: tr("Cancel"))
+            let list = NSHostingView(rootView: AppChoiceList(choice: choice))
+            list.frame = NSRect(x: 0, y: 0, width: 280, height: 200)
+            alert.accessoryView = list
+            chosen = run(alert) == .alertFirstButtonReturn ? choice.selection : nil
+        } else {
+            let last = UserDefaults.standard.string(forKey: Self.lastChoiceKey)
+            for choice in choices {
+                let button = alert.addButton(withTitle: choice.name)
+                let icon = NSWorkspace.shared.icon(forFile: choice.path)
+                icon.size = NSSize(width: 16, height: 16)
+                button.image = icon
+                button.imagePosition = .imageLeading
+                button.keyEquivalent = ""
+            }
+            alert.addButton(withTitle: tr("Cancel")).keyEquivalent = "\u{1b}"
+            let preferred = choices.firstIndex { $0.bundleId == last } ?? 0
+            alert.buttons[preferred].keyEquivalent = "\r"
+            let index = run(alert).rawValue - NSApplication.ModalResponse.alertFirstButtonReturn.rawValue
+            chosen = choices.indices.contains(index) ? choices[index].path : nil
+        }
+        guard let path = chosen, let picked = choices.first(where: { $0.path == path }) else {
+            logger.notice("Show in Which App?: cancelled")
+            return
+        }
+        UserDefaults.standard.set(picked.bundleId, forKey: Self.lastChoiceKey)
+        send(link, toAppAt: picked.path)
+    }
+
+    /// Run the question in front of Finder, which it was asked from.
+    private func run(_ alert: NSAlert) -> NSApplication.ModalResponse {
+        logger.notice("Show in Which App?: asking")
         AppDelegate.shared?.bringForward()
         AppDelegate.shared?.floatUntilUsed(alert.window)
-        guard alert.runModal() == .alertFirstButtonReturn, let path = choice.selection else { return }
-        send(link, toAppAt: path)
+        return alert.runModal()
     }
 
     /// Send `link` to the app at `path` alone. An app removed since the list was read, or one the system cannot open,
@@ -241,7 +282,7 @@ final class CrosslinkApps: NSObject, ObservableObject {
     }
 }
 
-/// The apps Show in Another App… asks to choose between, and the one chosen, by its path.
+/// The apps Show in Which App? lists when there are more than its buttons, and the one chosen, by its path.
 @MainActor
 final class AppChoice: ObservableObject {
     struct Choice: Identifiable {

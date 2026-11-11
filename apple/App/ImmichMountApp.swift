@@ -386,8 +386,9 @@ final class SettingsTabController: NSTabViewController {
     /// The pane last chosen, in the app's own defaults.
     static let lastPaneKey = "SettingsPane"
     private static let width: CGFloat = 520
-    /// The tallest the window grows for a pane; beyond it the pane scrolls.
-    private static let tallest: CGFloat = 720
+    /// The room the window leaves on its screen, above and below, for the menu bar, the Dock and its own title bar
+    /// and toolbar: a pane taller than the rest scrolls.
+    private static let screenMargin: CGFloat = 160
 
     /// Each pane's content height, as it last told it.
     private var heights: [SettingsPane: CGFloat] = [:]
@@ -428,7 +429,10 @@ final class SettingsTabController: NSTabViewController {
     /// that measured it, never during it.
     private func pane(_ pane: SettingsPane, measures measured: CGFloat) {
         logger.debug("settings pane \(pane.rawValue, privacy: .public) measures \(Double(measured), privacy: .public)")
-        let height = min(max(measured.rounded(.up), 120), Self.tallest)
+        // As tall as the content, up to what the screen holds: a fixed limit cut off a pane that had grown past it.
+        let screen = view.window?.screen ?? NSScreen.main
+        let tallest = max((screen?.visibleFrame.height ?? 900) - Self.screenMargin, 400)
+        let height = min(max(measured.rounded(.up), 120), tallest)
         guard heights[pane] != height else { return }
         heights[pane] = height
         tabViewItems[pane.rawValue].viewController?.preferredContentSize = NSSize(width: Self.width, height: height)

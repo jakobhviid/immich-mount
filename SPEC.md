@@ -462,13 +462,13 @@ part in Immich Crosslink, which shows it there.
   showing items in other apps that take part and showing the items they send in the file manager (in Finder, on the
   Mac), with a link to the protocol whose address is not shown: **Learn More** beside the switch on Linux, **Learn
   more…** at the end of the description on the Mac. Then **Apps That Take Part**, each by its name and icon with a
-  **Forget** button and a switch, described as "Apps that take part are found by themselves. Turn one off to leave it
-  out of Show in. Forget clears what Immich Mount remembers of an app: one that still takes part comes back, switched
-  on, so turn it off instead to leave it out." With none, "No other app that takes part is installed." and a link to the protocol's participants (**Find Apps
+  switch, described as "Apps that take part are found by themselves. Turn one off to leave it out of Show in. One not
+  found stays listed for 30 days, so it stays off if it comes back; Forget removes it now." With none, "No other app that takes part is installed." and a link to the protocol's participants (**Find Apps
   That Take Part**, **Find apps that take part…** on the Mac). Then **Immich Web App** (Links to Immich). An app seen
-  before but not found at the moment stays listed for 30 days, as **Not found**, by its remembered name and a generic
-  icon. Forgetting an app, by hand or after 30 days unseen, drops its switch too: one still found comes back at once,
-  new and on, and one not found leaves the list. What was seen is the app's state
+  before but not found at the moment (not announcing, unreadable, or its program gone) stays listed for 30 days, as
+  **Not found**, by its remembered name and a generic icon, with its switch and a **Forget** button. Forgetting it, by
+  hand or after 30 days unseen, drops its switch too, so an app that comes back is new and on. An app that is found has
+  no Forget: it would be found again at once. What was seen is the app's state
   (`~/.local/state/immich-mount/crosslink-seen.json` on Linux, the App Group on the Mac), not a setting. The menus
   offer only apps that are found. No app is set apart: Immich Mount names and offers no app of its own accord.
 - **With web links off,** the menus offer Show in *app* alone.
@@ -668,13 +668,15 @@ macOS edition"). Where Finder's way differs:
   names cannot be the apps', and the apps come in one action, **Show in Another App…** (the protocol's second way to
   offer Show in). Finder offers it on one item while at least one other app announces draft 0.2 and the item's
   kind. It has the menu bar app, started if it is not running and without a window, send the item's crosslink to
-  that app straight away when there is one; with several, a dialog, **Show in Which App?**, lists them by the names
-  and icons macOS gives them (a bundle's display name), the first chosen, with **Show** and **Cancel**, and a
-  double-click shows the item in the app clicked. Nothing is sent on Cancel. The app finds the apps
+  that app straight away when there is one; with several, an alert, **Show in Which App?**, says "Choose an app to show
+  “*item*” in." (the item's name as Finder shows it, when the system tells it at once) and has a button for each app,
+  by the name and icon macOS gives it (a bundle's display name), in the settings' order, and **Cancel**. Return presses
+  the app chosen last time (the first, before any), Escape cancels, and nothing is sent on Cancel. With more than six
+  apps, the alert lists them, the first chosen, with **Show** and **Cancel**. The app finds the apps
   (`NSWorkspace.urlsForApplications(toOpen:)`) at launch, when any app launches, when a crosslink setting changes and
   before it sends, leaving out an app whose program is missing, and marks the items Finder offers the action on; a
   send that fails gets an alert titled "Immich Crosslink", as on Linux, and the list is read again. The settings list
-  them, each with Forget and a switch (`crosslink.hidden`, by bundle id). A sandboxed app reads another app's
+  them, each with a switch (`crosslink.hidden`, by bundle id), and Forget on one not found. A sandboxed app reads another app's
   announcement only from a copy in /Applications.
 - **Dates:** a file has its capture time, as on Linux; a folder the time the location was set up (signing in),
   where on Linux it has the mount's.

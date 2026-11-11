@@ -462,7 +462,7 @@ step 1 offers.
 - **Settings:** `crosslink.enabled` (bool, default `true`): offer links to other apps. `crosslink.hidden` (list,
   default empty): apps left out, by bundle id or desktop entry id. In each settings window (the Mac's, GNOME's and
   Plasma's), a switch labelled **Immich Crosslink**, with a link to <https://jakob.hviid.phd/immich-crosslink/>, so it
-  is clear what it is; under it the apps found, each with Forget and a switch. The label and the link are the
+  is clear what it is; under it the apps found, each with a switch, and Forget on one not found. The label and the link are the
   protocol's, the same in every app that takes part. With the switch off, a crosslink Immich Mount receives (step 2)
   only gets a notification saying so, with a way to turn it on. Open in Immich is not affected by either.
 - **Docs:** SPEC (the items, the keys), ARCHITECTURE (finding apps, the fixed Finder action),
@@ -479,8 +479,8 @@ come and go: listed for 30 days after they were last found. Verified in the Fedo
 off left only the Show in items; an uninstalled test app was listed, Forget removed it with its switch, and it came
 back new and on), and the Python extension on Bazzite. On the Mac too: with web links off, `fileproviderctl evaluate`
 refused Open and Copy and offered Show in; a removed test app was listed and Forget removed it. **Agreed next**
-(2026-11-11, in the protocol): Forget on every app, not only one away, with a description of what it does; an app
-away reads Not found; the link reads Learn more…; the Mac's settings get an Other Apps pane in Immich Gallery's
+(2026-11-11, in the protocol): an app is found only when it can be read and started, one not found reads Not found
+and keeps Forget, with a description of what the switches and Forget do; the link reads Learn more…; the Mac's settings get an Other Apps pane in Immich Gallery's
 order; no app is set apart. Built; the desktop VMs' check of the new rows is left.
 **Verified with Immich Gallery** on the maintainer's Mac: the Gallery's Show in Immich Mount
 reached the installed release, which selected an album and a photo in an album in Finder.

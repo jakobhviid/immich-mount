@@ -1931,8 +1931,8 @@ fn remember_apps_at(file: &Path, installed: Vec<SeenApp>, config: &str, now: chr
     RememberedApps { absent, forgotten }
 }
 
-/// Forget an app, installed or not: its remembered name goes (the caller puts its switch back to on). One that still
-/// takes part is found again the next time the apps are read, as new.
+/// Forget an app not found: its remembered name goes (the caller puts its switch back to on), so one that comes back is
+/// new.
 #[uniffi::export]
 pub fn forget_app(file: String, bundle_id: String) {
     let file = Path::new(&file);

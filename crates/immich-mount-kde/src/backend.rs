@@ -89,8 +89,7 @@ pub mod qobject {
         #[cxx_name = "storeSetting"]
         fn store_setting(self: Pin<&mut Backend>, key: &QString, value: &QString) -> QString;
 
-        /// Forget an app that takes crosslinks, found or not: its remembered name and its switch go, and one still
-        /// found comes back, switched on.
+        /// Forget an app that took crosslinks and is not found now: its remembered name and its switch go.
         #[qinvokable]
         #[cxx_name = "forgetApp"]
         fn forget_app(self: Pin<&mut Backend>, id: &QString) -> QString;

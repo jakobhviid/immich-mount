@@ -216,8 +216,8 @@ private struct CrosslinkSection: View {
         }
     }
 
-    /// The apps seen, each by its name and icon, with Forget and its switch; they mean nothing while Immich Crosslink
-    /// is off. One not found now is listed by its remembered name for 30 days; with none, a sentence says so and links
+    /// The apps seen, each by its name and icon with its switch; they mean nothing while Immich Crosslink is off. One
+    /// not found now is listed by its remembered name for 30 days, with Forget; with none, a sentence says so and links
     /// to the protocol's list of apps that take part.
     private var apps: some View {
         Section {
@@ -228,7 +228,9 @@ private struct CrosslinkSection: View {
             ForEach(found.listed) { app in
                 LabeledContent {
                     HStack(spacing: 12) {
-                        Button(tr("Forget")) { found.forget(app.bundleId) }
+                        if !app.installed {
+                            Button(tr("Forget")) { found.forget(app.bundleId) }
+                        }
                         Toggle(isOn: Binding(get: { app.shown }, set: { settings.setShown(app.bundleId, $0) })) {
                             Text(verbatim: app.name)
                         }
@@ -250,7 +252,7 @@ private struct CrosslinkSection: View {
         } header: {
             Text(tr("Apps That Take Part"))
         } footer: {
-            Text(tr("Apps that take part are found by themselves. Turn one off to leave it out of Show in. Forget clears what Immich Mount remembers of an app: one that still takes part comes back, switched on, so turn it off instead to leave it out."))
+            Text(tr("Apps that take part are found by themselves. Turn one off to leave it out of Show in. One not found stays listed for 30 days, so it stays off if it comes back; Forget removes it now."))
                 .foregroundStyle(.secondary)
         }
     }

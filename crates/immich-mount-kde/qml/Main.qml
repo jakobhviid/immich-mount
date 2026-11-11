@@ -153,9 +153,11 @@ Kirigami.ApplicationWindow {
                         }
                         Component {
                             id: appRow
-                            // An app that takes crosslinks, by its desktop entry's name and icon, offered in Show in,
-                            // with Forget; the switch leads, as in every row of KDE's.
+                            // An app that takes crosslinks, by its desktop entry's name and icon, offered in Show in;
+                            // the switch leads, as in every row of KDE's. One not found has Forget, at the row's end so
+                            // the buttons line up.
                             RowLayout {
+                                Layout.fillWidth: true
                                 Controls.Switch {
                                     Accessible.name: row.modelData.title
                                     checked: row.modelData.value === "true"
@@ -165,8 +167,8 @@ Kirigami.ApplicationWindow {
                                 // found now has its remembered name and a generic icon.
                                 Kirigami.Icon {
                                     source: row.modelData.icon.length > 0 ? row.modelData.icon : "application-x-executable"
-                                    implicitWidth: Kirigami.Units.iconSizes.small
-                                    implicitHeight: Kirigami.Units.iconSizes.small
+                                    implicitWidth: Kirigami.Units.iconSizes.smallMedium
+                                    implicitHeight: Kirigami.Units.iconSizes.smallMedium
                                 }
                                 Controls.Label { text: row.modelData.title }
                                 Controls.Label {
@@ -174,7 +176,9 @@ Kirigami.ApplicationWindow {
                                     text: i18n("Not found")
                                     opacity: 0.7
                                 }
+                                Item { Layout.fillWidth: true }
                                 Controls.Button {
+                                    visible: !row.modelData.installed
                                     text: i18n("Forget")
                                     onClicked: preferences.forget(row.modelData.key)
                                 }

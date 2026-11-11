@@ -100,11 +100,12 @@ Measured contrast on the website (WCAG AA asks 4.5:1 for text):
   this order, the Immich Crosslink switch, **Apps That Take Part**, and **Immich Web App** (the switch **Open in
   Immich and Copy Immich Link**, captioned "Open photos, albums, people and places in Immich's web app in your
   browser, or copy their address."): the same order and words as Immich Gallery's. Each app that takes part is a row
-  of its icon, its name, then **Forget** and its switch (the switch last on GNOME and the Mac; first on KDE, as KDE's
-  rows put it); one away reads **Not found** after its name. With none, **Find Apps That Take Part** (**Find apps
+  of its icon, its name and its switch (the switch last on GNOME and the Mac; first on KDE, as KDE's rows put it);
+  one not found reads **Not found** after its name and has **Forget** (before the switch on GNOME and the Mac, at the
+  row's end on KDE). With none, **Find Apps That Take Part** (**Find apps
   that take part…** on the Mac) links to the protocol's participants, rather than any one app being recommended.
-- **Show in on the Mac** is one Finder item, **Show in Another App…**; with several apps it asks **Show in Which
-  App?**, with **Show** and **Cancel**.
+- **Show in on the Mac** is one Finder item, **Show in Another App…**; with several apps an alert asks **Show in
+  Which App?**, "Choose an app to show “*item*” in.", with a button per app and **Cancel**.
 - **Buttons and titles in title case** in English, as GNOME's, KDE's and Apple's guidelines ask; labels and
   descriptions in sentence case. Translations follow their language's own conventions.
 - **No em-dashes** anywhere (AGENTS.md).

@@ -331,7 +331,7 @@ folders in the drive keep their English names.
 |---|---|
 | The keyring prompt appeared at login | Unlock it. If it was dismissed, the mount did not start (a notification says so): run `immich-mount mount`, or open Immich Mount |
 | "Signed out of Immich" notification | Open the app and sign in again. Caches are kept |
-| An app under Apps That Take Part is wrong (stale, Not found, or not wanted) | **Forget** it in the settings, under Other Apps. An app that still takes part comes back at once, switched on: switch it off to leave it out of Show in |
+| An app under Apps That Take Part is not wanted, or reads Not found | Switch it off in the settings, under Other Apps, to leave it out of Show in; an installed app stays listed while it is installed. One that reads **Not found** (removed, moved, or its program gone) has **Forget**, which removes it now; otherwise it goes by itself after 30 days |
 | A change made in Immich does not show in an open folder | The mount has it within about 10 seconds, but Files and Dolphin do not redraw an open folder on their own: press F5, or open the folder again |
 | KWallet asks to create a wallet at sign-in | First use of KWallet on this account (no `pam_kwallet`): create it; the credential is kept there |
 | Dolphin shows generic icons on the whole mount | KDE keeps previews of remote locations off: turn on **Show thumbnails** in the KDE app, or run the line `immich-mount doctor` prints |

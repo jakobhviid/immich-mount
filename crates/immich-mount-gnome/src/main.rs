@@ -113,7 +113,8 @@ fn show_about(application: &adw::Application) {
     about.add_legal_section(
         tr("AI Disclosure"),
         None,
-        gtk::License::Unknown,
+        // Custom, since libadwaita shows a legal section's text only with it; Unknown left the heading alone.
+        gtk::License::Custom,
         Some(tr("Parts of this project were written with the assistance of AI coding agents. All changes are reviewed by the maintainer.")),
     );
     about.present(application.active_window().as_ref());
