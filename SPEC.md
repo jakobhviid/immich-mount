@@ -454,7 +454,7 @@ part in Immich Crosslink, which shows it there.
 - **Sending:** the crosslink, with the signed-in user's id when known, goes to that app alone (GIO's
   `g_app_info_launch_uris` in Files; in Dolphin the app's own command, made from its desktop entry), never to the
   scheme's default, and byte for byte as the daemon wrote it.
-  An app whose program is missing is not offered. When sending fails, a notification titled "Immich Crosslink" says
+  An app whose program is missing (its `TryExec`, where it has one, or the program of its `Exec`) is not offered. When sending fails, a notification titled "Immich Crosslink" says
   "*app* is no longer installed." (its desktop entry gone since the menu was made) or "Immich Mount could not open
   *app*: *the system's reason*", and the next menu reads the apps again.
 - **Off:** with `crosslink.enabled` off, no Show in items; Open in Immich and Copy Immich Link stay.

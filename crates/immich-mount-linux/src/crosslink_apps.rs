@@ -36,23 +36,34 @@ pub fn installed() -> Vec<CrosslinkApp> {
 }
 
 /// Whether an entry's program is there to start, as GIO checks before it lists an app: one that is not is left out,
-/// as Files' menu leaves it out (immich-crosslink, "Sending"). The program is the first word of `Exec`, found on the
-/// `PATH` unless it is a path.
+/// as Files' menu leaves it out, and the settings list it as not found (immich-crosslink, "Finding participants"). A
+/// `TryExec`, where there is one, must be there, and so must the first word of `Exec`; each is found on the `PATH`
+/// unless it is a path.
 fn can_start(text: &str) -> bool {
-    let mut in_main_group = false;
-    let exec = text.lines().map(str::trim).find_map(|line| {
-        if line.starts_with('[') {
-            in_main_group = line == "[Desktop Entry]";
-            None
-        } else {
-            line.strip_prefix("Exec=").filter(|_| in_main_group)
-        }
-    });
-    let Some(exec) = exec.map(str::trim) else { return false };
+    let main_group_value = |key: &str| {
+        let mut in_main_group = false;
+        text.lines().map(str::trim).find_map(|line| {
+            if line.starts_with('[') {
+                in_main_group = line == "[Desktop Entry]";
+                None
+            } else {
+                line.strip_prefix(key).and_then(|rest| rest.strip_prefix('=')).filter(|_| in_main_group).map(str::trim)
+            }
+        })
+    };
+    if main_group_value("TryExec").is_some_and(|program| !is_program_found(program)) {
+        return false;
+    }
+    let Some(exec) = main_group_value("Exec") else { return false };
     let program = match exec.strip_prefix('"') {
         Some(quoted) => quoted.split('"').next().unwrap_or_default(),
         None => exec.split_whitespace().next().unwrap_or_default(),
     };
+    is_program_found(program)
+}
+
+/// Whether `program` is an executable file: at its path, or else in a folder of the `PATH`.
+fn is_program_found(program: &str) -> bool {
     let is_program = |path: &Path| {
         use std::os::unix::fs::PermissionsExt;
         path.metadata().is_ok_and(|metadata| metadata.is_file() && metadata.permissions().mode() & 0o111 != 0)
@@ -250,6 +261,9 @@ mod tests {
         assert!(!can_start("[Desktop Entry]\nExec=no-such-program-anywhere %u\n"));
         assert!(!can_start("[Desktop Entry]\nName=No Exec\n"));
         assert!(!can_start("[Desktop Action other]\nExec=sh\n"), "only the main group's Exec");
+        assert!(!can_start("[Desktop Entry]\nTryExec=no-such-program-anywhere\nExec=sh %u\n"), "a TryExec that is gone");
+        assert!(can_start("[Desktop Entry]\nTryExec=sh\nExec=sh %u\n"), "a TryExec that is there");
+        assert!(!can_start("[Desktop Entry]\nTryExec=sh\nExec=no-such-program-anywhere %u\n"), "Exec still counts");
     }
 
     #[test]
