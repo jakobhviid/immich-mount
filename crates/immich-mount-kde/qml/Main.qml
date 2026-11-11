@@ -92,6 +92,9 @@ Kirigami.ApplicationWindow {
                     delegate: Loader {
                         id: row
                         required property var modelData
+                        // An app's row takes the form's width, so its Forget can sit at the end, lined up; a Loader is
+                        // no layout, and gives its item no width of its own.
+                        Layout.fillWidth: modelData.kind === "app"
                         Kirigami.FormData.isSection: modelData.kind === "section"
                         Kirigami.FormData.label: modelData.kind === "section" ? modelData.title
                             : (modelData.kind === "bool" || modelData.kind === "app" || modelData.kind === "note" ? "" : modelData.title + ":")
@@ -157,7 +160,6 @@ Kirigami.ApplicationWindow {
                             // the switch leads, as in every row of KDE's. One not found has Forget, at the row's end so
                             // the buttons line up.
                             RowLayout {
-                                Layout.fillWidth: true
                                 Controls.Switch {
                                     Accessible.name: row.modelData.title
                                     checked: row.modelData.value === "true"

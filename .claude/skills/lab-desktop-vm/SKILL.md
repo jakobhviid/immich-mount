@@ -134,7 +134,10 @@ JPEGs: `fixtures`, then `open <name> <dir>` (cold cache, settle, screenshot, who
 - **The tray** (ARCHITECTURE.md, "The tray"): on GNOME it needs the AppIndicator extension, as Ubuntu and Bazzite
   ship it: `dnf install -y gnome-shell-extension-appindicator` as root, then in the session `gsettings set
   org.gnome.shell enabled-extensions "['appindicatorsupport@rgcjonas.gmail.com']"` and `session.sh` again; the
-  daemon registers once the watcher appears. `exp/input.sh click` on the top bar's icon opens its menu. Plasma's
+  daemon registers once the watcher appears. `exp/input.sh click` on the top bar's icon may not open its menu (three
+  tries failed on 2026-11-11); opening it through the shell does: an Eval of
+  `Main.panel.statusArea['appindicator-<bus>@/StatusNotifierItem'].menu.open()`, its key listed by
+  `Object.keys(Main.panel.statusArea)`. Plasma's
   system tray shows the icon at once, and `in-session click.py 1247 869` opens its menu (the icon's place on the
   1440 by 900 screen, left of the clock). The accessibility bus cannot: it offers the item only "Press", which does
   not open it. The headless KWin reads no input device either (a uinput touchscreen's taps never arrive, and KWin
@@ -155,6 +158,16 @@ JPEGs: `fixtures`, then `open <name> <dir>` (cold cache, settle, screenshot, who
 - **`run-in-session.sh` without `-d` lacks the user manager's environment** (`KDE_SESSION_VERSION`,
   `XDG_CURRENT_DESKTOP`), so `xdg-open` there takes its generic path instead of `kde-open`. Open links with
   `run-in-session.sh -d xdg-open <link>`, as an app of the session would.
+- **The GNOME app's dialogs open late from its menu,** and a picture taken at once misses them. Activate the action
+  instead: `gdbus call --session --dest dev.hviid.ImmichMount --object-path /dev/hviid/ImmichMount --method
+  org.gtk.Actions.Activate preferences '[]' '{}'` (also `about`, `shortcuts`).
+- **Neither VM's helpers scroll.** On GNOME, an Eval sending Clutter's `notify_discrete_scroll`; on Plasma, KWin's
+  fake input `axis`, from a copy of `click.py`. On Plasma, scroll over a blank margin: the wheel over a combo box
+  changes its value.
+- **The KDE app's menus:** `act.py press "More Actions"` toggles its menu out of sight; `click.py 968 104` opens it,
+  sometimes at the second click, and `act.py tree` shows whether a "popup menu" is up. Back is `act.py press
+  "Navigate Back"`. Close `plasma-welcome` before taking pictures.
+- **`act.py press` returns before the app has written its setting:** read `config.toml` back after a moment.
 - **Harmless noise:** "Error registering session with GDM", and `xdg-desktop-portal` failing because
   `graphical-session.target` is inactive.
 
