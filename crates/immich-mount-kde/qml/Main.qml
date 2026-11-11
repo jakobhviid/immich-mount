@@ -21,11 +21,11 @@ Kirigami.ApplicationWindow {
     // The page shown beside the sidebar, by its id in the layout every app shares (ARCHITECTURE.md, "One layout for
     // every settings window"): status, general, folders, other-apps, account.
     property string category: "status"
-    // Back to the first page, popping the others one by one: popping "to" the first page left a page standing after
-    // signing out (seen in a Plasma 6.8 VM).
+    // Back to the first page, removing the others by index, from the last: popping left the Account page standing
+    // beside the start after signing out, with the first page shown (seen in a Plasma 6.8 VM).
     function popToFirstPage() {
         while (pageStack.depth > 1)
-            pageStack.pop()
+            pageStack.removePage(pageStack.depth - 1)
     }
     function openCategory(name) {
         category = name
@@ -59,7 +59,7 @@ Kirigami.ApplicationWindow {
             // Signed out, the sidebar's pages go with the sidebar, back to the start.
             if (backend.page !== "status" && root.pageStack.depth > 1) {
                 root.category = "status"
-                root.popToFirstPage()
+                Qt.callLater(root.popToFirstPage)
             }
             root.followStartRequest()
         }
@@ -69,6 +69,15 @@ Kirigami.ApplicationWindow {
     // Signing out removes the drive and what was downloaded, so it is asked first, as on the Mac.
     Kirigami.PromptDialog {
         id: signOutDialog
+        // Signing out waits for the dialog to have closed: the page under it is left only then.
+        property bool confirmed: false
+        onClosed: {
+            if (!confirmed)
+                return
+            confirmed = false
+            root.openCategory("status")
+            backend.disconnect()
+        }
         title: i18n("Sign out of Immich Mount?")
         subtitle: i18n("Immich Mount leaves Dolphin, together with the photos and videos downloaded to this computer. Your library on the server stays as it is.")
         standardButtons: Kirigami.Dialog.NoButton
@@ -76,9 +85,8 @@ Kirigami.ApplicationWindow {
             Kirigami.Action {
                 text: i18n("Sign Out")
                 onTriggered: {
+                    signOutDialog.confirmed = true
                     signOutDialog.close()
-                    root.openCategory("status")
-                    backend.disconnect()
                 }
             },
             Kirigami.Action {
