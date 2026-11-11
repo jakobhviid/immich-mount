@@ -49,7 +49,14 @@ Kirigami.ApplicationWindow {
     }
     Connections {
         target: backend
-        function onPageChanged() { root.followStartRequest() }
+        function onPageChanged() {
+            // Signed out, the sidebar's pages go with the sidebar, back to the start.
+            if (backend.page !== "status" && root.pageStack.depth > 1) {
+                root.category = "status"
+                root.pageStack.pop(root.pageStack.initialPage)
+            }
+            root.followStartRequest()
+        }
     }
     Component.onCompleted: followStartRequest()
 
@@ -62,7 +69,6 @@ Kirigami.ApplicationWindow {
         customFooterActions: [
             Kirigami.Action {
                 text: i18n("Sign Out")
-                icon.name: "system-log-out"
                 onTriggered: {
                     signOutDialog.close()
                     root.openCategory("status")
@@ -394,7 +400,6 @@ Kirigami.ApplicationWindow {
                 Controls.Button {
                     Layout.alignment: Qt.AlignHCenter
                     text: i18n("Sign Out…")
-                    icon.name: "system-log-out"
                     enabled: !backend.busy
                     onClicked: signOutDialog.open()
                 }
@@ -503,6 +508,8 @@ Kirigami.ApplicationWindow {
                     Layout.fillWidth: true
                     Controls.TextField {
                         id: addressField
+                        // Wide enough for a server's whole address.
+                        Layout.minimumWidth: Kirigami.Units.gridUnit * 18
                         Kirigami.FormData.label: i18n("Server address:")
                         Accessible.name: i18n("Server address")
                         text: backend.server

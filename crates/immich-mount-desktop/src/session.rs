@@ -368,7 +368,9 @@ pub async fn current_status() -> Option<Status> {
     let server = config.server_url.clone().filter(|url| !url.trim().is_empty())?;
     let mount_point = paths.expand(&config.mount_path);
     let credential_place = match &config.credential_file {
-        Some(file) => tr("Kept in {file}").replace("{file}", &paths.expand(file).display().to_string()),
+        // A credential file that is gone (signing out removes it) is no sign-in, though the setting stays.
+        Some(file) if paths.expand(file).exists() => tr("Kept in {file}").replace("{file}", &paths.expand(file).display().to_string()),
+        Some(_) => return None,
         None if paths.default_credential_file().exists() => {
             tr("Kept in {file}").replace("{file}", &paths.default_credential_file().display().to_string())
         }

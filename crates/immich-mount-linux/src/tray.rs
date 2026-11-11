@@ -325,30 +325,50 @@ impl Menu {
 
 /// Do what a line of the menu says: open the drive in the file manager, the app or its settings, or quit.
 fn run(action: Action, view: &View) {
-    let outcome = match action {
-        Action::OpenDrive => std::process::Command::new("xdg-open").arg(&view.mount_point).spawn(),
+    let (program, arguments): (std::path::PathBuf, Vec<String>) = match action {
+        Action::OpenDrive => ("xdg-open".into(), vec![view.mount_point.clone()]),
         Action::OpenUpdate => match &view.update {
-            Some(release) => std::process::Command::new("xdg-open").arg(&release.page).spawn(),
+            Some(release) => ("xdg-open".into(), vec![release.page.clone()]),
             None => return,
         },
         Action::OpenApp | Action::OpenSettings | Action::SignOut => match std::env::current_exe() {
             Ok(program) => {
-                let mut command = std::process::Command::new(program);
-                command.arg("app");
+                let mut arguments = vec!["app".to_owned()];
                 match action {
-                    Action::OpenSettings => _ = command.arg(OPEN_SETTINGS),
-                    Action::SignOut => _ = command.arg(OPEN_SIGN_OUT),
+                    Action::OpenSettings => arguments.push(OPEN_SETTINGS.to_owned()),
+                    Action::SignOut => arguments.push(OPEN_SIGN_OUT.to_owned()),
                     _ => {}
                 }
-                command.spawn()
+                (program, arguments)
             }
-            Err(error) => Err(error),
+            Err(error) => return log::warn!("the tray's {action:?} did not start: {error}"),
         },
         Action::Quit => return quit(),
     };
-    if let Err(error) = outcome {
+    if let Err(error) = launch(&program, &arguments) {
         log::warn!("the tray's {action:?} did not start: {error}");
     }
+}
+
+/// Start a program the tray opens (the app, the file manager, a browser) as the desktop would, outside the daemon's
+/// service: started as its child, it was in the service's group, which systemd stops whole, so a window the tray
+/// opened closed whenever the daemon stopped (signing out, Quit, a change of settings; seen in Fedora 44 VMs). Its
+/// own scope keeps it; where `systemd-run` is missing, it starts as a child. Either way the daemon reaps it.
+fn launch(program: &std::path::Path, arguments: &[String]) -> std::io::Result<()> {
+    let scoped = std::process::Command::new("systemd-run")
+        .args(["--user", "--scope", "--collect", "--quiet", "--"])
+        .arg(program)
+        .args(arguments)
+        .spawn();
+    let child = match scoped {
+        Ok(child) => child,
+        Err(_) => std::process::Command::new(program).args(arguments).spawn()?,
+    };
+    std::thread::spawn(move || {
+        let mut child = child;
+        let _ = child.wait();
+    });
+    Ok(())
 }
 
 /// Quit, which on Linux is unmounting (the daemon serves the drive and the tray icon alike): `immich-mount unmount`,

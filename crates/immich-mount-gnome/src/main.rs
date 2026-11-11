@@ -42,10 +42,12 @@ fn main() -> glib::ExitCode {
         // From the tray (`immich-mount app <address>`): a page to open, or the question to sign out; anything else is
         // the browser's sign-in redirect.
         for file in files {
-            match file.uri().as_str() {
-                immich_mount_linux::tray::OPEN_SETTINGS => window.show_preferences(),
-                immich_mount_linux::tray::OPEN_SIGN_OUT => window.ask_to_sign_out(),
-                address => window.handle_redirect(address),
+            let address = file.uri();
+            match tray_request(&address) {
+                Some(request) if request == tray_request(immich_mount_linux::tray::OPEN_SETTINGS).unwrap_or_default() => window.show_preferences(),
+                Some(request) if request == tray_request(immich_mount_linux::tray::OPEN_SIGN_OUT).unwrap_or_default() => window.ask_to_sign_out(),
+                Some(request) => eprintln!("the tray asked for something this app does not know: {request}"),
+                None => window.handle_redirect(&address),
             }
         }
     });
@@ -60,6 +62,13 @@ fn main() -> glib::ExitCode {
         application.set_accels_for_action(action, &[*keys]);
     }
     application.run()
+}
+
+/// What the tray asked for, from an `immich-mount:` address: `settings`, `sign-out`. GIO hands such an address on as
+/// `immich-mount:///settings` where GVfs runs, and as given elsewhere, so only its scheme and name count.
+fn tray_request(address: &str) -> Option<&str> {
+    let rest = address.strip_prefix("immich-mount:")?;
+    Some(rest.trim_start_matches('/').trim_end_matches('/'))
 }
 
 /// Point the C library's gettext, which GTK uses for the Blueprint's texts, at the catalogs `tr` reads (ARCHITECTURE.md,
@@ -124,4 +133,17 @@ fn show_about(application: &adw::Application) {
         Some(tr("Parts of this project were written with the assistance of AI coding agents. All changes are reviewed by the maintainer.")),
     );
     about.present(application.active_window().as_ref());
+}
+
+#[cfg(test)]
+mod tests {
+    use super::tray_request;
+
+    #[test]
+    fn the_trays_requests_are_read_however_gio_spells_them() {
+        assert_eq!(tray_request("immich-mount:settings"), Some("settings"));
+        assert_eq!(tray_request("immich-mount:///settings"), Some("settings"), "as GIO hands it on where GVfs runs");
+        assert_eq!(tray_request("immich-mount:///sign-out"), Some("sign-out"));
+        assert_eq!(tray_request("app.immich:///oauth-callback?code=1"), None, "the sign-in's redirect is not the tray's");
+    }
 }

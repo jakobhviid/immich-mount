@@ -1475,6 +1475,10 @@ drive and the app, without opening a window. **The daemon serves it,** as a Stat
     eject is: the daemon leaves cleanly, and its service starts again at the next login or with Mount in the app.
     On the Mac quitting leaves the location, which the system serves. KDE's own tray items end with Quit, and so do
     the apps' that use GNOME's AppIndicator.
+  - **What the tray opens runs on its own:** the app, the file manager or a browser, each in a scope of its own
+    (`systemd-run --user --scope`), and reaped. Started as the daemon's children, they were in its service's group,
+    which systemd stops whole, so a window the tray opened closed with every stop of the daemon: signing out, Quit, a
+    change of settings (seen in Fedora 44 VMs).
   - **Sign Out… asks, in the app.** The daemon has no window to ask in, so it opens the app on its Account page
     with the question up (`immich-mount app immich-mount:sign-out`, an address no other program claims, as
     `immich-mount:settings` opens General); the GNOME app takes it in the window already open.

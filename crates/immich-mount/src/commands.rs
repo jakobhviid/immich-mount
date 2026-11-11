@@ -222,7 +222,7 @@ pub fn unmount(paths: &Paths) -> Result<UnmountReport> {
                     .unwrap_or_default();
                 if let Some((name, _, _)) = uploads.first() {
                     // Short: the apps show it in a toast.
-                    anyhow::bail!("{name} is still uploading; unmount when it is done");
+                    anyhow::bail!("{name} is still uploading; try again when it is done");
                 }
                 mounts::unmount(&mount_point, true).map_err(anyhow::Error::msg)?;
             }
