@@ -1768,12 +1768,7 @@ const CROSSLINK_DRAFT: &str = "0.2";
 const CROSSLINK_KINDS: &[&str] = &["asset", "album", "person", "place", "page"];
 /// Immich Mount's own builds, never offered.
 const OWN_BUNDLES: &[&str] = &["dev.hviid.ImmichMount", "dev.hviid.ImmichMount.Dev"];
-/// The known apps (ROADMAP.md, step 3, "Known apps"): Immich Gallery, by its bundle ids, release first, each with the
-/// scheme of its own links. It opens `<scheme>://photo/<id>` for a photo, as its desktop widget does
-/// (`Shared/WidgetFeed.swift` in IGOLz/ImmichGallery).
-const GALLERY_BUNDLES: &[(&str, &str)] = &[("dev.igol.ImmichGallery", "immichgallery"), ("dev.igol.ImmichGallery.Dev", "immichgallery-dev")];
-
-/// An app the system knows: one registered for `immich-crosslink`, or a known app.
+/// An app registered for `immich-crosslink`.
 #[derive(Debug, Clone, PartialEq, Eq, uniffi::Record)]
 pub struct FoundApp {
     pub bundle_id: String,
@@ -1793,9 +1788,6 @@ pub struct OfferedApp {
     pub path: String,
     /// The kinds of item it is offered on.
     pub kinds: Vec<String>,
-    /// For a known app that does not announce itself: the scheme of its own links, which it is sent instead of a
-    /// crosslink, and only for a photo in Photos.
-    pub own_scheme: Option<String>,
 }
 
 /// An app the Settings window lists, with its switch.
@@ -1807,19 +1799,18 @@ pub struct ListedApp {
     pub shown: bool,
 }
 
-/// What Finder offers: Show in Immich Gallery, and the apps of Show in Another App…; and what Settings lists.
+/// What Finder offers, the apps of Show in Another App…, and what Settings lists.
 #[derive(Debug, Clone, PartialEq, Eq, uniffi::Record)]
 pub struct CrosslinkTargets {
-    pub gallery: Option<OfferedApp>,
-    pub others: Vec<OfferedApp>,
+    pub offered: Vec<OfferedApp>,
     pub listed: Vec<ListedApp>,
 }
 
-/// Which of the apps found Finder offers, by `config` (`crosslink.enabled`, `crosslink.hidden`). `development`: this
-/// is Immich Mount Dev, which prefers Immich Gallery's Dev build where both are installed. An app installed in several
-/// places is taken from Applications where it is there.
+/// Which of the apps found Finder offers, by `config` (`crosslink.enabled`, `crosslink.hidden`): those that announce
+/// the draft Immich Mount sends, and no app by name. An app installed in several places is taken from Applications
+/// where it is there.
 #[uniffi::export]
-pub fn crosslink_targets(found: Vec<FoundApp>, config: String, development: bool) -> CrosslinkTargets {
+pub fn crosslink_targets(found: Vec<FoundApp>, config: String) -> CrosslinkTargets {
     let config = parse_config(&config).unwrap_or_else(|_| Config::from_toml("").expect("the defaults parse"));
     let hidden = |bundle_id: &str| config.crosslink_hidden.split(';').any(|hidden| hidden.trim() == bundle_id);
     let mut apps: Vec<FoundApp> = Vec::new();
@@ -1841,34 +1832,23 @@ pub fn crosslink_targets(found: Vec<FoundApp>, config: String, development: bool
         (app.takes_crosslinks && app.version.as_deref() == Some(CROSSLINK_DRAFT))
             .then(|| app.shows.iter().filter(|kind| CROSSLINK_KINDS.contains(&kind.as_str())).cloned().collect())
     };
-    let mut galleries: Vec<&(&str, &str)> = GALLERY_BUNDLES.iter().collect();
-    if development {
-        galleries.reverse();
-    }
-    let gallery = galleries.into_iter().find_map(|(bundle_id, scheme)| {
-        let app = apps.iter().find(|app| app.bundle_id == *bundle_id)?;
-        Some(match announced(app) {
-            Some(kinds) => OfferedApp { bundle_id: app.bundle_id.clone(), path: app.path.clone(), kinds, own_scheme: None },
-            None => OfferedApp { bundle_id: app.bundle_id.clone(), path: app.path.clone(), kinds: vec!["asset".to_owned()], own_scheme: Some((*scheme).to_owned()) },
-        })
-    });
     let listed = apps
         .iter()
-        .filter(|app| announced(app).is_some() || gallery.as_ref().is_some_and(|gallery| gallery.bundle_id == app.bundle_id))
+        .filter(|app| announced(app).is_some())
         .map(|app| ListedApp { bundle_id: app.bundle_id.clone(), path: app.path.clone(), shown: !hidden(&app.bundle_id) })
         .collect();
     if !config.crosslink_enabled {
-        return CrosslinkTargets { gallery: None, others: Vec::new(), listed };
+        return CrosslinkTargets { offered: Vec::new(), listed };
     }
-    let others = apps
+    let offered = apps
         .iter()
-        .filter(|app| !hidden(&app.bundle_id) && gallery.as_ref().is_none_or(|gallery| gallery.bundle_id != app.bundle_id))
+        .filter(|app| !hidden(&app.bundle_id))
         .filter_map(|app| {
             let kinds = announced(app).filter(|kinds| !kinds.is_empty())?;
-            Some(OfferedApp { bundle_id: app.bundle_id.clone(), path: app.path.clone(), kinds, own_scheme: None })
+            Some(OfferedApp { bundle_id: app.bundle_id.clone(), path: app.path.clone(), kinds })
         })
         .collect();
-    CrosslinkTargets { gallery: gallery.filter(|gallery| !hidden(&gallery.bundle_id) && !gallery.kinds.is_empty()), others, listed }
+    CrosslinkTargets { offered, listed }
 }
 
 /// How long an app that is not installed stays listed (Immich Crosslink, "Participants that come and go").
@@ -1951,7 +1931,8 @@ fn remember_apps_at(file: &Path, installed: Vec<SeenApp>, config: &str, now: chr
     RememberedApps { absent, forgotten }
 }
 
-/// Forget an app that is not installed: it leaves the list (the caller puts its switch back to on).
+/// Forget an app, installed or not: its remembered name goes (the caller puts its switch back to on). One that still
+/// takes part is found again the next time the apps are read, as new.
 #[uniffi::export]
 pub fn forget_app(file: String, bundle_id: String) {
     let file = Path::new(&file);
@@ -2006,15 +1987,6 @@ pub fn set_app_shown(config: String, bundle_id: String, shown: bool) -> Result<S
 #[uniffi::export]
 pub fn item_kind(identifier: String) -> Option<String> {
     links::kind(&NodeKey::from_storage_key(&identifier)?).map(|kind| kind.as_str().to_owned())
-}
-
-/// The Asset's id when the item is a photo in Photos, which Immich Gallery's own link opens.
-#[uniffi::export]
-pub fn photo_in_photos(identifier: String) -> Option<String> {
-    match NodeKey::from_storage_key(&identifier)? {
-        NodeKey::Asset { parent, asset_id } if matches!(*parent, NodeKey::TimelineMonth(_) | NodeKey::TimelineDay(..)) => Some(asset_id),
-        _ => None,
-    }
 }
 
 /// The kind of item a crosslink names, when it is a valid link the protocol defines; for the menu of Show in Another
@@ -2846,51 +2818,30 @@ mod tests {
             found("org.example.Albums", "/Applications/Albums.app", true, Some("0.2"), &["album", "spaceship"]),
             found("org.example.Old", "/Applications/Old.app", true, Some("0.1"), EVERY_KIND),
             found("org.example.Quiet", "/Applications/Quiet.app", true, None, &[]),
+            found("dev.igol.ImmichGallery", "/Applications/ImmichGallery.app", false, None, &[]),
         ];
-        let targets = crosslink_targets(apps.clone(), String::new(), false);
-        assert_eq!(targets.gallery, None);
-        let albums = OfferedApp { bundle_id: "org.example.Albums".into(), path: "/Applications/Albums.app".into(), kinds: vec!["album".into()], own_scheme: None };
-        assert_eq!(targets.others, vec![albums.clone()], "itself, another draft and no announcement are left out");
+        let targets = crosslink_targets(apps.clone(), String::new());
+        let albums = OfferedApp { bundle_id: "org.example.Albums".into(), path: "/Applications/Albums.app".into(), kinds: vec!["album".into()] };
+        assert_eq!(targets.offered, vec![albums.clone()], "itself, another draft, no announcement and no scheme are left out");
         assert_eq!(targets.listed, vec![ListedApp { bundle_id: albums.bundle_id.clone(), path: albums.path.clone(), shown: true }]);
 
         let hidden = set_app_shown(String::new(), "org.example.Albums".into(), false).unwrap();
-        let targets = crosslink_targets(apps.clone(), hidden.clone(), false);
-        assert_eq!((targets.others.len(), targets.listed[0].shown), (0, false), "switched off in Settings");
+        let targets = crosslink_targets(apps.clone(), hidden.clone());
+        assert_eq!((targets.offered.len(), targets.listed[0].shown), (0, false), "switched off in Settings");
         assert!(!set_app_shown(hidden, "org.example.Albums".into(), true).unwrap().contains("hidden"), "back, the key goes");
 
-        let off = crosslink_targets(apps, "[crosslink]\nenabled = false\n".into(), false);
-        assert_eq!((off.gallery, off.others.len(), off.listed.len()), (None, 0, 1), "Immich Crosslink off: listed, offered nowhere");
+        let off = crosslink_targets(apps, "[crosslink]\nenabled = false\n".into());
+        assert_eq!((off.offered.len(), off.listed.len()), (0, 1), "Immich Crosslink off: listed, offered nowhere");
     }
 
     #[test]
-    fn immich_gallery_gets_its_own_action() {
-        let release = found("dev.igol.ImmichGallery", "/Applications/ImmichGallery.app", false, None, &[]);
-        let development = found("dev.igol.ImmichGallery.Dev", "/Applications/Immich Gallery Dev.app", true, Some("0.2"), EVERY_KIND);
-        let targets = crosslink_targets(vec![release.clone()], String::new(), false);
-        let own = OfferedApp { bundle_id: release.bundle_id.clone(), path: release.path.clone(), kinds: vec!["asset".into()], own_scheme: Some("immichgallery".into()) };
-        assert_eq!(targets.gallery, Some(own.clone()), "a release that does not announce: its own link, on photos");
-        assert_eq!(targets.listed.len(), 1);
-
-        let both = vec![release, development.clone()];
-        let targets = crosslink_targets(both.clone(), String::new(), true);
-        let gallery = targets.gallery.unwrap();
-        assert_eq!((gallery.bundle_id.as_str(), gallery.kinds.len(), gallery.own_scheme), ("dev.igol.ImmichGallery.Dev", 5, None), "announced: crosslinks");
-        assert!(targets.others.is_empty(), "never offered twice");
-        let targets = crosslink_targets(both, String::new(), false);
-        assert_eq!(targets.gallery, Some(own), "the release prefers the release");
-        assert_eq!(targets.others.iter().map(|app| app.bundle_id.as_str()).collect::<Vec<_>>(), ["dev.igol.ImmichGallery.Dev"]);
-    }
-
-    #[test]
-    fn an_item_tells_its_kind_and_a_photo_in_photos_its_asset() {
+    fn an_item_tells_its_kind() {
         let march = NodeKey::TimelineMonth(YearMonth { year: 2024, month: 3 });
         let in_photos = NodeKey::Asset { parent: Box::new(march.clone()), asset_id: LINKED_PHOTO.into() };
         let in_album = NodeKey::Asset { parent: Box::new(NodeKey::Album(LINKED_ALBUM.into())), asset_id: LINKED_PHOTO.into() };
         assert_eq!(item_kind(in_photos.storage_key()).as_deref(), Some("asset"));
         assert_eq!(item_kind(NodeKey::Album(LINKED_ALBUM.into()).storage_key()).as_deref(), Some("album"));
         assert_eq!(item_kind(march.storage_key()), None, "Immich has no page for a month");
-        assert_eq!(photo_in_photos(in_photos.storage_key()).as_deref(), Some(LINKED_PHOTO));
-        assert_eq!(photo_in_photos(in_album.storage_key()), None);
         assert_eq!(crosslink_kind(crosslink_to(&in_album)).as_deref(), Some("asset"));
         assert_eq!(crosslink_kind("immich-crosslink://host/albums".into()), None);
     }

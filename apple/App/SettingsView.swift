@@ -1,5 +1,5 @@
-// The Settings window's panes (ARCHITECTURE.md, "The macOS edition", "Settings"): General, Folders and Account, each
-// a grouped form, switched by the window's toolbar as Apple's Human Interface Guidelines ask. The settings of the
+// The Settings window's panes (ARCHITECTURE.md, "The macOS edition", "Settings"): General, Folders, Other Apps and
+// Account, each a grouped form, switched by the window's toolbar as Apple's Human Interface Guidelines ask. The settings of the
 // core's table are kept in config.toml in the App Group, where the extension reads them.
 
 import FileProvider
@@ -7,12 +7,13 @@ import SwiftUI
 
 /// The panes, in the toolbar's order.
 enum SettingsPane: Int, CaseIterable {
-    case general, folders, account
+    case general, folders, otherApps, account
 
     var title: String {
         switch self {
         case .general: tr("General")
         case .folders: tr("Folders")
+        case .otherApps: tr("Other Apps")
         case .account: tr("Account")
         }
     }
@@ -21,6 +22,7 @@ enum SettingsPane: Int, CaseIterable {
         switch self {
         case .general: "gearshape"
         case .folders: "folder"
+        case .otherApps: "link"
         case .account: "person.crop.circle"
         }
     }
@@ -29,8 +31,9 @@ enum SettingsPane: Int, CaseIterable {
     /// height.
     var defaultHeight: CGFloat {
         switch self {
-        case .general: 260
+        case .general: 200
         case .folders: 640
+        case .otherApps: 480
         case .account: 330
         }
     }
@@ -41,6 +44,7 @@ enum SettingsPane: Int, CaseIterable {
         let pane: AnyView = switch self {
         case .general: AnyView(GeneralPane())
         case .folders: AnyView(FoldersPane())
+        case .otherApps: AnyView(OtherAppsPane())
         case .account: AnyView(AccountPane())
         }
         return AnyView(pane.reportingContentHeight(report).environmentObject(model).environmentObject(settings))
@@ -133,7 +137,7 @@ final class SettingsModel: ObservableObject {
     }
 }
 
-/// Opening at login, updates, and Immich Crosslink.
+/// Opening at login, and updates.
 struct GeneralPane: View {
     @EnvironmentObject private var model: AppModel
     @EnvironmentObject private var settings: SettingsModel
@@ -154,11 +158,25 @@ struct GeneralPane: View {
                 Text("While Immich Mount runs, in the menu bar, changes in Immich reach Finder within seconds. Updates come from jakob.hviid.phd, signed by the project and notarized by Apple.")
                     .foregroundStyle(.secondary)
             }
-            if let webLinks = settings.panes?.webLinks {
-                WebAppSection(webLinks: webLinks)
-            }
+            Refusal()
+        }
+        .formStyle(.grouped)
+    }
+}
+
+/// The other apps an item can be shown in, as in Immich Gallery's settings: Immich Crosslink, the apps that take part,
+/// and Immich's web app.
+struct OtherAppsPane: View {
+    @EnvironmentObject private var settings: SettingsModel
+
+    var body: some View {
+        Form {
+            OutsideApplications()
             if let crosslink = settings.panes?.crosslink {
                 CrosslinkSection(crosslink: crosslink)
+            }
+            if let webLinks = settings.panes?.webLinks {
+                WebAppSection(webLinks: webLinks)
             }
             Refusal()
         }
@@ -175,6 +193,7 @@ private struct CrosslinkSection: View {
     let crosslink: Preference
 
     private static let page = URL(string: "https://jakob.hviid.phd/immich-crosslink/")!
+    private static let participants = URL(string: "https://jakob.hviid.phd/immich-crosslink/participants.html")!
 
     var body: some View {
         Group {
@@ -186,53 +205,63 @@ private struct CrosslinkSection: View {
 
     private var crosslinkSwitch: some View {
         Section {
-            LabeledContent {
-                Toggle(isOn: settings.isOn(crosslink, relist: false)) {
-                    Text(verbatim: "Immich Crosslink")
-                }
-                .labelsHidden()
-                .toggleStyle(.switch)
-                .accessibilityHint(tr(crosslink.title))
-            } label: {
-                HStack(spacing: 8) {
-                    Text(verbatim: "Immich Crosslink")
-                    Link(tr("Read more"), destination: Self.page)
-                    .help(tr(crosslink.title))
-                }
+            Toggle(isOn: settings.isOn(crosslink, relist: false)) {
+                Text(verbatim: "Immich Crosslink")
             }
+            .toggleStyle(.switch)
+        } footer: {
+            // The protocol's page, linked at the end of the description as System Settings does, its address not shown.
+            Text(Self.described(tr("Show photos, albums, people and places in other apps that take part, and show the items they send in Finder."),
+                                link: tr("Learn more…"), to: Self.page))
         }
     }
 
-    /// The apps seen, each with its switch; they mean nothing while Immich Crosslink is off. One not installed now is
-    /// listed by its remembered name for 30 days, with a Forget button; with none, a sentence says so.
+    /// The apps seen, each by its name and icon, with Forget and its switch; they mean nothing while Immich Crosslink
+    /// is off. One not found now is listed by its remembered name for 30 days; with none, a sentence says so and links
+    /// to the protocol's list of apps that take part.
     private var apps: some View {
-        Section(tr("Apps That Take Part")) {
+        Section {
             if found.listed.isEmpty {
-                Text(tr("No other app that takes part is installed."))
-                    .foregroundStyle(.secondary)
+                Text(Self.described(tr("No other app that takes part is installed."), link: tr("Find apps that take part…"),
+                                    to: Self.participants))
             }
             ForEach(found.listed) { app in
-                HStack {
-                    Toggle(isOn: Binding(get: { app.shown }, set: { settings.setShown(app.bundleId, $0) })) {
-                        Label {
-                            if app.installed {
-                                Text(verbatim: app.name)
-                            } else {
-                                Text(verbatim: app.name)
-                                Text(tr("Not installed"))
-                            }
-                        } icon: {
-                            Image(nsImage: app.icon).resizable().frame(width: 20, height: 20)
-                        }
-                    }
-                    .toggleStyle(.switch)
-                    if !app.installed {
+                LabeledContent {
+                    HStack(spacing: 12) {
                         Button(tr("Forget")) { found.forget(app.bundleId) }
+                        Toggle(isOn: Binding(get: { app.shown }, set: { settings.setShown(app.bundleId, $0) })) {
+                            Text(verbatim: app.name)
+                        }
+                        .labelsHidden()
+                        .toggleStyle(.switch)
+                    }
+                } label: {
+                    Label {
+                        Text(verbatim: app.name)
+                        if !app.installed {
+                            Text(tr("Not found"))
+                        }
+                    } icon: {
+                        Image(nsImage: app.icon).resizable().frame(width: 20, height: 20)
                     }
                 }
                 .disabled(crosslink.value != "true")
             }
+        } header: {
+            Text(tr("Apps That Take Part"))
+        } footer: {
+            Text(tr("Apps that take part are found by themselves. Turn one off to leave it out of Show in. Forget clears what Immich Mount remembers of an app: one that still takes part comes back, switched on."))
+                .foregroundStyle(.secondary)
         }
+    }
+
+    /// A description in the secondary colour, ending with a link to `page`.
+    private static func described(_ text: String, link: String, to page: URL) -> AttributedString {
+        var description = AttributedString(text + " ")
+        description.swiftUI.foregroundColor = .secondary
+        var linked = AttributedString(link)
+        linked.link = page
+        return description + linked
     }
 }
 

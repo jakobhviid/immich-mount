@@ -10,7 +10,8 @@ use std::rc::Rc;
 use adw::prelude::*;
 use immich_mount_core::settings::{Kind, Setting};
 use immich_mount_desktop::preferences::{
-    caption, change, choice_label, crosslink_apps, current_value, forget_app, link, restart_daemon, settings_in, show_app, title, apps_heading, GROUPS,
+    apps_description, apps_heading, caption, change, choice_label, crosslink_apps, current_value, forget_app, link, restart_daemon, settings_in,
+    show_app, title, GROUPS, PARTICIPANTS_PAGE,
 };
 use immich_mount_linux::i18n::tr;
 
@@ -25,11 +26,7 @@ pub fn dialog(report: impl Fn(&str) + Clone + 'static) -> adw::PreferencesDialog
             let widget = row(setting, &current, changed.clone(), report.clone());
             if let Some(action_row) = widget.downcast_ref::<adw::ActionRow>() {
                 if let Some(page) = link(setting) {
-                    let button = gtk::LinkButton::with_label(page, tr("Read more"));
-                    // The link reads Read more and nothing else: GTK would show the address as its tooltip.
-                    button.set_has_tooltip(false);
-                    button.set_valign(gtk::Align::Center);
-                    action_row.add_suffix(&button);
+                    action_row.add_suffix(&link_button(page, tr("Learn More")));
                 }
                 if let Some(caption) = caption(setting) {
                     action_row.set_subtitle(caption);
@@ -52,36 +49,56 @@ pub fn dialog(report: impl Fn(&str) + Clone + 'static) -> adw::PreferencesDialog
     dialog
 }
 
-/// The apps that take part in Immich Crosslink, by their names and icons, each with its switch; one not installed now
-/// is marked so, with a generic icon and a button that forgets it (Immich Crosslink, "Participants that come and go").
+/// A link to `page` that reads `label` and nothing else: GTK would show the address as its tooltip.
+fn link_button(page: &str, label: &str) -> gtk::LinkButton {
+    let button = gtk::LinkButton::with_label(page, label);
+    button.set_has_tooltip(false);
+    button.set_valign(gtk::Align::Center);
+    button
+}
+
+/// The apps that take part in Immich Crosslink, by their names and icons, each with Forget and its switch, the switch
+/// last as in every row; one not found now is marked so, with a generic icon (Immich Crosslink, "Participants that
+/// come and go"). Forgetting one that is still found leaves it listed, switched on, as it is found again.
 fn apps_group(changed: Rc<Cell<bool>>, report: impl Fn(&str) + Clone + 'static) -> adw::PreferencesGroup {
-    let group = adw::PreferencesGroup::builder().title(apps_heading()).build();
+    let group = adw::PreferencesGroup::builder().title(apps_heading()).description(apps_description()).build();
     let apps = crosslink_apps();
     if apps.is_empty() {
-        group.add(&adw::ActionRow::builder().title(tr("No other app that takes part is installed.")).build());
+        let none = adw::ActionRow::builder().title(tr("No other app that takes part is installed.")).build();
+        none.add_suffix(&link_button(PARTICIPANTS_PAGE, tr("Find Apps That Take Part")));
+        group.add(&none);
     }
     for (listed, shown) in apps {
         let app = listed.app;
-        let app_row = adw::SwitchRow::builder().title(app.name.as_str()).active(shown).build();
-        // An app without an icon, or not installed, gets the generic one, so every name lines up.
+        let app_row = adw::ActionRow::builder().title(app.name.as_str()).build();
+        // An app without an icon, or not found, gets the generic one, so every name lines up.
         let icon = app.icon.as_deref().filter(|_| listed.installed).unwrap_or("application-x-executable");
         app_row.add_prefix(&gtk::Image::from_icon_name(icon));
         if !listed.installed {
-            app_row.set_subtitle(tr("Not installed"));
-            let forget = gtk::Button::with_label(tr("Forget"));
-            forget.set_valign(gtk::Align::Center);
-            let (id, group, row_to_remove, changed, report) = (app.id.clone(), group.clone(), app_row.clone(), changed.clone(), report.clone());
-            forget.connect_clicked(move |_| match forget_app(&id) {
-                Ok(restart) => {
-                    changed.set(changed.get() || restart);
-                    group.remove(&row_to_remove);
-                }
-                Err(message) => report(&message),
-            });
-            app_row.add_suffix(&forget);
+            app_row.set_subtitle(tr("Not found"));
         }
+        let switch = gtk::Switch::builder().active(shown).valign(gtk::Align::Center).build();
+        switch.update_property(&[gtk::accessible::Property::Label(app.name.as_str())]);
+        let forget = gtk::Button::with_label(tr("Forget"));
+        forget.set_valign(gtk::Align::Center);
+        let (id, found, group_to_shrink, row_to_remove, switch_to_reset, changed_by_forget, report_forget) =
+            (app.id.clone(), listed.installed, group.clone(), app_row.clone(), switch.clone(), changed.clone(), report.clone());
+        forget.connect_clicked(move |_| match forget_app(&id) {
+            Ok(restart) => {
+                changed_by_forget.set(changed_by_forget.get() || restart);
+                if found {
+                    switch_to_reset.set_active(true);
+                } else {
+                    group_to_shrink.remove(&row_to_remove);
+                }
+            }
+            Err(message) => report_forget(&message),
+        });
+        app_row.add_suffix(&forget);
+        app_row.add_suffix(&switch);
+        app_row.set_activatable_widget(Some(&switch));
         let (changed, report) = (changed.clone(), report.clone());
-        app_row.connect_active_notify(move |app_row| match show_app(&app.id, app_row.is_active()) {
+        switch.connect_active_notify(move |switch| match show_app(&app.id, switch.is_active()) {
             Ok(restart) => changed.set(changed.get() || restart),
             Err(message) => report(&message),
         });

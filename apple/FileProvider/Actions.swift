@@ -3,11 +3,10 @@
 // web address (FileProviderItem's `hasWebLink`). The extension does both itself: it runs in the user's session, and
 // its sandbox lets it open a web address and write the general pasteboard, so the menu bar app need not run.
 //
-// Show in Immich Gallery and Show in Another App… (ROADMAP.md, "Open in Immich, and links between apps", step 3) are
-// offered by the items' `showInGallery` and `showInAnother`. Both hand the item's link to the menu bar app through the
-// app (`ActionRequest`), which starts when it is not running: an extension can show no menu of the apps at the
-// pointer, nor tell the user that an app is gone or did not open. The app sends the item's crosslink (or, to a
-// gallery that does not announce itself, its own link) to that app alone.
+// Show in Another App… (ROADMAP.md, "Open in Immich, and links between apps", step 3) is offered by the items'
+// `showInAnother`. It hands the item to the menu bar app (`ActionRequest`), which starts when it is not running: an
+// extension can show no window to choose an app in, nor tell the user that an app is gone or did not open. The app
+// sends the item's crosslink to the one app there is, or to the one the user chooses, alone.
 
 import AppKit
 import FileProvider
@@ -15,7 +14,6 @@ import FileProvider
 extension NSFileProviderExtensionActionIdentifier {
     static let openInImmich = NSFileProviderExtensionActionIdentifier("dev.hviid.ImmichMount.open-in-immich")
     static let copyImmichLink = NSFileProviderExtensionActionIdentifier("dev.hviid.ImmichMount.copy-link")
-    static let showInGallery = NSFileProviderExtensionActionIdentifier("dev.hviid.ImmichMount.show-in-gallery")
     static let showInAnotherApp = NSFileProviderExtensionActionIdentifier("dev.hviid.ImmichMount.show-in-another-app")
 }
 
@@ -55,8 +53,6 @@ extension FileProviderExtension: NSFileProviderCustomAction {
                 logger.notice("copied \(address, privacy: .public) to the pasteboard: \(copied)")
                 finish(copied ? nil : CocoaError(.featureUnsupported))
             }
-        case .showInGallery:
-            Task { finish(await Self.showInGallery(identifier.bridged)) }
         case .showInAnotherApp:
             Task { finish(await Self.showInAnotherApp(identifier.bridged)) }
         default:
@@ -65,17 +61,9 @@ extension FileProviderExtension: NSFileProviderCustomAction {
         return progress
     }
 
-    /// Hand Show in Immich Gallery to the app, which sends the item's link and tells the user should the gallery be
-    /// gone or not open.
-    private static func showInGallery(_ identifier: String) async -> Error? {
-        CurrentOffers.reload()
-        guard let gallery = CurrentOffers.value.gallery else { return CocoaError(.featureUnsupported) }
-        return await hand(ActionRequest(action: ActionRequest.showInApp, identifier: identifier, bundleId: gallery.bundleId))
-    }
-
-    /// Hand Show in Another App… to the app, which shows the menu of the other apps at the pointer.
+    /// Hand Show in Another App… to the app, which sends the item to the one app there is, or asks which.
     private static func showInAnotherApp(_ identifier: String) async -> Error? {
-        await hand(ActionRequest(action: ActionRequest.showInAnotherApp, identifier: identifier, bundleId: nil))
+        await hand(ActionRequest(identifier: identifier))
     }
 
     /// Keep the request in the App Group, and open the app's own scheme (its bundle identifier) with its token alone.

@@ -986,8 +986,19 @@ Open in Immich and Copy Immich Link take an item from the file manager to its pa
   - **Apps that come and go** stay listed in the settings for 30 days after they were last found, so one can be
     switched off before it comes back, and then age out with nothing to do (test apps, uninstalled ones). What was
     seen is kept as state, not a setting, as the protocol leaves to each app: it changes whenever the settings look,
-    and is nothing a user writes. Forgetting drops the app's switch too, so a returning app starts on, as a new one
-    does. Immich Gallery keeps the same list by the same rules.
+    and is nothing a user writes. Immich Gallery keeps the same list by the same rules.
+  - **Forget on every app, and off as the lasting choice.** It works like pairing devices, with pairing automatic:
+    an app that announces itself is found, its switch is the user's choice, and Forget drops what was remembered of
+    it, switch and all. One still found comes back at once, new and on; one not found leaves the list. So Forget is
+    always safe, and clears an entry that went wrong without the user knowing why (an app moved, renamed, or no
+    longer announcing), and an app the user does not want is switched off. The surprise, an app switched off coming
+    back on after Forget, is why the list's description says what Forget does. An app away reads **Not found**,
+    not "not installed": it may be installed and no longer announce itself, or be where a sandboxed app cannot read
+    it.
+    - **Not chosen: Forget only for apps away:** an entry for an installed app could never be cleared, and an app
+      found by mistake stayed listed.
+  - **No app set apart.** Immich Mount offers and names only apps that announce themselves, the same way whoever
+    made them, so the protocol it publishes is the one it follows. Immich Gallery is one participant among them.
 - **Web links can be switched off** (`web.links`), apart from Immich Crosslink, as the protocol asks of every
   participant: the daemon then leaves the web address out of `Links` and `WebLink`, and the menus, which offer each
   part only when it is there, offer Show in *app* alone. One switch for both items, since one opens the address the
@@ -995,23 +1006,32 @@ Open in Immich and Copy Immich Link take an item from the file manager to its pa
   - **An older daemon** answers `Links` with an unknown method; the menus then ask `WebLink` and offer no Show in
     items, so a newer extension never breaks against a daemon not yet restarted after an upgrade.
 - **Show in *app* on the Mac:** Finder's actions are declared in the extension's Info.plist, so their names are
-  fixed; a list that changes cannot be one action per app. Immich Gallery, the one app worth naming, has its own
-  action, and every other app is reached through **Show in Another App…**, which has the menu bar app show a menu.
-  The app finds the apps (an extension may not ask Launch Services about other apps' bundles from its sandbox, and the
-  app sees apps launch), writes what is offered to the App Group (`crosslink-apps.json`), and the extension marks the
-  items Finder offers each action on (`userInfo`); the markers are part of each item's version, so the app has the
-  system read the items again when the offers change. An extension shows no interface, so both actions hand the
-  request to the app: the extension writes it (the action, the item and the app) into the App Group's `actions/`,
-  and opens the app's own URL scheme with that request's one-time token alone, which starts the app without a window
-  if it is not running. The app takes a request once, only while it is a few seconds old, makes the link itself from
-  the item, and sends it only to an app offered for that item's kind; it shows Show in Another App…'s menu, and tells
-  the user in an alert when sending fails, which an extension could not. Requests no one took are removed as the app
-  starts.
+  fixed; a list that changes cannot be one action per app. So the Mac takes the protocol's second way to offer Show
+  in: one action, **Show in Another App…**, for every app that takes part. With one app offered for the item it
+  sends straight to it, which shows where it went; with several it asks in a dialog, **Show in Which App?**, a list
+  of the apps by name and icon with **Show** and **Cancel**, as Finder's own Open With > Other… asks. The app finds
+  the apps (an extension may not ask Launch Services about other apps' bundles from its sandbox, and the app sees
+  apps launch), writes what is offered to the App Group (`crosslink-apps.json`), and the extension marks the items
+  Finder offers the action on (`userInfo`); the marker is part of each item's version, so the app has the system
+  read the items again when the offers change. An extension shows no interface, so the action hands the request to
+  the app: the extension writes it (the item) into the App Group's `actions/`, and opens the app's own URL scheme
+  with that request's one-time token alone, which starts the app without a window if it is not running. The app
+  takes a request once, only while it is a few seconds old, reads the apps again, makes the link itself from the
+  item, and sends it only to an app offered for that item's kind; it asks which, and tells the user in an alert
+  when sending fails, which an extension could not. Requests no one took are removed as the app starts.
+  - **Not chosen: a menu at the pointer,** of the apps, popped up by the app once Finder's menu has closed (tried
+    first): a menu opened from nothing, which macOS has no pattern for, taking focus from Finder with no window to
+    show for it.
+  - **Not chosen: an action per known app** (Show in Immich Gallery). Its name would be fixed in the extension, so
+    only an app named in advance could have one: one participant set apart from the rest, with Immich Gallery's own
+    link (`immichgallery://photo/<id>`) for its releases that do not announce Immich Crosslink (tried first). Those
+    get Show in once they announce, like any other app.
+  - **Not chosen: a Finder Sync extension,** which can build its menus as they open, with the apps' names and icons:
+    Apple directs File Provider apps to their actions instead, and it would be one more extension for the user to
+    switch on.
   - **Not chosen: the link in the URL.** Any web page can open an app's URL scheme, so a link carried there would let
     a page make Immich Mount send something to another app without a click; the App Group is the extension's and the
     app's alone.
-  - **The Gallery's own link** (`immichgallery://photo/<id>`, its widget's) is kept for the releases that do not
-    announce Immich Crosslink; once a build announces, it gets crosslinks like any other app.
 - **Flatpak impact:** the D-Bus members and the command work from a Flatpak (the command needs the session bus and
   `xdg-open`, which the OpenURI portal answers); the file managers' menu items are files on the host, which a
   Flatpak cannot install. A Flatpak exports its launcher entry with the scheme, so it can take crosslinks; selecting
@@ -1741,12 +1761,16 @@ set what changed since a sync anchor (Apple's documentation):
 
 **Settings.** The app's Settings window is laid out as Apple's Human Interface Guidelines ask of one, and as the
 Mac's own apps and its sync apps (Dropbox, OneDrive) lay theirs out:
-- **A toolbar of panes:** General, Folders and Account. The window is titled by the pane shown, opens on the pane last
+- **A toolbar of panes:** General, Folders, Other Apps and Account. The window is titled by the pane shown, opens on the pane last
   used, and takes each pane's height, so it neither resizes nor minimises. A grouped form scrolls, so it takes any
   height it is offered and has none of its own to ask; each pane tells the height of its laid-out content instead
   (its scroll geometry, macOS 15 and later; fixed heights on macOS 14), and the window follows once the height has
   settled, since a pane first laid out at a narrow width tells passing heights of thousands of points (macOS 27).
 - **General:** opening at login and checking for updates.
+- **Other Apps:** Immich Crosslink, the apps that take part, then Immich's web app, in the order and words of Immich
+  Gallery's own Other Apps pane, so the two apps' settings read alike. The link to the protocol ends the switch's
+  description (**Learn more…**), where System Settings puts such links; a link standing beside a switch is not a
+  pattern the Mac's settings use.
 - **Folders:** one row per section, its switch beside its date folders (greyed out while the section is hidden), then
   the album layout and file naming, so a section and its date folders are set in one place. Upload is a section too:
   its switch shows or hides the folder, and what is copied into it is uploaded; it has no date folders.

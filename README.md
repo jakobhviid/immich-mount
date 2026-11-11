@@ -38,10 +38,11 @@ without downloading the library first.
   each other's photos, albums, people and places. Right-click a photo, album, person or place and choose **Show in
   *app*** to open that same item directly in another app that takes part; the other way round, the same item chosen
   in such an app opens in the drive, selected.
-  **[Immich Gallery](https://github.com/IGOLz/ImmichGallery)**, a native Immich client for macOS, is the second app:
-  Show in Immich Gallery works from Finder with its releases (on photos in Photos), and its own Immich Crosslink
-  support, which adds Show in Immich Mount in the gallery, is proposed upstream
-  ([IGOLz/ImmichGallery#47](https://github.com/IGOLz/ImmichGallery/pull/47)).
+  In Finder it is one item, **Show in Another App…**, which sends to the one app there is or asks which.
+  **[Immich Gallery](https://github.com/IGOLz/ImmichGallery)**, a native Immich client for macOS, is the second app
+  to take part: its support is proposed upstream
+  ([IGOLz/ImmichGallery#47](https://github.com/IGOLz/ImmichGallery/pull/47)), and the apps that take part are
+  listed on the [protocol's page](https://jakob.hviid.phd/immich-crosslink/participants.html).
 - **One app, native on each desktop:** it opens in GTK and libadwaita on GNOME and in Kirigami on KDE Plasma, to sign
   in, choose what to show, and see the status. A tray icon shows how it is connected, in KDE Plasma's system tray and
   in GNOME's top bar where the AppIndicator extension is on.

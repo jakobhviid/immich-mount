@@ -431,11 +431,11 @@ one announcing 0.1): an album folder offered both 0.2 apps, everything else only
 never; each received exactly the item's crosslink with `&user=`; `crosslink.hidden` removed one app and
 `crosslink.enabled` off removed every Show in item while Open in Immich stayed; against a daemon with only `WebLink`
 the menus offered Open and Copy alone. The Python extension did the same on Bazzite 44. **Built on the Mac** too
-(SPEC.md, "In Finder"): Immich Mount Dev on macOS 27.2 found Immich Gallery Dev (announcing) and the Gallery release
-(not announcing) and two test apps, `fileproviderctl evaluate` offered the actions on Albums, an album and a photo in
-an album, hiding an app or switching crosslink off removed them, and the menu listed two apps for an album. The maintainer's clicks in
-Finder (Show in Immich Gallery on a photo, Show in Another App… on an album) worked (2026-11-10). **Left:** for a
-second or so after the daemon starts, an item in a folder it has not listed yet gets no items.
+(SPEC.md, "In Finder"): Immich Mount Dev on macOS 27.2 found Immich Gallery Dev (announcing) and two test apps,
+`fileproviderctl evaluate` offered the action on Albums, an album and a photo in an album, and hiding an app or
+switching crosslink off removed it (2026-11-10). **Left:** for a second or so after the daemon starts, an item in a
+folder it has not listed yet gets no items; on the Mac, Show in Another App… sending straight to the one app and
+asking Show in Which App? among several, and the Other Apps pane, wait for the maintainer's click and glance.
 
 Immich Mount finds the other installed apps that take crosslinks, and offers **Show in *app*** for each, on the items
 step 1 offers.
@@ -448,42 +448,41 @@ step 1 offers.
   from the system (its bundle, its desktop entry), never from the link or the announcement.
 - **When:** Files' extension reads the apps for each menu, or keeps them until GIO's `GAppInfoMonitor` says apps may
   have changed; the Dolphin plugin likewise with `KSycoca::databaseChanged`. The Mac app reads them at launch, when it
-  sees an app launch, and before showing Show in Another App…; it never asks an app anything at run time.
+  sees an app launch, and before Show in Another App… sends; it never asks an app anything at run time.
 - **Opening one:** the crosslink, sent to that app alone: `NSWorkspace.open(_:withApplicationAt:configuration:)`,
   `g_app_info_launch_uris`. Never the scheme's default handler, which could be any of them.
-- **Files** lists one item per app. **Dolphin** needs the file item action plugin for a list that changes. **Finder**
-  declares its actions in the Info.plist, so their names are fixed: a known app gets its own action (below), and
-  **Show in Another App…** has the menu bar app show a menu of the others at the pointer. Each is offered through a
-  `userInfo` marker on the items of the kinds such an app announces, while it is installed; the app has the system
-  read the items again when the set of apps or kinds changes (at launch, and when it sees an app launch).
-- **Known apps:** an entry for an app that is worth naming before it takes crosslinks, or that takes its own links
-  as well: its bundle id or desktop entry, the menu item's name, and its own link per kind of item. The first is
-  **Immich Gallery** on the Mac (`dev.igol.ImmichGallery`, `dev.igol.ImmichGallery.Dev`): **Show in Immich Gallery**
-  on a photo in Photos opens `immichgallery://photo/<id>` (`immichgallery-dev://` for the Dev build), the link its
-  desktop widget uses (`Shared/WidgetFeed.swift` in IGOLz/ImmichGallery). Once the gallery announces itself and takes
-  crosslinks (step 4), it is found like any other app, for the kinds it announces.
+- **Files** lists one item per app, and **Dolphin** too, through the file item action plugin for a list that changes
+  (the protocol's first way to offer Show in). **Finder** declares its actions in the Info.plist, so their names are
+  fixed: one action, **Show in Another App…** (the second way), sends to the one app there is, or asks which of
+  several in a dialog. It is offered through a `userInfo` marker on the items of the kinds the apps announce; the app
+  has the system read the items again when the set of apps or kinds changes (at launch, and when it sees an app
+  launch).
+- **No app set apart:** every app is found by its announcement and offered the same way. Immich Gallery gets Show in
+  once it announces itself (step 4).
 - **Settings:** `crosslink.enabled` (bool, default `true`): offer links to other apps. `crosslink.hidden` (list,
   default empty): apps left out, by bundle id or desktop entry id. In each settings window (the Mac's, GNOME's and
-  Plasma's), a switch labelled **Immich Crosslink**, with a link to <https://jakob.hviid.phd/immich-crosslink/> beside
-  it, so it is clear what it is; under it the apps found, with a switch each. The label and the link are the
+  Plasma's), a switch labelled **Immich Crosslink**, with a link to <https://jakob.hviid.phd/immich-crosslink/>, so it
+  is clear what it is; under it the apps found, each with Forget and a switch. The label and the link are the
   protocol's, the same in every app that takes part. With the switch off, a crosslink Immich Mount receives (step 2)
   only gets a notification saying so, with a way to turn it on. Open in Immich is not affected by either.
-- **Docs:** SPEC (the items, the keys), ARCHITECTURE (finding apps, the known apps, the fixed Finder actions),
+- **Docs:** SPEC (the items, the keys), ARCHITECTURE (finding apps, the fixed Finder action),
   DESIGN (the words), README.
 - **Done when:** with test apps registered for the scheme (desktop entries, and small Mac apps), one announcing every
   kind is listed on every item with a path, one announcing only `album` only on albums, one with no announcement or
-  another draft nowhere; each receives the right crosslink, and leaves the menus when switched off or removed; on the Mac, with Immich Gallery
-  installed, Show in Immich Gallery opens the photo there. Flatpak impact: from inside a Flatpak the installed apps
+  another draft nowhere; each receives the right crosslink, and leaves the menus when switched off or removed; on the
+  Mac, Show in Another App… sends to the one app offered, and asks among several. Flatpak impact: from inside a Flatpak the installed apps
   cannot be listed (the OpenURI portal only offers a chooser), so a Flatpak build would offer Show in… through it.
 
 **Agreed with Immich Gallery, and built** (2026-11-10, in the protocol's clarified draft 0.2): a switch for
 Open in Immich and Copy Immich Link apart from Immich Crosslink (`web.links`, under Immich Web App), and apps that
-come and go: listed for 30 days after they were last found, as Not installed with a Forget button. Verified in the
-Fedora 44 GNOME and Plasma VMs (web links off left only the Show in items; an uninstalled test app was listed Not
-installed, Forget removed it with its switch, and it came back new and on), and the Python extension on Bazzite. On
-the Mac too: with web links off, `fileproviderctl evaluate` refused Open and Copy and offered Show in Immich Gallery;
-a removed test app was listed Not installed and Forget removed it. How the settings' new sections look waits for the
-maintainer's glance. **Verified with Immich Gallery** on the maintainer's Mac: the Gallery's Show in Immich Mount
+come and go: listed for 30 days after they were last found. Verified in the Fedora 44 GNOME and Plasma VMs (web links
+off left only the Show in items; an uninstalled test app was listed, Forget removed it with its switch, and it came
+back new and on), and the Python extension on Bazzite. On the Mac too: with web links off, `fileproviderctl evaluate`
+refused Open and Copy and offered Show in; a removed test app was listed and Forget removed it. **Agreed next**
+(2026-11-11, in the protocol): Forget on every app, not only one away, with a description of what it does; an app
+away reads Not found; the link reads Learn more…; the Mac's settings get an Other Apps pane in Immich Gallery's
+order; no app is set apart. Built; the desktop VMs' check of the new rows is left.
+**Verified with Immich Gallery** on the maintainer's Mac: the Gallery's Show in Immich Mount
 reached the installed release, which selected an album and a photo in an album in Finder.
 
 ### Step 4: Immich Gallery takes crosslinks (upstream)

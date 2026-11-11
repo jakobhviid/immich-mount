@@ -1,22 +1,16 @@
-// A Finder action the extension hands to the menu bar app (Show in Immich Gallery, Show in Another App…): the
-// extension can show no menu or message, so it writes the request into the App Group and opens the app's own scheme
-// with the request's one-time token alone. Any web page can open that scheme, so the address carries nothing to act
-// on: the app takes only a request the extension wrote moments ago, and makes the link itself from the item.
+// Finder's Show in Another App…, which the extension hands to the menu bar app: the extension can show no window or
+// message, so it writes the request into the App Group and opens the app's own scheme with the request's one-time
+// token alone. Any web page can open that scheme, so the address carries nothing to act on: the app takes only a
+// request the extension wrote moments ago, and makes the link itself from the item.
 
 import Foundation
 
 struct ActionRequest: Codable {
-    static let showInApp = "show-in-app"
-    static let showInAnotherApp = "show-in-another-app"
     /// How long a request waits for the app, which may have to start first.
     private static let freshFor: TimeInterval = 20
 
-    /// `showInApp` or `showInAnotherApp`.
-    let action: String
     /// The item's identifier.
     let identifier: String
-    /// For `showInApp`: the app to send to.
-    let bundleId: String?
 
     private static var folder: URL { AppGroup.container.appendingPathComponent("actions", isDirectory: true) }
 

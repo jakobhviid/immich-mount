@@ -159,7 +159,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate, SPUUpdaterDelegate,
         }
         #if DEBUG
         Task { await model.followLaunchArguments() }
-        // `-settingsPane <0, 1 or 2>`: open Settings on that pane, to check its layout without clicking.
+        // `-settingsPane <0 to 3>`: open Settings on that pane, to check its layout without clicking.
         if let pane = UserDefaults.standard.string(forKey: "settingsPane").flatMap(Int.init) {
             UserDefaults.standard.set(pane, forKey: "SettingsPane")
             showSettings()
@@ -866,8 +866,8 @@ final class AppModel: ObservableObject {
     /// For driving a development build from a script (the `mac-dev` skill), with launch arguments: `-signOut YES`
     /// signs out, and `-signInServer <address>` with `-signInAPIKey <key>`, or `-signInEmail` and
     /// `-signInPassword`, signs in when nobody is; `-setPreference <key>=<value>` changes one setting, as the Settings
-    /// window does; `-forgetApp <bundle id>` forgets an app not installed, as its Forget button does;
-    /// `-simulateAction` performs a Finder Show in action. Not in release builds.
+    /// window does; `-forgetApp <bundle id>` forgets an app, as its Forget button does;
+    /// `-simulateAction` performs Finder's Show in Another App…. Not in release builds.
     func followLaunchArguments() async {
         let arguments = UserDefaults.standard
         if arguments.bool(forKey: "signOut") {
@@ -878,15 +878,12 @@ final class AppModel: ObservableObject {
             settings.change(String(preference[..<equals]), to: String(preference[preference.index(after: equals)...]))
             logger.notice("set \(preference, privacy: .public): \(settings.message ?? "done", privacy: .public)")
         }
-        // `-simulateAction <action>|<bundle id or empty>|<item identifier>`: a Finder Show in action, as the extension
-        // hands it over (`ActionRequest`).
-        if let simulated = arguments.string(forKey: "simulateAction") {
-            let parts = simulated.split(separator: "|", maxSplits: 2, omittingEmptySubsequences: false).map(String.init)
-            if parts.count == 3, let token = try? ActionRequest(action: parts[0], identifier: parts[2],
-                                                                bundleId: parts[1].isEmpty ? nil : parts[1]).write(),
-               let url = URL(string: "\(Bundle.main.bundleIdentifier?.lowercased() ?? "")://action?token=\(token)") {
-                CrosslinkApps.shared.perform(url)
-            }
+        // `-simulateAction <item identifier>`: Finder's Show in Another App…, as the extension hands it over
+        // (`ActionRequest`).
+        if let identifier = arguments.string(forKey: "simulateAction"),
+           let token = try? ActionRequest(identifier: identifier).write(),
+           let url = URL(string: "\(Bundle.main.bundleIdentifier?.lowercased() ?? "")://action?token=\(token)") {
+            CrosslinkApps.shared.perform(url)
         }
         if let bundleId = arguments.string(forKey: "forgetApp") {
             CrosslinkApps.shared.forget(bundleId)

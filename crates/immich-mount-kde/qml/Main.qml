@@ -106,7 +106,23 @@ Kirigami.ApplicationWindow {
                             }
                         }
                         Component { id: sectionRow; Kirigami.Separator {} }
-                        Component { id: noteRow; Controls.Label { text: row.modelData.title; opacity: 0.7 } }
+                        Component {
+                            id: noteRow
+                            // A sentence, and a link where one helps (the apps that take part, when none is found).
+                            ColumnLayout {
+                                Controls.Label {
+                                    text: row.modelData.title
+                                    wrapMode: Text.WordWrap
+                                    opacity: 0.7
+                                    Layout.maximumWidth: Kirigami.Units.gridUnit * 22
+                                }
+                                Kirigami.LinkButton {
+                                    visible: row.modelData.link.length > 0
+                                    text: row.modelData.linkLabel
+                                    onClicked: Qt.openUrlExternally(row.modelData.link)
+                                }
+                            }
+                        }
                         Component {
                             id: switchRow
                             ColumnLayout {
@@ -117,10 +133,10 @@ Kirigami.ApplicationWindow {
                                         checked: row.modelData.value === "true"
                                         onToggled: preferences.store(row.modelData.key, checked ? "true" : "false")
                                     }
-                                    // Immich Crosslink's switch links to the protocol as Read more, never by its address.
+                                    // Immich Crosslink's switch links to the protocol as Learn More, never by its address.
                                     Kirigami.LinkButton {
                                         visible: row.modelData.link.length > 0
-                                        text: i18n("Read more")
+                                        text: i18n("Learn More")
                                         onClicked: Qt.openUrlExternally(row.modelData.link)
                                     }
                                 }
@@ -137,7 +153,8 @@ Kirigami.ApplicationWindow {
                         }
                         Component {
                             id: appRow
-                            // An app that takes crosslinks, by its desktop entry's name and icon, offered in Show in.
+                            // An app that takes crosslinks, by its desktop entry's name and icon, offered in Show in,
+                            // with Forget; the switch leads, as in every row of KDE's.
                             RowLayout {
                                 Controls.Switch {
                                     Accessible.name: row.modelData.title
@@ -145,7 +162,7 @@ Kirigami.ApplicationWindow {
                                     onToggled: preferences.store(row.modelData.key, checked ? "true" : "false")
                                 }
                                 // The switch draws no icon, so the app's own is shown beside its name; an app not
-                                // installed now has its remembered name and a generic icon.
+                                // found now has its remembered name and a generic icon.
                                 Kirigami.Icon {
                                     source: row.modelData.icon.length > 0 ? row.modelData.icon : "application-x-executable"
                                     implicitWidth: Kirigami.Units.iconSizes.small
@@ -154,11 +171,10 @@ Kirigami.ApplicationWindow {
                                 Controls.Label { text: row.modelData.title }
                                 Controls.Label {
                                     visible: !row.modelData.installed
-                                    text: i18n("Not installed")
+                                    text: i18n("Not found")
                                     opacity: 0.7
                                 }
                                 Controls.Button {
-                                    visible: !row.modelData.installed
                                     text: i18n("Forget")
                                     onClicked: preferences.forget(row.modelData.key)
                                 }

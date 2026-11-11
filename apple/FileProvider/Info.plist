@@ -61,16 +61,8 @@
 				<key>NSExtensionFileProviderActionActivationRule</key>
 				<string>fileproviderItems.@count == 1 AND SUBQUERY(fileproviderItems, $item, $item.userInfo.hasWebLink == YES).@count == 1</string>
 			</dict>
-			<!-- Show in other apps (ROADMAP.md, step 3), on one item marked for it (FileProviderItem's userInfo): a known
-			     app's own action, and the menu bar app's menu of the others. -->
-			<dict>
-				<key>NSExtensionFileProviderActionIdentifier</key>
-				<string>dev.hviid.ImmichMount.show-in-gallery</string>
-				<key>NSExtensionFileProviderActionName</key>
-				<string>Show in Immich Gallery</string>
-				<key>NSExtensionFileProviderActionActivationRule</key>
-				<string>fileproviderItems.@count == 1 AND SUBQUERY(fileproviderItems, $item, $item.userInfo.showInGallery == YES).@count == 1</string>
-			</dict>
+			<!-- Show in other apps (ROADMAP.md, step 3), on one item marked for it (FileProviderItem's userInfo). Finder's
+			     action names are fixed here, so one action stands for every app that takes part. -->
 			<dict>
 				<key>NSExtensionFileProviderActionIdentifier</key>
 				<string>dev.hviid.ImmichMount.show-in-another-app</string>

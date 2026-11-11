@@ -94,9 +94,8 @@ Traps (verified on macOS 27.0.1 with Xcode 27.2):
   out again with `--remove` right after; nothing else of ours is installed there but the Dev app.
 - **No command performs a Finder action:** `fileproviderctl evaluate` shows whether Finder offers one, and the log
   shows what the extension did, but the click is the maintainer's. Show in Another App… can be driven without Finder
-  (`open -a "/Applications/Immich Mount Dev.app" "dev.hviid.immichmount.dev://show-in-another-app?link=<crosslink,
-  percent-encoded>"`), but its menu then waits at the pointer for a click, holding the app's main thread; quit the
-  app (`pkill`) when nobody is there to choose.
+  (`-simulateAction <item identifier>`, below): with one app offered it sends at once; with several, Show in Which
+  App? waits for a click, holding the app's main thread, so quit the app (`pkill`) when nobody is there to choose.
 - **After `reimportItems`, the items of a folder carry no `userInfo`** until the folder is listed again (Finder
   visiting it, or a received link shown there): `fileproviderctl evaluate` then offers no action on them, not even
   Open in Immich (seen on macOS 27.2). Check the actions after Finder has listed the folder.
@@ -185,9 +184,10 @@ without typing into the window:
 app="/Applications/Immich Mount Dev.app"
 open -n "$app" --args -signInServer http://127.0.0.1:2283 -signInAPIKey <key>
 open -n "$app" --args -signOut YES       # its Finder location, account and store go; the release's stay
-open -n "$app" --args -settingsPane 1    # Settings, on a pane (0 General, 1 Folders, 2 Account)
+open -n "$app" --args -settingsPane 2    # Settings, on a pane (0 General, 1 Folders, 2 Other Apps, 3 Account)
 open -n "$app" --args -setPreference crosslink.enabled=false   # change one setting, as the Settings window does
-open -n "$app" --args -forgetApp dev.hviid.test.Gone        # forget an app not installed, as its Forget button does
+open -n "$app" --args -forgetApp dev.hviid.test.Gone        # forget an app, as its Forget button does
+open -n "$app" --args -simulateAction '<item identifier>'    # Finder's Show in Another App… on that item
 open -a "$app" 'immich-crosslink:///albums/<id>?server=http%3A%2F%2F127.0.0.1%3A2283'   # a link, to this app alone
 pkill -f "Immich Mount Dev.app/Contents/MacOS"   # quit it; no Apple events, so no Automation prompt
 ```

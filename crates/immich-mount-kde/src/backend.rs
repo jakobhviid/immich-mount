@@ -89,7 +89,8 @@ pub mod qobject {
         #[cxx_name = "storeSetting"]
         fn store_setting(self: Pin<&mut Backend>, key: &QString, value: &QString) -> QString;
 
-        /// Forget an app that took crosslinks and is not installed now: its remembered name and its switch go.
+        /// Forget an app that takes crosslinks, found or not: its remembered name and its switch go, and one still
+        /// found comes back, switched on.
         #[qinvokable]
         #[cxx_name = "forgetApp"]
         fn forget_app(self: Pin<&mut Backend>, id: &QString) -> QString;
@@ -428,7 +429,12 @@ impl qobject::Backend {
                 let apps = preferences::crosslink_apps();
                 rows.push(serde_json::json!({ "kind": "section", "title": preferences::apps_heading() }));
                 if apps.is_empty() {
-                    rows.push(serde_json::json!({ "kind": "note", "title": tr("No other app that takes part is installed.") }));
+                    rows.push(serde_json::json!({
+                        "kind": "note",
+                        "title": tr("No other app that takes part is installed."),
+                        "link": preferences::PARTICIPANTS_PAGE,
+                        "linkLabel": tr("Find Apps That Take Part"),
+                    }));
                 }
                 for (listed, shown) in apps {
                     rows.push(serde_json::json!({
@@ -440,6 +446,7 @@ impl qobject::Backend {
                         "value": shown.to_string(),
                     }));
                 }
+                rows.push(serde_json::json!({ "kind": "note", "title": preferences::apps_description(), "link": "", "linkLabel": "" }));
             }
         }
         QString::from(&serde_json::Value::Array(rows).to_string())

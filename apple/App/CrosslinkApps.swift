@@ -1,12 +1,13 @@
 // The other apps that take part in immich-crosslink (ROADMAP.md, "Open in Immich, and links between apps", step 3):
 // found through the system (`NSWorkspace.urlsForApplications(toOpen:)` and each bundle's `ImmichCrosslink`) at launch,
-// when another app launches, when a setting of theirs changes, and before Show in Another App…'s menu. The bridge
-// decides which Finder offers (`crosslinkTargets`); the offers are kept in the App Group for the extension, which marks
-// the items, and the system reads the items again when they change. An app is named and drawn by the system, never by
-// anything in a link or an announcement.
+// when another app launches, when a setting of theirs changes, and before Show in Another App… sends. The bridge
+// decides which Finder offers (`crosslinkTargets`), and no app is offered by name; the offers are kept in the App Group
+// for the extension, which marks the items, and the system reads the items again when they change. An app is named and
+// drawn by the system (its bundle's display name and icon), never by anything in a link or an announcement.
 
 import AppKit
 import FileProvider
+import SwiftUI
 import UniformTypeIdentifiers
 
 @MainActor
@@ -19,7 +20,7 @@ final class CrosslinkApps: NSObject, ObservableObject {
         let name: String
         let icon: NSImage
         let shown: Bool
-        /// Seen before and not installed now: listed by its remembered name, with a Forget button.
+        /// Seen before and not found now: listed by its remembered name.
         let installed: Bool
         var id: String { bundleId }
     }
@@ -54,16 +55,11 @@ final class CrosslinkApps: NSObject, ObservableObject {
     /// Find the apps, and keep the offers for the extension; when they changed, have the system read the items again,
     /// so the actions follow.
     func refresh() {
-        #if DEBUG
-        let development = true
-        #else
-        let development = false
-        #endif
-        let targets = crosslinkTargets(found: Self.found(), config: AppGroup.configText, development: development)
+        let targets = crosslinkTargets(found: Self.found(), config: AppGroup.configText)
         self.targets = targets
         let installed = targets.listed.map { app in
-            Listed(bundleId: app.bundleId, name: FileManager.default.displayName(atPath: app.path).replacingOccurrences(of: ".app", with: ""),
-                   icon: NSWorkspace.shared.icon(forFile: app.path), shown: app.shown, installed: true)
+            Listed(bundleId: app.bundleId, name: Self.name(ofAppAt: app.path), icon: NSWorkspace.shared.icon(forFile: app.path),
+                   shown: app.shown, installed: true)
         }
         // Remembered: an app away keeps its switch for 30 days (Immich Crosslink, "Participants that come and go").
         try? FileManager.default.createDirectory(at: AppGroup.container, withIntermediateDirectories: true)
@@ -77,7 +73,7 @@ final class CrosslinkApps: NSObject, ObservableObject {
         for bundleId in remembered.forgotten {
             Self.dropSwitch(bundleId)
         }
-        let offers = OfferedApps(gallery: targets.gallery.map(Self.kept), others: targets.others.map(Self.kept))
+        let offers = OfferedApps(apps: targets.offered.map(Self.kept))
         guard offers != OfferedApps.load() else { return }
         do {
             try offers.save()
@@ -85,7 +81,7 @@ final class CrosslinkApps: NSObject, ObservableObject {
             logger.error("the apps of Show in were not kept: \(String(describing: error), privacy: .public)")
             return
         }
-        logger.notice("Show in offers \(offers.gallery?.bundleId ?? "no gallery", privacy: .public) and \(offers.others.count) other apps")
+        logger.notice("Show in Another App… offers \(offers.apps.count) apps")
         Task {
             do {
                 try await NSFileProviderManager(for: FinderLocation.domain)?.reimportItems(below: .rootContainer)
@@ -95,7 +91,8 @@ final class CrosslinkApps: NSObject, ObservableObject {
         }
     }
 
-    /// Forget an app that is not installed, and its switch with it: should it come back, it is new again, and on.
+    /// Forget an app, installed or not, and its switch with it: one that still takes part is found again at once, new
+    /// and on (Immich Crosslink, "Participants that come and go").
     func forget(_ bundleId: String) {
         forgetApp(file: Self.seenFile.path, bundleId: bundleId)
         Self.dropSwitch(bundleId)
@@ -109,18 +106,13 @@ final class CrosslinkApps: NSObject, ObservableObject {
     }
 
     private static func kept(_ app: OfferedApp) -> OfferedApps.App {
-        OfferedApps.App(bundleId: app.bundleId, path: app.path, kinds: app.kinds, ownScheme: app.ownScheme)
+        OfferedApps.App(bundleId: app.bundleId, path: app.path, kinds: app.kinds)
     }
 
-    /// The apps registered for the scheme, and the known apps wherever they are, with their announcements.
+    /// The apps registered for the scheme, with their announcements.
     private static func found() -> [FoundApp] {
         guard let probe = URL(string: "immich-crosslink:///photos") else { return [] }
-        let registered = NSWorkspace.shared.urlsForApplications(toOpen: probe)
-        let takes = Set(registered.map(\.standardizedFileURL))
-        let known = ["dev.igol.ImmichGallery", "dev.igol.ImmichGallery.Dev"].flatMap {
-            NSWorkspace.shared.urlsForApplications(withBundleIdentifier: $0)
-        }
-        return (registered + known).compactMap { url in
+        return NSWorkspace.shared.urlsForApplications(toOpen: probe).compactMap { url in
             // A sandboxed app reads only some places: an app outside Applications may not be read (immich-crosslink,
             // "Finding participants").
             guard let bundle = Bundle(url: url), let bundleId = bundle.bundleIdentifier, Self.canStart(url) else {
@@ -129,16 +121,27 @@ final class CrosslinkApps: NSObject, ObservableObject {
             }
             let announcement = bundle.infoDictionary?["ImmichCrosslink"] as? [String: Any]
             logger.info("found \(bundleId, privacy: .public) at \(url.path, privacy: .public), announcing \(announcement == nil ? "nothing" : "itself", privacy: .public)")
-            return FoundApp(bundleId: bundleId, path: url.path, takesCrosslinks: takes.contains(url.standardizedFileURL),
+            return FoundApp(bundleId: bundleId, path: url.path, takesCrosslinks: true,
                             version: announcement?["Version"] as? String, shows: announcement?["Shows"] as? [String] ?? [])
         }
     }
 
+    /// An app's name as the system gives it: its bundle's display name, else its file's name.
+    static func name(ofAppAt path: String) -> String {
+        let bundle = Bundle(path: path)
+        let display = bundle?.localizedInfoDictionary?["CFBundleDisplayName"] ?? bundle?.infoDictionary?["CFBundleDisplayName"]
+        if let display = display as? String, !display.isEmpty {
+            return display
+        }
+        return FileManager.default.displayName(atPath: path).replacingOccurrences(of: ".app", with: "")
+    }
+
     // MARK: Show in Another App…
 
-    /// A Finder Show in action the extension handed over: `url` carries only the token of the request it kept in the
-    /// App Group. Any page can open the app's scheme, so a token that names no fresh request does nothing; the link is
-    /// made here from the item, and sent only to an app offered for that item's kind.
+    /// Finder's Show in Another App…, which the extension handed over: `url` carries only the token of the request it
+    /// kept in the App Group. Any page can open the app's scheme, so a token that names no fresh request does nothing;
+    /// the link is made here from the item, and sent only to an app offered for that item's kind: the one there is
+    /// straight away, or the one the user chooses of several (Immich Crosslink, "Sending").
     func perform(_ url: URL) {
         guard let token = URLComponents(url: url, resolvingAgainstBaseURL: false)?.queryItems?.first(where: { $0.name == "token" })?.value,
               let request = ActionRequest.take(token) else {
@@ -149,75 +152,50 @@ final class CrosslinkApps: NSObject, ObservableObject {
             logger.error("a Show in request named no item with a link")
             return
         }
-        Task {
-            switch request.action {
-            case ActionRequest.showInApp:
-                await showInApp(request.bundleId ?? "", identifier: request.identifier, kind: kind, account: account)
-            case ActionRequest.showInAnotherApp:
-                guard let link = await itemCrosslink(server: account.server, credential: account.credential, identifier: request.identifier) else { return }
-                showMenu(link: link, kind: kind)
-            default:
-                logger.error("a Show in request of an unknown kind")
-            }
-        }
-    }
-
-    /// Show in Immich Gallery: to the app among those Finder was offering (as kept for the extension; one removed
-    /// since is told about in `send`), when it is offered for the item.
-    private func showInApp(_ bundleId: String, identifier: String, kind: String, account: Account) async {
-        let offered = OfferedApps.load()
-        guard let app = ([offered.gallery].compactMap { $0 } + offered.others).first(where: { $0.bundleId == bundleId }),
-              offered.gallery?.bundleId != bundleId || offered.offersGallery(kind: kind, photoInPhotos: photoInPhotos(identifier: identifier) != nil),
-              app.kinds.contains(kind) else {
-            logger.error("Show in came for an app that is not offered on this item: \(bundleId, privacy: .public)")
-            return
-        }
-        let link: String?
-        if let scheme = app.ownScheme {
-            link = photoInPhotos(identifier: identifier).map { "\(scheme)://photo/\($0)" }
-        } else {
-            link = await itemCrosslink(server: account.server, credential: account.credential, identifier: identifier)
-        }
-        guard let link, let url = URL(string: link) else { return }
-        send(url, toAppAt: app.path)
-    }
-
-    /// The menu of the other apps that show the item's kind, at the pointer, as Finder's Show in Another App… asks.
-    private func showMenu(link: String, kind: String) {
+        // Read again: an app removed since Finder showed the action is not offered.
         refresh()
-        let apps = (targets?.others ?? []).filter { $0.kinds.contains(kind) }
+        let apps = (targets?.offered ?? []).filter { $0.kinds.contains(kind) }
         guard !apps.isEmpty else {
             logger.notice("Show in Another App…: no app shows \(kind, privacy: .public)")
+            Self.tell(tr("No other app that takes part is installed."))
             return
         }
-        let menu = NSMenu()
-        for app in apps {
-            let name = FileManager.default.displayName(atPath: app.path).replacingOccurrences(of: ".app", with: "")
-            let item = NSMenuItem(title: tr("Show in {app}", ["app": name]), action: #selector(send(_:)), keyEquivalent: "")
-            item.target = self
-            item.representedObject = [link, app.path]
-            let icon = NSWorkspace.shared.icon(forFile: app.path)
-            icon.size = NSSize(width: 16, height: 16)
-            item.image = icon
-            menu.addItem(item)
+        Task {
+            guard let link = await itemCrosslink(server: account.server, credential: account.credential, identifier: request.identifier),
+                  let url = URL(string: link) else { return }
+            guard apps.count > 1 else {
+                send(url, toAppAt: apps[0].path)
+                return
+            }
+            // A modal alert run inside a task holds the main queue (AppDelegate's `confirmSignOut`).
+            RunLoop.main.perform { MainActor.assumeIsolated { self.choose(among: apps, for: url) } }
         }
-        logger.notice("Show in Another App…: \(apps.count) apps for \(kind, privacy: .public)")
-        // A menu bar app's menu tracks only once the app is active.
-        NSApp.activate()
-        menu.popUp(positioning: nil, at: NSEvent.mouseLocation, in: nil)
     }
 
-    /// Send the crosslink to the app chosen, and to it alone.
-    @objc private func send(_ item: NSMenuItem) {
-        guard let pair = item.representedObject as? [String], pair.count == 2, let url = URL(string: pair[0]) else { return }
-        send(url, toAppAt: pair[1])
+    /// Ask which app shows the item, by the names and icons the system gives them, and send the link to the one
+    /// chosen. The first is chosen until the user picks another; a double-click picks and shows.
+    private func choose(among apps: [OfferedApp], for link: URL) {
+        let choice = AppChoice(apps: apps.map { AppChoice.Choice(path: $0.path, name: Self.name(ofAppAt: $0.path),
+                                                                 icon: NSWorkspace.shared.icon(forFile: $0.path)) })
+        let alert = NSAlert()
+        alert.messageText = tr("Show in Which App?")
+        alert.addButton(withTitle: tr("Show"))
+        alert.addButton(withTitle: tr("Cancel"))
+        let list = NSHostingView(rootView: AppChoiceList(choice: choice))
+        list.frame = NSRect(x: 0, y: 0, width: 280, height: min(CGFloat(apps.count) * 32 + 8, 200))
+        alert.accessoryView = list
+        logger.notice("Show in Another App…: asking which of \(apps.count) apps")
+        AppDelegate.shared?.bringForward()
+        AppDelegate.shared?.floatUntilUsed(alert.window)
+        guard alert.runModal() == .alertFirstButtonReturn, let path = choice.selection else { return }
+        send(link, toAppAt: path)
     }
 
     /// Send `link` to the app at `path` alone. An app removed since the list was read, or one the system cannot open,
     /// is told about in an alert, and the list is read again (Immich Crosslink, "Sending").
     func send(_ link: URL, toAppAt path: String) {
         let app = URL(fileURLWithPath: path)
-        let name = FileManager.default.displayName(atPath: path).replacingOccurrences(of: ".app", with: "")
+        let name = Self.name(ofAppAt: path)
         guard Self.canStart(app) else {
             logger.notice("\(app.lastPathComponent, privacy: .public) is no longer installed")
             Self.tell(tr("{app} is no longer installed.", ["app": name]))
@@ -259,6 +237,46 @@ final class CrosslinkApps: NSObject, ObservableObject {
                 AppDelegate.shared?.floatUntilUsed(alert.window)
                 alert.runModal()
             }
+        }
+    }
+}
+
+/// The apps Show in Another App… asks to choose between, and the one chosen, by its path.
+@MainActor
+final class AppChoice: ObservableObject {
+    struct Choice: Identifiable {
+        let path: String
+        let name: String
+        let icon: NSImage
+        var id: String { path }
+    }
+
+    let apps: [Choice]
+    @Published var selection: String?
+
+    init(apps: [Choice]) {
+        self.apps = apps
+        selection = apps.first?.path
+    }
+}
+
+/// The list in Show in Which App?: each app by its icon and name. A double-click, or Return, shows the item in it.
+private struct AppChoiceList: View {
+    @ObservedObject var choice: AppChoice
+
+    var body: some View {
+        List(choice.apps, selection: $choice.selection) { app in
+            Label {
+                Text(verbatim: app.name)
+            } icon: {
+                Image(nsImage: app.icon).resizable().frame(width: 20, height: 20)
+            }
+            .tag(app.path)
+        }
+        .contextMenu(forSelectionType: String.self) { _ in } primaryAction: { paths in
+            guard let path = paths.first else { return }
+            choice.selection = path
+            NSApp.stopModal(withCode: .alertFirstButtonReturn)
         }
     }
 }
