@@ -99,6 +99,11 @@ pub mod qobject {
         #[cxx_name = "homeRelative"]
         fn home_relative(self: &Backend, address: &QString) -> QString;
 
+        /// The location setting `written` in full, as Status shows it.
+        #[qinvokable]
+        #[cxx_name = "expandedPath"]
+        fn expanded_path(self: &Backend, written: &QString) -> QString;
+
         /// The folder above the location setting `written`, as a `file://` address, for the folder chooser to open at.
         #[qinvokable]
         #[cxx_name = "folderAddress"]
@@ -459,7 +464,10 @@ impl qobject::Backend {
                             .into();
                         "choice".into()
                     }
-                    (None, Kind::Path) => "folder".into(),
+                    (None, Kind::Path) => {
+                        shown["shown"] = Paths::from_environment().expand(&preferences::current_value(setting)).display().to_string().into();
+                        "folder".into()
+                    }
                     (None, Kind::Text) => "text".into(),
                 };
                 rows.push(shown);
@@ -496,6 +504,10 @@ impl qobject::Backend {
         let address = address.to_string();
         let path = url::Url::parse(&address).ok().and_then(|url| url.to_file_path().ok()).unwrap_or_else(|| std::path::PathBuf::from(&address));
         QString::from(&preferences::home_relative(&path))
+    }
+
+    pub fn expanded_path(&self, written: &QString) -> QString {
+        QString::from(&Paths::from_environment().expand(&written.to_string()).display().to_string())
     }
 
     pub fn folder_address(&self, written: &QString) -> QString {

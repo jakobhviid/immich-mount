@@ -109,9 +109,12 @@ fn section_row(row: &'static Row, inner: &'static str, context: &Context) -> gtk
 /// A choice among words, each by its label.
 fn choice_row(key: &'static str, words: &'static [&'static str], context: &Context) -> adw::ComboRow {
     let labels: Vec<&str> = words.iter().map(|word| choice_label(word)).collect();
-    let combo = adw::ComboRow::builder().title(title(setting(key))).model(&gtk::StringList::new(&labels)).build();
-    // A long choice ("Year in the Name (2023 - Trip)") reads whole under the title, rather than cut short beside it.
-    combo.set_use_subtitle(labels.iter().any(|label| label.chars().count() > 20));
+    // A long choice ("Year in the Name (2023 - Trip)") reads whole under the title, rather than cut short beside it;
+    // set before the model, so the row shows its value from the start.
+    let long = labels.iter().any(|label| label.chars().count() > 20);
+    let combo = adw::ComboRow::builder().title(title(setting(key))).use_subtitle(long).build();
+    combo.set_list_factory(Some(&whole_labels()));
+    combo.set_model(Some(&gtk::StringList::new(&labels)));
     let current = current_value(setting(key));
     combo.set_selected(words.iter().position(|word| *word == current).unwrap_or(0) as u32);
     let context = context.clone();
@@ -120,6 +123,26 @@ fn choice_row(key: &'static str, words: &'static [&'static str], context: &Conte
         context.outcome(change(key, word));
     });
     combo
+}
+
+/// The list a choice drops down, its labels whole rather than cut to the row's width.
+fn whole_labels() -> gtk::SignalListItemFactory {
+    let factory = gtk::SignalListItemFactory::new();
+    factory.connect_setup(|_, item| {
+        let Some(item) = item.downcast_ref::<gtk::ListItem>() else { return };
+        item.set_child(Some(&gtk::Label::builder().xalign(0.0).build()));
+    });
+    factory.connect_bind(|_, item| {
+        let Some(item) = item.downcast_ref::<gtk::ListItem>() else { return };
+        let (Some(label), Some(text)) = (
+            item.child().and_downcast::<gtk::Label>(),
+            item.item().and_downcast::<gtk::StringObject>(),
+        ) else {
+            return;
+        };
+        label.set_label(&text.string());
+    });
+    factory
 }
 
 /// The cache's size: one of the sizes offered, in the units Files counts in, or one set by hand, as itself.

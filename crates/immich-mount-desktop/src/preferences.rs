@@ -107,7 +107,7 @@ pub const PAGES: &[Page] = &[
         pane: Pane::OtherApps,
         id: "other-apps",
         title: "Other Apps",
-        icon: "insert-link-symbolic",
+        icon: "view-app-grid-symbolic",
         groups: &[
             Group { title: None, description: None, rows: &[row("crosslink.enabled", "Immich Crosslink", None)], apps: true },
             Group {

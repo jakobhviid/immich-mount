@@ -255,9 +255,8 @@ Kirigami.ApplicationWindow {
                                 }
                                 Controls.ComboBox {
                                     Accessible.name: row.modelData.innerTitle
-                                    Controls.ToolTip.text: row.modelData.innerTitle
-                                    Controls.ToolTip.visible: hovered
-                                    Controls.ToolTip.delay: Kirigami.Units.toolTipDelay
+                                    // The list says what it chooses ("Day Folders: From 500 Items"), the lists lined up.
+                                    displayText: row.modelData.innerTitle + ": " + currentText
                                     enabled: sectionSwitch.checked
                                     model: row.modelData.choices
                                     textRole: "label"
@@ -271,7 +270,7 @@ Kirigami.ApplicationWindow {
                             id: folderRow
                             // A folder, chosen in the system's folder chooser rather than typed.
                             RowLayout {
-                                Controls.Label { id: folderPath; text: row.modelData.value }
+                                Controls.Label { id: folderPath; text: row.modelData.shown }
                                 Controls.Button {
                                     text: i18n("Choose…")
                                     icon.name: "document-open-folder"
@@ -285,7 +284,7 @@ Kirigami.ApplicationWindow {
                                         const text = backend.homeRelative(selectedFolder.toString())
                                         preferences.store(row.modelData.key, text)
                                         if (refusal.text.length === 0)
-                                            folderPath.text = text
+                                            folderPath.text = backend.expandedPath(text)
                                     }
                                 }
                             }
@@ -428,6 +427,8 @@ Kirigami.ApplicationWindow {
                 icon.name: "help-about"
                 text: i18n("About")
                 displayHint: Kirigami.DisplayHint.AlwaysHide
+                // Signed in, About is in the sidebar.
+                visible: backend.page !== "status"
                 onTriggered: root.pageStack.layers.push(aboutPage)
             }
         ]
