@@ -31,7 +31,7 @@ pub const PARTICIPANTS_PAGE: &str = "https://jakob.hviid.phd/immich-crosslink/pa
 
 /// What the switches and Forget of the apps that take part do, under their list.
 pub fn apps_description() -> &'static str {
-    tr("Apps that take part are found by themselves. Turn one off to leave it out of Show in. Forget clears what Immich Mount remembers of an app: one that still takes part comes back, switched on.")
+    tr("Apps that take part are found by themselves. Turn one off to leave it out of Show in. Forget clears what Immich Mount remembers of an app: one that still takes part comes back, switched on, so turn it off instead to leave it out.")
 }
 
 /// The title of the list of apps under Immich Crosslink's switch, in the user's language.

@@ -264,8 +264,8 @@ msgstr "jakob.hviid.phd/immich-mount থেকে নামিয়ে নি�
 
 #: crates/immich-mount-desktop/src/preferences.rs:34
 #: apple/App/SettingsView.swift:253
-msgid "Apps that take part are found by themselves. Turn one off to leave it out of Show in. Forget clears what Immich Mount remembers of an app: one that still takes part comes back, switched on."
-msgstr "অংশ নেওয়া অ্যাপ নিজে থেকেই খুঁজে পাওয়া যায়। কোনো অ্যাপকে \"…-এ দেখান\" থেকে বাদ দিতে সেটি বন্ধ করুন। \"ভুলে যান\" কোনো অ্যাপ সম্পর্কে Immich Mount যা মনে রাখে তা মুছে দেয়: যে অ্যাপ এখনও অংশ নেয় সেটি চালু অবস্থায় ফিরে আসে।"
+msgid "Apps that take part are found by themselves. Turn one off to leave it out of Show in. Forget clears what Immich Mount remembers of an app: one that still takes part comes back, switched on, so turn it off instead to leave it out."
+msgstr "অংশ নেওয়া অ্যাপ নিজে থেকেই খুঁজে পাওয়া যায়। কোনো অ্যাপকে \"…-এ দেখান\" থেকে বাদ দিতে সেটি বন্ধ করুন। \"ভুলে যান\" কোনো অ্যাপ সম্পর্কে Immich Mount যা মনে রাখে তা মুছে দেয়: যে অ্যাপ এখনও অংশ নেয় সেটি চালু অবস্থায় ফিরে আসে, তাই বাদ দিতে বরং সেটি বন্ধ করুন।"
 
 #: crates/immich-mount-desktop/src/preferences.rs:39
 #: apple/App/SettingsView.swift:251

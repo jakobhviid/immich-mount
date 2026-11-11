@@ -464,7 +464,7 @@ part in Immich Crosslink, which shows it there.
   more…** at the end of the description on the Mac. Then **Apps That Take Part**, each by its name and icon with a
   **Forget** button and a switch, described as "Apps that take part are found by themselves. Turn one off to leave it
   out of Show in. Forget clears what Immich Mount remembers of an app: one that still takes part comes back, switched
-  on." With none, "No other app that takes part is installed." and a link to the protocol's participants (**Find Apps
+  on, so turn it off instead to leave it out." With none, "No other app that takes part is installed." and a link to the protocol's participants (**Find Apps
   That Take Part**, **Find apps that take part…** on the Mac). Then **Immich Web App** (Links to Immich). An app seen
   before but not found at the moment stays listed for 30 days, as **Not found**, by its remembered name and a generic
   icon. Forgetting an app, by hand or after 30 days unseen, drops its switch too: one still found comes back at once,

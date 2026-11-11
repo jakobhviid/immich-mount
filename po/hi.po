@@ -264,8 +264,8 @@ msgstr "इसे jakob.hviid.phd/immich-mount से डाउनलोड क�
 
 #: crates/immich-mount-desktop/src/preferences.rs:34
 #: apple/App/SettingsView.swift:253
-msgid "Apps that take part are found by themselves. Turn one off to leave it out of Show in. Forget clears what Immich Mount remembers of an app: one that still takes part comes back, switched on."
-msgstr "भाग लेने वाले ऐप अपने आप मिल जाते हैं। किसी ऐप को \"… में दिखाएँ\" से बाहर रखने के लिए उसे बंद करें। \"भूल जाएँ\" वह सब मिटा देता है जो Immich Mount किसी ऐप के बारे में याद रखता है: जो ऐप अब भी भाग लेता है, वह चालू होकर वापस आ जाता है।"
+msgid "Apps that take part are found by themselves. Turn one off to leave it out of Show in. Forget clears what Immich Mount remembers of an app: one that still takes part comes back, switched on, so turn it off instead to leave it out."
+msgstr "भाग लेने वाले ऐप अपने आप मिल जाते हैं। किसी ऐप को \"… में दिखाएँ\" से बाहर रखने के लिए उसे बंद करें। \"भूल जाएँ\" वह सब मिटा देता है जो Immich Mount किसी ऐप के बारे में याद रखता है: जो ऐप अब भी भाग लेता है, वह चालू होकर वापस आ जाता है, इसलिए उसे बाहर रखने के लिए इसके बजाय उसे बंद करें।"
 
 #: crates/immich-mount-desktop/src/preferences.rs:39
 #: apple/App/SettingsView.swift:251

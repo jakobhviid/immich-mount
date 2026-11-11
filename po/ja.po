@@ -264,8 +264,8 @@ msgstr "jakob.hviid.phd/immich-mount からダウンロードしてください�
 
 #: crates/immich-mount-desktop/src/preferences.rs:34
 #: apple/App/SettingsView.swift:253
-msgid "Apps that take part are found by themselves. Turn one off to leave it out of Show in. Forget clears what Immich Mount remembers of an app: one that still takes part comes back, switched on."
-msgstr "参加しているアプリは自動的に見つかります。「… で表示」から除くには、そのアプリをオフにします。「削除」は Immich Mount がアプリについて記憶している内容を消去します。まだ参加しているアプリは、オンの状態で再び表示されます。"
+msgid "Apps that take part are found by themselves. Turn one off to leave it out of Show in. Forget clears what Immich Mount remembers of an app: one that still takes part comes back, switched on, so turn it off instead to leave it out."
+msgstr "参加しているアプリは自動的に見つかります。「… で表示」から除くには、そのアプリをオフにします。「削除」は Immich Mount がアプリについて記憶している内容を消去します。まだ参加しているアプリは、オンの状態で再び表示されます。除くには、代わりにオフにしてください。"
 
 #: crates/immich-mount-desktop/src/preferences.rs:39
 #: apple/App/SettingsView.swift:251

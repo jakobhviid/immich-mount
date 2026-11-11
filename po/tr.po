@@ -264,8 +264,8 @@ msgstr "jakob.hviid.phd/immich-mount adresinden indirin."
 
 #: crates/immich-mount-desktop/src/preferences.rs:34
 #: apple/App/SettingsView.swift:253
-msgid "Apps that take part are found by themselves. Turn one off to leave it out of Show in. Forget clears what Immich Mount remembers of an app: one that still takes part comes back, switched on."
-msgstr "Katılan uygulamalar kendiliğinden bulunur. Bir uygulamayı “… uygulamasında göster” menüsünün dışında bırakmak için kapatın. “Unut”, Immich Mount’un bir uygulama hakkında hatırladıklarını temizler: hâlâ katılan bir uygulama açık olarak geri gelir."
+msgid "Apps that take part are found by themselves. Turn one off to leave it out of Show in. Forget clears what Immich Mount remembers of an app: one that still takes part comes back, switched on, so turn it off instead to leave it out."
+msgstr "Katılan uygulamalar kendiliğinden bulunur. Bir uygulamayı “… uygulamasında göster” menüsünün dışında bırakmak için kapatın. “Unut”, Immich Mount’un bir uygulama hakkında hatırladıklarını temizler: hâlâ katılan bir uygulama açık olarak geri gelir; dışarıda bırakmak için bunun yerine kapatın."
 
 #: crates/immich-mount-desktop/src/preferences.rs:39
 #: apple/App/SettingsView.swift:251

@@ -264,8 +264,8 @@ msgstr "Hent den fra jakob.hviid.phd/immich-mount."
 
 #: crates/immich-mount-desktop/src/preferences.rs:34
 #: apple/App/SettingsView.swift:253
-msgid "Apps that take part are found by themselves. Turn one off to leave it out of Show in. Forget clears what Immich Mount remembers of an app: one that still takes part comes back, switched on."
-msgstr "Apps, der deltager, findes af sig selv. Slå en fra for at udelade den fra Vis i. Glem rydder, hvad Immich Mount husker om en app: en, der stadig deltager, kommer tilbage, slået til."
+msgid "Apps that take part are found by themselves. Turn one off to leave it out of Show in. Forget clears what Immich Mount remembers of an app: one that still takes part comes back, switched on, so turn it off instead to leave it out."
+msgstr "Apps, der deltager, findes af sig selv. Slå en fra for at udelade den fra Vis i. Glem rydder, hvad Immich Mount husker om en app: en, der stadig deltager, kommer tilbage, slået til, så slå den hellere fra for at udelade den."
 
 #: crates/immich-mount-desktop/src/preferences.rs:39
 #: apple/App/SettingsView.swift:251

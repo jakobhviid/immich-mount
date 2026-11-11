@@ -264,8 +264,8 @@ msgstr "请从 jakob.hviid.phd/immich-mount 下载。"
 
 #: crates/immich-mount-desktop/src/preferences.rs:34
 #: apple/App/SettingsView.swift:253
-msgid "Apps that take part are found by themselves. Turn one off to leave it out of Show in. Forget clears what Immich Mount remembers of an app: one that still takes part comes back, switched on."
-msgstr "参与的应用会被自动找到。关闭某个应用即可将其排除在“在…中显示”之外。“忘记”会清除 Immich Mount 记住的某个应用的信息：仍在参与的应用会重新出现，并处于打开状态。"
+msgid "Apps that take part are found by themselves. Turn one off to leave it out of Show in. Forget clears what Immich Mount remembers of an app: one that still takes part comes back, switched on, so turn it off instead to leave it out."
+msgstr "参与的应用会被自动找到。关闭某个应用即可将其排除在“在…中显示”之外。“忘记”会清除 Immich Mount 记住的某个应用的信息：仍在参与的应用会重新出现，并处于打开状态，因此若要排除它，请改为将其关闭。"
 
 #: crates/immich-mount-desktop/src/preferences.rs:39
 #: apple/App/SettingsView.swift:251

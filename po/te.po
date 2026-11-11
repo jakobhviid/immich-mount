@@ -264,8 +264,8 @@ msgstr "jakob.hviid.phd/immich-mount నుండి డౌన్‌లోడ్
 
 #: crates/immich-mount-desktop/src/preferences.rs:34
 #: apple/App/SettingsView.swift:253
-msgid "Apps that take part are found by themselves. Turn one off to leave it out of Show in. Forget clears what Immich Mount remembers of an app: one that still takes part comes back, switched on."
-msgstr "పాల్గొనే యాప్‌లు వాటంతట అవే కనుగొనబడతాయి. ఒక యాప్‌ను \"…లో చూపించు\" నుండి మినహాయించడానికి దాన్ని ఆఫ్ చేయండి. \"మర్చిపో\" ఒక యాప్ గురించి Immich Mount గుర్తుంచుకున్నదాన్ని తుడిచివేస్తుంది: ఇంకా పాల్గొంటున్న యాప్ ఆన్ చేయబడి తిరిగి వస్తుంది."
+msgid "Apps that take part are found by themselves. Turn one off to leave it out of Show in. Forget clears what Immich Mount remembers of an app: one that still takes part comes back, switched on, so turn it off instead to leave it out."
+msgstr "పాల్గొనే యాప్‌లు వాటంతట అవే కనుగొనబడతాయి. ఒక యాప్‌ను \"…లో చూపించు\" నుండి మినహాయించడానికి దాన్ని ఆఫ్ చేయండి. \"మర్చిపో\" ఒక యాప్ గురించి Immich Mount గుర్తుంచుకున్నదాన్ని తుడిచివేస్తుంది: ఇంకా పాల్గొంటున్న యాప్ ఆన్ చేయబడి తిరిగి వస్తుంది, కాబట్టి మినహాయించడానికి బదులుగా దాన్ని ఆఫ్ చేయండి."
 
 #: crates/immich-mount-desktop/src/preferences.rs:39
 #: apple/App/SettingsView.swift:251

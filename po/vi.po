@@ -264,8 +264,8 @@ msgstr "Tải về tại jakob.hviid.phd/immich-mount."
 
 #: crates/immich-mount-desktop/src/preferences.rs:34
 #: apple/App/SettingsView.swift:253
-msgid "Apps that take part are found by themselves. Turn one off to leave it out of Show in. Forget clears what Immich Mount remembers of an app: one that still takes part comes back, switched on."
-msgstr "Các ứng dụng tham gia được tự động tìm thấy. Tắt một ứng dụng để loại nó khỏi Hiện trong. Quên sẽ xóa những gì Immich Mount nhớ về một ứng dụng: ứng dụng nào vẫn tham gia sẽ quay lại ở trạng thái bật."
+msgid "Apps that take part are found by themselves. Turn one off to leave it out of Show in. Forget clears what Immich Mount remembers of an app: one that still takes part comes back, switched on, so turn it off instead to leave it out."
+msgstr "Các ứng dụng tham gia được tự động tìm thấy. Tắt một ứng dụng để loại nó khỏi Hiện trong. Quên sẽ xóa những gì Immich Mount nhớ về một ứng dụng: ứng dụng nào vẫn tham gia sẽ quay lại ở trạng thái bật, vì vậy hãy tắt nó thay vì quên để loại nó ra."
 
 #: crates/immich-mount-desktop/src/preferences.rs:39
 #: apple/App/SettingsView.swift:251

@@ -250,7 +250,7 @@ private struct CrosslinkSection: View {
         } header: {
             Text(tr("Apps That Take Part"))
         } footer: {
-            Text(tr("Apps that take part are found by themselves. Turn one off to leave it out of Show in. Forget clears what Immich Mount remembers of an app: one that still takes part comes back, switched on."))
+            Text(tr("Apps that take part are found by themselves. Turn one off to leave it out of Show in. Forget clears what Immich Mount remembers of an app: one that still takes part comes back, switched on, so turn it off instead to leave it out."))
                 .foregroundStyle(.secondary)
         }
     }
