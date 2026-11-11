@@ -113,7 +113,7 @@ fn choice_row(key: &'static str, words: &'static [&'static str], context: &Conte
     // set before the model, so the row shows its value from the start.
     let long = labels.iter().any(|label| label.chars().count() > 20);
     let combo = adw::ComboRow::builder().title(title(setting(key))).use_subtitle(long).build();
-    combo.set_list_factory(Some(&whole_labels()));
+    combo.set_list_factory(Some(&whole_labels(&combo)));
     combo.set_model(Some(&gtk::StringList::new(&labels)));
     let current = current_value(setting(key));
     combo.set_selected(words.iter().position(|word| *word == current).unwrap_or(0) as u32);
@@ -125,22 +125,39 @@ fn choice_row(key: &'static str, words: &'static [&'static str], context: &Conte
     combo
 }
 
-/// The list a choice drops down, its labels whole rather than cut to the row's width.
-fn whole_labels() -> gtk::SignalListItemFactory {
+/// The list a choice drops down, its labels whole rather than cut to the row's width, with the checkmark on the
+/// choice made, as libadwaita's own list has it.
+fn whole_labels(combo: &adw::ComboRow) -> gtk::SignalListItemFactory {
     let factory = gtk::SignalListItemFactory::new();
-    factory.connect_setup(|_, item| {
+    let shown_by = combo.downgrade();
+    factory.connect_setup(move |_, item| {
         let Some(item) = item.downcast_ref::<gtk::ListItem>() else { return };
-        item.set_child(Some(&gtk::Label::builder().xalign(0.0).build()));
+        let line = gtk::Box::new(gtk::Orientation::Horizontal, 6);
+        line.append(&gtk::Label::builder().xalign(0.0).hexpand(true).build());
+        let check = gtk::Image::from_icon_name("object-select-symbolic");
+        check.set_opacity(0.0);
+        line.append(&check);
+        item.set_child(Some(&line));
+        // The checkmark follows the choice while the list is kept between openings.
+        if let Some(combo) = shown_by.upgrade() {
+            let (item, check) = (item.downgrade(), check.downgrade());
+            combo.connect_selected_notify(move |combo| {
+                if let (Some(item), Some(check)) = (item.upgrade(), check.upgrade()) {
+                    check.set_opacity(if item.position() == combo.selected() { 1.0 } else { 0.0 });
+                }
+            });
+        }
     });
-    factory.connect_bind(|_, item| {
+    let shown_by = combo.downgrade();
+    factory.connect_bind(move |_, item| {
         let Some(item) = item.downcast_ref::<gtk::ListItem>() else { return };
-        let (Some(label), Some(text)) = (
-            item.child().and_downcast::<gtk::Label>(),
-            item.item().and_downcast::<gtk::StringObject>(),
-        ) else {
-            return;
-        };
-        label.set_label(&text.string());
+        let Some(line) = item.child().and_downcast::<gtk::Box>() else { return };
+        let (Some(label), Some(check)) = (line.first_child().and_downcast::<gtk::Label>(), line.last_child()) else { return };
+        if let Some(text) = item.item().and_downcast::<gtk::StringObject>() {
+            label.set_label(&text.string());
+        }
+        let chosen = shown_by.upgrade().is_some_and(|combo| combo.selected() == item.position());
+        check.set_opacity(if chosen { 1.0 } else { 0.0 });
     });
     factory
 }

@@ -253,10 +253,15 @@ Kirigami.ApplicationWindow {
                                     checked: row.modelData.value === "true"
                                     onToggled: preferences.store(row.modelData.key, checked ? "true" : "false")
                                 }
+                                // What the list beside it chooses, in a column of its own, so the lists line up.
+                                Controls.Label {
+                                    text: row.modelData.innerTitle + ":"
+                                    enabled: sectionSwitch.checked
+                                    elide: Text.ElideRight
+                                    Layout.preferredWidth: Kirigami.Units.gridUnit * 12
+                                }
                                 Controls.ComboBox {
                                     Accessible.name: row.modelData.innerTitle
-                                    // The list says what it chooses ("Day Folders: From 500 Items"), the lists lined up.
-                                    displayText: row.modelData.innerTitle + ": " + currentText
                                     enabled: sectionSwitch.checked
                                     model: row.modelData.choices
                                     textRole: "label"
