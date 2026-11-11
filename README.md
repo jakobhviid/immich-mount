@@ -139,7 +139,13 @@ at every login.
 <td><img src="docs/screenshots/app-connect.png" alt="Immich Mount asking for the server address"></td>
 <td><img src="docs/screenshots/app-sign-in.png" alt="Sign-in methods offered by the server: single sign-on, email and password, API key"></td>
 <td><img src="docs/screenshots/app-setup.png" alt="First run: which sections the drive shows, and where it goes"></td>
-<td><img src="docs/screenshots/app-status.png" alt="The status page: the library is in Files, with Open in Files and Unmount"></td>
+</tr></table>
+
+Signed in, the app's window is its pages, in a sidebar: Status, then General, Folders, Other Apps and Account.
+
+<table><tr>
+<td><img src="docs/screenshots/app-status.png" alt="The Status page beside the sidebar: the library is in Files, with Open in Files and Unmount"></td>
+<td><img src="docs/screenshots/app-preferences.png" alt="The Folders page: each section with its switch and its date folders, then album and file names"></td>
 </tr></table>
 
 While it is mounted, its icon sits in the tray: in KDE Plasma's system tray, and in GNOME's top bar where the
@@ -159,7 +165,11 @@ the thumbnails:
 <table><tr>
 <td><img src="docs/screenshots/kde-sign-in.png" alt="The KDE app's sign-in page: single sign-on, email and password, API key"></td>
 <td><img src="docs/screenshots/kde-setup.png" alt="The KDE app's first run: sections, location, and Show thumbnails for Dolphin"></td>
-<td><img src="docs/screenshots/kde-status.png" alt="The KDE app's status page: the library is in Dolphin, with Unmount and Disconnect"></td>
+</tr></table>
+
+<table><tr>
+<td><img src="docs/screenshots/kde-status.png" alt="The KDE app's Status page beside its sidebar: the library is in Dolphin, with Unmount and Show thumbnails"></td>
+<td><img src="docs/screenshots/kde-preferences.png" alt="The KDE app's Folders page: each section with its switch and its date folders, then album and file names"></td>
 </tr></table>
 
 **From a terminal,** or on a machine without a desktop:

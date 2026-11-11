@@ -1393,7 +1393,8 @@ Each platform gets a native app that looks and reads like a first-party app (pri
   Rust/Qt bridge). The object is a thin layer over `immich-mount-desktop`, so the two apps share every step but
   the widgets.
   - **Its pages** follow GNOME's steps in Kirigami's terms: `PlaceholderMessage` for the start, waiting and status
-    pages, `FormLayout` for sign-in, setup and the settings, About as a layer from the header's menu, and the
+    pages, `FormLayout` for sign-in, setup and the settings, About as a layer from the sidebar (from the header's
+    menu before signing in), and the
     `org.kde.desktop` style, so it looks like Plasma's own apps. Signed in, a `GlobalDrawer` is the sidebar of the
     same pages as GNOME's, open beside them on a wide window and a drawer on a narrow one, as in System Settings, with
     one page shown at a time.
