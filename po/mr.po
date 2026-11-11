@@ -264,7 +264,7 @@ msgstr "jakob.hviid.phd/immich-mount वरून डाउनलोड कर�
 
 #: crates/immich-mount-desktop/src/preferences.rs:168
 msgid "Custom ({size})"
-msgstr ""
+msgstr "सानुकूल ({size})"
 
 #: crates/immich-mount-desktop/src/preferences.rs:181
 #: apple/App/SettingsView.swift:255
@@ -298,30 +298,30 @@ msgstr "स्थान"
 #: crates/immich-mount-desktop/src/preferences.rs:57
 #: crates/immich-mount-desktop/src/preferences.rs:57
 msgid "Name in the Sidebar"
-msgstr ""
+msgstr "साइडबारमधील नाव"
 
 #: crates/immich-mount-desktop/src/preferences.rs:65
 #: crates/immich-mount-desktop/src/preferences.rs:65
 #: crates/immich-mount-desktop/src/preferences.rs:65
 msgid "Cache Size"
-msgstr ""
+msgstr "कॅशेचा आकार"
 
 #: crates/immich-mount-desktop/src/preferences.rs:66
 #: crates/immich-mount-desktop/src/preferences.rs:66
 #: crates/immich-mount-desktop/src/preferences.rs:66
 msgid "Sharp Thumbnails"
-msgstr ""
+msgstr "स्पष्ट थंबनेल"
 
 #: crates/immich-mount-desktop/src/preferences.rs:73
 #: crates/immich-mount-desktop/src/preferences.rs:73
 #: crates/immich-mount-desktop/src/preferences.rs:73
 msgid "Check for Updates"
-msgstr ""
+msgstr "अपडेट तपासा"
 
 #: crates/immich-mount-desktop/src/preferences.rs:88
 #: crates/immich-mount-desktop/src/preferences.rs:88
 msgid "Day Folders"
-msgstr ""
+msgstr "दिवसांचे फोल्डर"
 
 #: crates/immich-mount-desktop/src/preferences.rs:89
 #: crates/immich-mount-desktop/src/preferences.rs:90
@@ -334,24 +334,24 @@ msgstr ""
 #: crates/immich-mount-desktop/src/preferences.rs:92
 #: crates/immich-mount-desktop/src/preferences.rs:93
 msgid "Year and Month Folders"
-msgstr ""
+msgstr "वर्ष आणि महिन्याचे फोल्डर"
 
 #: crates/immich-mount-desktop/src/preferences.rs:94
 #: crates/immich-mount-desktop/src/preferences.rs:94
 msgid "Folders Copied Into Upload"
-msgstr ""
+msgstr "Upload मध्ये कॉपी केलेले फोल्डर"
 
 #: crates/immich-mount-desktop/src/preferences.rs:101
 #: crates/immich-mount-desktop/src/preferences.rs:101
 #: crates/immich-mount-desktop/src/preferences.rs:101
 msgid "Album Folders"
-msgstr ""
+msgstr "अल्बम फोल्डर"
 
 #: crates/immich-mount-desktop/src/preferences.rs:101
 #: crates/immich-mount-desktop/src/preferences.rs:101
 #: crates/immich-mount-desktop/src/preferences.rs:101
 msgid "File Names"
-msgstr ""
+msgstr "फाइलची नावे"
 
 #: crates/immich-mount-desktop/src/preferences.rs:116
 #: crates/immich-mount-desktop/src/preferences.rs:116
@@ -453,15 +453,15 @@ msgstr "ड्राइव्ह"
 
 #: crates/immich-mount-desktop/src/preferences.rs:62
 msgid "Storage"
-msgstr ""
+msgstr "स्टोरेज"
 
 #: crates/immich-mount-desktop/src/preferences.rs:65
 msgid "Opened originals are kept on this computer up to this size."
-msgstr ""
+msgstr "उघडलेल्या मूळ फाइल्स या संगणकावर या आकारापर्यंत ठेवल्या जातात."
 
 #: crates/immich-mount-desktop/src/preferences.rs:66
 msgid "Also download larger previews, for big icon sizes. Uses more data."
-msgstr ""
+msgstr "मोठ्या आयकॉनसाठी मोठी पूर्वदृश्येही डाउनलोड करा. जास्त डेटा लागतो."
 
 #: crates/immich-mount-desktop/src/preferences.rs:71
 msgid "Updates"
@@ -469,7 +469,7 @@ msgstr "अपडेट"
 
 #: crates/immich-mount-desktop/src/preferences.rs:73
 msgid "Tell me when a new version is out."
-msgstr ""
+msgstr "नवीन आवृत्ती आल्यावर मला कळवा."
 
 #: crates/immich-mount-desktop/src/preferences.rs:85
 #: crates/immich-mount-gnome/src/window.blp:144
@@ -480,7 +480,7 @@ msgstr "विभाग"
 
 #: crates/immich-mount-desktop/src/preferences.rs:86
 msgid "The folders the drive shows, and how each splits its photos by date."
-msgstr ""
+msgstr "ड्राइव्ह कोणते फोल्डर दाखवते, आणि प्रत्येक फोल्डर आपले फोटो तारखेनुसार कसे विभागतो."
 
 #: crates/immich-mount-desktop/src/preferences.rs:88
 #: crates/immich-mount-gnome/src/window.blp:149
@@ -489,11 +489,11 @@ msgstr "टाइमलाइन, वर्ष आणि महिन्या�
 
 #: crates/immich-mount-desktop/src/preferences.rs:94
 msgid "What is copied into it is uploaded"
-msgstr ""
+msgstr "यात कॉपी केलेले अपलोड होते"
 
 #: crates/immich-mount-desktop/src/preferences.rs:99
 msgid "Names"
-msgstr ""
+msgstr "नावे"
 
 #: crates/immich-mount-desktop/src/preferences.rs:114
 #: apple/App/SettingsView.swift:281
@@ -503,7 +503,7 @@ msgstr "Immich वेब ॲप"
 #: crates/immich-mount-desktop/src/preferences.rs:55
 #: crates/immich-mount-desktop/src/preferences.rs:55
 msgid "Mount at Login"
-msgstr ""
+msgstr "लॉगिनवेळी माउंट करा"
 
 #: crates/immich-mount-gnome/src/main.rs:106
 msgid "Your Immich photos and videos as a drive in Files."
@@ -546,7 +546,7 @@ msgstr "बाहेर पडा"
 #: crates/immich-mount-gnome/src/preferences.rs:149
 #: crates/immich-mount-gnome/src/preferences.rs:153
 msgid "Choose a Folder"
-msgstr ""
+msgstr "फोल्डर निवडा"
 
 #: crates/immich-mount-gnome/src/preferences.rs:184
 #: crates/immich-mount-kde/qml/Main.qml:197
@@ -582,7 +582,7 @@ msgstr "सहभागी ॲप्स शोधा"
 #: crates/immich-mount-kde/qml/Main.qml:47
 #: crates/immich-mount-kde/qml/Main.qml:440
 msgid "Status"
-msgstr ""
+msgstr "स्थिती"
 
 #: crates/immich-mount-gnome/src/window.rs:217
 #: crates/immich-mount-gnome/src/window.blp:366
@@ -779,7 +779,7 @@ msgstr "क्रेडेन्शियल"
 
 #: crates/immich-mount-gnome/src/window.blp:384
 msgid "Disconnecting signs out and takes the drive out of Files. Your library on the server stays as it is."
-msgstr ""
+msgstr "डिस्कनेक्ट केल्याने तुम्ही साइन आउट होता आणि ड्राइव्ह फाइल्स् मधून निघते. सर्व्हरवरील तुमची लायब्ररी जशी आहे तशीच राहते."
 
 #: crates/immich-mount-gnome/src/window.blp:387
 msgid "_Disconnect"
@@ -841,7 +841,7 @@ msgstr "या ड्राइव्हसह, दूरस्थ स्था�
 
 #: crates/immich-mount-kde/qml/Main.qml:276
 msgid "Choose…"
-msgstr ""
+msgstr "निवडा…"
 
 #: crates/immich-mount-kde/qml/Main.qml:342
 #: apple/App/ContentView.swift:107
@@ -862,7 +862,7 @@ msgstr "डिस्कनेक्ट करा"
 
 #: crates/immich-mount-kde/qml/Main.qml:364
 msgid "Disconnecting signs out and takes the drive out of Dolphin. Your library on the server stays as it is."
-msgstr ""
+msgstr "डिस्कनेक्ट केल्याने तुम्ही साइन आउट होता आणि ड्राइव्ह Dolphin मधून निघते. सर्व्हरवरील तुमची लायब्ररी जशी आहे तशीच राहते."
 
 #: crates/immich-mount-kde/qml/Main.qml:386
 msgid "Your Immich photos and videos as a drive in Dolphin. By Jakob Hviid, under the MIT license."

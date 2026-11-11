@@ -264,7 +264,7 @@ msgstr "Laden Sie sie von jakob.hviid.phd/immich-mount herunter."
 
 #: crates/immich-mount-desktop/src/preferences.rs:168
 msgid "Custom ({size})"
-msgstr ""
+msgstr "Benutzerdefiniert ({size})"
 
 #: crates/immich-mount-desktop/src/preferences.rs:181
 #: apple/App/SettingsView.swift:255
@@ -298,30 +298,30 @@ msgstr "Speicherort"
 #: crates/immich-mount-desktop/src/preferences.rs:57
 #: crates/immich-mount-desktop/src/preferences.rs:57
 msgid "Name in the Sidebar"
-msgstr ""
+msgstr "Name in der Seitenleiste"
 
 #: crates/immich-mount-desktop/src/preferences.rs:65
 #: crates/immich-mount-desktop/src/preferences.rs:65
 #: crates/immich-mount-desktop/src/preferences.rs:65
 msgid "Cache Size"
-msgstr ""
+msgstr "Cache-Größe"
 
 #: crates/immich-mount-desktop/src/preferences.rs:66
 #: crates/immich-mount-desktop/src/preferences.rs:66
 #: crates/immich-mount-desktop/src/preferences.rs:66
 msgid "Sharp Thumbnails"
-msgstr ""
+msgstr "Scharfe Vorschaubilder"
 
 #: crates/immich-mount-desktop/src/preferences.rs:73
 #: crates/immich-mount-desktop/src/preferences.rs:73
 #: crates/immich-mount-desktop/src/preferences.rs:73
 msgid "Check for Updates"
-msgstr ""
+msgstr "Nach Aktualisierungen suchen"
 
 #: crates/immich-mount-desktop/src/preferences.rs:88
 #: crates/immich-mount-desktop/src/preferences.rs:88
 msgid "Day Folders"
-msgstr ""
+msgstr "Tagesordner"
 
 #: crates/immich-mount-desktop/src/preferences.rs:89
 #: crates/immich-mount-desktop/src/preferences.rs:90
@@ -334,24 +334,24 @@ msgstr ""
 #: crates/immich-mount-desktop/src/preferences.rs:92
 #: crates/immich-mount-desktop/src/preferences.rs:93
 msgid "Year and Month Folders"
-msgstr ""
+msgstr "Jahres- und Monatsordner"
 
 #: crates/immich-mount-desktop/src/preferences.rs:94
 #: crates/immich-mount-desktop/src/preferences.rs:94
 msgid "Folders Copied Into Upload"
-msgstr ""
+msgstr "In Upload kopierte Ordner"
 
 #: crates/immich-mount-desktop/src/preferences.rs:101
 #: crates/immich-mount-desktop/src/preferences.rs:101
 #: crates/immich-mount-desktop/src/preferences.rs:101
 msgid "Album Folders"
-msgstr ""
+msgstr "Albenordner"
 
 #: crates/immich-mount-desktop/src/preferences.rs:101
 #: crates/immich-mount-desktop/src/preferences.rs:101
 #: crates/immich-mount-desktop/src/preferences.rs:101
 msgid "File Names"
-msgstr ""
+msgstr "Dateinamen"
 
 #: crates/immich-mount-desktop/src/preferences.rs:116
 #: crates/immich-mount-desktop/src/preferences.rs:116
@@ -453,15 +453,15 @@ msgstr "Laufwerk"
 
 #: crates/immich-mount-desktop/src/preferences.rs:62
 msgid "Storage"
-msgstr ""
+msgstr "Speicher"
 
 #: crates/immich-mount-desktop/src/preferences.rs:65
 msgid "Opened originals are kept on this computer up to this size."
-msgstr ""
+msgstr "Geöffnete Originale werden bis zu dieser Größe auf diesem Rechner aufbewahrt."
 
 #: crates/immich-mount-desktop/src/preferences.rs:66
 msgid "Also download larger previews, for big icon sizes. Uses more data."
-msgstr ""
+msgstr "Auch größere Vorschauen laden, für große Symbole. Benötigt mehr Daten."
 
 #: crates/immich-mount-desktop/src/preferences.rs:71
 msgid "Updates"
@@ -469,7 +469,7 @@ msgstr "Updates"
 
 #: crates/immich-mount-desktop/src/preferences.rs:73
 msgid "Tell me when a new version is out."
-msgstr ""
+msgstr "Benachrichtigen, wenn eine neue Version erscheint."
 
 #: crates/immich-mount-desktop/src/preferences.rs:85
 #: crates/immich-mount-gnome/src/window.blp:144
@@ -480,7 +480,7 @@ msgstr "Bereiche"
 
 #: crates/immich-mount-desktop/src/preferences.rs:86
 msgid "The folders the drive shows, and how each splits its photos by date."
-msgstr ""
+msgstr "Die Ordner, die das Laufwerk zeigt, und wie jeder seine Fotos nach Datum aufteilt."
 
 #: crates/immich-mount-desktop/src/preferences.rs:88
 #: crates/immich-mount-gnome/src/window.blp:149
@@ -489,11 +489,11 @@ msgstr "Die Zeitleiste, nach Jahr und Monat"
 
 #: crates/immich-mount-desktop/src/preferences.rs:94
 msgid "What is copied into it is uploaded"
-msgstr ""
+msgstr "Was hineinkopiert wird, wird hochgeladen"
 
 #: crates/immich-mount-desktop/src/preferences.rs:99
 msgid "Names"
-msgstr ""
+msgstr "Namen"
 
 #: crates/immich-mount-desktop/src/preferences.rs:114
 #: apple/App/SettingsView.swift:281
@@ -503,7 +503,7 @@ msgstr "Immich-Web-App"
 #: crates/immich-mount-desktop/src/preferences.rs:55
 #: crates/immich-mount-desktop/src/preferences.rs:55
 msgid "Mount at Login"
-msgstr ""
+msgstr "Bei der Anmeldung einhängen"
 
 #: crates/immich-mount-gnome/src/main.rs:106
 msgid "Your Immich photos and videos as a drive in Files."
@@ -546,7 +546,7 @@ msgstr "Beenden"
 #: crates/immich-mount-gnome/src/preferences.rs:149
 #: crates/immich-mount-gnome/src/preferences.rs:153
 msgid "Choose a Folder"
-msgstr ""
+msgstr "Ordner wählen"
 
 #: crates/immich-mount-gnome/src/preferences.rs:184
 #: crates/immich-mount-kde/qml/Main.qml:197
@@ -582,7 +582,7 @@ msgstr "Teilnehmende Apps finden"
 #: crates/immich-mount-kde/qml/Main.qml:47
 #: crates/immich-mount-kde/qml/Main.qml:440
 msgid "Status"
-msgstr ""
+msgstr "Status"
 
 #: crates/immich-mount-gnome/src/window.rs:217
 #: crates/immich-mount-gnome/src/window.blp:366
@@ -779,7 +779,7 @@ msgstr "Zugangsdaten"
 
 #: crates/immich-mount-gnome/src/window.blp:384
 msgid "Disconnecting signs out and takes the drive out of Files. Your library on the server stays as it is."
-msgstr ""
+msgstr "Beim Trennen der Verbindung werden Sie abgemeldet, und das Laufwerk verschwindet aus Dateien. Ihre Bibliothek auf dem Server bleibt, wie sie ist."
 
 #: crates/immich-mount-gnome/src/window.blp:387
 msgid "_Disconnect"
@@ -841,7 +841,7 @@ msgstr "Erlaubt Dolphin Vorschauen von Dateien bis 100 MB an entfernten Orten, d
 
 #: crates/immich-mount-kde/qml/Main.qml:276
 msgid "Choose…"
-msgstr ""
+msgstr "Wählen …"
 
 #: crates/immich-mount-kde/qml/Main.qml:342
 #: apple/App/ContentView.swift:107
@@ -862,7 +862,7 @@ msgstr "Verbindung trennen"
 
 #: crates/immich-mount-kde/qml/Main.qml:364
 msgid "Disconnecting signs out and takes the drive out of Dolphin. Your library on the server stays as it is."
-msgstr ""
+msgstr "Beim Trennen der Verbindung werden Sie abgemeldet, und das Laufwerk verschwindet aus Dolphin. Ihre Bibliothek auf dem Server bleibt, wie sie ist."
 
 #: crates/immich-mount-kde/qml/Main.qml:386
 msgid "Your Immich photos and videos as a drive in Dolphin. By Jakob Hviid, under the MIT license."

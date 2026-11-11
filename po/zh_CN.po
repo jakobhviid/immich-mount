@@ -264,7 +264,7 @@ msgstr "请从 jakob.hviid.phd/immich-mount 下载。"
 
 #: crates/immich-mount-desktop/src/preferences.rs:168
 msgid "Custom ({size})"
-msgstr ""
+msgstr "自定义（{size}）"
 
 #: crates/immich-mount-desktop/src/preferences.rs:181
 #: apple/App/SettingsView.swift:255
@@ -298,30 +298,30 @@ msgstr "位置"
 #: crates/immich-mount-desktop/src/preferences.rs:57
 #: crates/immich-mount-desktop/src/preferences.rs:57
 msgid "Name in the Sidebar"
-msgstr ""
+msgstr "侧边栏中的名称"
 
 #: crates/immich-mount-desktop/src/preferences.rs:65
 #: crates/immich-mount-desktop/src/preferences.rs:65
 #: crates/immich-mount-desktop/src/preferences.rs:65
 msgid "Cache Size"
-msgstr ""
+msgstr "缓存大小"
 
 #: crates/immich-mount-desktop/src/preferences.rs:66
 #: crates/immich-mount-desktop/src/preferences.rs:66
 #: crates/immich-mount-desktop/src/preferences.rs:66
 msgid "Sharp Thumbnails"
-msgstr ""
+msgstr "清晰缩略图"
 
 #: crates/immich-mount-desktop/src/preferences.rs:73
 #: crates/immich-mount-desktop/src/preferences.rs:73
 #: crates/immich-mount-desktop/src/preferences.rs:73
 msgid "Check for Updates"
-msgstr ""
+msgstr "检查更新"
 
 #: crates/immich-mount-desktop/src/preferences.rs:88
 #: crates/immich-mount-desktop/src/preferences.rs:88
 msgid "Day Folders"
-msgstr ""
+msgstr "每日文件夹"
 
 #: crates/immich-mount-desktop/src/preferences.rs:89
 #: crates/immich-mount-desktop/src/preferences.rs:90
@@ -334,24 +334,24 @@ msgstr ""
 #: crates/immich-mount-desktop/src/preferences.rs:92
 #: crates/immich-mount-desktop/src/preferences.rs:93
 msgid "Year and Month Folders"
-msgstr ""
+msgstr "年月文件夹"
 
 #: crates/immich-mount-desktop/src/preferences.rs:94
 #: crates/immich-mount-desktop/src/preferences.rs:94
 msgid "Folders Copied Into Upload"
-msgstr ""
+msgstr "复制到 Upload 的文件夹"
 
 #: crates/immich-mount-desktop/src/preferences.rs:101
 #: crates/immich-mount-desktop/src/preferences.rs:101
 #: crates/immich-mount-desktop/src/preferences.rs:101
 msgid "Album Folders"
-msgstr ""
+msgstr "相册文件夹"
 
 #: crates/immich-mount-desktop/src/preferences.rs:101
 #: crates/immich-mount-desktop/src/preferences.rs:101
 #: crates/immich-mount-desktop/src/preferences.rs:101
 msgid "File Names"
-msgstr ""
+msgstr "文件名"
 
 #: crates/immich-mount-desktop/src/preferences.rs:116
 #: crates/immich-mount-desktop/src/preferences.rs:116
@@ -453,15 +453,15 @@ msgstr "驱动器"
 
 #: crates/immich-mount-desktop/src/preferences.rs:62
 msgid "Storage"
-msgstr ""
+msgstr "存储"
 
 #: crates/immich-mount-desktop/src/preferences.rs:65
 msgid "Opened originals are kept on this computer up to this size."
-msgstr ""
+msgstr "打开过的原图会保存在这台电脑上，最多到这个大小。"
 
 #: crates/immich-mount-desktop/src/preferences.rs:66
 msgid "Also download larger previews, for big icon sizes. Uses more data."
-msgstr ""
+msgstr "同时下载更大的预览图，用于大图标。会使用更多流量。"
 
 #: crates/immich-mount-desktop/src/preferences.rs:71
 msgid "Updates"
@@ -469,7 +469,7 @@ msgstr "更新"
 
 #: crates/immich-mount-desktop/src/preferences.rs:73
 msgid "Tell me when a new version is out."
-msgstr ""
+msgstr "有新版本时通知我。"
 
 #: crates/immich-mount-desktop/src/preferences.rs:85
 #: crates/immich-mount-gnome/src/window.blp:144
@@ -480,7 +480,7 @@ msgstr "版块"
 
 #: crates/immich-mount-desktop/src/preferences.rs:86
 msgid "The folders the drive shows, and how each splits its photos by date."
-msgstr ""
+msgstr "驱动器显示的文件夹，以及每个文件夹如何按日期划分照片。"
 
 #: crates/immich-mount-desktop/src/preferences.rs:88
 #: crates/immich-mount-gnome/src/window.blp:149
@@ -489,11 +489,11 @@ msgstr "时间线，按年和月"
 
 #: crates/immich-mount-desktop/src/preferences.rs:94
 msgid "What is copied into it is uploaded"
-msgstr ""
+msgstr "复制到其中的内容会被上传"
 
 #: crates/immich-mount-desktop/src/preferences.rs:99
 msgid "Names"
-msgstr ""
+msgstr "名称"
 
 #: crates/immich-mount-desktop/src/preferences.rs:114
 #: apple/App/SettingsView.swift:281
@@ -503,7 +503,7 @@ msgstr "Immich 网页应用"
 #: crates/immich-mount-desktop/src/preferences.rs:55
 #: crates/immich-mount-desktop/src/preferences.rs:55
 msgid "Mount at Login"
-msgstr ""
+msgstr "登录时挂载"
 
 #: crates/immich-mount-gnome/src/main.rs:106
 msgid "Your Immich photos and videos as a drive in Files."
@@ -546,7 +546,7 @@ msgstr "退出"
 #: crates/immich-mount-gnome/src/preferences.rs:149
 #: crates/immich-mount-gnome/src/preferences.rs:153
 msgid "Choose a Folder"
-msgstr ""
+msgstr "选择文件夹"
 
 #: crates/immich-mount-gnome/src/preferences.rs:184
 #: crates/immich-mount-kde/qml/Main.qml:197
@@ -582,7 +582,7 @@ msgstr "查找参与的应用"
 #: crates/immich-mount-kde/qml/Main.qml:47
 #: crates/immich-mount-kde/qml/Main.qml:440
 msgid "Status"
-msgstr ""
+msgstr "状态"
 
 #: crates/immich-mount-gnome/src/window.rs:217
 #: crates/immich-mount-gnome/src/window.blp:366
@@ -779,7 +779,7 @@ msgstr "凭据"
 
 #: crates/immich-mount-gnome/src/window.blp:384
 msgid "Disconnecting signs out and takes the drive out of Files. Your library on the server stays as it is."
-msgstr ""
+msgstr "断开连接会退出登录，并将驱动器移出“文件”。服务器上的图库保持不变。"
 
 #: crates/immich-mount-gnome/src/window.blp:387
 msgid "_Disconnect"
@@ -841,7 +841,7 @@ msgstr "允许 Dolphin 预览远程位置（包括此驱动器）上不超过 10
 
 #: crates/immich-mount-kde/qml/Main.qml:276
 msgid "Choose…"
-msgstr ""
+msgstr "选择…"
 
 #: crates/immich-mount-kde/qml/Main.qml:342
 #: apple/App/ContentView.swift:107
@@ -862,7 +862,7 @@ msgstr "断开连接"
 
 #: crates/immich-mount-kde/qml/Main.qml:364
 msgid "Disconnecting signs out and takes the drive out of Dolphin. Your library on the server stays as it is."
-msgstr ""
+msgstr "断开连接会退出登录，并将驱动器移出 Dolphin。服务器上的图库保持不变。"
 
 #: crates/immich-mount-kde/qml/Main.qml:386
 msgid "Your Immich photos and videos as a drive in Dolphin. By Jakob Hviid, under the MIT license."

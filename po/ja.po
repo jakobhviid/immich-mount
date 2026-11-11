@@ -264,7 +264,7 @@ msgstr "jakob.hviid.phd/immich-mount からダウンロードしてください�
 
 #: crates/immich-mount-desktop/src/preferences.rs:168
 msgid "Custom ({size})"
-msgstr ""
+msgstr "カスタム ({size})"
 
 #: crates/immich-mount-desktop/src/preferences.rs:181
 #: apple/App/SettingsView.swift:255
@@ -298,30 +298,30 @@ msgstr "場所"
 #: crates/immich-mount-desktop/src/preferences.rs:57
 #: crates/immich-mount-desktop/src/preferences.rs:57
 msgid "Name in the Sidebar"
-msgstr ""
+msgstr "サイドバーでの名前"
 
 #: crates/immich-mount-desktop/src/preferences.rs:65
 #: crates/immich-mount-desktop/src/preferences.rs:65
 #: crates/immich-mount-desktop/src/preferences.rs:65
 msgid "Cache Size"
-msgstr ""
+msgstr "キャッシュのサイズ"
 
 #: crates/immich-mount-desktop/src/preferences.rs:66
 #: crates/immich-mount-desktop/src/preferences.rs:66
 #: crates/immich-mount-desktop/src/preferences.rs:66
 msgid "Sharp Thumbnails"
-msgstr ""
+msgstr "鮮明なサムネイル"
 
 #: crates/immich-mount-desktop/src/preferences.rs:73
 #: crates/immich-mount-desktop/src/preferences.rs:73
 #: crates/immich-mount-desktop/src/preferences.rs:73
 msgid "Check for Updates"
-msgstr ""
+msgstr "アップデートを確認"
 
 #: crates/immich-mount-desktop/src/preferences.rs:88
 #: crates/immich-mount-desktop/src/preferences.rs:88
 msgid "Day Folders"
-msgstr ""
+msgstr "日フォルダー"
 
 #: crates/immich-mount-desktop/src/preferences.rs:89
 #: crates/immich-mount-desktop/src/preferences.rs:90
@@ -334,24 +334,24 @@ msgstr ""
 #: crates/immich-mount-desktop/src/preferences.rs:92
 #: crates/immich-mount-desktop/src/preferences.rs:93
 msgid "Year and Month Folders"
-msgstr ""
+msgstr "年・月フォルダー"
 
 #: crates/immich-mount-desktop/src/preferences.rs:94
 #: crates/immich-mount-desktop/src/preferences.rs:94
 msgid "Folders Copied Into Upload"
-msgstr ""
+msgstr "Uploadにコピーしたフォルダー"
 
 #: crates/immich-mount-desktop/src/preferences.rs:101
 #: crates/immich-mount-desktop/src/preferences.rs:101
 #: crates/immich-mount-desktop/src/preferences.rs:101
 msgid "Album Folders"
-msgstr ""
+msgstr "アルバムのフォルダー"
 
 #: crates/immich-mount-desktop/src/preferences.rs:101
 #: crates/immich-mount-desktop/src/preferences.rs:101
 #: crates/immich-mount-desktop/src/preferences.rs:101
 msgid "File Names"
-msgstr ""
+msgstr "ファイル名"
 
 #: crates/immich-mount-desktop/src/preferences.rs:116
 #: crates/immich-mount-desktop/src/preferences.rs:116
@@ -453,15 +453,15 @@ msgstr "ドライブ"
 
 #: crates/immich-mount-desktop/src/preferences.rs:62
 msgid "Storage"
-msgstr ""
+msgstr "ストレージ"
 
 #: crates/immich-mount-desktop/src/preferences.rs:65
 msgid "Opened originals are kept on this computer up to this size."
-msgstr ""
+msgstr "開いたオリジナルは、このサイズまでこのコンピューターに保存されます。"
 
 #: crates/immich-mount-desktop/src/preferences.rs:66
 msgid "Also download larger previews, for big icon sizes. Uses more data."
-msgstr ""
+msgstr "大きなアイコン用に、より大きなプレビューもダウンロードします。より多くのデータを使います。"
 
 #: crates/immich-mount-desktop/src/preferences.rs:71
 msgid "Updates"
@@ -469,7 +469,7 @@ msgstr "アップデート"
 
 #: crates/immich-mount-desktop/src/preferences.rs:73
 msgid "Tell me when a new version is out."
-msgstr ""
+msgstr "新しいバージョンが出たら知らせる。"
 
 #: crates/immich-mount-desktop/src/preferences.rs:85
 #: crates/immich-mount-gnome/src/window.blp:144
@@ -480,7 +480,7 @@ msgstr "セクション"
 
 #: crates/immich-mount-desktop/src/preferences.rs:86
 msgid "The folders the drive shows, and how each splits its photos by date."
-msgstr ""
+msgstr "ドライブに表示するフォルダーと、それぞれの写真を日付で分ける方法。"
 
 #: crates/immich-mount-desktop/src/preferences.rs:88
 #: crates/immich-mount-gnome/src/window.blp:149
@@ -489,11 +489,11 @@ msgstr "タイムライン（年月別）"
 
 #: crates/immich-mount-desktop/src/preferences.rs:94
 msgid "What is copied into it is uploaded"
-msgstr ""
+msgstr "コピーしたものはアップロードされます"
 
 #: crates/immich-mount-desktop/src/preferences.rs:99
 msgid "Names"
-msgstr ""
+msgstr "名前"
 
 #: crates/immich-mount-desktop/src/preferences.rs:114
 #: apple/App/SettingsView.swift:281
@@ -503,7 +503,7 @@ msgstr "Immich ウェブアプリ"
 #: crates/immich-mount-desktop/src/preferences.rs:55
 #: crates/immich-mount-desktop/src/preferences.rs:55
 msgid "Mount at Login"
-msgstr ""
+msgstr "ログイン時にマウント"
 
 #: crates/immich-mount-gnome/src/main.rs:106
 msgid "Your Immich photos and videos as a drive in Files."
@@ -546,7 +546,7 @@ msgstr "終了"
 #: crates/immich-mount-gnome/src/preferences.rs:149
 #: crates/immich-mount-gnome/src/preferences.rs:153
 msgid "Choose a Folder"
-msgstr ""
+msgstr "フォルダーを選択"
 
 #: crates/immich-mount-gnome/src/preferences.rs:184
 #: crates/immich-mount-kde/qml/Main.qml:197
@@ -582,7 +582,7 @@ msgstr "参加しているアプリを探す"
 #: crates/immich-mount-kde/qml/Main.qml:47
 #: crates/immich-mount-kde/qml/Main.qml:440
 msgid "Status"
-msgstr ""
+msgstr "状態"
 
 #: crates/immich-mount-gnome/src/window.rs:217
 #: crates/immich-mount-gnome/src/window.blp:366
@@ -779,7 +779,7 @@ msgstr "認証情報"
 
 #: crates/immich-mount-gnome/src/window.blp:384
 msgid "Disconnecting signs out and takes the drive out of Files. Your library on the server stays as it is."
-msgstr ""
+msgstr "切断するとサインアウトし、ドライブは「ファイル」から外れます。サーバー上のライブラリはそのままです。"
 
 #: crates/immich-mount-gnome/src/window.blp:387
 msgid "_Disconnect"
@@ -841,7 +841,7 @@ msgstr "Dolphinがリモートの場所（このドライブを含む）にあ�
 
 #: crates/immich-mount-kde/qml/Main.qml:276
 msgid "Choose…"
-msgstr ""
+msgstr "選択…"
 
 #: crates/immich-mount-kde/qml/Main.qml:342
 #: apple/App/ContentView.swift:107
@@ -862,7 +862,7 @@ msgstr "切断"
 
 #: crates/immich-mount-kde/qml/Main.qml:364
 msgid "Disconnecting signs out and takes the drive out of Dolphin. Your library on the server stays as it is."
-msgstr ""
+msgstr "切断するとサインアウトし、ドライブは Dolphin から外れます。サーバー上のライブラリはそのままです。"
 
 #: crates/immich-mount-kde/qml/Main.qml:386
 msgid "Your Immich photos and videos as a drive in Dolphin. By Jakob Hviid, under the MIT license."
