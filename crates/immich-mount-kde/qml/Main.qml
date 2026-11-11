@@ -21,10 +21,16 @@ Kirigami.ApplicationWindow {
     // The page shown beside the sidebar, by its id in the layout every app shares (ARCHITECTURE.md, "One layout for
     // every settings window"): status, general, folders, other-apps, account.
     property string category: "status"
+    // Back to the first page, popping the others one by one: popping "to" the first page left a page standing after
+    // signing out (seen in a Plasma 6.8 VM).
+    function popToFirstPage() {
+        while (pageStack.depth > 1)
+            pageStack.pop()
+    }
     function openCategory(name) {
         category = name
         // Leaving a settings page destroys it, which restarts the daemon if a setting changed.
-        pageStack.pop(pageStack.initialPage)
+        popToFirstPage()
         if (name === "account")
             pageStack.push(accountPage)
         else if (name !== "status")
@@ -53,7 +59,7 @@ Kirigami.ApplicationWindow {
             // Signed out, the sidebar's pages go with the sidebar, back to the start.
             if (backend.page !== "status" && root.pageStack.depth > 1) {
                 root.category = "status"
-                root.pageStack.pop(root.pageStack.initialPage)
+                root.popToFirstPage()
             }
             root.followStartRequest()
         }
