@@ -64,7 +64,7 @@ SOURCES = [
 # language (SPEC.md, "Names"), so a switch or a setting that names one names it as the drive shows it.
 UNTRANSLATED = {
     "Immich Mount", "Immich Drive", "Immich", "Immich Crosslink", "photos.example.org",
-    "Photos", "Albums", "People", "Places", "Favorites", "Archive",
+    "Photos", "Albums", "People", "Places", "Favorites", "Archive", "Upload",
 }
 
 DESKTOP_ENTRY_KEYS = ("Comment", "Keywords")
