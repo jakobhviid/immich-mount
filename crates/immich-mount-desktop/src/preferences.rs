@@ -1,26 +1,162 @@
-//! The preferences every desktop app shows, generated from the core's settings table, the same one behind
-//! `immich-mount configure` (ARCHITECTURE.md, "The desktop app"). The apps differ only in their widgets.
+//! The settings pages every desktop app shows (ARCHITECTURE.md, "One layout for every settings window"): designed here,
+//! once, over the core's settings table, the same one behind `immich-mount configure`. Each setting's pane comes from
+//! the core (`settings::PANES`); this says how each page reads. The apps differ only in their widgets.
 
-use immich_mount_core::settings::{self, Setting, SETTINGS};
+use immich_mount_core::settings::{self, Pane, Setting, SETTINGS};
 use immich_mount_linux::i18n::tr;
 use immich_mount_linux::paths::Paths;
 
-/// The groups the apps show, by the settings' key prefix, with their titles in English (`tr` translates them).
-/// Settings outside these (the server, set by signing in; the headless credential file) are left to
-/// `immich-mount configure`.
-pub const GROUPS: &[(&str, &str)] = &[
-    ("mount", "Drive"),
-    ("sections", "Sections"),
-    ("grouping", "Date Folders"),
-    ("albums", "Albums"),
-    ("files", "Files"),
-    ("uploads", "Uploads"),
-    ("thumbnails", "Thumbnails"),
-    ("cache", "Cache"),
-    ("crosslink", "Other Apps"),
-    ("web", "Immich Web App"),
-    ("updates", "Updates"),
+/// One row of a settings page: a setting, its title and the line under it, in English (`tr` translates them), and,
+/// for a section, the setting shown with it (its date folders, or what Upload does with folders).
+pub struct Row {
+    pub key: &'static str,
+    pub title: &'static str,
+    pub subtitle: Option<&'static str>,
+    pub inner: Option<(&'static str, &'static str)>,
+}
+
+/// A group of rows under a title. `apps`: the apps that take part in Immich Crosslink follow this group.
+pub struct Group {
+    pub title: Option<&'static str>,
+    pub description: Option<&'static str>,
+    pub rows: &'static [Row],
+    pub apps: bool,
+}
+
+/// A page of settings, by the pane it shows, its title, its icon and its groups.
+pub struct Page {
+    pub pane: Pane,
+    pub id: &'static str,
+    pub title: &'static str,
+    pub icon: &'static str,
+    pub groups: &'static [Group],
+}
+
+const fn row(key: &'static str, title: &'static str, subtitle: Option<&'static str>) -> Row {
+    Row { key, title, subtitle, inner: None }
+}
+
+const fn section(key: &'static str, title: &'static str, subtitle: Option<&'static str>, inner: (&'static str, &'static str)) -> Row {
+    Row { key, title, subtitle, inner: Some(inner) }
+}
+
+/// The settings pages, in the sidebar's order after Status (and before Account), as the Mac's Settings window has them.
+pub const PAGES: &[Page] = &[
+    Page {
+        pane: Pane::General,
+        id: "general",
+        title: "General",
+        icon: "preferences-system-symbolic",
+        groups: &[
+            Group {
+                title: Some("Drive"),
+                description: None,
+                rows: &[
+                    row("mount.at_login", "Mount at Login", None),
+                    row("mount.path", "Location", None),
+                    row("mount.name", "Name in the Sidebar", None),
+                ],
+                apps: false,
+            },
+            Group {
+                title: Some("Storage"),
+                description: None,
+                rows: &[
+                    row("cache.limit", "Cache Size", Some("Opened originals are kept on this computer up to this size.")),
+                    row("thumbnails.sharp", "Sharp Thumbnails", Some("Also download larger previews, for big icon sizes. Uses more data.")),
+                ],
+                apps: false,
+            },
+            Group {
+                title: Some("Updates"),
+                description: None,
+                rows: &[row("updates.check", "Check for Updates", Some("Tell me when a new version is out."))],
+                apps: false,
+            },
+        ],
+    },
+    Page {
+        pane: Pane::Folders,
+        id: "folders",
+        title: "Folders",
+        icon: "folder-symbolic",
+        groups: &[
+            Group {
+                title: Some("Sections"),
+                description: Some("The folders the drive shows, and how each splits its photos by date."),
+                rows: &[
+                    section("sections.photos", "Photos", Some("The timeline, by year and month"), ("grouping.photos", "Day Folders")),
+                    section("sections.albums", "Albums", None, ("grouping.albums", "Year and Month Folders")),
+                    section("sections.people", "People", None, ("grouping.people", "Year and Month Folders")),
+                    section("sections.places", "Places", None, ("grouping.places", "Year and Month Folders")),
+                    section("sections.favorites", "Favorites", None, ("grouping.favorites", "Year and Month Folders")),
+                    section("sections.archive", "Archive", None, ("grouping.archive", "Year and Month Folders")),
+                    section("uploads.enabled", "Upload", Some("What is copied into it is uploaded"), ("uploads.folders", "Folders Copied Into Upload")),
+                ],
+                apps: false,
+            },
+            Group {
+                title: Some("Names"),
+                description: None,
+                rows: &[row("albums.layout", "Album Folders", None), row("files.naming", "File Names", None)],
+                apps: false,
+            },
+        ],
+    },
+    Page {
+        pane: Pane::OtherApps,
+        id: "other-apps",
+        title: "Other Apps",
+        icon: "emblem-shared-symbolic",
+        groups: &[
+            Group { title: None, description: None, rows: &[row("crosslink.enabled", "Immich Crosslink", None)], apps: true },
+            Group {
+                title: Some("Immich Web App"),
+                description: None,
+                rows: &[row("web.links", "Open in Immich and Copy Immich Link", None)],
+                apps: false,
+            },
+        ],
+    },
 ];
+
+/// A folder as the location setting is written: `~/…` under home, which may be reached through a symlink (Fedora's
+/// atomic desktops, Bazzite: a folder chooser may give the resolved path), else the path as it is.
+pub fn home_relative(path: &std::path::Path) -> String {
+    let home = std::env::var_os("HOME").map(std::path::PathBuf::from).unwrap_or_default();
+    let homes = [home.clone(), home.canonicalize().unwrap_or(home)];
+    for home in homes.iter().filter(|home| !home.as_os_str().is_empty()) {
+        if let Ok(rest) = path.strip_prefix(home) {
+            return if rest.as_os_str().is_empty() { "~".to_owned() } else { format!("~/{}", rest.display()) };
+        }
+    }
+    path.display().to_string()
+}
+
+/// A setting of the table, by key.
+pub fn setting(key: &str) -> &'static Setting {
+    SETTINGS.iter().find(|setting| setting.key == key).expect("every row names a setting of the table")
+}
+
+/// The cache size a row shows: one of the sizes offered, or, set by hand to another, itself.
+pub fn cache_sizes() -> Vec<String> {
+    let current = current_value(setting("cache.limit"));
+    let mut sizes: Vec<String> = settings::CACHE_SIZES.iter().map(|size| (*size).to_owned()).collect();
+    if !settings::CACHE_SIZES.contains(&current.as_str()) {
+        sizes.push(current);
+    }
+    sizes
+}
+
+/// How a cache size reads: in decimal units, as the file managers count, and marked when it was set by hand.
+pub fn cache_size_label(size: &str, format: impl Fn(u64) -> String) -> String {
+    let bytes = settings::parse_size(size).unwrap_or_default();
+    if settings::CACHE_SIZES.contains(&size) {
+        format(bytes)
+    } else {
+        tr("Custom ({size})").replace("{size}", &format(bytes))
+    }
+}
 
 /// The protocol behind `crosslink.enabled`, linked beside its switch so it is clear what it is (immich-crosslink,
 /// "Settings": the same label and link in every app that takes part).
@@ -39,8 +175,12 @@ pub fn apps_heading() -> &'static str {
     tr("Apps That Take Part")
 }
 
-/// A line under a setting's title, in the user's language, where one says more than the title.
+/// A line under a setting's title, in the user's language, where one says more than the title: the row's own, or
+/// one of these.
 pub fn caption(setting: &Setting) -> Option<&'static str> {
+    if let Some(subtitle) = PAGES.iter().flat_map(|page| page.groups).flat_map(|group| group.rows).find(|row| row.key == setting.key).and_then(|row| row.subtitle) {
+        return Some(tr(subtitle));
+    }
     match setting.key {
         "web.links" => Some(tr("Open photos, albums, people and places in Immich's web app in your browser, or copy their address.")),
         "crosslink.enabled" => Some(tr("Show photos, albums, people and places in other apps that take part, and show the items they send in the file manager.")),
@@ -53,11 +193,18 @@ pub fn link(setting: &Setting) -> Option<&'static str> {
     (setting.key == "crosslink.enabled").then_some(CROSSLINK_PAGE)
 }
 
-/// A setting's title in the user's language: its description in the core's table, translated. Immich Crosslink's
-/// switch carries the protocol's name, in English in every language.
+/// A setting's title in the user's language: its row's title, or, for one shown inside a section, the title given
+/// there, translated. Immich Crosslink's switch carries the protocol's name, in English in every language.
 pub fn title(setting: &Setting) -> &'static str {
     if setting.key == "crosslink.enabled" {
         return "Immich Crosslink";
+    }
+    let rows = || PAGES.iter().flat_map(|page| page.groups).flat_map(|group| group.rows);
+    if let Some(row) = rows().find(|row| row.key == setting.key) {
+        return tr(row.title);
+    }
+    if let Some((_, title)) = rows().filter_map(|row| row.inner).find(|(key, _)| *key == setting.key) {
+        return tr(title);
     }
     tr(setting.description)
 }
@@ -65,12 +212,6 @@ pub fn title(setting: &Setting) -> &'static str {
 /// How a choice reads in a dialog, in the user's language. The names the drive may have stay as they are.
 pub fn choice_label(word: &str) -> &str {
     tr(settings::choice_label(word))
-}
-
-/// The settings of one group, in table order. The apps left out of Show in are not a row of their own: each app found
-/// has its switch (`crosslink_apps`).
-pub fn settings_in(prefix: &str) -> impl Iterator<Item = &'static Setting> + '_ {
-    SETTINGS.iter().filter(move |setting| setting.key.split('.').next() == Some(prefix) && setting.key != "crosslink.hidden")
 }
 
 /// The other apps that take crosslinks, installed now or seen in the last 30 days, each with whether Show in offers
@@ -183,12 +324,30 @@ mod tests {
     use immich_mount_core::settings::Kind;
 
     #[test]
+    fn every_setting_a_window_shows_is_on_its_pane_page_once() {
+        let mut shown: Vec<&str> = Vec::new();
+        for page in PAGES {
+            for row in page.groups.iter().flat_map(|group| group.rows) {
+                for key in std::iter::once(row.key).chain(row.inner.map(|(key, _)| key)) {
+                    assert_eq!(settings::pane(key), Some(page.pane), "{key} is on the {} page, its pane says otherwise", page.id);
+                    assert!(!shown.contains(&key), "{key} is shown twice");
+                    shown.push(key);
+                }
+            }
+        }
+        for setting in SETTINGS {
+            let placed = settings::pane(setting.key) != Some(Pane::CommandLine);
+            assert_eq!(placed, shown.contains(&setting.key), "{}: placed on a pane, it must be shown; on the command line only, never", setting.key);
+        }
+    }
+
+    #[test]
     fn every_choice_shown_has_a_label() {
-        for (prefix, _) in GROUPS {
-            for setting in settings_in(prefix) {
-                if let Kind::Choice(words) = setting.kind {
+        for row in PAGES.iter().flat_map(|page| page.groups).flat_map(|group| group.rows) {
+            for key in std::iter::once(row.key).chain(row.inner.map(|(key, _)| key)) {
+                if let Kind::Choice(words) = setting(key).kind {
                     for word in words {
-                        assert_ne!(choice_label(word), *word, "{} has no label for {word}", setting.key);
+                        assert_ne!(choice_label(word), *word, "{key} has no label for {word}");
                     }
                 }
             }

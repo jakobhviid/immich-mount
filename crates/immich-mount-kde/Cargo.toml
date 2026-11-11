@@ -12,6 +12,7 @@ immich-mount-desktop = { path = "../immich-mount-desktop" }
 immich-mount-core = { path = "../immich-mount-core" }
 immich-mount-linux = { path = "../immich-mount-linux" }
 serde_json = "1"
+url = "2"
 cxx = "1"
 cxx-qt = "0.10"
 cxx-qt-lib = { version = "0.10", features = ["qt_full"] }

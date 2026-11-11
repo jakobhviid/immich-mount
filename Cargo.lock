@@ -1817,6 +1817,7 @@ dependencies = [
  "immich-mount-linux",
  "serde_json",
  "tokio",
+ "url",
 ]
 
 [[package]]

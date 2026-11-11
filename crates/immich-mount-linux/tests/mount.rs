@@ -142,8 +142,9 @@ fn the_mount_lists_and_reads_like_a_normal_folder() {
     std::thread::sleep(Duration::from_millis(200));
 
     let root = mountpoint.path();
-    assert_eq!(sorted_names(root), [".nomedia", ".trackerignore", ".xdg-volume-info", "Albums", "People", "Photos", "Places", "Upload"]);
-    assert_eq!(std::fs::read_to_string(root.join(".xdg-volume-info")).unwrap(), "[Volume Info]\nName=Immich Mount\n");
+    assert_eq!(sorted_names(root), [".directory", ".nomedia", ".trackerignore", ".xdg-volume-info", "Albums", "People", "Photos", "Places", "Upload"]);
+    assert_eq!(std::fs::read_to_string(root.join(".xdg-volume-info")).unwrap(), "[Volume Info]\nName=Immich Mount\nIcon=dev.hviid.ImmichMount\n");
+    assert_eq!(std::fs::read_to_string(root.join(".directory")).unwrap(), "[Desktop Entry]\nIcon=dev.hviid.ImmichMount\n", "Dolphin's folder icon");
 
     let month = root.join("Photos").join("2024").join("03 March");
     assert_eq!(sorted_names(&month), ["2024-03-15 14.32.07.jpg", "2024-03-15 14.32.09.jpg"]);

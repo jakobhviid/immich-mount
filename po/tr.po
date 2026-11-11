@@ -128,13 +128,13 @@ msgid "Files not uploaded: {count}"
 msgstr "Yüklenmeyen dosyalar: {count}"
 
 #: crates/immich-mount-linux/src/folders.rs:213
-#: crates/immich-mount-core/src/settings.rs:94
+#: crates/immich-mount-core/src/settings.rs:151
 #: apple/App/FolderCopies.swift:83
 msgid "Make Albums"
 msgstr "Albüm oluştur"
 
 #: crates/immich-mount-linux/src/folders.rs:213
-#: crates/immich-mount-core/src/settings.rs:93
+#: crates/immich-mount-core/src/settings.rs:150
 #: apple/App/FolderCopies.swift:84
 msgid "Timeline Only"
 msgstr "Yalnızca zaman tüneli"
@@ -237,8 +237,8 @@ msgid "Signed in as: {account}"
 msgstr "Oturum açan: {account}"
 
 #: crates/immich-mount-linux/src/tray.rs:85
-#: crates/immich-mount-kde/qml/Main.qml:460
-#: crates/immich-mount-kde/qml/Main.qml:481
+#: crates/immich-mount-kde/qml/Main.qml:584
+#: crates/immich-mount-kde/qml/Main.qml:605
 msgid "Open in Dolphin"
 msgstr "Dolphin’de aç"
 
@@ -262,73 +262,110 @@ msgstr "Immich Mount {version} kullanılabilir"
 msgid "Get it from jakob.hviid.phd/immich-mount."
 msgstr "jakob.hviid.phd/immich-mount adresinden indirin."
 
-#: crates/immich-mount-desktop/src/preferences.rs:34
+#: crates/immich-mount-desktop/src/preferences.rs:157
+msgid "Custom ({size})"
+msgstr ""
+
+#: crates/immich-mount-desktop/src/preferences.rs:170
 #: apple/App/SettingsView.swift:255
 msgid "Apps that take part are found by themselves. Turn one off to leave it out of Show in. One not found stays listed for 30 days, so it stays off if it comes back; Forget removes it now."
 msgstr "Katılan uygulamalar kendiliğinden bulunur. Bir uygulamayı “… uygulamasında göster” menüsünün dışında bırakmak için kapatın. Bulunamayan bir uygulama 30 gün listede kalır, böylece geri gelirse kapalı kalır; “Unut” onu hemen kaldırır."
 
-#: crates/immich-mount-desktop/src/preferences.rs:39
+#: crates/immich-mount-desktop/src/preferences.rs:175
 #: apple/App/SettingsView.swift:253
 msgid "Apps That Take Part"
 msgstr "Katılan Uygulamalar"
 
-#: crates/immich-mount-desktop/src/preferences.rs:45
+#: crates/immich-mount-desktop/src/preferences.rs:185
 #: apple/App/SettingsView.swift:283
 msgid "Open photos, albums, people and places in Immich's web app in your browser, or copy their address."
 msgstr "Fotoğrafları, albümleri, kişileri ve yerleri tarayıcınızda Immich’in web uygulamasında açın veya adreslerini kopyalayın."
 
-#: crates/immich-mount-desktop/src/preferences.rs:46
+#: crates/immich-mount-desktop/src/preferences.rs:186
 msgid "Show photos, albums, people and places in other apps that take part, and show the items they send in the file manager."
 msgstr "Fotoğrafları, albümleri, kişileri ve yerleri katılan diğer uygulamalarda gösterin ve bu uygulamaların gönderdiği öğeleri dosya yöneticisinde gösterin."
 
-#: crates/immich-mount-desktop/src/preferences.rs:12
-msgid "Drive"
-msgstr "Sürücü"
+#: crates/immich-mount-desktop/src/preferences.rs:56
+#: crates/immich-mount-desktop/src/preferences.rs:56
+#: crates/immich-mount-desktop/src/preferences.rs:56
+#: crates/immich-mount-gnome/src/window.blp:174
+#: crates/immich-mount-gnome/src/window.blp:331
+#: crates/immich-mount-kde/qml/Main.qml:572
+msgid "Location"
+msgstr "Konum"
 
-#: crates/immich-mount-desktop/src/preferences.rs:13
-#: crates/immich-mount-gnome/src/window.blp:144
-#: crates/immich-mount-kde/qml/Main.qml:441
-#: apple/App/SettingsView.swift:315
-msgid "Sections"
-msgstr "Bölümler"
+#: crates/immich-mount-desktop/src/preferences.rs:57
+#: crates/immich-mount-desktop/src/preferences.rs:57
+#: crates/immich-mount-desktop/src/preferences.rs:57
+msgid "Name in the Sidebar"
+msgstr ""
 
-#: crates/immich-mount-desktop/src/preferences.rs:14
-#: apple/App/SettingsView.swift:317
-msgid "Date Folders"
-msgstr "Tarih klasörleri"
+#: crates/immich-mount-desktop/src/preferences.rs:65
+#: crates/immich-mount-desktop/src/preferences.rs:65
+#: crates/immich-mount-desktop/src/preferences.rs:65
+msgid "Cache Size"
+msgstr ""
 
-#: crates/immich-mount-desktop/src/preferences.rs:16
-#: apple/App/SettingsView.swift:341
-msgid "Files"
-msgstr "Dosyalar"
+#: crates/immich-mount-desktop/src/preferences.rs:66
+#: crates/immich-mount-desktop/src/preferences.rs:66
+#: crates/immich-mount-desktop/src/preferences.rs:66
+msgid "Sharp Thumbnails"
+msgstr ""
 
-#: crates/immich-mount-desktop/src/preferences.rs:17
-#: apple/App/SettingsView.swift:330
-msgid "Uploads"
-msgstr "Yüklemeler"
+#: crates/immich-mount-desktop/src/preferences.rs:73
+#: crates/immich-mount-desktop/src/preferences.rs:73
+#: crates/immich-mount-desktop/src/preferences.rs:73
+msgid "Check for Updates"
+msgstr ""
 
-#: crates/immich-mount-desktop/src/preferences.rs:18
-msgid "Thumbnails"
-msgstr "Küçük resimler"
+#: crates/immich-mount-desktop/src/preferences.rs:88
+#: crates/immich-mount-desktop/src/preferences.rs:88
+msgid "Day Folders"
+msgstr ""
 
-#: crates/immich-mount-desktop/src/preferences.rs:19
-#: crates/immich-mount-gnome/src/window.blp:314
-msgid "Cache"
-msgstr "Önbellek"
+#: crates/immich-mount-desktop/src/preferences.rs:89
+#: crates/immich-mount-desktop/src/preferences.rs:90
+#: crates/immich-mount-desktop/src/preferences.rs:91
+#: crates/immich-mount-desktop/src/preferences.rs:92
+#: crates/immich-mount-desktop/src/preferences.rs:93
+#: crates/immich-mount-desktop/src/preferences.rs:89
+#: crates/immich-mount-desktop/src/preferences.rs:90
+#: crates/immich-mount-desktop/src/preferences.rs:91
+#: crates/immich-mount-desktop/src/preferences.rs:92
+#: crates/immich-mount-desktop/src/preferences.rs:93
+msgid "Year and Month Folders"
+msgstr ""
 
-#: crates/immich-mount-desktop/src/preferences.rs:20
-#: apple/App/SettingsView.swift:16
-msgid "Other Apps"
-msgstr "Diğer uygulamalar"
+#: crates/immich-mount-desktop/src/preferences.rs:94
+#: crates/immich-mount-desktop/src/preferences.rs:94
+#: crates/immich-mount-desktop/src/preferences.rs:94
+msgid "Upload"
+msgstr ""
 
-#: crates/immich-mount-desktop/src/preferences.rs:21
-#: apple/App/SettingsView.swift:281
-msgid "Immich Web App"
-msgstr "Immich Web Uygulaması"
+#: crates/immich-mount-desktop/src/preferences.rs:94
+#: crates/immich-mount-desktop/src/preferences.rs:94
+msgid "Folders Copied Into Upload"
+msgstr ""
 
-#: crates/immich-mount-desktop/src/preferences.rs:22
-msgid "Updates"
-msgstr "Güncellemeler"
+#: crates/immich-mount-desktop/src/preferences.rs:101
+#: crates/immich-mount-desktop/src/preferences.rs:101
+#: crates/immich-mount-desktop/src/preferences.rs:101
+msgid "Album Folders"
+msgstr ""
+
+#: crates/immich-mount-desktop/src/preferences.rs:101
+#: crates/immich-mount-desktop/src/preferences.rs:101
+#: crates/immich-mount-desktop/src/preferences.rs:101
+msgid "File Names"
+msgstr ""
+
+#: crates/immich-mount-desktop/src/preferences.rs:116
+#: crates/immich-mount-desktop/src/preferences.rs:116
+#: crates/immich-mount-desktop/src/preferences.rs:116
+#: crates/immich-mount-core/src/settings.rs:74
+#: apple/App/SettingsView.swift:278
+msgid "Open in Immich and Copy Immich Link"
+msgstr "Immich’te Aç ve Immich Bağlantısını Kopyala"
 
 #: crates/immich-mount-desktop/src/session.rs:62
 msgid "Online"
@@ -395,6 +432,85 @@ msgstr "Oturum açıldı ancak bağlama başlatılamıyor: {error}."
 msgid "Signed in, but the mount did not start: {error}"
 msgstr "Oturum açıldı ancak bağlama başlamadı: {error}"
 
+#: crates/immich-mount-desktop/src/preferences.rs:48
+#: crates/immich-mount-kde/qml/Main.qml:48
+#: crates/immich-mount-kde/qml/Main.qml:114
+#: apple/App/SettingsView.swift:14
+msgid "General"
+msgstr "Genel"
+
+#: crates/immich-mount-desktop/src/preferences.rs:81
+#: crates/immich-mount-kde/qml/Main.qml:49
+#: crates/immich-mount-kde/qml/Main.qml:114
+#: apple/App/SettingsView.swift:15
+msgid "Folders"
+msgstr "Klasörler"
+
+#: crates/immich-mount-desktop/src/preferences.rs:109
+#: crates/immich-mount-kde/qml/Main.qml:50
+#: crates/immich-mount-kde/qml/Main.qml:114
+#: apple/App/SettingsView.swift:16
+msgid "Other Apps"
+msgstr "Diğer uygulamalar"
+
+#: crates/immich-mount-desktop/src/preferences.rs:52
+msgid "Drive"
+msgstr "Sürücü"
+
+#: crates/immich-mount-desktop/src/preferences.rs:62
+msgid "Storage"
+msgstr ""
+
+#: crates/immich-mount-desktop/src/preferences.rs:65
+msgid "Opened originals are kept on this computer up to this size."
+msgstr ""
+
+#: crates/immich-mount-desktop/src/preferences.rs:66
+msgid "Also download larger previews, for big icon sizes. Uses more data."
+msgstr ""
+
+#: crates/immich-mount-desktop/src/preferences.rs:71
+msgid "Updates"
+msgstr "Güncellemeler"
+
+#: crates/immich-mount-desktop/src/preferences.rs:73
+msgid "Tell me when a new version is out."
+msgstr ""
+
+#: crates/immich-mount-desktop/src/preferences.rs:85
+#: crates/immich-mount-gnome/src/window.blp:144
+#: crates/immich-mount-kde/qml/Main.qml:565
+#: apple/App/SettingsView.swift:315
+msgid "Sections"
+msgstr "Bölümler"
+
+#: crates/immich-mount-desktop/src/preferences.rs:86
+msgid "The folders the drive shows, and how each splits its photos by date."
+msgstr ""
+
+#: crates/immich-mount-desktop/src/preferences.rs:88
+#: crates/immich-mount-gnome/src/window.blp:149
+msgid "The timeline, by year and month"
+msgstr "Yıl ve aya göre zaman çizelgesi"
+
+#: crates/immich-mount-desktop/src/preferences.rs:94
+msgid "What is copied into it is uploaded"
+msgstr ""
+
+#: crates/immich-mount-desktop/src/preferences.rs:99
+msgid "Names"
+msgstr ""
+
+#: crates/immich-mount-desktop/src/preferences.rs:114
+#: apple/App/SettingsView.swift:281
+msgid "Immich Web App"
+msgstr "Immich Web Uygulaması"
+
+#: crates/immich-mount-desktop/src/preferences.rs:55
+#: crates/immich-mount-desktop/src/preferences.rs:55
+msgid "Mount at Login"
+msgstr ""
+
 #: crates/immich-mount-gnome/src/main.rs:106
 msgid "Your Immich photos and videos as a drive in Files."
 msgstr "Immich fotoğraflarınız ve videolarınız, Dosyalar’da bir sürücü olarak."
@@ -416,14 +532,12 @@ msgid "AI Disclosure"
 msgstr "Yapay zekâ kullanımı"
 
 #: crates/immich-mount-gnome/src/main.rs:118
-#: crates/immich-mount-kde/qml/Main.qml:252
+#: crates/immich-mount-kde/qml/Main.qml:382
 #: apple/App/ImmichMountApp.swift:521
 msgid "Parts of this project were written with the assistance of AI coding agents. All changes are reviewed by the maintainer."
 msgstr "Bu projenin bazı bölümleri yapay zekâ kodlama ajanlarının yardımıyla yazıldı. Tüm değişiklikler proje sorumlusu tarafından incelenir."
 
 #: crates/immich-mount-gnome/src/main.rs:81
-#: crates/immich-mount-kde/qml/Main.qml:71
-#: crates/immich-mount-kde/qml/Main.qml:275
 msgid "Preferences"
 msgstr "Tercihler"
 
@@ -435,95 +549,114 @@ msgstr "Klavye kısayolları"
 msgid "Quit"
 msgstr "Çık"
 
-#: crates/immich-mount-gnome/src/preferences.rs:76
-#: crates/immich-mount-kde/qml/Main.qml:176
+#: crates/immich-mount-gnome/src/preferences.rs:148
+#: crates/immich-mount-gnome/src/preferences.rs:152
+msgid "Choose a Folder"
+msgstr ""
+
+#: crates/immich-mount-gnome/src/preferences.rs:179
+#: crates/immich-mount-kde/qml/Main.qml:187
+msgid "Learn More"
+msgstr "Daha Fazla Bilgi"
+
+#: crates/immich-mount-gnome/src/preferences.rs:214
+#: crates/immich-mount-kde/qml/Main.qml:223
 #: apple/App/SettingsView.swift:244
 msgid "Not found"
 msgstr "Bulunamadı"
 
-#: crates/immich-mount-gnome/src/preferences.rs:77
-#: crates/immich-mount-kde/qml/Main.qml:182
+#: crates/immich-mount-gnome/src/preferences.rs:215
+#: crates/immich-mount-kde/qml/Main.qml:229
 #: apple/App/SettingsView.swift:232
 msgid "Forget"
 msgstr "Unut"
 
-#: crates/immich-mount-gnome/src/preferences.rs:108
-#: crates/immich-mount-kde/src/backend.rs:433
+#: crates/immich-mount-gnome/src/preferences.rs:242
+#: crates/immich-mount-kde/src/backend.rs:473
 #: apple/App/CrosslinkApps.swift:160
 #: apple/App/SettingsView.swift:225
 msgid "No other app that takes part is installed."
 msgstr "Katılan başka bir uygulama yüklü değil."
 
-#: crates/immich-mount-gnome/src/preferences.rs:109
-#: crates/immich-mount-kde/src/backend.rs:435
+#: crates/immich-mount-gnome/src/preferences.rs:243
+#: crates/immich-mount-kde/src/backend.rs:475
 msgid "Find Apps That Take Part"
 msgstr "Katılan Uygulamaları Bul"
 
-#: crates/immich-mount-gnome/src/preferences.rs:120
-#: crates/immich-mount-kde/qml/Main.qml:139
-msgid "Learn More"
-msgstr "Daha Fazla Bilgi"
+#: crates/immich-mount-gnome/src/window.rs:215
+#: crates/immich-mount-gnome/src/window.blp:237
+#: crates/immich-mount-kde/qml/Main.qml:47
+msgid "Status"
+msgstr ""
 
-#: crates/immich-mount-gnome/src/window.rs:267
-#: crates/immich-mount-kde/qml/Main.qml:398
+#: crates/immich-mount-gnome/src/window.rs:217
+#: crates/immich-mount-gnome/src/window.blp:366
+#: crates/immich-mount-kde/qml/Main.qml:51
+#: crates/immich-mount-kde/qml/Main.qml:314
+#: apple/App/SettingsView.swift:17
+msgid "Account"
+msgstr "Hesap"
+
+#: crates/immich-mount-gnome/src/window.rs:309
+#: crates/immich-mount-kde/qml/Main.qml:522
 msgid "Continue in your browser"
 msgstr "Tarayıcınızda devam edin"
 
-#: crates/immich-mount-gnome/src/window.rs:278
+#: crates/immich-mount-gnome/src/window.rs:320
 msgid "This sign-in belongs to an earlier attempt. Finish the latest one, or sign in again."
 msgstr "Bu oturum açma işlemi daha önceki bir denemeye ait. En sonuncusunu tamamlayın veya yeniden oturum açın."
 
-#: crates/immich-mount-gnome/src/window.rs:290
+#: crates/immich-mount-gnome/src/window.rs:332
 msgid "Enter your email and password"
 msgstr "E-posta adresinizi ve parolanızı girin"
 
-#: crates/immich-mount-gnome/src/window.rs:301
+#: crates/immich-mount-gnome/src/window.rs:343
 msgid "Enter an API key"
 msgstr "Bir API anahtarı girin"
 
-#: crates/immich-mount-gnome/src/window.rs:328
+#: crates/immich-mount-gnome/src/window.rs:370
 msgid "Signed in as {account}"
 msgstr "{account} olarak oturum açıldı"
 
-#: crates/immich-mount-gnome/src/window.rs:398
+#: crates/immich-mount-gnome/src/window.rs:440
 msgid "Signed in, but the status could not be read"
 msgstr "Oturum açıldı ancak durum okunamadı"
 
-#: crates/immich-mount-gnome/src/window.rs:425
-#: crates/immich-mount-kde/qml/Main.qml:475
+#: crates/immich-mount-gnome/src/window.rs:467
+#: crates/immich-mount-kde/qml/Main.qml:599
 msgid "Signed Out of Immich"
 msgstr "Immich oturumu kapatıldı"
 
-#: crates/immich-mount-gnome/src/window.rs:425
-#: crates/immich-mount-kde/qml/Main.qml:476
+#: crates/immich-mount-gnome/src/window.rs:467
+#: crates/immich-mount-kde/qml/Main.qml:600
 msgid "Sign in again to keep browsing. Your caches are kept."
 msgstr "Göz atmaya devam etmek için yeniden oturum açın. Önbellekleriniz korunur."
 
-#: crates/immich-mount-gnome/src/window.rs:426
-#: crates/immich-mount-gnome/src/window.blp:217
+#: crates/immich-mount-gnome/src/window.rs:468
+#: crates/immich-mount-gnome/src/window.blp:251
 msgid "Your Library Is in Files"
 msgstr "Kitaplığınız Dosyalar’da"
 
-#: crates/immich-mount-gnome/src/window.rs:426
-#: crates/immich-mount-kde/qml/Main.qml:477
+#: crates/immich-mount-gnome/src/window.rs:468
+#: crates/immich-mount-kde/qml/Main.qml:601
 msgid "Browse it like any folder. Originals download only when you open them."
 msgstr "Herhangi bir klasör gibi göz atın. Özgün dosyalar yalnızca siz açtığınızda indirilir."
 
-#: crates/immich-mount-gnome/src/window.rs:427
-#: crates/immich-mount-kde/qml/Main.qml:475
+#: crates/immich-mount-gnome/src/window.rs:469
+#: crates/immich-mount-kde/qml/Main.qml:599
 msgid "Not Mounted"
 msgstr "Bağlı değil"
 
-#: crates/immich-mount-gnome/src/window.rs:427
+#: crates/immich-mount-gnome/src/window.rs:469
 msgid "Mount it to browse your library in Files."
 msgstr "Kitaplığınıza Dosyalar’da göz atmak için sürücüyü bağlayın."
 
-#: crates/immich-mount-gnome/src/window.rs:470
+#: crates/immich-mount-gnome/src/window.rs:559
 msgid "Disconnected"
 msgstr "Bağlantı kesildi"
 
 #: crates/immich-mount-gnome/src/window.blp:26
-#: crates/immich-mount-gnome/src/window.blp:210
+#: crates/immich-mount-gnome/src/window.blp:216
 msgid "Main Menu"
 msgstr "Ana menü"
 
@@ -532,7 +665,7 @@ msgid "Your Immich Library in Files"
 msgstr "Immich kitaplığınız Dosyalar’da"
 
 #: crates/immich-mount-gnome/src/window.blp:34
-#: crates/immich-mount-kde/qml/Main.qml:314
+#: crates/immich-mount-kde/qml/Main.qml:438
 msgid "Browse your photos and videos as a drive. Originals download only when you open them."
 msgstr "Fotoğraflarınıza ve videolarınıza bir sürücüdeymiş gibi göz atın. Özgün dosyalar yalnızca siz açtığınızda indirilir."
 
@@ -545,15 +678,15 @@ msgid "_Continue"
 msgstr "_Devam et"
 
 #: crates/immich-mount-gnome/src/window.blp:70
-#: crates/immich-mount-kde/qml/Main.qml:289
-#: crates/immich-mount-kde/qml/Main.qml:372
+#: crates/immich-mount-kde/qml/Main.qml:413
+#: crates/immich-mount-kde/qml/Main.qml:496
 #: apple/App/ContentView.swift:143
 #: apple/App/ContentView.swift:147
 msgid "Sign In"
 msgstr "Oturum aç"
 
 #: crates/immich-mount-gnome/src/window.blp:78
-#: crates/immich-mount-kde/qml/Main.qml:353
+#: crates/immich-mount-kde/qml/Main.qml:477
 msgid "Opens your browser, where you sign in as usual, with a passkey or a password manager."
 msgstr "Tarayıcınızı açar; orada her zamanki gibi geçiş anahtarıyla veya parola yöneticisiyle oturum açarsınız."
 
@@ -566,12 +699,12 @@ msgid "For two-factor sign-in, use your server's single sign-on instead."
 msgstr "İki aşamalı oturum açma için bunun yerine sunucunuzun çoklu oturum açma özelliğini kullanın."
 
 #: crates/immich-mount-gnome/src/window.blp:96
-#: crates/immich-mount-kde/qml/Main.qml:362
+#: crates/immich-mount-kde/qml/Main.qml:486
 msgid "Email"
 msgstr "E-posta"
 
 #: crates/immich-mount-gnome/src/window.blp:101
-#: crates/immich-mount-kde/qml/Main.qml:366
+#: crates/immich-mount-kde/qml/Main.qml:490
 msgid "Password"
 msgstr "Parola"
 
@@ -603,76 +736,65 @@ msgstr "Kitaplığınız Dosyalar’da"
 msgid "The folders the drive shows. You can change this later in Preferences."
 msgstr "Sürücünün gösterdiği klasörler. Bunu daha sonra Tercihler’den değiştirebilirsiniz."
 
-#: crates/immich-mount-gnome/src/window.blp:149
-msgid "The timeline, by year and month"
-msgstr "Yıl ve aya göre zaman çizelgesi"
-
-#: crates/immich-mount-gnome/src/window.blp:174
-#: crates/immich-mount-gnome/src/window.blp:322
-#: crates/immich-mount-kde/qml/Main.qml:448
-msgid "Location"
-msgstr "Konum"
-
 #: crates/immich-mount-gnome/src/window.blp:177
-#: crates/immich-mount-kde/qml/Main.qml:451
+#: crates/immich-mount-kde/qml/Main.qml:575
 msgid "Folder"
 msgstr "Klasör"
 
 #: crates/immich-mount-gnome/src/window.blp:183
-#: crates/immich-mount-gnome/src/window.blp:231
+#: crates/immich-mount-gnome/src/window.blp:265
 msgid "_Open in Files"
 msgstr "_Dosyalar’da aç"
 
-#: crates/immich-mount-gnome/src/window.blp:242
+#: crates/immich-mount-gnome/src/window.blp:276
 msgid "_Unmount"
 msgstr "_Ayır"
 
-#: crates/immich-mount-gnome/src/window.blp:244
+#: crates/immich-mount-gnome/src/window.blp:278
 msgid "Take it out of Files until you mount it again or log in"
 msgstr "Yeniden bağlayana veya oturum açana kadar Dosyalar’dan kaldır"
 
-#: crates/immich-mount-gnome/src/window.blp:253
+#: crates/immich-mount-gnome/src/window.blp:287
 msgid "_Mount"
 msgstr "_Bağla"
 
-#: crates/immich-mount-gnome/src/window.blp:269
+#: crates/immich-mount-gnome/src/window.blp:303
 msgid "Sign In _Again"
 msgstr "_Yeniden oturum aç"
 
-#: crates/immich-mount-gnome/src/window.blp:281
-msgid "Server"
-msgstr "Sunucu"
-
-#: crates/immich-mount-gnome/src/window.blp:289
-#: apple/App/SettingsView.swift:17
-msgid "Account"
-msgstr "Hesap"
-
-#: crates/immich-mount-gnome/src/window.blp:298
-msgid "Credential"
-msgstr "Kimlik bilgisi"
-
-#: crates/immich-mount-gnome/src/window.blp:306
+#: crates/immich-mount-gnome/src/window.blp:315
 msgid "Connection"
 msgstr "Bağlantı"
 
-#: crates/immich-mount-gnome/src/window.blp:330
+#: crates/immich-mount-gnome/src/window.blp:323
+msgid "Cache"
+msgstr "Önbellek"
+
+#: crates/immich-mount-gnome/src/window.blp:339
 msgid "Uploading"
 msgstr "Yükleniyor"
 
-#: crates/immich-mount-gnome/src/window.blp:341
+#: crates/immich-mount-gnome/src/window.blp:358
+msgid "Server"
+msgstr "Sunucu"
+
+#: crates/immich-mount-gnome/src/window.blp:375
+msgid "Credential"
+msgstr "Kimlik bilgisi"
+
+#: crates/immich-mount-gnome/src/window.blp:384
+msgid "Disconnecting signs out and takes the drive out of Files. Your library on the server stays as it is."
+msgstr ""
+
+#: crates/immich-mount-gnome/src/window.blp:387
 msgid "_Disconnect"
 msgstr "Bağlantıyı _kes"
 
-#: crates/immich-mount-gnome/src/window.blp:362
-msgid "_Preferences"
-msgstr "_Tercihler"
-
-#: crates/immich-mount-gnome/src/window.blp:367
+#: crates/immich-mount-gnome/src/window.blp:418
 msgid "_Keyboard Shortcuts"
 msgstr "_Klavye kısayolları"
 
-#: crates/immich-mount-gnome/src/window.blp:372
+#: crates/immich-mount-gnome/src/window.blp:423
 msgid "_About Immich Mount"
 msgstr "Immich Mount _hakkında"
 
@@ -708,196 +830,204 @@ msgstr "{app} artık yüklü değil."
 msgid "Immich Mount could not open {app}: {error}"
 msgstr "Immich Mount {app} uygulamasını açamadı: {error}"
 
-#: crates/immich-mount-kde/qml/Main.qml:53
+#: crates/immich-mount-kde/qml/Main.qml:94
 msgid "Show thumbnails"
 msgstr "Küçük resimleri göster"
 
-#: crates/immich-mount-kde/qml/Main.qml:62
+#: crates/immich-mount-kde/qml/Main.qml:103
 msgid "Lets Dolphin preview files up to 100 MB on remote locations, this drive included. Thumbnails come from the server; no original is downloaded."
 msgstr "Dolphin’in, bu sürücü de dahil olmak üzere uzak konumlardaki 100 MB’a kadar dosyaları önizlemesini sağlar. Küçük resimler sunucudan gelir; hiçbir özgün dosya indirilmez."
 
-#: crates/immich-mount-kde/qml/Main.qml:220
-#: crates/immich-mount-kde/qml/Main.qml:281
-msgid "About"
-msgstr "Hakkında"
+#: crates/immich-mount-kde/qml/Main.qml:266
+msgid "Choose…"
+msgstr ""
 
-#: crates/immich-mount-kde/qml/Main.qml:232
-msgid "Your Immich photos and videos as a drive in Dolphin. By Jakob Hviid, under the MIT license."
-msgstr "Immich fotoğraflarınız ve videolarınız, Dolphin’de bir sürücü olarak. Jakob Hviid tarafından, MIT lisansı altında."
-
-#: crates/immich-mount-kde/qml/Main.qml:237
-#: apple/App/Info.plist (NSHumanReadableCopyright)
-msgid "Immich Mount is an independent, unofficial project. It is not affiliated with, endorsed by, or sponsored by the Immich project or FUTO. “Immich” is used only to describe the server this software works with, and remains the mark of its owner."
-msgstr "Immich Mount bağımsız, resmî olmayan bir projedir. Immich projesi veya FUTO ile bağlantılı değildir; onlar tarafından onaylanmamış ve sponsorluğu üstlenilmemiştir. “Immich” adı yalnızca bu yazılımın birlikte çalıştığı sunucuyu tanımlamak için kullanılır ve sahibinin markası olmaya devam eder."
-
-#: crates/immich-mount-kde/qml/Main.qml:239
-msgid "Credits"
-msgstr "Emeği geçenler"
-
-#: crates/immich-mount-kde/qml/Main.qml:245
-msgid "Inspired by {project}"
-msgstr "İlham kaynağı: {project}"
-
-#: crates/immich-mount-kde/qml/Main.qml:246
-msgid "The Immich API layer: {project}"
-msgstr "Immich API katmanı: {project}"
-
-#: crates/immich-mount-kde/qml/Main.qml:248
-#: apple/App/ImmichMountApp.swift:520
-msgid "AI disclosure"
-msgstr "Yapay zekâ kullanımı"
-
-#: crates/immich-mount-kde/qml/Main.qml:257
-msgid "Website: {link}"
-msgstr "Web sitesi: {link}"
-
-#: crates/immich-mount-kde/qml/Main.qml:258
-msgid "Source code: {link}"
-msgstr "Kaynak kodu: {link}"
-
-#: crates/immich-mount-kde/qml/Main.qml:268
-#: apple/App/ContentView.swift:125
-msgid "Back"
-msgstr "Geri"
-
-#: crates/immich-mount-kde/qml/Main.qml:288
-msgid "Connect"
-msgstr "Sunucuya bağlan"
-
-#: crates/immich-mount-kde/qml/Main.qml:290
-msgid "Continue in Your Browser"
-msgstr "Tarayıcınızda devam edin"
-
-#: crates/immich-mount-kde/qml/Main.qml:291
-msgid "Your Library in Dolphin"
-msgstr "Kitaplığınız Dolphin’de"
-
-#: crates/immich-mount-kde/qml/Main.qml:313
-msgid "Your Immich Library in Dolphin"
-msgstr "Immich kitaplığınız Dolphin’de"
-
-#: crates/immich-mount-kde/qml/Main.qml:320
-msgid "Server address:"
-msgstr "Sunucu adresi:"
-
-#: crates/immich-mount-kde/qml/Main.qml:321
-msgid "Server address"
-msgstr "Sunucu adresi"
-
-#: crates/immich-mount-kde/qml/Main.qml:329
-#: apple/App/ContentView.swift:139
-msgid "Continue"
-msgstr "Devam et"
-
-#: crates/immich-mount-kde/qml/Main.qml:359
-msgid "Email and password"
-msgstr "E-posta ve parola"
-
-#: crates/immich-mount-kde/qml/Main.qml:362
-#: apple/App/ContentView.swift:101
-msgid "Email:"
-msgstr "E-posta:"
-
-#: crates/immich-mount-kde/qml/Main.qml:365
-#: apple/App/ContentView.swift:102
-msgid "Password:"
-msgstr "Parola:"
-
-#: crates/immich-mount-kde/qml/Main.qml:377
-#: crates/immich-mount-kde/qml/Main.qml:381
-msgid "API key"
-msgstr "API anahtarı"
-
-#: crates/immich-mount-kde/qml/Main.qml:380
-msgid "Key:"
-msgstr "Anahtar:"
-
-#: crates/immich-mount-kde/qml/Main.qml:386
-msgid "Sign In With Key"
-msgstr "Anahtarla oturum aç"
-
-#: crates/immich-mount-kde/qml/Main.qml:399
-msgid "Sign in there. When your browser asks to open Immich Mount, allow it."
-msgstr "Orada oturum açın. Tarayıcınız Immich Mount’u açmak için izin istediğinde izin verin."
-
-#: crates/immich-mount-kde/qml/Main.qml:402
-msgid "Open the Sign-In Page Again"
-msgstr "Oturum açma sayfasını yeniden aç"
-
-#: crates/immich-mount-kde/qml/Main.qml:413
-msgid "No browser could be opened. Open this address in one:"
-msgstr "Hiçbir tarayıcı açılamadı. Bu adresi bir tarayıcıda açın:"
-
-#: crates/immich-mount-kde/qml/Main.qml:420
-msgid "Sign-in address"
-msgstr "Oturum açma adresi"
-
-#: crates/immich-mount-kde/qml/Main.qml:450
-msgid "Folder:"
-msgstr "Klasör:"
-
-#: crates/immich-mount-kde/qml/Main.qml:455
-msgid "Dolphin"
-msgstr "Dolphin"
-
-#: crates/immich-mount-kde/qml/Main.qml:475
-msgid "Your Library Is in Dolphin"
-msgstr "Kitaplığınız Dolphin’de"
-
-#: crates/immich-mount-kde/qml/Main.qml:478
-msgid "Mount it to browse your library in Dolphin."
-msgstr "Kitaplığınıza Dolphin’de göz atmak için sürücüyü bağlayın."
-
-#: crates/immich-mount-kde/qml/Main.qml:481
-msgid "Sign In Again"
-msgstr "Yeniden oturum aç"
-
-#: crates/immich-mount-kde/qml/Main.qml:481
-msgid "Mount"
-msgstr "Bağla"
-
-#: crates/immich-mount-kde/qml/Main.qml:489
+#: crates/immich-mount-kde/qml/Main.qml:318
 #: apple/App/ContentView.swift:107
 msgid "Server:"
 msgstr "Sunucu:"
 
-#: crates/immich-mount-kde/qml/Main.qml:490
+#: crates/immich-mount-kde/qml/Main.qml:319
 msgid "Account:"
 msgstr "Hesap:"
 
-#: crates/immich-mount-kde/qml/Main.qml:491
+#: crates/immich-mount-kde/qml/Main.qml:320
 msgid "Credential:"
 msgstr "Kimlik bilgisi:"
 
-#: crates/immich-mount-kde/qml/Main.qml:492
-msgid "Connection:"
-msgstr "Bağlantı:"
-
-#: crates/immich-mount-kde/qml/Main.qml:493
-msgid "Cache:"
-msgstr "Önbellek:"
-
-#: crates/immich-mount-kde/qml/Main.qml:494
-msgid "Location:"
-msgstr "Konum:"
-
-#: crates/immich-mount-kde/qml/Main.qml:495
-msgid "Uploading:"
-msgstr "Yükleniyor:"
-
-#: crates/immich-mount-kde/qml/Main.qml:496
-msgid "Dolphin:"
-msgstr "Dolphin:"
-
-#: crates/immich-mount-kde/qml/Main.qml:501
-msgid "Unmount"
-msgstr "Ayır"
-
-#: crates/immich-mount-kde/qml/Main.qml:508
+#: crates/immich-mount-kde/qml/Main.qml:324
 msgid "Disconnect"
 msgstr "Bağlantıyı kes"
 
-#: crates/immich-mount-kde/qml/Main.qml:520
+#: crates/immich-mount-kde/qml/Main.qml:340
+msgid "Disconnecting signs out and takes the drive out of Dolphin. Your library on the server stays as it is."
+msgstr ""
+
+#: crates/immich-mount-kde/qml/Main.qml:350
+#: crates/immich-mount-kde/qml/Main.qml:405
+msgid "About"
+msgstr "Hakkında"
+
+#: crates/immich-mount-kde/qml/Main.qml:362
+msgid "Your Immich photos and videos as a drive in Dolphin. By Jakob Hviid, under the MIT license."
+msgstr "Immich fotoğraflarınız ve videolarınız, Dolphin’de bir sürücü olarak. Jakob Hviid tarafından, MIT lisansı altında."
+
+#: crates/immich-mount-kde/qml/Main.qml:367
+#: apple/App/Info.plist (NSHumanReadableCopyright)
+msgid "Immich Mount is an independent, unofficial project. It is not affiliated with, endorsed by, or sponsored by the Immich project or FUTO. “Immich” is used only to describe the server this software works with, and remains the mark of its owner."
+msgstr "Immich Mount bağımsız, resmî olmayan bir projedir. Immich projesi veya FUTO ile bağlantılı değildir; onlar tarafından onaylanmamış ve sponsorluğu üstlenilmemiştir. “Immich” adı yalnızca bu yazılımın birlikte çalıştığı sunucuyu tanımlamak için kullanılır ve sahibinin markası olmaya devam eder."
+
+#: crates/immich-mount-kde/qml/Main.qml:369
+msgid "Credits"
+msgstr "Emeği geçenler"
+
+#: crates/immich-mount-kde/qml/Main.qml:375
+msgid "Inspired by {project}"
+msgstr "İlham kaynağı: {project}"
+
+#: crates/immich-mount-kde/qml/Main.qml:376
+msgid "The Immich API layer: {project}"
+msgstr "Immich API katmanı: {project}"
+
+#: crates/immich-mount-kde/qml/Main.qml:378
+#: apple/App/ImmichMountApp.swift:520
+msgid "AI disclosure"
+msgstr "Yapay zekâ kullanımı"
+
+#: crates/immich-mount-kde/qml/Main.qml:387
+msgid "Website: {link}"
+msgstr "Web sitesi: {link}"
+
+#: crates/immich-mount-kde/qml/Main.qml:388
+msgid "Source code: {link}"
+msgstr "Kaynak kodu: {link}"
+
+#: crates/immich-mount-kde/qml/Main.qml:398
+#: apple/App/ContentView.swift:125
+msgid "Back"
+msgstr "Geri"
+
+#: crates/immich-mount-kde/qml/Main.qml:412
+msgid "Connect"
+msgstr "Sunucuya bağlan"
+
+#: crates/immich-mount-kde/qml/Main.qml:414
+msgid "Continue in Your Browser"
+msgstr "Tarayıcınızda devam edin"
+
+#: crates/immich-mount-kde/qml/Main.qml:415
+msgid "Your Library in Dolphin"
+msgstr "Kitaplığınız Dolphin’de"
+
+#: crates/immich-mount-kde/qml/Main.qml:437
+msgid "Your Immich Library in Dolphin"
+msgstr "Immich kitaplığınız Dolphin’de"
+
+#: crates/immich-mount-kde/qml/Main.qml:444
+msgid "Server address:"
+msgstr "Sunucu adresi:"
+
+#: crates/immich-mount-kde/qml/Main.qml:445
+msgid "Server address"
+msgstr "Sunucu adresi"
+
+#: crates/immich-mount-kde/qml/Main.qml:453
+#: apple/App/ContentView.swift:139
+msgid "Continue"
+msgstr "Devam et"
+
+#: crates/immich-mount-kde/qml/Main.qml:483
+msgid "Email and password"
+msgstr "E-posta ve parola"
+
+#: crates/immich-mount-kde/qml/Main.qml:486
+#: apple/App/ContentView.swift:101
+msgid "Email:"
+msgstr "E-posta:"
+
+#: crates/immich-mount-kde/qml/Main.qml:489
+#: apple/App/ContentView.swift:102
+msgid "Password:"
+msgstr "Parola:"
+
+#: crates/immich-mount-kde/qml/Main.qml:501
+#: crates/immich-mount-kde/qml/Main.qml:505
+msgid "API key"
+msgstr "API anahtarı"
+
+#: crates/immich-mount-kde/qml/Main.qml:504
+msgid "Key:"
+msgstr "Anahtar:"
+
+#: crates/immich-mount-kde/qml/Main.qml:510
+msgid "Sign In With Key"
+msgstr "Anahtarla oturum aç"
+
+#: crates/immich-mount-kde/qml/Main.qml:523
+msgid "Sign in there. When your browser asks to open Immich Mount, allow it."
+msgstr "Orada oturum açın. Tarayıcınız Immich Mount’u açmak için izin istediğinde izin verin."
+
+#: crates/immich-mount-kde/qml/Main.qml:526
+msgid "Open the Sign-In Page Again"
+msgstr "Oturum açma sayfasını yeniden aç"
+
+#: crates/immich-mount-kde/qml/Main.qml:537
+msgid "No browser could be opened. Open this address in one:"
+msgstr "Hiçbir tarayıcı açılamadı. Bu adresi bir tarayıcıda açın:"
+
+#: crates/immich-mount-kde/qml/Main.qml:544
+msgid "Sign-in address"
+msgstr "Oturum açma adresi"
+
+#: crates/immich-mount-kde/qml/Main.qml:574
+msgid "Folder:"
+msgstr "Klasör:"
+
+#: crates/immich-mount-kde/qml/Main.qml:579
+msgid "Dolphin"
+msgstr "Dolphin"
+
+#: crates/immich-mount-kde/qml/Main.qml:599
+msgid "Your Library Is in Dolphin"
+msgstr "Kitaplığınız Dolphin’de"
+
+#: crates/immich-mount-kde/qml/Main.qml:602
+msgid "Mount it to browse your library in Dolphin."
+msgstr "Kitaplığınıza Dolphin’de göz atmak için sürücüyü bağlayın."
+
+#: crates/immich-mount-kde/qml/Main.qml:605
+msgid "Sign In Again"
+msgstr "Yeniden oturum aç"
+
+#: crates/immich-mount-kde/qml/Main.qml:605
+msgid "Mount"
+msgstr "Bağla"
+
+#: crates/immich-mount-kde/qml/Main.qml:613
+msgid "Connection:"
+msgstr "Bağlantı:"
+
+#: crates/immich-mount-kde/qml/Main.qml:614
+msgid "Cache:"
+msgstr "Önbellek:"
+
+#: crates/immich-mount-kde/qml/Main.qml:615
+msgid "Location:"
+msgstr "Konum:"
+
+#: crates/immich-mount-kde/qml/Main.qml:616
+msgid "Uploading:"
+msgstr "Yükleniyor:"
+
+#: crates/immich-mount-kde/qml/Main.qml:617
+msgid "Dolphin:"
+msgstr "Dolphin:"
+
+#: crates/immich-mount-kde/qml/Main.qml:622
+msgid "Unmount"
+msgstr "Ayır"
+
+#: crates/immich-mount-kde/qml/Main.qml:635
 msgid "Immich Mount is an independent, unofficial project. It is not affiliated with, endorsed by, or sponsored by the Immich project or FUTO."
 msgstr "Immich Mount bağımsız, resmî olmayan bir projedir. Immich projesi veya FUTO ile bağlantılı değildir; onlar tarafından onaylanmamış ve sponsorluğu üstlenilmemiştir."
 
@@ -994,11 +1124,6 @@ msgstr "Önizlemeden 1024 piksellik küçük resimler de oluştur"
 msgid "Refuse thumbnailer reads of originals"
 msgstr "Küçük resim oluşturucuların özgün dosyaları okumasını reddet"
 
-#: crates/immich-mount-core/src/settings.rs:74
-#: apple/App/SettingsView.swift:278
-msgid "Open in Immich and Copy Immich Link"
-msgstr "Immich’te Aç ve Immich Bağlantısını Kopyala"
-
 #: crates/immich-mount-core/src/settings.rs:75
 msgid "Show what other apps link to (Immich Crosslink)"
 msgstr "Başka uygulamaların bağlantı verdiği öğeleri göster (Immich Crosslink)"
@@ -1015,39 +1140,39 @@ msgstr "Yeni bir sürüm çıktığında bana bildir"
 msgid "Headless only: a 0600 file holding the credential"
 msgstr "Yalnızca masaüstü olmadan: kimlik bilgisini tutan 0600 izinli bir dosya"
 
-#: crates/immich-mount-core/src/settings.rs:84
+#: crates/immich-mount-core/src/settings.rs:141
 msgid "Never"
 msgstr "Asla"
 
-#: crates/immich-mount-core/src/settings.rs:85
+#: crates/immich-mount-core/src/settings.rs:142
 msgid "From 500 Items"
 msgstr "500 öğeden itibaren"
 
-#: crates/immich-mount-core/src/settings.rs:86
+#: crates/immich-mount-core/src/settings.rs:143
 msgid "Always"
 msgstr "Her zaman"
 
-#: crates/immich-mount-core/src/settings.rs:87
+#: crates/immich-mount-core/src/settings.rs:144
 msgid "Year in the Name (2023 - Trip)"
 msgstr "Yıl adda (2023 - Gezi)"
 
-#: crates/immich-mount-core/src/settings.rs:88
+#: crates/immich-mount-core/src/settings.rs:145
 msgid "Year Folders (2023/Trip)"
 msgstr "Yıl klasörleri (2023/Gezi)"
 
-#: crates/immich-mount-core/src/settings.rs:89
+#: crates/immich-mount-core/src/settings.rs:146
 msgid "Name Only (Trip)"
 msgstr "Yalnızca ad (Gezi)"
 
-#: crates/immich-mount-core/src/settings.rs:90
+#: crates/immich-mount-core/src/settings.rs:147
 msgid "Date and Time Taken"
 msgstr "Çekim tarihi ve saati"
 
-#: crates/immich-mount-core/src/settings.rs:91
+#: crates/immich-mount-core/src/settings.rs:148
 msgid "Original File Names"
 msgstr "Özgün dosya adları"
 
-#: crates/immich-mount-core/src/settings.rs:92
+#: crates/immich-mount-core/src/settings.rs:149
 msgid "Ask Each Time"
 msgstr "Her seferinde sor"
 
@@ -1228,14 +1353,6 @@ msgstr "Immich Mount’tan çık"
 msgid "Not signed in"
 msgstr "Oturum açılmadı"
 
-#: apple/App/SettingsView.swift:14
-msgid "General"
-msgstr "Genel"
-
-#: apple/App/SettingsView.swift:15
-msgid "Folders"
-msgstr "Klasörler"
-
 #: apple/App/SettingsView.swift:214
 msgid "Show photos, albums, people and places in other apps that take part, and show the items they send in Finder."
 msgstr "Fotoğrafları, albümleri, kişileri ve yerleri katılan diğer uygulamalarda gösterin ve bu uygulamaların gönderdiği öğeleri Finder’da gösterin."
@@ -1248,6 +1365,14 @@ msgstr "Daha fazla bilgi…"
 msgid "Find apps that take part…"
 msgstr "Katılan uygulamaları bul…"
 
+#: apple/App/SettingsView.swift:317
+msgid "Date Folders"
+msgstr "Tarih klasörleri"
+
+#: apple/App/SettingsView.swift:330
+msgid "Uploads"
+msgstr "Yüklemeler"
+
 #: apple/App/SettingsView.swift:336
 msgid "Folder names"
 msgstr "Klasör adları"
@@ -1255,6 +1380,10 @@ msgstr "Klasör adları"
 #: apple/App/SettingsView.swift:339
 msgid "File names"
 msgstr "Dosya adları"
+
+#: apple/App/SettingsView.swift:341
+msgid "Files"
+msgstr "Dosyalar"
 
 #: apple/App/SettingsView.swift:150
 msgid "Open at login"

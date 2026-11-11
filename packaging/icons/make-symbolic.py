@@ -1,8 +1,9 @@
 #!/usr/bin/env python3
-"""The symbolic icon on Linux: the app icon's wide drive as one solid shape, with the lens ring in five segments,
-the lens's centre, the line where the face meets the base and the base's light cut out (DESIGN.md, "The icon
-family"). The same language as the Mac's menu bar icon, in Linux's own shape. It serves the notifications and the
-tray, and GTK and KDE both recolour it to the text colour.
+"""The symbolic icon on Linux: the drive filling a rounded square as one solid shape, with the lens ring in five
+segments, the lens's centre, the line where the face meets the base and the base's light cut out (DESIGN.md, "The
+icon family"). The Mac's menu bar icon, on Linux: a glyph that fills its square as its neighbours in a top bar or a
+tray do (the wide drive drew smaller than they did). It serves the tray, the notifications and Files' sidebar, and
+GTK and KDE both recolour it to the text colour.
 
     packaging/icons/make-symbolic.py
 """
@@ -12,14 +13,15 @@ from pathlib import Path
 
 TARGET = Path(__file__).resolve().parent / "dev.hviid.ImmichMount-symbolic.svg"
 
-# The drive on a 16-pixel grid, as wide as the app icon's (112 by 88 of 128): 15 by 11.8, its corners rounded.
-LEFT, TOP, RIGHT, BOTTOM, RADIUS = 0.5, 2.1, 15.5, 13.9, 2.4
-BASE = 2.7  # the base's height, under the face
-GAP = 0.8  # what is cut out: the base's line and the ring's gaps
-# The lens in the middle of the face, as on the app icon, its ring 0.42 of the face's height across.
+# The drive on a 16-pixel grid, filling it as the Mac's menu bar icon fills its 16 points: 15 by 15, its corners
+# rounded as the Mac's are at that size.
+LEFT, TOP, RIGHT, BOTTOM, RADIUS = 0.5, 0.5, 15.5, 15.5, 3.75
+BASE = 3.2  # the base's height, a fifth of the drive, as on the Mac's
+GAP = 0.85  # what is cut out: the base's line and the ring's gaps
+# The lens in the middle of the face, its ring as large on the face as the app icon's.
 CENTRE = (8.0, (TOP + BOTTOM - BASE - GAP / 2) / 2)
-RING_OUTER, RING_INNER, DOT = 3.75, 2.35, 0.95
-LIGHT = (11.6, BOTTOM - 1.45, 2.0, 0.8)  # the base's light: left, top, width, height
+RING_OUTER, RING_INNER, DOT = 4.6, 2.9, 1.15
+LIGHT = (11.3, BOTTOM - 2.0, 2.4, 0.9)  # the base's light: left, top, width, height
 
 
 def fmt(value):
@@ -58,8 +60,8 @@ def main():
     light = rounded(left, top, left + width, top + height, height / 2)
     shape = " ".join([rounded(LEFT, TOP, RIGHT, BOTTOM, RADIUS), *segments, dot, line, light])
     TARGET.write_text(f"""<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 16 16">
-  <!-- Immich Mount, symbolic, written by packaging/icons/make-symbolic.py: the wide drive, its lens ring in five
-       segments. GTK and KDE both recolour it to the text colour. -->
+  <!-- Immich Mount, symbolic, written by packaging/icons/make-symbolic.py: the drive in a rounded square, its lens
+       ring in five segments. GTK and KDE both recolour it to the text colour. -->
   <style id="current-color-scheme">.ColorScheme-Text {{ color: #2e3436; }}</style>
   <path class="ColorScheme-Text" fill="currentColor" fill-rule="evenodd" d="{shape}"/>
 </svg>

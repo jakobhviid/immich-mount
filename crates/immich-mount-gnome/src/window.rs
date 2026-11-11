@@ -1,6 +1,8 @@
-//! The main window: connect to a server, sign in, and the status of the mount (ARCHITECTURE.md, "The desktop app").
+//! The main window: connect to a server and sign in; then the app's pages in a sidebar, Status first, then the settings
+//! and the account (ARCHITECTURE.md, "The desktop app", "One layout for every settings window").
 
-use std::cell::RefCell;
+use std::cell::{Cell, RefCell};
+use std::rc::Rc;
 use std::future::Future;
 
 use adw::prelude::*;
@@ -40,6 +42,14 @@ mod imp {
         pub password_row: TemplateChild<adw::PasswordEntryRow>,
         #[template_child]
         pub api_key_row: TemplateChild<adw::PasswordEntryRow>,
+        #[template_child]
+        pub split_view: TemplateChild<adw::NavigationSplitView>,
+        #[template_child]
+        pub sidebar: TemplateChild<gtk::ListBox>,
+        #[template_child]
+        pub content_page: TemplateChild<adw::NavigationPage>,
+        #[template_child]
+        pub pages: TemplateChild<gtk::Stack>,
         #[template_child]
         pub status_page: TemplateChild<adw::StatusPage>,
         #[template_child]
@@ -84,6 +94,10 @@ mod imp {
         pub attempt: RefCell<Option<BrowserSignIn>>,
         /// Where the mount is, for "Open in Files".
         pub mount_point: RefCell<Option<std::path::PathBuf>>,
+        /// A setting changed since the daemon last started: it restarts once the user leaves the page.
+        pub settings_changed: Rc<Cell<bool>>,
+        /// The page shown, by its sidebar id.
+        pub shown_page: RefCell<String>,
     }
 
     #[glib::object_subclass]
@@ -159,6 +173,12 @@ mod imp {
         fn on_disconnect(&self, #[rest] _values: &[glib::Value]) {
             self.obj().disconnect();
         }
+
+        #[template_callback]
+        fn on_page_selected(&self, #[rest] _values: &[glib::Value]) {
+            let Some(row) = self.sidebar.selected_row() else { return };
+            self.obj().open_page(&row.widget_name());
+        }
     }
 
     impl ObjectImpl for Window {}
@@ -189,9 +209,31 @@ where
     });
 }
 
+/// The sidebar's pages: Status, the settings pages of the shared layout, and Account, each by its id, title and icon.
+fn sidebar_pages() -> Vec<(&'static str, &'static str, &'static str)> {
+    let settings = immich_mount_desktop::preferences::PAGES.iter().map(|page| (page.id, tr(page.title), page.icon));
+    std::iter::once(("status", tr("Status"), "dev.hviid.ImmichMount-symbolic"))
+        .chain(settings)
+        .chain(std::iter::once(("account", tr("Account"), "avatar-default-symbolic")))
+        .collect()
+}
+
 impl Window {
     pub fn new(application: &adw::Application) -> Self {
         let window: Window = glib::Object::builder().property("application", application).build();
+        for (id, title, icon) in sidebar_pages() {
+            let content = gtk::Box::builder().spacing(12).margin_top(6).margin_bottom(6).margin_start(6).margin_end(6).build();
+            content.append(&gtk::Image::from_icon_name(icon));
+            content.append(&gtk::Label::builder().label(title).xalign(0.0).build());
+            let row = gtk::ListBoxRow::builder().child(&content).name(id).build();
+            window.imp().sidebar.append(&row);
+        }
+        window.imp().sidebar.select_row(window.imp().sidebar.row_at_index(0).as_ref());
+        // A change of settings reaches the daemon when the window closes, as when the user leaves its page.
+        window.connect_close_request(|window| {
+            window.apply_settings();
+            glib::Propagation::Proceed
+        });
         if let Some(server) = session::configured_server() {
             window.imp().server_row.set_text(&server);
         }
@@ -434,9 +476,56 @@ impl Window {
         imp.mount_point.replace(Some(status.mount_point.clone()));
     }
 
+    /// Show the first settings page, General, as Preferences in the menus and Ctrl+, ask.
     pub fn show_preferences(&self) {
-        let window = self.clone();
-        crate::preferences::dialog(move |message| window.toast(message)).present(Some(self));
+        self.select_page("general");
+    }
+
+    /// Select a page in the sidebar, which opens it.
+    pub fn select_page(&self, id: &str) {
+        let sidebar = &self.imp().sidebar;
+        let mut index = 0;
+        while let Some(row) = sidebar.row_at_index(index) {
+            if row.widget_name() == id {
+                sidebar.select_row(Some(&row));
+                self.imp().split_view.set_show_content(true);
+                return;
+            }
+            index += 1;
+        }
+    }
+
+    /// Open a page: a settings page is drawn anew, so it shows the settings as they are now. Leaving one where
+    /// something changed restarts the daemon, which reads its settings at start.
+    fn open_page(&self, id: &str) {
+        let imp = self.imp();
+        if *imp.shown_page.borrow() != id {
+            self.apply_settings();
+        }
+        imp.shown_page.replace(id.to_owned());
+        if let Some(page) = immich_mount_desktop::preferences::PAGES.iter().find(|page| page.id == id) {
+            if let Some(old) = imp.pages.child_by_name(id) {
+                imp.pages.remove(&old);
+            }
+            let window = self.clone();
+            let context = crate::preferences::Context {
+                changed: imp.settings_changed.clone(),
+                report: Rc::new(move |message: &str| window.toast(message)),
+            };
+            let drawn = crate::preferences::page(page, &context, self.upcast_ref());
+            imp.pages.add_named(&drawn, Some(id));
+        }
+        imp.pages.set_visible_child_name(id);
+        let title = sidebar_pages().into_iter().find(|(page, _, _)| *page == id).map_or("", |(_, title, _)| title);
+        imp.content_page.set_title(title);
+        imp.split_view.set_show_content(true);
+    }
+
+    /// Restart the daemon if a setting changed, so it reads them again.
+    fn apply_settings(&self) {
+        if self.imp().settings_changed.replace(false) {
+            immich_mount_desktop::preferences::restart_daemon();
+        }
     }
 
     fn open_in_files(&self) {

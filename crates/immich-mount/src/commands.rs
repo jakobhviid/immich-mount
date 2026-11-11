@@ -149,6 +149,8 @@ pub struct MountReport {
 
 /// How long `mount` waits for the daemon to mount.
 const MOUNT_WAIT: std::time::Duration = std::time::Duration::from_secs(15);
+/// How long `mount` waits for a daemon still leaving after an unmount.
+const STOP_WAIT: std::time::Duration = std::time::Duration::from_secs(10);
 
 /// Start the user service (the daemon), writing it first if no install brought one, enable it when `mount.at_login`
 /// says so, and wait until the mount is up. Until the daemon has its D-Bus control, the service is how the mount is
@@ -160,6 +162,16 @@ pub fn mount(paths: &Paths) -> Result<MountReport> {
         return Ok(MountReport { mount_point, was_mounted: true });
     }
     let unit = service::ensure_user_service(paths).context("setting up the user service")?;
+    // Right after an unmount, the daemon notices the eject and leaves by itself, but its service is still active for a
+    // moment, and `start` does nothing to an active service: the daemon then left, and the mount never came back (seen
+    // in a Fedora 44 VM). Wait for it to leave; a daemon that is merely slow to mount comes up meanwhile.
+    let stop_deadline = std::time::Instant::now() + STOP_WAIT;
+    while service_is_active(unit) && std::time::Instant::now() < stop_deadline {
+        if mounts::mount_state(&mount_point) == mounts::MountState::Mounted {
+            return Ok(MountReport { mount_point, was_mounted: false });
+        }
+        std::thread::sleep(std::time::Duration::from_millis(200));
+    }
     if config.mount_at_login {
         let _ = std::process::Command::new("systemctl").args(["--user", "enable", unit]).output();
     }
@@ -181,6 +193,11 @@ pub fn mount(paths: &Paths) -> Result<MountReport> {
         std::thread::sleep(std::time::Duration::from_millis(250));
     }
     anyhow::bail!("the service started but did not mount within 15 seconds; see `journalctl --user -u immich-mount`")
+}
+
+/// Whether the user service `unit` is active (not starting, stopping or stopped).
+fn service_is_active(unit: &str) -> bool {
+    std::process::Command::new("systemctl").args(["--user", "is-active", "--quiet", unit]).status().is_ok_and(|status| status.success())
 }
 
 #[derive(Serialize)]

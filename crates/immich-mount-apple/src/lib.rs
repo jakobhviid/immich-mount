@@ -2112,6 +2112,21 @@ mod tests {
     use immich_mount_core::tree::{InMemoryNames, SectionKey};
     use std::sync::atomic::{AtomicBool, Ordering};
 
+    /// The Settings window shows what the layout every app shares places on its panes (ARCHITECTURE.md, "One layout for
+    /// every settings window"), less what means nothing on a Mac: the mount's own settings (Finder's location has its
+    /// place and name), the cache (the system's), thumbnails (Finder asks the extension) and updates (the app's own).
+    #[test]
+    fn the_settings_window_shows_the_shared_layout_less_what_a_mac_has_no_use_for() {
+        const LINUX_ONLY: &[&str] = &["mount.path", "mount.name", "mount.at_login", "cache.limit", "thumbnails.sharp", "updates.check"];
+        let panes = settings_panes(String::new()).unwrap();
+        let mut shown: Vec<String> = panes.sections.iter().flat_map(|section| std::iter::once(section.shown.key.clone()).chain(section.date_folders.as_ref().map(|folders| folders.key.clone()))).collect();
+        shown.extend([&panes.album_layout, &panes.file_naming, &panes.upload_folders, &panes.crosslink, &panes.web_links].map(|preference| preference.key.clone()));
+        for (key, pane) in settings::PANES {
+            let expected = *pane != settings::Pane::CommandLine && !LINUX_ONLY.contains(key);
+            assert_eq!(shown.iter().any(|shown| shown == key), expected, "{key} ({pane:?})");
+        }
+    }
+
     /// One photo in March 2024, in one album.
     #[derive(Default)]
     struct FakeLibrary {

@@ -5,8 +5,8 @@ translation-domain "immich-mount";
 
 template $ImmichMountWindow: Adw.ApplicationWindow {
   title: _("Immich Mount");
-  default-width: 560;
-  default-height: 700;
+  default-width: 860;
+  default-height: 640;
   width-request: 360;
   height-request: 294;
 
@@ -200,152 +200,200 @@ template $ImmichMountWindow: Adw.ApplicationWindow {
         title: _("Immich Mount");
         can-pop: false;
 
-        child: Adw.ToolbarView {
-          [top]
-          Adw.HeaderBar {
-            [end]
-            MenuButton {
-              primary: true;
-              icon-name: "open-menu-symbolic";
-              tooltip-text: _("Main Menu");
-              menu-model: primary_menu;
-            }
-          }
+        // Signed in: the app is its pages, Status first, in a sidebar as GNOME Settings has them (ARCHITECTURE.md,
+        // "One layout for every settings window"); narrow, the sidebar and a page take turns.
+        child: Adw.NavigationSplitView split_view {
+          sidebar: Adw.NavigationPage {
+            title: _("Immich Mount");
 
-          content: Adw.StatusPage status_page {
-            icon-name: "dev.hviid.ImmichMount";
-            title: _("Your Library Is in Files");
+            child: Adw.ToolbarView {
+              [top]
+              Adw.HeaderBar {
+                [end]
+                MenuButton {
+                  primary: true;
+                  icon-name: "open-menu-symbolic";
+                  tooltip-text: _("Main Menu");
+                  menu-model: primary_menu;
+                }
+              }
 
-            child: Adw.Clamp {
-              maximum-size: 420;
+              content: ScrolledWindow {
+                hscrollbar-policy: never;
 
-              child: Box {
-                orientation: vertical;
-                spacing: 24;
+                child: ListBox sidebar {
+                  selection-mode: single;
+                  row-selected => $on_page_selected() swapped;
 
-                Box {
-                  halign: center;
-                  spacing: 12;
+                  styles [
+                    "navigation-sidebar",
+                  ]
+                };
+              };
+            };
+          };
 
-                  Button open_button {
-                    label: _("_Open in Files");
-                    use-underline: true;
-                    clicked => $on_open_in_files() swapped;
+          content: Adw.NavigationPage content_page {
+            title: _("Status");
 
-                    styles [
-                      "pill",
-                      "suggested-action",
-                    ]
-                  }
+            child: Adw.ToolbarView {
+              [top]
+              Adw.HeaderBar {}
 
-                  Button unmount_button {
-                    label: _("_Unmount");
-                    use-underline: true;
-                    tooltip-text: _("Take it out of Files until you mount it again or log in");
-                    clicked => $on_unmount() swapped;
+              content: Stack pages {
+                transition-type: crossfade;
 
-                    styles [
-                      "pill",
-                    ]
-                  }
+                StackPage {
+                  name: "status";
 
-                  Button mount_button {
-                    label: _("_Mount");
-                    use-underline: true;
-                    visible: false;
-                    clicked => $on_mount() swapped;
+                  child: Adw.StatusPage status_page {
+                    icon-name: "dev.hviid.ImmichMount";
+                    title: _("Your Library Is in Files");
 
-                    styles [
-                      "pill",
-                      "suggested-action",
-                    ]
-                  }
+                    child: Adw.Clamp {
+                      maximum-size: 420;
+
+                      child: Box {
+                        orientation: vertical;
+                        spacing: 24;
+
+                        Box {
+                          halign: center;
+                          spacing: 12;
+
+                          Button open_button {
+                            label: _("_Open in Files");
+                            use-underline: true;
+                            clicked => $on_open_in_files() swapped;
+
+                            styles [
+                              "pill",
+                              "suggested-action",
+                            ]
+                          }
+
+                          Button unmount_button {
+                            label: _("_Unmount");
+                            use-underline: true;
+                            tooltip-text: _("Take it out of Files until you mount it again or log in");
+                            clicked => $on_unmount() swapped;
+
+                            styles [
+                              "pill",
+                            ]
+                          }
+
+                          Button mount_button {
+                            label: _("_Mount");
+                            use-underline: true;
+                            visible: false;
+                            clicked => $on_mount() swapped;
+
+                            styles [
+                              "pill",
+                              "suggested-action",
+                            ]
+                          }
+                        }
+
+                        Adw.PreferencesGroup sign_in_again_group {
+                          visible: false;
+
+                          Adw.ButtonRow {
+                            title: _("Sign In _Again");
+                            use-underline: true;
+                            activated => $on_sign_in_again() swapped;
+
+                            styles [
+                              "suggested-action",
+                            ]
+                          }
+                        }
+
+                        Adw.PreferencesGroup {
+                          Adw.ActionRow connection_row {
+                            title: _("Connection");
+
+                            styles [
+                              "property",
+                            ]
+                          }
+
+                          Adw.ActionRow cache_row {
+                            title: _("Cache");
+
+                            styles [
+                              "property",
+                            ]
+                          }
+
+                          Adw.ActionRow mount_row {
+                            title: _("Location");
+
+                            styles [
+                              "property",
+                            ]
+                          }
+
+                          Adw.ActionRow uploads_row {
+                            title: _("Uploading");
+                            visible: false;
+
+                            styles [
+                              "property",
+                            ]
+                          }
+                        }
+                      };
+                    };
+                  };
                 }
 
-                Adw.PreferencesGroup sign_in_again_group {
-                  visible: false;
+                StackPage {
+                  name: "account";
 
-                  Adw.ButtonRow {
-                    title: _("Sign In _Again");
-                    use-underline: true;
-                    activated => $on_sign_in_again() swapped;
+                  child: Adw.PreferencesPage {
+                    Adw.PreferencesGroup {
+                      Adw.ActionRow server_status_row {
+                        title: _("Server");
 
-                    styles [
-                      "suggested-action",
-                    ]
-                  }
-                }
+                        styles [
+                          "property",
+                        ]
+                      }
 
-                Adw.PreferencesGroup {
-                  Adw.ActionRow server_status_row {
-                    title: _("Server");
+                      Adw.ActionRow email_status_row {
+                        title: _("Account");
+                        visible: false;
 
-                    styles [
-                      "property",
-                    ]
-                  }
+                        styles [
+                          "property",
+                        ]
+                      }
 
-                  Adw.ActionRow email_status_row {
-                    title: _("Account");
-                    visible: false;
+                      Adw.ActionRow account_row {
+                        title: _("Credential");
 
-                    styles [
-                      "property",
-                    ]
-                  }
+                        styles [
+                          "property",
+                        ]
+                      }
+                    }
 
-                  Adw.ActionRow account_row {
-                    title: _("Credential");
+                    Adw.PreferencesGroup {
+                      description: _("Disconnecting signs out and takes the drive out of Files. Your library on the server stays as it is.");
 
-                    styles [
-                      "property",
-                    ]
-                  }
+                      Adw.ButtonRow {
+                        title: _("_Disconnect");
+                        use-underline: true;
+                        activated => $on_disconnect() swapped;
 
-                  Adw.ActionRow connection_row {
-                    title: _("Connection");
-
-                    styles [
-                      "property",
-                    ]
-                  }
-
-                  Adw.ActionRow cache_row {
-                    title: _("Cache");
-
-                    styles [
-                      "property",
-                    ]
-                  }
-
-                  Adw.ActionRow mount_row {
-                    title: _("Location");
-
-                    styles [
-                      "property",
-                    ]
-                  }
-
-                  Adw.ActionRow uploads_row {
-                    title: _("Uploading");
-                    visible: false;
-
-                    styles [
-                      "property",
-                    ]
-                  }
-                }
-
-                Adw.PreferencesGroup {
-                  Adw.ButtonRow {
-                    title: _("_Disconnect");
-                    use-underline: true;
-                    activated => $on_disconnect() swapped;
-
-                    styles [
-                      "destructive-action",
-                    ]
-                  }
+                        styles [
+                          "destructive-action",
+                        ]
+                      }
+                    }
+                  };
                 }
               };
             };
@@ -354,15 +402,18 @@ template $ImmichMountWindow: Adw.ApplicationWindow {
       }
     };
   };
+
+  Adw.Breakpoint {
+    condition ("max-width: 560sp")
+
+    setters {
+      split_view.collapsed: true;
+    }
+  }
 }
 
 menu primary_menu {
   section {
-    item {
-      label: _("_Preferences");
-      action: "app.preferences";
-    }
-
     item {
       label: _("_Keyboard Shortcuts");
       action: "app.shortcuts";

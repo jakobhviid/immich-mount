@@ -22,7 +22,7 @@ pub enum Kind {
     Text,
     /// A file system path; `~` is expanded by the caller.
     Path,
-    /// A size such as `10GiB`.
+    /// A size such as `10GB` or `10GiB`.
     Size,
     /// One of a fixed set of words.
     Choice(&'static [&'static str]),
@@ -66,7 +66,7 @@ pub const SETTINGS: &[Setting] = &[
     Setting { key: "grouping.archive", kind: Kind::Choice(GROUPING_CHOICES), description: "Year and month folders inside the archive", default: "always" },
     Setting { key: "albums.layout", kind: Kind::Choice(&["year-prefix", "year-folders", "flat"]), description: "How album folders are named and grouped", default: "year-prefix" },
     Setting { key: "files.naming", kind: Kind::Choice(&["date-time", "original"]), description: "How files are named", default: "date-time" },
-    Setting { key: "cache.limit", kind: Kind::Size, description: "The content cache's size limit", default: "10GiB" },
+    Setting { key: "cache.limit", kind: Kind::Size, description: "The content cache's size limit", default: "10GB" },
     Setting { key: "uploads.enabled", kind: Kind::Bool, description: "Show the Upload folder, and upload what is copied into it", default: "true" },
     Setting { key: "uploads.folders", kind: Kind::Choice(&["ask", "timeline", "albums"]), description: "Folders copied into Upload", default: "ask" },
     Setting { key: "thumbnails.sharp", kind: Kind::Bool, description: "Also seed 1024 px thumbnails from the preview", default: "true" },
@@ -77,6 +77,63 @@ pub const SETTINGS: &[Setting] = &[
     Setting { key: "updates.check", kind: Kind::Bool, description: "Tell me when a new version is out", default: "true" },
     Setting { key: "credential.file", kind: Kind::Path, description: "Headless only: a 0600 file holding the credential", default: "" },
 ];
+
+/// The cache sizes the settings windows offer, in decimal units as the file managers count; any other size set in
+/// `config.toml` shows as itself.
+pub const CACHE_SIZES: &[&str] = &["5GB", "10GB", "25GB", "50GB", "100GB"];
+
+/// Where a setting is shown (ARCHITECTURE.md, "One layout for every settings window"). The apps lay their windows out
+/// from this, each in its own platform's way; the Mac leaves out what means nothing there.
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub enum Pane {
+    /// Opening at login, the drive's place and name, the cache, thumbnails and updates.
+    General,
+    /// The sections with their date folders, Upload, album and file names.
+    Folders,
+    /// Immich Crosslink, the apps that take part, and Immich's web app.
+    OtherApps,
+    /// Only in `config.toml` and `immich-mount configure`: set another way (the server, by signing in; the apps left
+    /// out of Show in, by each app's switch), for headless machines only, or a safeguard no window should offer.
+    CommandLine,
+}
+
+/// Every setting's pane. A test keeps it whole: a setting added to the table without a place here fails it.
+pub const PANES: &[(&str, Pane)] = &[
+    ("server.url", Pane::CommandLine),
+    ("mount.path", Pane::General),
+    ("mount.name", Pane::General),
+    ("mount.at_login", Pane::General),
+    ("sections.photos", Pane::Folders),
+    ("sections.albums", Pane::Folders),
+    ("sections.people", Pane::Folders),
+    ("sections.places", Pane::Folders),
+    ("sections.favorites", Pane::Folders),
+    ("sections.archive", Pane::Folders),
+    ("grouping.photos", Pane::Folders),
+    ("grouping.albums", Pane::Folders),
+    ("grouping.people", Pane::Folders),
+    ("grouping.places", Pane::Folders),
+    ("grouping.favorites", Pane::Folders),
+    ("grouping.archive", Pane::Folders),
+    ("albums.layout", Pane::Folders),
+    ("files.naming", Pane::Folders),
+    ("cache.limit", Pane::General),
+    ("uploads.enabled", Pane::Folders),
+    ("uploads.folders", Pane::Folders),
+    ("thumbnails.sharp", Pane::General),
+    // Off, a thumbnailer may download every original it is shown, gigabytes for icons: no window offers that.
+    ("thumbnails.safety_net", Pane::CommandLine),
+    ("web.links", Pane::OtherApps),
+    ("crosslink.enabled", Pane::OtherApps),
+    ("crosslink.hidden", Pane::CommandLine),
+    ("updates.check", Pane::General),
+    ("credential.file", Pane::CommandLine),
+];
+
+/// A setting's pane.
+pub fn pane(key: &str) -> Option<Pane> {
+    PANES.iter().find(|(placed, _)| *placed == key).map(|(_, pane)| *pane)
+}
 
 /// How a choice reads in a dialog, in every edition's app.
 pub fn choice_label(word: &str) -> &str {
@@ -134,15 +191,26 @@ pub fn validate(key: &str, given: &str) -> Result<(), SettingError> {
     match setting.kind {
         Kind::Bool => given.parse::<bool>().map(|_| ()).map_err(|_| invalid("`true` or `false`".into())),
         Kind::Text | Kind::Path => if given.trim().is_empty() { Err(invalid("non-empty".into())) } else { Ok(()) },
-        Kind::Size => parse_size(given).map(|_| ()).ok_or_else(|| invalid("a size such as `10GiB` or `500MiB`".into())),
+        Kind::Size => parse_size(given).map(|_| ()).ok_or_else(|| invalid("a size such as `10GB` or `500MiB`".into())),
         Kind::Choice(choices) => if choices.contains(&given) { Ok(()) } else { Err(invalid(format!("one of {}", choices.join(", ")))) },
     }
 }
 
-/// Parse a size: a whole number of bytes, or a number with `KiB`, `MiB`, `GiB` or `TiB`.
+/// Parse a size: a whole number of bytes, or a number with a decimal unit (`KB`, `MB`, `GB`, `TB`, as file managers
+/// count) or a binary one (`KiB`, `MiB`, `GiB`, `TiB`).
 pub fn parse_size(text: &str) -> Option<u64> {
     let text = text.trim();
-    let units = [("TiB", 1u64 << 40), ("GiB", 1 << 30), ("MiB", 1 << 20), ("KiB", 1 << 10), ("B", 1)];
+    let units = [
+        ("TiB", 1u64 << 40),
+        ("GiB", 1 << 30),
+        ("MiB", 1 << 20),
+        ("KiB", 1 << 10),
+        ("TB", 1_000_000_000_000),
+        ("GB", 1_000_000_000),
+        ("MB", 1_000_000),
+        ("KB", 1_000),
+        ("B", 1),
+    ];
     for (unit, multiplier) in units {
         if let Some(number) = text.strip_suffix(unit) {
             return number.trim().parse::<u64>().ok()?.checked_mul(multiplier);
@@ -320,7 +388,7 @@ mod tests {
         assert_eq!(config.grouping_photos, GroupingMode::AtLeast500);
         assert!(!config.show_archive && !config.show_favorites, "the archive and favorites are shown only when asked for");
         assert_eq!((config.grouping_archive, config.grouping_favorites), (GroupingMode::Always, GroupingMode::Always));
-        assert_eq!(config.cache_limit_bytes, 10 << 30);
+        assert_eq!(config.cache_limit_bytes, 10_000_000_000, "10 GB, as Files counts");
         assert!(config.server_url.is_none());
         assert_eq!(config.upload_folders, FolderChoice::Ask, "a folder copied into Upload asks before it makes albums");
     }
@@ -358,6 +426,26 @@ mod tests {
         assert!(matches!(set_value("", "files.naming", "camera"), Err(SettingError::InvalidValue { .. })));
         assert!(matches!(set_value("", "no.such", "x"), Err(SettingError::UnknownKey(_))));
         assert!(set_value("", "mount.at_login", "false").unwrap().contains("at_login = false"));
+    }
+
+    #[test]
+    fn every_setting_has_one_pane_and_every_pane_entry_a_setting() {
+        for setting in SETTINGS {
+            assert_eq!(PANES.iter().filter(|(key, _)| *key == setting.key).count(), 1, "{} needs exactly one pane", setting.key);
+        }
+        for (key, _) in PANES {
+            assert!(SETTINGS.iter().any(|setting| setting.key == *key), "{key} is placed but not a setting");
+        }
+        for size in CACHE_SIZES {
+            assert!(validate("cache.limit", size).is_ok(), "{size}");
+        }
+    }
+
+    #[test]
+    fn sizes_parse_with_decimal_units() {
+        assert_eq!(parse_size("10GB"), Some(10_000_000_000));
+        assert_eq!(parse_size("500 MB"), Some(500_000_000));
+        assert_eq!(parse_size("1TB"), Some(1_000_000_000_000));
     }
 
     #[test]

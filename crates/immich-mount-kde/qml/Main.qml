@@ -1,6 +1,8 @@
-// Immich Mount for KDE Plasma: the same steps as the GNOME app (connect, sign in, choose, status), in Kirigami.
+// Immich Mount for KDE Plasma: the same steps as the GNOME app (connect, sign in, choose), then the same pages in a
+// sidebar (Status, General, Folders, Other Apps, Account), in Kirigami.
 import QtQuick
 import QtQuick.Controls as Controls
+import QtQuick.Dialogs
 import QtQuick.Layouts
 import org.kde.kirigami as Kirigami
 import dev.hviid.ImmichMount
@@ -8,22 +10,61 @@ import dev.hviid.ImmichMount
 Kirigami.ApplicationWindow {
     id: root
     title: "Immich Mount"
-    width: Kirigami.Units.gridUnit * 30
-    height: Kirigami.Units.gridUnit * 40
+    width: Kirigami.Units.gridUnit * 50
+    height: Kirigami.Units.gridUnit * 36
     minimumWidth: Kirigami.Units.gridUnit * 20
+
+    // One page at a time beside the sidebar, which is how the user moves between them.
+    pageStack.columnView.columnResizeMode: Kirigami.ColumnView.SingleColumn
+    pageStack.globalToolBar.showNavigationButtons: Kirigami.ApplicationHeaderStyle.NoNavigationButtons
+
+    // The page shown beside the sidebar, by its id in the layout every app shares (ARCHITECTURE.md, "One layout for
+    // every settings window"): status, general, folders, other-apps, account.
+    property string category: "status"
+    function openCategory(name) {
+        category = name
+        // Leaving a settings page destroys it, which restarts the daemon if a setting changed.
+        pageStack.pop(pageStack.initialPage)
+        if (name === "account")
+            pageStack.push(accountPage)
+        else if (name !== "status")
+            pageStack.push(preferencesPage, { pageId: name })
+        if (globalDrawer.modal)
+            globalDrawer.close()
+    }
+
+    // Signed in, the app's pages are in a sidebar, as in KDE's System Settings; before that, the sign-in steps fill
+    // the window. Narrow, the sidebar becomes a drawer.
+    globalDrawer: Kirigami.GlobalDrawer {
+        id: sidebar
+        isMenu: false
+        collapsible: false
+        enabled: backend.page === "status"
+        modal: !root.wideScreen || !enabled
+        drawerOpen: enabled && !modal
+        handleVisible: enabled && modal
+        actions: [
+            Kirigami.Action { text: i18n("Status"); icon.name: "dev.hviid.ImmichMount"; checkable: true; checked: root.category === "status"; onTriggered: root.openCategory("status") },
+            Kirigami.Action { text: i18n("General"); icon.name: "configure"; checkable: true; checked: root.category === "general"; onTriggered: root.openCategory("general") },
+            Kirigami.Action { text: i18n("Folders"); icon.name: "folder"; checkable: true; checked: root.category === "folders"; onTriggered: root.openCategory("folders") },
+            Kirigami.Action { text: i18n("Other Apps"); icon.name: "emblem-shared"; checkable: true; checked: root.category === "other-apps"; onTriggered: root.openCategory("other-apps") },
+            Kirigami.Action { text: i18n("Account"); icon.name: "user-identity"; checkable: true; checked: root.category === "account"; onTriggered: root.openCategory("account") }
+        ]
+    }
 
     Backend {
         id: backend
     }
 
-    // The usual keys of a KDE app: Ctrl+Q quits, Ctrl+, opens the preferences.
+    // The usual keys of a KDE app: Ctrl+Q quits, Ctrl+, opens the settings, from General.
     Shortcut {
         sequences: [StandardKey.Quit]
         onActivated: Qt.quit()
     }
     Shortcut {
         sequence: "Ctrl+,"
-        onActivated: root.pageStack.layers.push(preferencesPage)
+        enabled: backend.page === "status"
+        onActivated: root.openCategory("general")
     }
 
     // A text in the user's language (ARCHITECTURE.md, "Translations"), its {name} placeholders filled from values.
@@ -63,20 +104,22 @@ Kirigami.ApplicationWindow {
         }
     }
 
-    // Generated from the settings table, as the GNOME app's dialog is: one row per setting, written at once.
+    // A settings page, drawn from the layout every app shares, as the GNOME app's are: one row per setting, written
+    // at once.
     Component {
         id: preferencesPage
         Kirigami.ScrollablePage {
             id: preferences
-            title: i18n("Preferences")
-            property var rows: JSON.parse(backend.preferenceRows())
+            property string pageId: "general"
+            title: pageId === "folders" ? i18n("Folders") : (pageId === "other-apps" ? i18n("Other Apps") : i18n("General"))
+            property var rows: JSON.parse(backend.preferenceRows(pageId))
             function store(key, value) {
                 refusal.text = backend.storeSetting(key, value)
             }
             // A forgotten app leaves the list, so the rows are read again.
             function forget(key) {
                 refusal.text = backend.forgetApp(key)
-                rows = JSON.parse(backend.preferenceRows())
+                rows = JSON.parse(backend.preferenceRows(pageId))
             }
             Component.onDestruction: backend.preferencesClosed()
             header: Kirigami.InlineMessage {
@@ -97,13 +140,15 @@ Kirigami.ApplicationWindow {
                         Layout.fillWidth: modelData.kind === "app"
                         Kirigami.FormData.isSection: modelData.kind === "section"
                         Kirigami.FormData.label: modelData.kind === "section" ? modelData.title
-                            : (modelData.kind === "bool" || modelData.kind === "app" || modelData.kind === "note" ? "" : modelData.title + ":")
+                            : (modelData.kind === "bool" || modelData.kind === "app" || modelData.kind === "note" || modelData.kind === "pair" ? "" : modelData.title + ":")
                         sourceComponent: {
                             switch (modelData.kind) {
                             case "section": return sectionRow
                             case "bool": return switchRow
                             case "app": return appRow
                             case "note": return noteRow
+                            case "pair": return pairRow
+                            case "folder": return folderRow
                             case "choice": return choiceRow
                             default: return textRow
                             }
@@ -187,6 +232,53 @@ Kirigami.ApplicationWindow {
                             }
                         }
                         Component {
+                            id: pairRow
+                            // A section: its switch, and beside it its date folders (or what Upload does with folders),
+                            // which mean nothing while the section is hidden.
+                            RowLayout {
+                                Controls.Switch {
+                                    id: sectionSwitch
+                                    text: row.modelData.title
+                                    checked: row.modelData.value === "true"
+                                    onToggled: preferences.store(row.modelData.key, checked ? "true" : "false")
+                                }
+                                Controls.Label {
+                                    text: row.modelData.innerTitle + ":"
+                                    enabled: sectionSwitch.checked
+                                }
+                                Controls.ComboBox {
+                                    Accessible.name: row.modelData.innerTitle
+                                    enabled: sectionSwitch.checked
+                                    model: row.modelData.choices
+                                    textRole: "label"
+                                    valueRole: "word"
+                                    Component.onCompleted: currentIndex = indexOfValue(row.modelData.innerValue)
+                                    onActivated: preferences.store(row.modelData.innerKey, currentValue)
+                                }
+                            }
+                        }
+                        Component {
+                            id: folderRow
+                            // A folder, chosen in the system's folder chooser rather than typed.
+                            RowLayout {
+                                Controls.Label { id: folderPath; text: row.modelData.value }
+                                Controls.Button {
+                                    text: i18n("Choose…")
+                                    icon.name: "document-open-folder"
+                                    onClicked: folderDialog.open()
+                                }
+                                FolderDialog {
+                                    id: folderDialog
+                                    onAccepted: {
+                                        const text = backend.homeRelative(selectedFolder.toString())
+                                        preferences.store(row.modelData.key, text)
+                                        if (refusal.text.length === 0)
+                                            folderPath.text = text
+                                    }
+                                }
+                            }
+                        }
+                        Component {
                             id: choiceRow
                             Controls.ComboBox {
                                 Accessible.name: row.modelData.title
@@ -210,6 +302,42 @@ Kirigami.ApplicationWindow {
                             }
                         }
                     }
+                }
+            }
+        }
+    }
+
+    // The account: the server and how the app is signed in to it, and disconnecting.
+    Component {
+        id: accountPage
+        Kirigami.ScrollablePage {
+            title: i18n("Account")
+            ColumnLayout {
+                Kirigami.FormLayout {
+                    Layout.fillWidth: true
+                    Controls.Label { Kirigami.FormData.label: i18n("Server:"); text: backend.serverline }
+                    Controls.Label { Kirigami.FormData.label: i18n("Account:"); text: backend.account; visible: text.length > 0 }
+                    Controls.Label { Kirigami.FormData.label: i18n("Credential:"); text: backend.credential }
+                }
+                Controls.Button {
+                    Layout.alignment: Qt.AlignHCenter
+                    text: i18n("Disconnect")
+                    icon.name: "network-disconnect"
+                    enabled: !backend.busy
+                    onClicked: {
+                        root.openCategory("status")
+                        backend.disconnect()
+                    }
+                }
+                Controls.Label {
+                    Layout.fillWidth: true
+                    Layout.maximumWidth: Kirigami.Units.gridUnit * 24
+                    Layout.alignment: Qt.AlignHCenter
+                    horizontalAlignment: Text.AlignHCenter
+                    wrapMode: Text.WordWrap
+                    font: Kirigami.Theme.smallFont
+                    opacity: 0.7
+                    text: i18n("Disconnecting signs out and takes the drive out of Dolphin. Your library on the server stays as it is.")
                 }
             }
         }
@@ -271,12 +399,6 @@ Kirigami.ApplicationWindow {
                 visible: backend.page === "signin" || backend.page === "waiting"
                 enabled: !backend.busy
                 onTriggered: backend.goBack()
-            },
-            Kirigami.Action {
-                icon.name: "configure"
-                text: i18n("Preferences")
-                displayHint: Kirigami.DisplayHint.AlwaysHide
-                onTriggered: root.pageStack.layers.push(preferencesPage)
             },
             Kirigami.Action {
                 icon.name: "help-about"
@@ -488,9 +610,6 @@ Kirigami.ApplicationWindow {
                 }
                 Kirigami.FormLayout {
                     Layout.fillWidth: true
-                    Controls.Label { Kirigami.FormData.label: i18n("Server:"); text: backend.serverline }
-                    Controls.Label { Kirigami.FormData.label: i18n("Account:"); text: backend.account; visible: text.length > 0 }
-                    Controls.Label { Kirigami.FormData.label: i18n("Credential:"); text: backend.credential }
                     Controls.Label { Kirigami.FormData.label: i18n("Connection:"); text: backend.connection }
                     Controls.Label { Kirigami.FormData.label: i18n("Cache:"); text: backend.cache }
                     Controls.Label { Kirigami.FormData.label: i18n("Location:"); text: backend.location }
@@ -505,12 +624,6 @@ Kirigami.ApplicationWindow {
                         visible: backend.mounted
                         enabled: !backend.busy
                         onClicked: backend.switchMount(false)
-                    }
-                    Controls.Button {
-                        text: i18n("Disconnect")
-                        icon.name: "network-disconnect"
-                        enabled: !backend.busy
-                        onClicked: backend.disconnect()
                     }
                 }
                 Controls.Label {

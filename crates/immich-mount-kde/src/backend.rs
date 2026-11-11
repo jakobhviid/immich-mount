@@ -78,11 +78,11 @@ pub mod qobject {
         #[cxx_name = "allowPreviews"]
         fn allow_previews(self: Pin<&mut Backend>, allow: bool);
 
-        /// The preferences page's rows as JSON, in the settings table's order: a section header for each group, then
-        /// its settings with their kind, description, current value and choices.
+        /// A settings page's rows as JSON, by the page's id in the layout every app shares: a heading for each
+        /// group, then its settings with their kind, title, caption, current value and choices.
         #[qinvokable]
         #[cxx_name = "preferenceRows"]
-        fn preference_rows(self: &Backend) -> QString;
+        fn preference_rows(self: &Backend, page: &QString) -> QString;
 
         /// Store one setting from the preferences page: the refusal's message, or nothing.
         #[qinvokable]
@@ -93,6 +93,11 @@ pub mod qobject {
         #[qinvokable]
         #[cxx_name = "forgetApp"]
         fn forget_app(self: Pin<&mut Backend>, id: &QString) -> QString;
+
+        /// A folder the folder chooser gave, as a `file://` address, written as the location setting is.
+        #[qinvokable]
+        #[cxx_name = "homeRelative"]
+        fn home_relative(self: &Backend, address: &QString) -> QString;
 
         /// The preferences page closed: the daemon restarts if a setting it reads changed.
         #[qinvokable]
@@ -185,9 +190,10 @@ where
     });
 }
 
+/// A size in decimal units, as Dolphin counts: whole when it is ("10 GB"), else to a tenth.
 fn format_bytes(bytes: u64) -> String {
-    let gigabytes = bytes as f64 / 1e9;
-    if gigabytes >= 1.0 { format!("{gigabytes:.1} GB") } else { format!("{:.1} MB", bytes as f64 / 1e6) }
+    let (value, unit) = if bytes >= 1_000_000_000 { (bytes as f64 / 1e9, "GB") } else { (bytes as f64 / 1e6, "MB") };
+    if (value - value.round()).abs() < 0.05 { format!("{value:.0} {unit}") } else { format!("{value:.1} {unit}") }
 }
 
 impl cxx_qt::Initialize for qobject::Backend {
@@ -400,30 +406,64 @@ impl qobject::Backend {
         QString::from(tr(&text.to_string()))
     }
 
-    pub fn preference_rows(&self) -> QString {
+    pub fn preference_rows(&self, page: &QString) -> QString {
         let mut rows = Vec::new();
-        for (prefix, heading) in preferences::GROUPS {
-            rows.push(serde_json::json!({ "kind": "section", "title": tr(heading) }));
-            for setting in preferences::settings_in(prefix) {
-                let (kind, choices) = match setting.kind {
-                    Kind::Bool => ("bool", Vec::new()),
-                    Kind::Choice(words) => (
-                        "choice",
-                        words.iter().map(|word| serde_json::json!({ "word": word, "label": preferences::choice_label(word) })).collect(),
-                    ),
-                    Kind::Text | Kind::Path | Kind::Size => ("text", Vec::new()),
-                };
-                rows.push(serde_json::json!({
-                    "kind": kind,
+        let page = page.to_string();
+        let Some(page) = preferences::PAGES.iter().find(|shown| shown.id == page) else {
+            return QString::from("[]");
+        };
+        let choices = |words: &[&str]| -> Vec<serde_json::Value> {
+            words.iter().map(|word| serde_json::json!({ "word": word, "label": preferences::choice_label(word) })).collect()
+        };
+        for group in page.groups {
+            if let Some(heading) = group.title {
+                rows.push(serde_json::json!({ "kind": "section", "title": tr(heading) }));
+            }
+            if let Some(description) = group.description {
+                rows.push(serde_json::json!({ "kind": "note", "title": tr(description), "link": "", "linkLabel": "" }));
+            }
+            for row in group.rows {
+                let setting = preferences::setting(row.key);
+                let mut shown = serde_json::json!({
                     "key": setting.key,
                     "title": preferences::title(setting),
                     "link": preferences::link(setting).unwrap_or_default(),
                     "caption": preferences::caption(setting).unwrap_or_default(),
                     "value": preferences::current_value(setting),
-                    "choices": choices,
-                }));
+                    "choices": [],
+                });
+                shown["kind"] = match (row.inner, setting.kind) {
+                    // A section: its switch, with its date folders (or Upload's folders) beside it.
+                    (Some((inner, _)), _) => {
+                        let inner_setting = preferences::setting(inner);
+                        shown["innerKey"] = inner.into();
+                        shown["innerTitle"] = preferences::title(inner_setting).into();
+                        shown["innerValue"] = preferences::current_value(inner_setting).into();
+                        if let Kind::Choice(words) = inner_setting.kind {
+                            shown["choices"] = choices(words).into();
+                        }
+                        "pair".into()
+                    }
+                    (None, Kind::Bool) => "bool".into(),
+                    (None, Kind::Choice(words)) => {
+                        shown["choices"] = choices(words).into();
+                        "choice".into()
+                    }
+                    (None, Kind::Size) => {
+                        let sizes = preferences::cache_sizes();
+                        shown["choices"] = sizes
+                            .iter()
+                            .map(|size| serde_json::json!({ "word": size, "label": preferences::cache_size_label(size, format_bytes) }))
+                            .collect::<Vec<_>>()
+                            .into();
+                        "choice".into()
+                    }
+                    (None, Kind::Path) => "folder".into(),
+                    (None, Kind::Text) => "text".into(),
+                };
+                rows.push(shown);
             }
-            if *prefix == "crosslink" {
+            if group.apps {
                 // The heading stays when no app is listed, with a sentence saying so.
                 let apps = preferences::crosslink_apps();
                 rows.push(serde_json::json!({ "kind": "section", "title": preferences::apps_heading() }));
@@ -449,6 +489,12 @@ impl qobject::Backend {
             }
         }
         QString::from(&serde_json::Value::Array(rows).to_string())
+    }
+
+    pub fn home_relative(&self, address: &QString) -> QString {
+        let address = address.to_string();
+        let path = url::Url::parse(&address).ok().and_then(|url| url.to_file_path().ok()).unwrap_or_else(|| std::path::PathBuf::from(&address));
+        QString::from(&preferences::home_relative(&path))
     }
 
     pub fn store_setting(mut self: Pin<&mut Self>, key: &QString, value: &QString) -> QString {

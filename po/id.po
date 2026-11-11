@@ -128,13 +128,13 @@ msgid "Files not uploaded: {count}"
 msgstr "Berkas yang tidak diunggah: {count}"
 
 #: crates/immich-mount-linux/src/folders.rs:213
-#: crates/immich-mount-core/src/settings.rs:94
+#: crates/immich-mount-core/src/settings.rs:151
 #: apple/App/FolderCopies.swift:83
 msgid "Make Albums"
 msgstr "Buat album"
 
 #: crates/immich-mount-linux/src/folders.rs:213
-#: crates/immich-mount-core/src/settings.rs:93
+#: crates/immich-mount-core/src/settings.rs:150
 #: apple/App/FolderCopies.swift:84
 msgid "Timeline Only"
 msgstr "Hanya linimasa"
@@ -237,8 +237,8 @@ msgid "Signed in as: {account}"
 msgstr "Masuk sebagai: {account}"
 
 #: crates/immich-mount-linux/src/tray.rs:85
-#: crates/immich-mount-kde/qml/Main.qml:460
-#: crates/immich-mount-kde/qml/Main.qml:481
+#: crates/immich-mount-kde/qml/Main.qml:584
+#: crates/immich-mount-kde/qml/Main.qml:605
 msgid "Open in Dolphin"
 msgstr "Buka di Dolphin"
 
@@ -262,73 +262,110 @@ msgstr "Immich Mount {version} tersedia"
 msgid "Get it from jakob.hviid.phd/immich-mount."
 msgstr "Unduh dari jakob.hviid.phd/immich-mount."
 
-#: crates/immich-mount-desktop/src/preferences.rs:34
+#: crates/immich-mount-desktop/src/preferences.rs:157
+msgid "Custom ({size})"
+msgstr ""
+
+#: crates/immich-mount-desktop/src/preferences.rs:170
 #: apple/App/SettingsView.swift:255
 msgid "Apps that take part are found by themselves. Turn one off to leave it out of Show in. One not found stays listed for 30 days, so it stays off if it comes back; Forget removes it now."
 msgstr "Aplikasi yang ikut serta ditemukan dengan sendirinya. Matikan salah satunya agar tidak muncul di Tampilkan di. Aplikasi yang tidak ditemukan tetap tercantum selama 30 hari, agar tetap mati jika kembali; Lupakan menghapusnya sekarang."
 
-#: crates/immich-mount-desktop/src/preferences.rs:39
+#: crates/immich-mount-desktop/src/preferences.rs:175
 #: apple/App/SettingsView.swift:253
 msgid "Apps That Take Part"
 msgstr "Aplikasi yang Ikut Serta"
 
-#: crates/immich-mount-desktop/src/preferences.rs:45
+#: crates/immich-mount-desktop/src/preferences.rs:185
 #: apple/App/SettingsView.swift:283
 msgid "Open photos, albums, people and places in Immich's web app in your browser, or copy their address."
 msgstr "Buka foto, album, orang, dan tempat di aplikasi web Immich di peramban, atau salin alamatnya."
 
-#: crates/immich-mount-desktop/src/preferences.rs:46
+#: crates/immich-mount-desktop/src/preferences.rs:186
 msgid "Show photos, albums, people and places in other apps that take part, and show the items they send in the file manager."
 msgstr "Tampilkan foto, album, orang, dan tempat di aplikasi lain yang ikut serta, dan tampilkan item yang dikirim aplikasi itu di pengelola berkas."
 
-#: crates/immich-mount-desktop/src/preferences.rs:12
-msgid "Drive"
-msgstr "Kandar"
+#: crates/immich-mount-desktop/src/preferences.rs:56
+#: crates/immich-mount-desktop/src/preferences.rs:56
+#: crates/immich-mount-desktop/src/preferences.rs:56
+#: crates/immich-mount-gnome/src/window.blp:174
+#: crates/immich-mount-gnome/src/window.blp:331
+#: crates/immich-mount-kde/qml/Main.qml:572
+msgid "Location"
+msgstr "Lokasi"
 
-#: crates/immich-mount-desktop/src/preferences.rs:13
-#: crates/immich-mount-gnome/src/window.blp:144
-#: crates/immich-mount-kde/qml/Main.qml:441
-#: apple/App/SettingsView.swift:315
-msgid "Sections"
-msgstr "Bagian"
+#: crates/immich-mount-desktop/src/preferences.rs:57
+#: crates/immich-mount-desktop/src/preferences.rs:57
+#: crates/immich-mount-desktop/src/preferences.rs:57
+msgid "Name in the Sidebar"
+msgstr ""
 
-#: crates/immich-mount-desktop/src/preferences.rs:14
-#: apple/App/SettingsView.swift:317
-msgid "Date Folders"
-msgstr "Folder tanggal"
+#: crates/immich-mount-desktop/src/preferences.rs:65
+#: crates/immich-mount-desktop/src/preferences.rs:65
+#: crates/immich-mount-desktop/src/preferences.rs:65
+msgid "Cache Size"
+msgstr ""
 
-#: crates/immich-mount-desktop/src/preferences.rs:16
-#: apple/App/SettingsView.swift:341
-msgid "Files"
-msgstr "Berkas"
+#: crates/immich-mount-desktop/src/preferences.rs:66
+#: crates/immich-mount-desktop/src/preferences.rs:66
+#: crates/immich-mount-desktop/src/preferences.rs:66
+msgid "Sharp Thumbnails"
+msgstr ""
 
-#: crates/immich-mount-desktop/src/preferences.rs:17
-#: apple/App/SettingsView.swift:330
-msgid "Uploads"
-msgstr "Unggahan"
+#: crates/immich-mount-desktop/src/preferences.rs:73
+#: crates/immich-mount-desktop/src/preferences.rs:73
+#: crates/immich-mount-desktop/src/preferences.rs:73
+msgid "Check for Updates"
+msgstr ""
 
-#: crates/immich-mount-desktop/src/preferences.rs:18
-msgid "Thumbnails"
-msgstr "Gambar mini"
+#: crates/immich-mount-desktop/src/preferences.rs:88
+#: crates/immich-mount-desktop/src/preferences.rs:88
+msgid "Day Folders"
+msgstr ""
 
-#: crates/immich-mount-desktop/src/preferences.rs:19
-#: crates/immich-mount-gnome/src/window.blp:314
-msgid "Cache"
-msgstr "Cache"
+#: crates/immich-mount-desktop/src/preferences.rs:89
+#: crates/immich-mount-desktop/src/preferences.rs:90
+#: crates/immich-mount-desktop/src/preferences.rs:91
+#: crates/immich-mount-desktop/src/preferences.rs:92
+#: crates/immich-mount-desktop/src/preferences.rs:93
+#: crates/immich-mount-desktop/src/preferences.rs:89
+#: crates/immich-mount-desktop/src/preferences.rs:90
+#: crates/immich-mount-desktop/src/preferences.rs:91
+#: crates/immich-mount-desktop/src/preferences.rs:92
+#: crates/immich-mount-desktop/src/preferences.rs:93
+msgid "Year and Month Folders"
+msgstr ""
 
-#: crates/immich-mount-desktop/src/preferences.rs:20
-#: apple/App/SettingsView.swift:16
-msgid "Other Apps"
-msgstr "Aplikasi lain"
+#: crates/immich-mount-desktop/src/preferences.rs:94
+#: crates/immich-mount-desktop/src/preferences.rs:94
+#: crates/immich-mount-desktop/src/preferences.rs:94
+msgid "Upload"
+msgstr ""
 
-#: crates/immich-mount-desktop/src/preferences.rs:21
-#: apple/App/SettingsView.swift:281
-msgid "Immich Web App"
-msgstr "Aplikasi Web Immich"
+#: crates/immich-mount-desktop/src/preferences.rs:94
+#: crates/immich-mount-desktop/src/preferences.rs:94
+msgid "Folders Copied Into Upload"
+msgstr ""
 
-#: crates/immich-mount-desktop/src/preferences.rs:22
-msgid "Updates"
-msgstr "Pembaruan"
+#: crates/immich-mount-desktop/src/preferences.rs:101
+#: crates/immich-mount-desktop/src/preferences.rs:101
+#: crates/immich-mount-desktop/src/preferences.rs:101
+msgid "Album Folders"
+msgstr ""
+
+#: crates/immich-mount-desktop/src/preferences.rs:101
+#: crates/immich-mount-desktop/src/preferences.rs:101
+#: crates/immich-mount-desktop/src/preferences.rs:101
+msgid "File Names"
+msgstr ""
+
+#: crates/immich-mount-desktop/src/preferences.rs:116
+#: crates/immich-mount-desktop/src/preferences.rs:116
+#: crates/immich-mount-desktop/src/preferences.rs:116
+#: crates/immich-mount-core/src/settings.rs:74
+#: apple/App/SettingsView.swift:278
+msgid "Open in Immich and Copy Immich Link"
+msgstr "Buka di Immich dan Salin Tautan Immich"
 
 #: crates/immich-mount-desktop/src/session.rs:62
 msgid "Online"
@@ -395,6 +432,85 @@ msgstr "Sudah masuk, tetapi pengaitan tidak dapat dimulai: {error}."
 msgid "Signed in, but the mount did not start: {error}"
 msgstr "Sudah masuk, tetapi pengaitan tidak dimulai: {error}"
 
+#: crates/immich-mount-desktop/src/preferences.rs:48
+#: crates/immich-mount-kde/qml/Main.qml:48
+#: crates/immich-mount-kde/qml/Main.qml:114
+#: apple/App/SettingsView.swift:14
+msgid "General"
+msgstr "Umum"
+
+#: crates/immich-mount-desktop/src/preferences.rs:81
+#: crates/immich-mount-kde/qml/Main.qml:49
+#: crates/immich-mount-kde/qml/Main.qml:114
+#: apple/App/SettingsView.swift:15
+msgid "Folders"
+msgstr "Folder"
+
+#: crates/immich-mount-desktop/src/preferences.rs:109
+#: crates/immich-mount-kde/qml/Main.qml:50
+#: crates/immich-mount-kde/qml/Main.qml:114
+#: apple/App/SettingsView.swift:16
+msgid "Other Apps"
+msgstr "Aplikasi lain"
+
+#: crates/immich-mount-desktop/src/preferences.rs:52
+msgid "Drive"
+msgstr "Kandar"
+
+#: crates/immich-mount-desktop/src/preferences.rs:62
+msgid "Storage"
+msgstr ""
+
+#: crates/immich-mount-desktop/src/preferences.rs:65
+msgid "Opened originals are kept on this computer up to this size."
+msgstr ""
+
+#: crates/immich-mount-desktop/src/preferences.rs:66
+msgid "Also download larger previews, for big icon sizes. Uses more data."
+msgstr ""
+
+#: crates/immich-mount-desktop/src/preferences.rs:71
+msgid "Updates"
+msgstr "Pembaruan"
+
+#: crates/immich-mount-desktop/src/preferences.rs:73
+msgid "Tell me when a new version is out."
+msgstr ""
+
+#: crates/immich-mount-desktop/src/preferences.rs:85
+#: crates/immich-mount-gnome/src/window.blp:144
+#: crates/immich-mount-kde/qml/Main.qml:565
+#: apple/App/SettingsView.swift:315
+msgid "Sections"
+msgstr "Bagian"
+
+#: crates/immich-mount-desktop/src/preferences.rs:86
+msgid "The folders the drive shows, and how each splits its photos by date."
+msgstr ""
+
+#: crates/immich-mount-desktop/src/preferences.rs:88
+#: crates/immich-mount-gnome/src/window.blp:149
+msgid "The timeline, by year and month"
+msgstr "Lini masa, per tahun dan bulan"
+
+#: crates/immich-mount-desktop/src/preferences.rs:94
+msgid "What is copied into it is uploaded"
+msgstr ""
+
+#: crates/immich-mount-desktop/src/preferences.rs:99
+msgid "Names"
+msgstr ""
+
+#: crates/immich-mount-desktop/src/preferences.rs:114
+#: apple/App/SettingsView.swift:281
+msgid "Immich Web App"
+msgstr "Aplikasi Web Immich"
+
+#: crates/immich-mount-desktop/src/preferences.rs:55
+#: crates/immich-mount-desktop/src/preferences.rs:55
+msgid "Mount at Login"
+msgstr ""
+
 #: crates/immich-mount-gnome/src/main.rs:106
 msgid "Your Immich photos and videos as a drive in Files."
 msgstr "Foto dan video Immich Anda sebagai kandar di Berkas."
@@ -416,14 +532,12 @@ msgid "AI Disclosure"
 msgstr "Penggunaan AI"
 
 #: crates/immich-mount-gnome/src/main.rs:118
-#: crates/immich-mount-kde/qml/Main.qml:252
+#: crates/immich-mount-kde/qml/Main.qml:382
 #: apple/App/ImmichMountApp.swift:521
 msgid "Parts of this project were written with the assistance of AI coding agents. All changes are reviewed by the maintainer."
 msgstr "Sebagian proyek ini ditulis dengan bantuan agen pemrograman AI. Semua perubahan ditinjau oleh pengelola proyek."
 
 #: crates/immich-mount-gnome/src/main.rs:81
-#: crates/immich-mount-kde/qml/Main.qml:71
-#: crates/immich-mount-kde/qml/Main.qml:275
 msgid "Preferences"
 msgstr "Preferensi"
 
@@ -435,95 +549,114 @@ msgstr "Pintasan papan ketik"
 msgid "Quit"
 msgstr "Keluar"
 
-#: crates/immich-mount-gnome/src/preferences.rs:76
-#: crates/immich-mount-kde/qml/Main.qml:176
+#: crates/immich-mount-gnome/src/preferences.rs:148
+#: crates/immich-mount-gnome/src/preferences.rs:152
+msgid "Choose a Folder"
+msgstr ""
+
+#: crates/immich-mount-gnome/src/preferences.rs:179
+#: crates/immich-mount-kde/qml/Main.qml:187
+msgid "Learn More"
+msgstr "Pelajari Selengkapnya"
+
+#: crates/immich-mount-gnome/src/preferences.rs:214
+#: crates/immich-mount-kde/qml/Main.qml:223
 #: apple/App/SettingsView.swift:244
 msgid "Not found"
 msgstr "Tidak ditemukan"
 
-#: crates/immich-mount-gnome/src/preferences.rs:77
-#: crates/immich-mount-kde/qml/Main.qml:182
+#: crates/immich-mount-gnome/src/preferences.rs:215
+#: crates/immich-mount-kde/qml/Main.qml:229
 #: apple/App/SettingsView.swift:232
 msgid "Forget"
 msgstr "Lupakan"
 
-#: crates/immich-mount-gnome/src/preferences.rs:108
-#: crates/immich-mount-kde/src/backend.rs:433
+#: crates/immich-mount-gnome/src/preferences.rs:242
+#: crates/immich-mount-kde/src/backend.rs:473
 #: apple/App/CrosslinkApps.swift:160
 #: apple/App/SettingsView.swift:225
 msgid "No other app that takes part is installed."
 msgstr "Tidak ada aplikasi lain yang ikut serta terpasang."
 
-#: crates/immich-mount-gnome/src/preferences.rs:109
-#: crates/immich-mount-kde/src/backend.rs:435
+#: crates/immich-mount-gnome/src/preferences.rs:243
+#: crates/immich-mount-kde/src/backend.rs:475
 msgid "Find Apps That Take Part"
 msgstr "Temukan Aplikasi yang Ikut Serta"
 
-#: crates/immich-mount-gnome/src/preferences.rs:120
-#: crates/immich-mount-kde/qml/Main.qml:139
-msgid "Learn More"
-msgstr "Pelajari Selengkapnya"
+#: crates/immich-mount-gnome/src/window.rs:215
+#: crates/immich-mount-gnome/src/window.blp:237
+#: crates/immich-mount-kde/qml/Main.qml:47
+msgid "Status"
+msgstr ""
 
-#: crates/immich-mount-gnome/src/window.rs:267
-#: crates/immich-mount-kde/qml/Main.qml:398
+#: crates/immich-mount-gnome/src/window.rs:217
+#: crates/immich-mount-gnome/src/window.blp:366
+#: crates/immich-mount-kde/qml/Main.qml:51
+#: crates/immich-mount-kde/qml/Main.qml:314
+#: apple/App/SettingsView.swift:17
+msgid "Account"
+msgstr "Akun"
+
+#: crates/immich-mount-gnome/src/window.rs:309
+#: crates/immich-mount-kde/qml/Main.qml:522
 msgid "Continue in your browser"
 msgstr "Lanjutkan di peramban Anda"
 
-#: crates/immich-mount-gnome/src/window.rs:278
+#: crates/immich-mount-gnome/src/window.rs:320
 msgid "This sign-in belongs to an earlier attempt. Finish the latest one, or sign in again."
 msgstr "Proses masuk ini milik percobaan sebelumnya. Selesaikan yang terbaru, atau masuk lagi."
 
-#: crates/immich-mount-gnome/src/window.rs:290
+#: crates/immich-mount-gnome/src/window.rs:332
 msgid "Enter your email and password"
 msgstr "Masukkan email dan kata sandi Anda"
 
-#: crates/immich-mount-gnome/src/window.rs:301
+#: crates/immich-mount-gnome/src/window.rs:343
 msgid "Enter an API key"
 msgstr "Masukkan kunci API"
 
-#: crates/immich-mount-gnome/src/window.rs:328
+#: crates/immich-mount-gnome/src/window.rs:370
 msgid "Signed in as {account}"
 msgstr "Masuk sebagai {account}"
 
-#: crates/immich-mount-gnome/src/window.rs:398
+#: crates/immich-mount-gnome/src/window.rs:440
 msgid "Signed in, but the status could not be read"
 msgstr "Sudah masuk, tetapi status tidak dapat dibaca"
 
-#: crates/immich-mount-gnome/src/window.rs:425
-#: crates/immich-mount-kde/qml/Main.qml:475
+#: crates/immich-mount-gnome/src/window.rs:467
+#: crates/immich-mount-kde/qml/Main.qml:599
 msgid "Signed Out of Immich"
 msgstr "Telah keluar dari Immich"
 
-#: crates/immich-mount-gnome/src/window.rs:425
-#: crates/immich-mount-kde/qml/Main.qml:476
+#: crates/immich-mount-gnome/src/window.rs:467
+#: crates/immich-mount-kde/qml/Main.qml:600
 msgid "Sign in again to keep browsing. Your caches are kept."
 msgstr "Masuk lagi untuk terus menjelajah. Cache Anda tetap disimpan."
 
-#: crates/immich-mount-gnome/src/window.rs:426
-#: crates/immich-mount-gnome/src/window.blp:217
+#: crates/immich-mount-gnome/src/window.rs:468
+#: crates/immich-mount-gnome/src/window.blp:251
 msgid "Your Library Is in Files"
 msgstr "Pustaka Anda ada di Berkas"
 
-#: crates/immich-mount-gnome/src/window.rs:426
-#: crates/immich-mount-kde/qml/Main.qml:477
+#: crates/immich-mount-gnome/src/window.rs:468
+#: crates/immich-mount-kde/qml/Main.qml:601
 msgid "Browse it like any folder. Originals download only when you open them."
 msgstr "Jelajahi seperti folder lainnya. Berkas asli hanya diunduh saat Anda membukanya."
 
-#: crates/immich-mount-gnome/src/window.rs:427
-#: crates/immich-mount-kde/qml/Main.qml:475
+#: crates/immich-mount-gnome/src/window.rs:469
+#: crates/immich-mount-kde/qml/Main.qml:599
 msgid "Not Mounted"
 msgstr "Tidak dikaitkan"
 
-#: crates/immich-mount-gnome/src/window.rs:427
+#: crates/immich-mount-gnome/src/window.rs:469
 msgid "Mount it to browse your library in Files."
 msgstr "Kaitkan kandar untuk menjelajahi pustaka Anda di Berkas."
 
-#: crates/immich-mount-gnome/src/window.rs:470
+#: crates/immich-mount-gnome/src/window.rs:559
 msgid "Disconnected"
 msgstr "Sambungan diputus"
 
 #: crates/immich-mount-gnome/src/window.blp:26
-#: crates/immich-mount-gnome/src/window.blp:210
+#: crates/immich-mount-gnome/src/window.blp:216
 msgid "Main Menu"
 msgstr "Menu utama"
 
@@ -532,7 +665,7 @@ msgid "Your Immich Library in Files"
 msgstr "Pustaka Immich Anda di Berkas"
 
 #: crates/immich-mount-gnome/src/window.blp:34
-#: crates/immich-mount-kde/qml/Main.qml:314
+#: crates/immich-mount-kde/qml/Main.qml:438
 msgid "Browse your photos and videos as a drive. Originals download only when you open them."
 msgstr "Jelajahi foto dan video Anda sebagai kandar. Berkas asli hanya diunduh saat Anda membukanya."
 
@@ -545,15 +678,15 @@ msgid "_Continue"
 msgstr "_Lanjutkan"
 
 #: crates/immich-mount-gnome/src/window.blp:70
-#: crates/immich-mount-kde/qml/Main.qml:289
-#: crates/immich-mount-kde/qml/Main.qml:372
+#: crates/immich-mount-kde/qml/Main.qml:413
+#: crates/immich-mount-kde/qml/Main.qml:496
 #: apple/App/ContentView.swift:143
 #: apple/App/ContentView.swift:147
 msgid "Sign In"
 msgstr "Masuk"
 
 #: crates/immich-mount-gnome/src/window.blp:78
-#: crates/immich-mount-kde/qml/Main.qml:353
+#: crates/immich-mount-kde/qml/Main.qml:477
 msgid "Opens your browser, where you sign in as usual, with a passkey or a password manager."
 msgstr "Membuka peramban Anda, tempat Anda masuk seperti biasa, dengan kunci sandi atau pengelola kata sandi."
 
@@ -566,12 +699,12 @@ msgid "For two-factor sign-in, use your server's single sign-on instead."
 msgstr "Untuk masuk dengan autentikasi dua faktor, gunakan sistem masuk tunggal server Anda sebagai gantinya."
 
 #: crates/immich-mount-gnome/src/window.blp:96
-#: crates/immich-mount-kde/qml/Main.qml:362
+#: crates/immich-mount-kde/qml/Main.qml:486
 msgid "Email"
 msgstr "Email"
 
 #: crates/immich-mount-gnome/src/window.blp:101
-#: crates/immich-mount-kde/qml/Main.qml:366
+#: crates/immich-mount-kde/qml/Main.qml:490
 msgid "Password"
 msgstr "Kata sandi"
 
@@ -603,76 +736,65 @@ msgstr "Pustaka Anda di Berkas"
 msgid "The folders the drive shows. You can change this later in Preferences."
 msgstr "Folder yang ditampilkan kandar. Anda dapat mengubahnya nanti di Preferensi."
 
-#: crates/immich-mount-gnome/src/window.blp:149
-msgid "The timeline, by year and month"
-msgstr "Lini masa, per tahun dan bulan"
-
-#: crates/immich-mount-gnome/src/window.blp:174
-#: crates/immich-mount-gnome/src/window.blp:322
-#: crates/immich-mount-kde/qml/Main.qml:448
-msgid "Location"
-msgstr "Lokasi"
-
 #: crates/immich-mount-gnome/src/window.blp:177
-#: crates/immich-mount-kde/qml/Main.qml:451
+#: crates/immich-mount-kde/qml/Main.qml:575
 msgid "Folder"
 msgstr "Folder"
 
 #: crates/immich-mount-gnome/src/window.blp:183
-#: crates/immich-mount-gnome/src/window.blp:231
+#: crates/immich-mount-gnome/src/window.blp:265
 msgid "_Open in Files"
 msgstr "_Buka di Berkas"
 
-#: crates/immich-mount-gnome/src/window.blp:242
+#: crates/immich-mount-gnome/src/window.blp:276
 msgid "_Unmount"
 msgstr "_Lepas kait"
 
-#: crates/immich-mount-gnome/src/window.blp:244
+#: crates/immich-mount-gnome/src/window.blp:278
 msgid "Take it out of Files until you mount it again or log in"
 msgstr "Lepaskan dari Berkas sampai Anda mengaitkannya lagi atau masuk ke sesi"
 
-#: crates/immich-mount-gnome/src/window.blp:253
+#: crates/immich-mount-gnome/src/window.blp:287
 msgid "_Mount"
 msgstr "_Kaitkan"
 
-#: crates/immich-mount-gnome/src/window.blp:269
+#: crates/immich-mount-gnome/src/window.blp:303
 msgid "Sign In _Again"
 msgstr "_Masuk lagi"
 
-#: crates/immich-mount-gnome/src/window.blp:281
-msgid "Server"
-msgstr "Server"
-
-#: crates/immich-mount-gnome/src/window.blp:289
-#: apple/App/SettingsView.swift:17
-msgid "Account"
-msgstr "Akun"
-
-#: crates/immich-mount-gnome/src/window.blp:298
-msgid "Credential"
-msgstr "Kredensial"
-
-#: crates/immich-mount-gnome/src/window.blp:306
+#: crates/immich-mount-gnome/src/window.blp:315
 msgid "Connection"
 msgstr "Koneksi"
 
-#: crates/immich-mount-gnome/src/window.blp:330
+#: crates/immich-mount-gnome/src/window.blp:323
+msgid "Cache"
+msgstr "Cache"
+
+#: crates/immich-mount-gnome/src/window.blp:339
 msgid "Uploading"
 msgstr "Mengunggah"
 
-#: crates/immich-mount-gnome/src/window.blp:341
+#: crates/immich-mount-gnome/src/window.blp:358
+msgid "Server"
+msgstr "Server"
+
+#: crates/immich-mount-gnome/src/window.blp:375
+msgid "Credential"
+msgstr "Kredensial"
+
+#: crates/immich-mount-gnome/src/window.blp:384
+msgid "Disconnecting signs out and takes the drive out of Files. Your library on the server stays as it is."
+msgstr ""
+
+#: crates/immich-mount-gnome/src/window.blp:387
 msgid "_Disconnect"
 msgstr "_Putuskan sambungan"
 
-#: crates/immich-mount-gnome/src/window.blp:362
-msgid "_Preferences"
-msgstr "_Preferensi"
-
-#: crates/immich-mount-gnome/src/window.blp:367
+#: crates/immich-mount-gnome/src/window.blp:418
 msgid "_Keyboard Shortcuts"
 msgstr "Pintasan papan _ketik"
 
-#: crates/immich-mount-gnome/src/window.blp:372
+#: crates/immich-mount-gnome/src/window.blp:423
 msgid "_About Immich Mount"
 msgstr "_Tentang Immich Mount"
 
@@ -708,196 +830,204 @@ msgstr "{app} tidak lagi terpasang."
 msgid "Immich Mount could not open {app}: {error}"
 msgstr "Immich Mount tidak dapat membuka {app}: {error}"
 
-#: crates/immich-mount-kde/qml/Main.qml:53
+#: crates/immich-mount-kde/qml/Main.qml:94
 msgid "Show thumbnails"
 msgstr "Tampilkan gambar mini"
 
-#: crates/immich-mount-kde/qml/Main.qml:62
+#: crates/immich-mount-kde/qml/Main.qml:103
 msgid "Lets Dolphin preview files up to 100 MB on remote locations, this drive included. Thumbnails come from the server; no original is downloaded."
 msgstr "Memungkinkan Dolphin menampilkan pratinjau berkas hingga 100 MB di lokasi jarak jauh, termasuk kandar ini. Gambar mini berasal dari server; tidak ada berkas asli yang diunduh."
 
-#: crates/immich-mount-kde/qml/Main.qml:220
-#: crates/immich-mount-kde/qml/Main.qml:281
-msgid "About"
-msgstr "Tentang"
+#: crates/immich-mount-kde/qml/Main.qml:266
+msgid "Choose…"
+msgstr ""
 
-#: crates/immich-mount-kde/qml/Main.qml:232
-msgid "Your Immich photos and videos as a drive in Dolphin. By Jakob Hviid, under the MIT license."
-msgstr "Foto dan video Immich Anda sebagai kandar di Dolphin. Oleh Jakob Hviid, di bawah lisensi MIT."
-
-#: crates/immich-mount-kde/qml/Main.qml:237
-#: apple/App/Info.plist (NSHumanReadableCopyright)
-msgid "Immich Mount is an independent, unofficial project. It is not affiliated with, endorsed by, or sponsored by the Immich project or FUTO. “Immich” is used only to describe the server this software works with, and remains the mark of its owner."
-msgstr "Immich Mount adalah proyek independen dan tidak resmi. Proyek ini tidak berafiliasi dengan, tidak didukung oleh, dan tidak disponsori oleh proyek Immich atau FUTO. “Immich” hanya digunakan untuk menyebut server yang dapat digunakan bersama perangkat lunak ini, dan tetap merupakan merek dagang pemiliknya."
-
-#: crates/immich-mount-kde/qml/Main.qml:239
-msgid "Credits"
-msgstr "Kredit"
-
-#: crates/immich-mount-kde/qml/Main.qml:245
-msgid "Inspired by {project}"
-msgstr "Terinspirasi oleh {project}"
-
-#: crates/immich-mount-kde/qml/Main.qml:246
-msgid "The Immich API layer: {project}"
-msgstr "Lapisan API Immich: {project}"
-
-#: crates/immich-mount-kde/qml/Main.qml:248
-#: apple/App/ImmichMountApp.swift:520
-msgid "AI disclosure"
-msgstr "Penggunaan AI"
-
-#: crates/immich-mount-kde/qml/Main.qml:257
-msgid "Website: {link}"
-msgstr "Situs web: {link}"
-
-#: crates/immich-mount-kde/qml/Main.qml:258
-msgid "Source code: {link}"
-msgstr "Kode sumber: {link}"
-
-#: crates/immich-mount-kde/qml/Main.qml:268
-#: apple/App/ContentView.swift:125
-msgid "Back"
-msgstr "Kembali"
-
-#: crates/immich-mount-kde/qml/Main.qml:288
-msgid "Connect"
-msgstr "Sambungkan ke server"
-
-#: crates/immich-mount-kde/qml/Main.qml:290
-msgid "Continue in Your Browser"
-msgstr "Lanjutkan di peramban Anda"
-
-#: crates/immich-mount-kde/qml/Main.qml:291
-msgid "Your Library in Dolphin"
-msgstr "Pustaka Anda di Dolphin"
-
-#: crates/immich-mount-kde/qml/Main.qml:313
-msgid "Your Immich Library in Dolphin"
-msgstr "Pustaka Immich Anda di Dolphin"
-
-#: crates/immich-mount-kde/qml/Main.qml:320
-msgid "Server address:"
-msgstr "Alamat server:"
-
-#: crates/immich-mount-kde/qml/Main.qml:321
-msgid "Server address"
-msgstr "Alamat server"
-
-#: crates/immich-mount-kde/qml/Main.qml:329
-#: apple/App/ContentView.swift:139
-msgid "Continue"
-msgstr "Lanjutkan"
-
-#: crates/immich-mount-kde/qml/Main.qml:359
-msgid "Email and password"
-msgstr "Email dan kata sandi"
-
-#: crates/immich-mount-kde/qml/Main.qml:362
-#: apple/App/ContentView.swift:101
-msgid "Email:"
-msgstr "Email:"
-
-#: crates/immich-mount-kde/qml/Main.qml:365
-#: apple/App/ContentView.swift:102
-msgid "Password:"
-msgstr "Kata sandi:"
-
-#: crates/immich-mount-kde/qml/Main.qml:377
-#: crates/immich-mount-kde/qml/Main.qml:381
-msgid "API key"
-msgstr "Kunci API"
-
-#: crates/immich-mount-kde/qml/Main.qml:380
-msgid "Key:"
-msgstr "Kunci:"
-
-#: crates/immich-mount-kde/qml/Main.qml:386
-msgid "Sign In With Key"
-msgstr "Masuk dengan kunci"
-
-#: crates/immich-mount-kde/qml/Main.qml:399
-msgid "Sign in there. When your browser asks to open Immich Mount, allow it."
-msgstr "Masuk di sana. Saat peramban Anda meminta izin untuk membuka Immich Mount, izinkan."
-
-#: crates/immich-mount-kde/qml/Main.qml:402
-msgid "Open the Sign-In Page Again"
-msgstr "Buka lagi halaman masuk"
-
-#: crates/immich-mount-kde/qml/Main.qml:413
-msgid "No browser could be opened. Open this address in one:"
-msgstr "Tidak ada peramban yang dapat dibuka. Buka alamat ini di peramban:"
-
-#: crates/immich-mount-kde/qml/Main.qml:420
-msgid "Sign-in address"
-msgstr "Alamat masuk"
-
-#: crates/immich-mount-kde/qml/Main.qml:450
-msgid "Folder:"
-msgstr "Folder:"
-
-#: crates/immich-mount-kde/qml/Main.qml:455
-msgid "Dolphin"
-msgstr "Dolphin"
-
-#: crates/immich-mount-kde/qml/Main.qml:475
-msgid "Your Library Is in Dolphin"
-msgstr "Pustaka Anda ada di Dolphin"
-
-#: crates/immich-mount-kde/qml/Main.qml:478
-msgid "Mount it to browse your library in Dolphin."
-msgstr "Kaitkan kandar untuk menjelajahi pustaka Anda di Dolphin."
-
-#: crates/immich-mount-kde/qml/Main.qml:481
-msgid "Sign In Again"
-msgstr "Masuk lagi"
-
-#: crates/immich-mount-kde/qml/Main.qml:481
-msgid "Mount"
-msgstr "Kaitkan"
-
-#: crates/immich-mount-kde/qml/Main.qml:489
+#: crates/immich-mount-kde/qml/Main.qml:318
 #: apple/App/ContentView.swift:107
 msgid "Server:"
 msgstr "Server:"
 
-#: crates/immich-mount-kde/qml/Main.qml:490
+#: crates/immich-mount-kde/qml/Main.qml:319
 msgid "Account:"
 msgstr "Akun:"
 
-#: crates/immich-mount-kde/qml/Main.qml:491
+#: crates/immich-mount-kde/qml/Main.qml:320
 msgid "Credential:"
 msgstr "Kredensial:"
 
-#: crates/immich-mount-kde/qml/Main.qml:492
-msgid "Connection:"
-msgstr "Koneksi:"
-
-#: crates/immich-mount-kde/qml/Main.qml:493
-msgid "Cache:"
-msgstr "Cache:"
-
-#: crates/immich-mount-kde/qml/Main.qml:494
-msgid "Location:"
-msgstr "Lokasi:"
-
-#: crates/immich-mount-kde/qml/Main.qml:495
-msgid "Uploading:"
-msgstr "Mengunggah:"
-
-#: crates/immich-mount-kde/qml/Main.qml:496
-msgid "Dolphin:"
-msgstr "Dolphin:"
-
-#: crates/immich-mount-kde/qml/Main.qml:501
-msgid "Unmount"
-msgstr "Lepas kait"
-
-#: crates/immich-mount-kde/qml/Main.qml:508
+#: crates/immich-mount-kde/qml/Main.qml:324
 msgid "Disconnect"
 msgstr "Putuskan sambungan"
 
-#: crates/immich-mount-kde/qml/Main.qml:520
+#: crates/immich-mount-kde/qml/Main.qml:340
+msgid "Disconnecting signs out and takes the drive out of Dolphin. Your library on the server stays as it is."
+msgstr ""
+
+#: crates/immich-mount-kde/qml/Main.qml:350
+#: crates/immich-mount-kde/qml/Main.qml:405
+msgid "About"
+msgstr "Tentang"
+
+#: crates/immich-mount-kde/qml/Main.qml:362
+msgid "Your Immich photos and videos as a drive in Dolphin. By Jakob Hviid, under the MIT license."
+msgstr "Foto dan video Immich Anda sebagai kandar di Dolphin. Oleh Jakob Hviid, di bawah lisensi MIT."
+
+#: crates/immich-mount-kde/qml/Main.qml:367
+#: apple/App/Info.plist (NSHumanReadableCopyright)
+msgid "Immich Mount is an independent, unofficial project. It is not affiliated with, endorsed by, or sponsored by the Immich project or FUTO. “Immich” is used only to describe the server this software works with, and remains the mark of its owner."
+msgstr "Immich Mount adalah proyek independen dan tidak resmi. Proyek ini tidak berafiliasi dengan, tidak didukung oleh, dan tidak disponsori oleh proyek Immich atau FUTO. “Immich” hanya digunakan untuk menyebut server yang dapat digunakan bersama perangkat lunak ini, dan tetap merupakan merek dagang pemiliknya."
+
+#: crates/immich-mount-kde/qml/Main.qml:369
+msgid "Credits"
+msgstr "Kredit"
+
+#: crates/immich-mount-kde/qml/Main.qml:375
+msgid "Inspired by {project}"
+msgstr "Terinspirasi oleh {project}"
+
+#: crates/immich-mount-kde/qml/Main.qml:376
+msgid "The Immich API layer: {project}"
+msgstr "Lapisan API Immich: {project}"
+
+#: crates/immich-mount-kde/qml/Main.qml:378
+#: apple/App/ImmichMountApp.swift:520
+msgid "AI disclosure"
+msgstr "Penggunaan AI"
+
+#: crates/immich-mount-kde/qml/Main.qml:387
+msgid "Website: {link}"
+msgstr "Situs web: {link}"
+
+#: crates/immich-mount-kde/qml/Main.qml:388
+msgid "Source code: {link}"
+msgstr "Kode sumber: {link}"
+
+#: crates/immich-mount-kde/qml/Main.qml:398
+#: apple/App/ContentView.swift:125
+msgid "Back"
+msgstr "Kembali"
+
+#: crates/immich-mount-kde/qml/Main.qml:412
+msgid "Connect"
+msgstr "Sambungkan ke server"
+
+#: crates/immich-mount-kde/qml/Main.qml:414
+msgid "Continue in Your Browser"
+msgstr "Lanjutkan di peramban Anda"
+
+#: crates/immich-mount-kde/qml/Main.qml:415
+msgid "Your Library in Dolphin"
+msgstr "Pustaka Anda di Dolphin"
+
+#: crates/immich-mount-kde/qml/Main.qml:437
+msgid "Your Immich Library in Dolphin"
+msgstr "Pustaka Immich Anda di Dolphin"
+
+#: crates/immich-mount-kde/qml/Main.qml:444
+msgid "Server address:"
+msgstr "Alamat server:"
+
+#: crates/immich-mount-kde/qml/Main.qml:445
+msgid "Server address"
+msgstr "Alamat server"
+
+#: crates/immich-mount-kde/qml/Main.qml:453
+#: apple/App/ContentView.swift:139
+msgid "Continue"
+msgstr "Lanjutkan"
+
+#: crates/immich-mount-kde/qml/Main.qml:483
+msgid "Email and password"
+msgstr "Email dan kata sandi"
+
+#: crates/immich-mount-kde/qml/Main.qml:486
+#: apple/App/ContentView.swift:101
+msgid "Email:"
+msgstr "Email:"
+
+#: crates/immich-mount-kde/qml/Main.qml:489
+#: apple/App/ContentView.swift:102
+msgid "Password:"
+msgstr "Kata sandi:"
+
+#: crates/immich-mount-kde/qml/Main.qml:501
+#: crates/immich-mount-kde/qml/Main.qml:505
+msgid "API key"
+msgstr "Kunci API"
+
+#: crates/immich-mount-kde/qml/Main.qml:504
+msgid "Key:"
+msgstr "Kunci:"
+
+#: crates/immich-mount-kde/qml/Main.qml:510
+msgid "Sign In With Key"
+msgstr "Masuk dengan kunci"
+
+#: crates/immich-mount-kde/qml/Main.qml:523
+msgid "Sign in there. When your browser asks to open Immich Mount, allow it."
+msgstr "Masuk di sana. Saat peramban Anda meminta izin untuk membuka Immich Mount, izinkan."
+
+#: crates/immich-mount-kde/qml/Main.qml:526
+msgid "Open the Sign-In Page Again"
+msgstr "Buka lagi halaman masuk"
+
+#: crates/immich-mount-kde/qml/Main.qml:537
+msgid "No browser could be opened. Open this address in one:"
+msgstr "Tidak ada peramban yang dapat dibuka. Buka alamat ini di peramban:"
+
+#: crates/immich-mount-kde/qml/Main.qml:544
+msgid "Sign-in address"
+msgstr "Alamat masuk"
+
+#: crates/immich-mount-kde/qml/Main.qml:574
+msgid "Folder:"
+msgstr "Folder:"
+
+#: crates/immich-mount-kde/qml/Main.qml:579
+msgid "Dolphin"
+msgstr "Dolphin"
+
+#: crates/immich-mount-kde/qml/Main.qml:599
+msgid "Your Library Is in Dolphin"
+msgstr "Pustaka Anda ada di Dolphin"
+
+#: crates/immich-mount-kde/qml/Main.qml:602
+msgid "Mount it to browse your library in Dolphin."
+msgstr "Kaitkan kandar untuk menjelajahi pustaka Anda di Dolphin."
+
+#: crates/immich-mount-kde/qml/Main.qml:605
+msgid "Sign In Again"
+msgstr "Masuk lagi"
+
+#: crates/immich-mount-kde/qml/Main.qml:605
+msgid "Mount"
+msgstr "Kaitkan"
+
+#: crates/immich-mount-kde/qml/Main.qml:613
+msgid "Connection:"
+msgstr "Koneksi:"
+
+#: crates/immich-mount-kde/qml/Main.qml:614
+msgid "Cache:"
+msgstr "Cache:"
+
+#: crates/immich-mount-kde/qml/Main.qml:615
+msgid "Location:"
+msgstr "Lokasi:"
+
+#: crates/immich-mount-kde/qml/Main.qml:616
+msgid "Uploading:"
+msgstr "Mengunggah:"
+
+#: crates/immich-mount-kde/qml/Main.qml:617
+msgid "Dolphin:"
+msgstr "Dolphin:"
+
+#: crates/immich-mount-kde/qml/Main.qml:622
+msgid "Unmount"
+msgstr "Lepas kait"
+
+#: crates/immich-mount-kde/qml/Main.qml:635
 msgid "Immich Mount is an independent, unofficial project. It is not affiliated with, endorsed by, or sponsored by the Immich project or FUTO."
 msgstr "Immich Mount adalah proyek independen dan tidak resmi. Proyek ini tidak berafiliasi dengan, tidak didukung oleh, dan tidak disponsori oleh proyek Immich atau FUTO."
 
@@ -994,11 +1124,6 @@ msgstr "Juga buat gambar mini 1024 px dari pratinjau"
 msgid "Refuse thumbnailer reads of originals"
 msgstr "Tolak pembacaan berkas asli oleh pembuat gambar mini"
 
-#: crates/immich-mount-core/src/settings.rs:74
-#: apple/App/SettingsView.swift:278
-msgid "Open in Immich and Copy Immich Link"
-msgstr "Buka di Immich dan Salin Tautan Immich"
-
 #: crates/immich-mount-core/src/settings.rs:75
 msgid "Show what other apps link to (Immich Crosslink)"
 msgstr "Tampilkan apa yang ditautkan aplikasi lain (Immich Crosslink)"
@@ -1015,39 +1140,39 @@ msgstr "Beri tahu saya saat versi baru tersedia"
 msgid "Headless only: a 0600 file holding the credential"
 msgstr "Hanya tanpa desktop: berkas 0600 yang menyimpan kredensial"
 
-#: crates/immich-mount-core/src/settings.rs:84
+#: crates/immich-mount-core/src/settings.rs:141
 msgid "Never"
 msgstr "Tidak pernah"
 
-#: crates/immich-mount-core/src/settings.rs:85
+#: crates/immich-mount-core/src/settings.rs:142
 msgid "From 500 Items"
 msgstr "Mulai 500 item"
 
-#: crates/immich-mount-core/src/settings.rs:86
+#: crates/immich-mount-core/src/settings.rs:143
 msgid "Always"
 msgstr "Selalu"
 
-#: crates/immich-mount-core/src/settings.rs:87
+#: crates/immich-mount-core/src/settings.rs:144
 msgid "Year in the Name (2023 - Trip)"
 msgstr "Tahun di nama (2023 - Perjalanan)"
 
-#: crates/immich-mount-core/src/settings.rs:88
+#: crates/immich-mount-core/src/settings.rs:145
 msgid "Year Folders (2023/Trip)"
 msgstr "Folder tahun (2023/Perjalanan)"
 
-#: crates/immich-mount-core/src/settings.rs:89
+#: crates/immich-mount-core/src/settings.rs:146
 msgid "Name Only (Trip)"
 msgstr "Nama saja (Perjalanan)"
 
-#: crates/immich-mount-core/src/settings.rs:90
+#: crates/immich-mount-core/src/settings.rs:147
 msgid "Date and Time Taken"
 msgstr "Tanggal dan waktu pengambilan"
 
-#: crates/immich-mount-core/src/settings.rs:91
+#: crates/immich-mount-core/src/settings.rs:148
 msgid "Original File Names"
 msgstr "Nama berkas asli"
 
-#: crates/immich-mount-core/src/settings.rs:92
+#: crates/immich-mount-core/src/settings.rs:149
 msgid "Ask Each Time"
 msgstr "Tanya setiap kali"
 
@@ -1228,14 +1353,6 @@ msgstr "Keluar dari Immich Mount"
 msgid "Not signed in"
 msgstr "Belum masuk"
 
-#: apple/App/SettingsView.swift:14
-msgid "General"
-msgstr "Umum"
-
-#: apple/App/SettingsView.swift:15
-msgid "Folders"
-msgstr "Folder"
-
 #: apple/App/SettingsView.swift:214
 msgid "Show photos, albums, people and places in other apps that take part, and show the items they send in Finder."
 msgstr "Tampilkan foto, album, orang, dan tempat di aplikasi lain yang ikut serta, dan tampilkan item yang dikirim aplikasi itu di Finder."
@@ -1248,6 +1365,14 @@ msgstr "Pelajari selengkapnya…"
 msgid "Find apps that take part…"
 msgstr "Temukan aplikasi yang ikut serta…"
 
+#: apple/App/SettingsView.swift:317
+msgid "Date Folders"
+msgstr "Folder tanggal"
+
+#: apple/App/SettingsView.swift:330
+msgid "Uploads"
+msgstr "Unggahan"
+
 #: apple/App/SettingsView.swift:336
 msgid "Folder names"
 msgstr "Nama folder"
@@ -1255,6 +1380,10 @@ msgstr "Nama folder"
 #: apple/App/SettingsView.swift:339
 msgid "File names"
 msgstr "Nama file"
+
+#: apple/App/SettingsView.swift:341
+msgid "Files"
+msgstr "Berkas"
 
 #: apple/App/SettingsView.swift:150
 msgid "Open at login"

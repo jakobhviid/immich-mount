@@ -279,13 +279,18 @@ fn is_probe_name(name: &str) -> bool {
     PROBED.contains(&name) || ROM_PROPERTIES.contains(&name) || name.starts_with(".Trash-") || name.starts_with("._")
 }
 
-/// Files the mount answers itself, at its root; all but the volume information are empty.
-const VIRTUAL_FILES: &[&str] = &[VOLUME_INFO, ".nomedia", ".trackerignore"];
-/// GVfs's volume information: Files and Dolphin show the mount under its `Name`, the drive's name (`mount.name`).
+/// Files the mount answers itself, at its root; all but the volume information and the folder's icon are empty.
+const VIRTUAL_FILES: &[&str] = &[VOLUME_INFO, DIRECTORY, ".nomedia", ".trackerignore"];
+/// GVfs's volume information: Files and Dolphin show the mount under its `Name`, the drive's name (`mount.name`), and
+/// GVfs gives its full-colour icon the `Icon` (ARCHITECTURE.md, "The drive's icon").
 const VOLUME_INFO: &str = ".xdg-volume-info";
+/// KDE's folder settings: Dolphin draws the mount's folder with its `Icon`, where previews of remote folders are on
+/// (KDE counts the mount as remote).
+const DIRECTORY: &str = ".directory";
+const DIRECTORY_TEXT: &str = "[Desktop Entry]\nIcon=dev.hviid.ImmichMount\n";
 
 fn volume_info(drive_name: &str) -> Arc<str> {
-    format!("[Volume Info]\nName={drive_name}\n").into()
+    format!("[Volume Info]\nName={drive_name}\nIcon=dev.hviid.ImmichMount\n").into()
 }
 
 /// What an inode stands for.
@@ -880,7 +885,11 @@ where
                 _ => reply.error(Errno::EIO),
             },
             (MountNode::Virtual(name), _) => {
-                let bytes = if *name == VOLUME_INFO { self.volume_info.as_bytes() } else { &[] };
+                let bytes = match *name {
+                    VOLUME_INFO => self.volume_info.as_bytes(),
+                    DIRECTORY => DIRECTORY_TEXT.as_bytes(),
+                    _ => &[],
+                };
                 let start = (offset as usize).min(bytes.len());
                 let end = (start + size as usize).min(bytes.len());
                 reply.data(&bytes[start..end]);
@@ -1520,7 +1529,12 @@ impl AttributeMaker {
         // a copied album an ordinary folder (0755). What the mount allows is `access()`'s answer and each operation's.
         let (file_type, permissions, size, modified) = match (node, kind) {
             (MountNode::Virtual(name), _) => {
-                (FileType::RegularFile, 0o644, if *name == VOLUME_INFO { self.volume_info_size } else { 0 }, self.mounted_at)
+                let size = match *name {
+                    VOLUME_INFO => self.volume_info_size,
+                    DIRECTORY => DIRECTORY_TEXT.len() as u64,
+                    _ => 0,
+                };
+                (FileType::RegularFile, 0o644, size, self.mounted_at)
             }
             (_, EntryKind::Folder) => (FileType::Directory, 0o755, 0, self.mounted_at),
             (_, EntryKind::File { size, modified, .. }) => (FileType::RegularFile, 0o644, size.unwrap_or(0), SystemTime::from(*modified)),

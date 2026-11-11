@@ -46,6 +46,8 @@ SOURCES = [
     ("crates/immich-mount/src/*.rs", [TR]),
     ("crates/immich-mount-linux/src/*.rs", [TR]),
     ("crates/immich-mount-desktop/src/*.rs", [TR, TITLE_ROW]),
+    # The settings pages' layout: each page's and group's title, and the lines under rows.
+    ("crates/immich-mount-desktop/src/preferences.rs", [r"\btitle: " + LITERAL, r"\bSome\(\s*" + LITERAL, r'\b(?:row|section)\(\s*"[a-z._]+",\s*' + LITERAL, r'\("[a-z._]+", ' + LITERAL]),
     ("crates/immich-mount-gnome/src/*.rs", [TR, TITLE_ROW]),
     ("crates/immich-mount-gnome/src/*.blp", [r"\b_\(\s*" + LITERAL]),
     ("crates/immich-mount-gnome/nautilus/*.c", [r"\bdgettext\(\s*TEXT_DOMAIN,\s*" + LITERAL]),
@@ -61,7 +63,7 @@ SOURCES = [
 # Names and examples, never translated: the drive's own folders among them, which keep their names in every
 # language (SPEC.md, "Names"), so a switch or a setting that names one names it as the drive shows it.
 UNTRANSLATED = {
-    "Immich Mount", "Immich Drive", "Immich", "photos.example.org",
+    "Immich Mount", "Immich Drive", "Immich", "Immich Crosslink", "photos.example.org",
     "Photos", "Albums", "People", "Places", "Favorites", "Archive",
 }
 

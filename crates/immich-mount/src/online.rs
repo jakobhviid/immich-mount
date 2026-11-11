@@ -441,7 +441,41 @@ pub fn daemon(paths: &Paths) -> Result<Option<StopReason>> {
     let source = Arc::new(ImmichSource::new(client));
     let server = daemon::ServerInfo { url: server_url, version, account, user_id };
     let updates = crate::updates::wanted(&config).then(|| (crate::updates::check(), paths.state_directory.join("update-told")));
-    match daemon::serve(source, server, config, &mount_point, &account_cache, &paths.thumbnail_directory, &paths.not_uploaded_directory(), updates, &runtime) {
+    // The drive's icon in Files (ARCHITECTURE.md, "The drive's icon"): the sidebar's fstab line only while mounted, so
+    // none left by a daemon that was killed stays; the folder's icon, as the folder is seen unmounted and mounted.
+    // Another daemon serving the mount keeps its line: this one then stops at once, and touches none of it.
+    let served_elsewhere = immich_mount_linux::mounts::mount_state(&immich_mount_linux::mounts::canonical_mount_point(&mount_point))
+        == immich_mount_linux::mounts::MountState::Mounted;
+    if !served_elsewhere {
+        if let Err(error) = immich_mount_linux::gnome::list_mount_in_fstab(paths, None) {
+            log::warn!("could not write the volume monitor's fstab: {error}");
+        }
+    }
+    if std::fs::create_dir_all(&mount_point).is_ok() {
+        immich_mount_linux::gnome::set_folder_icon(&mount_point);
+    }
+    let watched = (paths.clone(), mount_point.clone(), config.mount_name);
+    std::thread::spawn(move || {
+        let (paths, mount_point, drive_name) = watched;
+        let resolved = immich_mount_linux::mounts::canonical_mount_point(&mount_point);
+        for _ in 0..240 {
+            if immich_mount_linux::mounts::mount_state(&resolved) == immich_mount_linux::mounts::MountState::Mounted {
+                if let Err(error) = immich_mount_linux::gnome::list_mount_in_fstab(&paths, Some((&mount_point, drive_name))) {
+                    log::warn!("could not list the mount in the volume monitor's fstab: {error}");
+                }
+                immich_mount_linux::gnome::set_folder_icon(&mount_point);
+                return;
+            }
+            std::thread::sleep(std::time::Duration::from_millis(250));
+        }
+    });
+    let served = daemon::serve(source, server, config, &mount_point, &account_cache, &paths.thumbnail_directory, &paths.not_uploaded_directory(), updates, &runtime);
+    if !served_elsewhere {
+        if let Err(error) = immich_mount_linux::gnome::list_mount_in_fstab(paths, None) {
+            log::warn!("could not take the mount out of the volume monitor's fstab: {error}");
+        }
+    }
+    match served {
         // Another daemon serves it (the packages' service and Homebrew's both on): this one leaves cleanly, so its
         // service is not restarted every few seconds.
         Err(daemon::DaemonError::AlreadyMounted(path)) => {
