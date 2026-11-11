@@ -8,7 +8,6 @@ use std::cell::Cell;
 use std::rc::Rc;
 
 use adw::prelude::*;
-use gtk::glib;
 use immich_mount_core::settings::Kind;
 use immich_mount_desktop::preferences::{
     apps_description, apps_heading, cache_size_label, cache_sizes, caption, change, choice_label, crosslink_apps, current_value, forget_app,
@@ -111,6 +110,8 @@ fn section_row(row: &'static Row, inner: &'static str, context: &Context) -> gtk
 fn choice_row(key: &'static str, words: &'static [&'static str], context: &Context) -> adw::ComboRow {
     let labels: Vec<&str> = words.iter().map(|word| choice_label(word)).collect();
     let combo = adw::ComboRow::builder().title(title(setting(key))).model(&gtk::StringList::new(&labels)).build();
+    // A long choice ("Year in the Name (2023 - Trip)") reads whole under the title, rather than cut short beside it.
+    combo.set_use_subtitle(labels.iter().any(|label| label.chars().count() > 20));
     let current = current_value(setting(key));
     combo.set_selected(words.iter().position(|word| *word == current).unwrap_or(0) as u32);
     let context = context.clone();
@@ -124,8 +125,7 @@ fn choice_row(key: &'static str, words: &'static [&'static str], context: &Conte
 /// The cache's size: one of the sizes offered, in the units Files counts in, or one set by hand, as itself.
 fn cache_row(key: &'static str, context: &Context) -> adw::ComboRow {
     let sizes = cache_sizes();
-    let format = |bytes: u64| glib::format_size(bytes).to_string();
-    let labels: Vec<String> = sizes.iter().map(|size| cache_size_label(size, format)).collect();
+    let labels: Vec<String> = sizes.iter().map(|size| cache_size_label(size)).collect();
     let label_refs: Vec<&str> = labels.iter().map(String::as_str).collect();
     let combo = adw::ComboRow::builder().title(title(setting(key))).model(&gtk::StringList::new(&label_refs)).build();
     if let Some(line) = caption(setting(key)) {
@@ -141,15 +141,20 @@ fn cache_row(key: &'static str, context: &Context) -> adw::ComboRow {
     combo
 }
 
-/// A folder, chosen in the system's folder chooser rather than typed.
+/// A folder, chosen in the system's folder chooser rather than typed, and shown in full, as Status shows it.
 fn folder_row(key: &'static str, current: &str, context: &Context, window: &gtk::Window) -> adw::ActionRow {
-    let row = adw::ActionRow::builder().title(title(setting(key))).subtitle(current).build();
+    let expand = |written: &str| immich_mount_linux::paths::Paths::from_environment().expand(written);
+    let row = adw::ActionRow::builder().title(title(setting(key))).subtitle(expand(current).display().to_string()).build();
     row.add_css_class("property");
     let choose = gtk::Button::builder().icon_name("document-open-symbolic").valign(gtk::Align::Center).tooltip_text(tr("Choose a Folder")).build();
     choose.add_css_class("flat");
     let (shown_row, context, parent) = (row.clone(), context.clone(), window.clone());
     choose.connect_clicked(move |_| {
         let dialog = gtk::FileDialog::builder().title(tr("Choose a Folder")).modal(true).build();
+        // It opens where the drive is, beside it, rather than at Recent.
+        if let Some(parent) = expand(&current_value(setting(key))).parent() {
+            dialog.set_initial_folder(Some(&gtk::gio::File::for_path(parent)));
+        }
         let (shown_row, context) = (shown_row.clone(), context.clone());
         dialog.select_folder(Some(&parent), gtk::gio::Cancellable::NONE, move |chosen| {
             let Some(path) = chosen.ok().and_then(|folder| folder.path()) else { return };
@@ -157,7 +162,7 @@ fn folder_row(key: &'static str, current: &str, context: &Context, window: &gtk:
             match change(key, &text) {
                 Ok(restart) => {
                     context.changed.set(context.changed.get() || restart);
-                    shown_row.set_subtitle(&text);
+                    shown_row.set_subtitle(&expand(&text).display().to_string());
                 }
                 Err(message) => (context.report)(&message),
             }

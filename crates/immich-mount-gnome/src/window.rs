@@ -461,7 +461,7 @@ impl Window {
         imp.mount_row.set_subtitle(&status.mount_point.display().to_string());
         imp.connection_row.set_subtitle(&status.connection_text());
         imp.sign_in_again_group.set_visible(status.daemon.as_ref().is_some_and(|report| report.state == "signed-out"));
-        imp.cache_row.set_subtitle(&status.cache_text(|bytes| glib::format_size(bytes).to_string()));
+        imp.cache_row.set_subtitle(&status.cache_text(immich_mount_desktop::preferences::format_size));
         let signed_out = status.daemon.as_ref().is_some_and(|report| report.state == "signed-out");
         let (title, description) = match (signed_out, status.mounted) {
             (true, _) => (tr("Signed Out of Immich"), tr("Sign in again to keep browsing. Your caches are kept.")),

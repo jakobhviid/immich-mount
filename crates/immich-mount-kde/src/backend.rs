@@ -99,6 +99,11 @@ pub mod qobject {
         #[cxx_name = "homeRelative"]
         fn home_relative(self: &Backend, address: &QString) -> QString;
 
+        /// The folder above the location setting `written`, as a `file://` address, for the folder chooser to open at.
+        #[qinvokable]
+        #[cxx_name = "folderAddress"]
+        fn folder_address(self: &Backend, written: &QString) -> QString;
+
         /// The preferences page closed: the daemon restarts if a setting it reads changed.
         #[qinvokable]
         #[cxx_name = "preferencesClosed"]
@@ -190,11 +195,7 @@ where
     });
 }
 
-/// A size in decimal units, as Dolphin counts: whole when it is ("10 GB"), else to a tenth.
-fn format_bytes(bytes: u64) -> String {
-    let (value, unit) = if bytes >= 1_000_000_000 { (bytes as f64 / 1e9, "GB") } else { (bytes as f64 / 1e6, "MB") };
-    if (value - value.round()).abs() < 0.05 { format!("{value:.0} {unit}") } else { format!("{value:.1} {unit}") }
-}
+
 
 impl cxx_qt::Initialize for qobject::Backend {
     fn initialize(mut self: Pin<&mut Self>) {
@@ -383,7 +384,7 @@ impl qobject::Backend {
         self.as_mut().read_previews();
         let signed_out = status.daemon.as_ref().is_some_and(|report| report.state == "signed-out");
         self.as_mut().set_connection(QString::from(&status.connection_text()));
-        self.as_mut().set_cache(QString::from(&status.cache_text(format_bytes)));
+        self.as_mut().set_cache(QString::from(&status.cache_text(preferences::format_size)));
         self.as_mut().set_signedout(signed_out);
     }
 
@@ -453,7 +454,7 @@ impl qobject::Backend {
                         let sizes = preferences::cache_sizes();
                         shown["choices"] = sizes
                             .iter()
-                            .map(|size| serde_json::json!({ "word": size, "label": preferences::cache_size_label(size, format_bytes) }))
+                            .map(|size| serde_json::json!({ "word": size, "label": preferences::cache_size_label(size) }))
                             .collect::<Vec<_>>()
                             .into();
                         "choice".into()
@@ -495,6 +496,12 @@ impl qobject::Backend {
         let address = address.to_string();
         let path = url::Url::parse(&address).ok().and_then(|url| url.to_file_path().ok()).unwrap_or_else(|| std::path::PathBuf::from(&address));
         QString::from(&preferences::home_relative(&path))
+    }
+
+    pub fn folder_address(&self, written: &QString) -> QString {
+        let path = Paths::from_environment().expand(&written.to_string());
+        let folder = path.parent().map(std::path::Path::to_path_buf).unwrap_or(path);
+        QString::from(&url::Url::from_directory_path(&folder).map(|url| url.to_string()).unwrap_or_default())
     }
 
     pub fn store_setting(mut self: Pin<&mut Self>, key: &QString, value: &QString) -> QString {

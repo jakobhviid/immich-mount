@@ -199,7 +199,11 @@ fn main() -> ExitCode {
             if json {
                 print_json(&report);
             } else {
-                println!("{} ({:?} before)", report.mount_point.display(), report.was);
+                match report.was {
+                    immich_mount_linux::mounts::MountState::Mounted => println!("unmounted {}", report.mount_point.display()),
+                    immich_mount_linux::mounts::MountState::Stale => println!("detached a dead mount at {}", report.mount_point.display()),
+                    immich_mount_linux::mounts::MountState::NotMounted => println!("{} was not mounted", report.mount_point.display()),
+                }
             }
         })),
         Some(Command::Logout) => finish(commands::logout(&paths, online::revoke_session(&paths)).map(|report| {

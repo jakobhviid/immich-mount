@@ -107,7 +107,7 @@ pub const PAGES: &[Page] = &[
         pane: Pane::OtherApps,
         id: "other-apps",
         title: "Other Apps",
-        icon: "emblem-shared-symbolic",
+        icon: "insert-link-symbolic",
         groups: &[
             Group { title: None, description: None, rows: &[row("crosslink.enabled", "Immich Crosslink", None)], apps: true },
             Group {
@@ -148,13 +148,24 @@ pub fn cache_sizes() -> Vec<String> {
     sizes
 }
 
-/// How a cache size reads: in decimal units, as the file managers count, and marked when it was set by hand.
-pub fn cache_size_label(size: &str, format: impl Fn(u64) -> String) -> String {
-    let bytes = settings::parse_size(size).unwrap_or_default();
+/// A size in decimal units, as Files and Dolphin count, the same in both apps: whole where it is ("10 GB"), else to a
+/// tenth ("1.4 GB").
+pub fn format_size(bytes: u64) -> String {
+    let (value, unit) = match bytes {
+        1_000_000_000_000.. => (bytes as f64 / 1e12, "TB"),
+        1_000_000_000.. => (bytes as f64 / 1e9, "GB"),
+        _ => (bytes as f64 / 1e6, "MB"),
+    };
+    if (value - value.round()).abs() < 0.05 { format!("{value:.0} {unit}") } else { format!("{value:.1} {unit}") }
+}
+
+/// How a cache size reads, marked when it was set by hand to one the apps do not offer.
+pub fn cache_size_label(size: &str) -> String {
+    let bytes = format_size(settings::parse_size(size).unwrap_or_default());
     if settings::CACHE_SIZES.contains(&size) {
-        format(bytes)
+        bytes
     } else {
-        tr("Custom ({size})").replace("{size}", &format(bytes))
+        tr("Custom ({size})").replace("{size}", &bytes)
     }
 }
 
@@ -339,6 +350,14 @@ mod tests {
             let placed = settings::pane(setting.key) != Some(Pane::CommandLine);
             assert_eq!(placed, shown.contains(&setting.key), "{}: placed on a pane, it must be shown; on the command line only, never", setting.key);
         }
+    }
+
+    #[test]
+    fn sizes_read_as_the_file_managers_count() {
+        assert_eq!(format_size(10_000_000_000), "10 GB");
+        assert_eq!(format_size(1_400_000_000), "1.4 GB");
+        assert_eq!(format_size(0), "0 MB");
+        assert_eq!(cache_size_label("25GB"), "25 GB");
     }
 
     #[test]

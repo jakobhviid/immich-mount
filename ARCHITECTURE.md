@@ -127,12 +127,14 @@ Fedora 44 GNOME 50 and Plasma 6.8 VMs, from GLib 2.88, GVfs 1.60, Nautilus 50.4 
   unless the mount has a volume. A volume comes from an fstab entry, whose `x-gvfs-symbolic-icon`, `x-gvfs-icon` and
   `x-gvfs-name` it honours; a mount's own options and `/.xdg-volume-info` (which has no symbolic key) never set the
   symbol. So the daemon points GVfs's volume monitor, through the drop-in it already writes for that user service, at
-  a private copy of `/etc/fstab` (`LIBMOUNT_FSTAB`, which GLib's libmount reads and watches) and puts the mount's
-  line there while, and only while, it is mounted: an entry left for an unmounted folder would show a volume that
-  cannot mount. It writes the copy without the line as it starts, so none left by a daemon that was killed stays,
-  and leaves the copy alone when another daemon serves the mount. Eject still works (the `umount` the monitor runs is
-  setuid and ignores the variable), and the same line's `x-gvfs-show` lists the mount where home is reached through
-  a symlink as well.
+  a private copy of `/etc/fstab` (`LIBMOUNT_FSTAB`, which GLib's libmount reads and watches) and lists the mount there
+  while it runs: an entry left for an unmounted folder would show a volume that cannot mount. It writes the copy once
+  as it starts, with the line, before it mounts and before it restarts the monitor, so GVfs has the volume when the
+  mount appears; a line added moments after the copy was written went unnoticed, and a running Files then listed the
+  drive twice, with the generic symbol (seen in Fedora 44 and Bazzite GNOME VMs). It writes the copy without the line
+  once it stops, replaces a line left by a daemon that was killed as it starts again, and leaves the copy alone when
+  another daemon serves the mount. Eject still works (the `umount` the monitor runs is setuid and ignores the
+  variable), and the same line's `x-gvfs-show` lists the mount where home is reached through a symlink as well.
   - **The cost:** `LIBMOUNT_FSTAB` is libmount's own testing switch, not a promise GVfs makes, and the copy follows
     `/etc/fstab` only as each daemon starts. Should GVfs stop honouring it, the drive keeps the generic symbol, as
     before; nothing else depends on it. Only where the volume monitor is a user service, as the drop-in already is.

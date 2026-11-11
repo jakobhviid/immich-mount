@@ -44,11 +44,21 @@ Kirigami.ApplicationWindow {
         drawerOpen: enabled && !modal
         handleVisible: enabled && modal
         actions: [
-            Kirigami.Action { text: i18n("Status"); icon.name: "dev.hviid.ImmichMount"; checkable: true; checked: root.category === "status"; onTriggered: root.openCategory("status") },
+            Kirigami.Action { text: i18n("Status"); icon.name: "dev.hviid.ImmichMount-symbolic"; checkable: true; checked: root.category === "status"; onTriggered: root.openCategory("status") },
             Kirigami.Action { text: i18n("General"); icon.name: "configure"; checkable: true; checked: root.category === "general"; onTriggered: root.openCategory("general") },
             Kirigami.Action { text: i18n("Folders"); icon.name: "folder"; checkable: true; checked: root.category === "folders"; onTriggered: root.openCategory("folders") },
-            Kirigami.Action { text: i18n("Other Apps"); icon.name: "emblem-shared"; checkable: true; checked: root.category === "other-apps"; onTriggered: root.openCategory("other-apps") },
-            Kirigami.Action { text: i18n("Account"); icon.name: "user-identity"; checkable: true; checked: root.category === "account"; onTriggered: root.openCategory("account") }
+            Kirigami.Action { text: i18n("Other Apps"); icon.name: "insert-link"; checkable: true; checked: root.category === "other-apps"; onTriggered: root.openCategory("other-apps") },
+            Kirigami.Action { text: i18n("Account"); icon.name: "user-identity"; checkable: true; checked: root.category === "account"; onTriggered: root.openCategory("account") },
+            Kirigami.Action { separator: true },
+            Kirigami.Action {
+                text: i18n("About")
+                icon.name: "help-about"
+                onTriggered: {
+                    root.pageStack.layers.push(aboutPage)
+                    if (sidebar.modal)
+                        sidebar.close()
+                }
+            }
         ]
     }
 
@@ -140,7 +150,7 @@ Kirigami.ApplicationWindow {
                         Layout.fillWidth: modelData.kind === "app"
                         Kirigami.FormData.isSection: modelData.kind === "section"
                         Kirigami.FormData.label: modelData.kind === "section" ? modelData.title
-                            : (modelData.kind === "bool" || modelData.kind === "app" || modelData.kind === "note" || modelData.kind === "pair" ? "" : modelData.title + ":")
+                            : (modelData.kind === "bool" || modelData.kind === "app" || modelData.kind === "note" ? "" : modelData.title + ":")
                         sourceComponent: {
                             switch (modelData.kind) {
                             case "section": return sectionRow
@@ -233,21 +243,21 @@ Kirigami.ApplicationWindow {
                         }
                         Component {
                             id: pairRow
-                            // A section: its switch, and beside it its date folders (or what Upload does with folders),
-                            // which mean nothing while the section is hidden.
+                            // A section, named in the form's label column: its switch, and beside it its date folders
+                            // (or what Upload does with folders), which mean nothing while the section is hidden. The
+                            // lists line up, one under the other.
                             RowLayout {
                                 Controls.Switch {
                                     id: sectionSwitch
-                                    text: row.modelData.title
+                                    Accessible.name: row.modelData.title
                                     checked: row.modelData.value === "true"
                                     onToggled: preferences.store(row.modelData.key, checked ? "true" : "false")
                                 }
-                                Controls.Label {
-                                    text: row.modelData.innerTitle + ":"
-                                    enabled: sectionSwitch.checked
-                                }
                                 Controls.ComboBox {
                                     Accessible.name: row.modelData.innerTitle
+                                    Controls.ToolTip.text: row.modelData.innerTitle
+                                    Controls.ToolTip.visible: hovered
+                                    Controls.ToolTip.delay: Kirigami.Units.toolTipDelay
                                     enabled: sectionSwitch.checked
                                     model: row.modelData.choices
                                     textRole: "label"
@@ -269,6 +279,8 @@ Kirigami.ApplicationWindow {
                                 }
                                 FolderDialog {
                                     id: folderDialog
+                                    // It opens where the drive is, beside it.
+                                    currentFolder: backend.folderAddress(row.modelData.value)
                                     onAccepted: {
                                         const text = backend.homeRelative(selectedFolder.toString())
                                         preferences.store(row.modelData.key, text)
@@ -280,13 +292,25 @@ Kirigami.ApplicationWindow {
                         }
                         Component {
                             id: choiceRow
-                            Controls.ComboBox {
-                                Accessible.name: row.modelData.title
-                                model: row.modelData.choices
-                                textRole: "label"
-                                valueRole: "word"
-                                Component.onCompleted: currentIndex = indexOfValue(row.modelData.value)
-                                onActivated: preferences.store(row.modelData.key, currentValue)
+                            ColumnLayout {
+                                spacing: 0
+                                Controls.ComboBox {
+                                    Accessible.name: row.modelData.title
+                                    model: row.modelData.choices
+                                    textRole: "label"
+                                    valueRole: "word"
+                                    Component.onCompleted: currentIndex = indexOfValue(row.modelData.value)
+                                    onActivated: preferences.store(row.modelData.key, currentValue)
+                                }
+                                // A line under the list where its title alone says too little.
+                                Controls.Label {
+                                    visible: row.modelData.caption.length > 0
+                                    text: row.modelData.caption
+                                    wrapMode: Text.WordWrap
+                                    font: Kirigami.Theme.smallFont
+                                    opacity: 0.7
+                                    Layout.maximumWidth: Kirigami.Units.gridUnit * 22
+                                }
                             }
                         }
                         Component {
@@ -413,6 +437,7 @@ Kirigami.ApplicationWindow {
             case "signin": return i18n("Sign In")
             case "waiting": return i18n("Continue in Your Browser")
             case "setup": return i18n("Your Library in Dolphin")
+            case "status": return i18n("Status")
             default: return "Immich Mount"
             }
         }

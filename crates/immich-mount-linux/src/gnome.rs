@@ -97,14 +97,15 @@ fn fstab_line(mount_point: &Path, drive_name: &str) -> String {
 }
 
 /// Write the volume monitor's fstab: the system's, as it is now, and the mount's line while `mounted` names it. Only
-/// where the drop-in points the monitor at it. A line left by a daemon that stopped without its unmount (killed,
-/// crashed) is gone at the next start, which writes it without.
+/// where the volume monitor is a user service, which the drop-in points at it. Written once as the daemon starts,
+/// before it mounts and before the monitor restarts: a second write moments after the first went unnoticed (GVfs then
+/// gave the mount no volume, and a running Files listed it twice). A line left by a daemon that stopped without its
+/// unmount (killed) is replaced at the next start.
 pub fn list_mount_in_fstab(paths: &Paths, mounted: Option<(&Path, &str)>) -> Result<(), String> {
-    let drop_in = std::fs::read_to_string(volume_monitor_drop_in(paths)).unwrap_or_default();
-    let file = private_fstab(paths);
-    if !drop_in.contains(&format!("LIBMOUNT_FSTAB={}", file.display())) {
+    if !crate::service::is_installed(VOLUME_MONITOR) {
         return Ok(());
     }
+    let file = private_fstab(paths);
     let mut text = std::fs::read_to_string("/etc/fstab").unwrap_or_default();
     if !text.is_empty() && !text.ends_with('\n') {
         text.push('\n');

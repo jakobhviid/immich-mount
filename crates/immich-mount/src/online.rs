@@ -413,9 +413,19 @@ pub fn daemon(paths: &Paths) -> Result<Option<StopReason>> {
         }
     };
     let mount_point = paths.expand(&config.mount_path);
+    // The drive's icon in Files' sidebar (ARCHITECTURE.md, "The drive's icon"): the volume monitor's fstab lists the
+    // mount from before it is mounted, so GVfs has its volume when the mount appears, and until it stops. Another
+    // daemon serving the mount keeps its line: this one then stops at once, and touches none of it.
+    let served_elsewhere = immich_mount_linux::mounts::mount_state(&immich_mount_linux::mounts::canonical_mount_point(&mount_point))
+        == immich_mount_linux::mounts::MountState::Mounted;
+    if !served_elsewhere {
+        if let Err(error) = immich_mount_linux::gnome::list_mount_in_fstab(paths, Some((&mount_point, config.mount_name))) {
+            log::warn!("could not list the mount in the volume monitor's fstab: {error}");
+        }
+    }
     // GVfs lists no mount in a home reached through a symlink until its volume monitor has the resolved home.
     match immich_mount_linux::gnome::show_mounts_in_sidebar(paths, &mount_point) {
-        Ok(true) => log::info!("gave GVfs's volume monitor the resolved home, so Files lists the mount as a drive"),
+        Ok(true) => log::info!("set GVfs's volume monitor up, so Files lists the mount as a drive with its icon"),
         Ok(false) => {}
         Err(error) => log::warn!("could not set GVfs up for this home, so Files may not list the mount: {error}"),
     }
@@ -441,29 +451,16 @@ pub fn daemon(paths: &Paths) -> Result<Option<StopReason>> {
     let source = Arc::new(ImmichSource::new(client));
     let server = daemon::ServerInfo { url: server_url, version, account, user_id };
     let updates = crate::updates::wanted(&config).then(|| (crate::updates::check(), paths.state_directory.join("update-told")));
-    // The drive's icon in Files (ARCHITECTURE.md, "The drive's icon"): the sidebar's fstab line only while mounted, so
-    // none left by a daemon that was killed stays; the folder's icon, as the folder is seen unmounted and mounted.
-    // Another daemon serving the mount keeps its line: this one then stops at once, and touches none of it.
-    let served_elsewhere = immich_mount_linux::mounts::mount_state(&immich_mount_linux::mounts::canonical_mount_point(&mount_point))
-        == immich_mount_linux::mounts::MountState::Mounted;
-    if !served_elsewhere {
-        if let Err(error) = immich_mount_linux::gnome::list_mount_in_fstab(paths, None) {
-            log::warn!("could not write the volume monitor's fstab: {error}");
-        }
-    }
+    // The mount point's folder icon in Files, as the folder is seen unmounted and, once up, mounted.
     if std::fs::create_dir_all(&mount_point).is_ok() {
         immich_mount_linux::gnome::set_folder_icon(&mount_point);
     }
-    let watched = (paths.clone(), mount_point.clone(), config.mount_name);
+    let watched = mount_point.clone();
     std::thread::spawn(move || {
-        let (paths, mount_point, drive_name) = watched;
-        let resolved = immich_mount_linux::mounts::canonical_mount_point(&mount_point);
+        let resolved = immich_mount_linux::mounts::canonical_mount_point(&watched);
         for _ in 0..240 {
             if immich_mount_linux::mounts::mount_state(&resolved) == immich_mount_linux::mounts::MountState::Mounted {
-                if let Err(error) = immich_mount_linux::gnome::list_mount_in_fstab(&paths, Some((&mount_point, drive_name))) {
-                    log::warn!("could not list the mount in the volume monitor's fstab: {error}");
-                }
-                immich_mount_linux::gnome::set_folder_icon(&mount_point);
+                immich_mount_linux::gnome::set_folder_icon(&watched);
                 return;
             }
             std::thread::sleep(std::time::Duration::from_millis(250));
